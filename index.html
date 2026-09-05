@@ -1,334 +1,118 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Music City Estates — a virtual music world where artists create, collaborate, perform, grow, and earn." />
-  <title>Music City Estates | Build Your Sound. Own Your Journey.</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Music City Estates — build your sound, grow your fanbase, and take over the city.">
+  <title>Music City Estates</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Russo+One&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="noise"></div>
+  <div class="ambient" aria-hidden="true"></div>
+  <div class="game-shell">
+    <header class="topbar">
+      <button class="brand" data-screen="studio" aria-label="Go to Bedroom Studio">
+        <span class="brand-disc">M</span>
+        <span><strong>MUSIC CITY</strong><small>ESTATES</small></span>
+      </button>
 
-  <header class="site-header">
-    <a class="brand" href="#home" aria-label="Music City Estates home">
-      <span class="brand-mark">MCE</span>
-      <span class="brand-copy">
-        <strong>MUSIC CITY</strong>
-        <small>ESTATES</small>
-      </span>
-    </a>
+      <section class="player-card" aria-label="Player profile">
+        <div class="avatar" aria-hidden="true">🎧</div>
+        <div class="identity">
+          <button id="editName" title="Edit artist name"><strong id="artistName">Rookie</strong><span>✎</span></button>
+          <small id="careerLevel">Bedroom Artist</small>
+        </div>
+        <div class="stat"><span>Cash</span><strong id="cashStat">$100</strong></div>
+        <div class="stat"><span>Fans</span><strong id="fansStat">0</strong></div>
+        <div class="xp-stat">
+          <div><span>XP</span><strong id="xpStat">0 / 100</strong></div>
+          <div class="progress"><i id="xpBar"></i></div>
+        </div>
+      </section>
+    </header>
 
-    <button class="menu-toggle" aria-label="Open navigation" aria-expanded="false">☰</button>
+    <main>
+      <section class="screen active" id="studioScreen" aria-labelledby="studioTitle">
+        <div class="studio-scene">
+          <div class="scene-copy">
+            <div class="location-chip"><span></span> CURRENT LOCATION</div>
+            <p class="chapter">CHAPTER 01</p>
+            <h1 id="studioTitle">Bedroom<br><em>Studio</em></h1>
+            <p>This is where every legend starts. Create your first track, build a buzz, and earn your way onto the city's stages.</p>
+            <div class="next-goal" id="nextGoal">
+              <span class="goal-icon">☕</span>
+              <div><small>NEXT UNLOCK</small><strong>Small Cafe</strong><div class="progress"><i></i></div></div>
+              <b>0 / 10 XP</b>
+            </div>
+          </div>
 
-    <nav class="nav" aria-label="Main navigation">
-      <a href="#world">The World</a>
-      <a href="#journey">Artist Journey</a>
-      <a href="#features">Features</a>
-      <a href="#founders">Founders</a>
+          <div class="room-art" aria-label="Stylized bedroom music studio artwork">
+            <div class="window"><i></i><i></i><i></i><i></i><span class="moon"></span></div>
+            <div class="poster">MAKE<br>NOISE.</div>
+            <div class="shelf"><i></i><i></i><i></i></div>
+            <div class="desk">
+              <div class="monitor"><div class="wave"></div></div>
+              <div class="speaker left"><i></i></div><div class="speaker right"><i></i></div>
+              <div class="keyboard"></div>
+            </div>
+            <div class="chair">♫</div>
+            <div class="rug"></div>
+          </div>
+        </div>
+
+        <section class="action-section">
+          <div class="section-title"><div><small>MAKE YOUR MOVE</small><h2>What do you want to do?</h2></div><span id="dayLabel">DAY 1 · 8:00 PM</span></div>
+          <div class="action-grid">
+            <button class="action-card primary" data-action="song"><span class="action-icon">♫</span><div><h3>Create Song</h3><p>Write and record a new demo</p><small>+10 XP · +3 FANS</small></div><b>→</b></button>
+            <button class="action-card" data-action="perform"><span class="action-icon">🎙</span><div><h3>Perform Live</h3><p>Play your best available venue</p><small>+FANS · +CASH</small></div><b>→</b></button>
+            <button class="action-card locked-action" data-action="battle"><span class="action-icon">⚡</span><div><h3>Enter Battle</h3><p id="battleRequirement">Reach 25 fans to unlock</p><small>HIGH RISK · HIGH REWARD</small></div><b class="lock-icon">🔒</b></button>
+            <button class="action-card" data-action="promote"><span class="action-icon">📣</span><div><h3>Promote Music</h3><p>Spend $15 to reach new listeners</p><small>+5 FANS · +5 XP</small></div><b>→</b></button>
+          </div>
+        </section>
+      </section>
+
+      <section class="screen city-screen" id="cityScreen" aria-labelledby="cityTitle">
+        <div class="page-heading"><div><div class="location-chip"><span></span> CITY MAP</div><h1 id="cityTitle">Choose your <em>next move.</em></h1><p>Grow your fanbase and reputation to unlock every corner of Music City.</p></div><div class="map-legend"><span><i class="open-dot"></i>Open</span><span><i class="locked-dot"></i>Locked</span></div></div>
+        <div class="map-grid" id="mapGrid"></div>
+      </section>
+
+      <section class="screen phone-screen" id="phoneScreen" aria-labelledby="phoneTitle">
+        <div class="page-heading"><div><div class="location-chip"><span></span> YOUR NETWORK</div><h1 id="phoneTitle">City <em>Phone.</em></h1><p>Stay connected. Every relationship can change your career.</p></div></div>
+        <div class="phone-layout">
+          <div class="phone-device">
+            <div class="phone-speaker"></div>
+            <div class="phone-status"><span id="phoneTime">8:00</span><span>●●● ◒</span></div>
+            <div class="phone-head"><small>MUSIC CITY</small><h2 id="phonePanelTitle">Contacts</h2></div>
+            <div class="phone-content" id="phoneContent"></div>
+            <div class="phone-tabs">
+              <button class="active" data-phone-tab="contacts"><span>♟</span>Contacts</button>
+              <button data-phone-tab="messages"><span>✉</span>Messages</button>
+              <button data-phone-tab="social"><span>♥</span>Social</button>
+              <button data-phone-tab="releases"><span>♫</span>Music</button>
+            </div>
+          </div>
+          <aside class="coming-soon">
+            <small>COMING SOON</small><h2>Your team is everything.</h2><p>Build relationships with producers, DJs, and A&amp;R reps as your career grows.</p>
+            <div class="future-list"><span>🎛 <b>Upload or generate beats</b></span><span>🎙 <b>Record studio vocals</b></span><span>✨ <b>AI music polishing</b></span><span>🏆 <b>Fan voting &amp; artist battles</b></span><span>📱 <b>Social media posting</b></span></div>
+          </aside>
+        </div>
+      </section>
+    </main>
+
+    <nav class="game-nav" aria-label="Game navigation">
+      <button class="active" data-screen="studio"><span>⌂</span>Studio</button>
+      <button data-screen="city"><span>⌖</span>View City</button>
+      <button data-screen="phone"><span>▣</span>View Phone<i id="messageBadge">1</i></button>
     </nav>
-
-    <a class="button button-small desktop-cta" href="#founders">Join the City</a>
-  </header>
-
-  <main>
-    <section class="hero" id="home">
-      <div class="hero-glow hero-glow-one"></div>
-      <div class="hero-glow hero-glow-two"></div>
-
-      <div class="hero-content">
-        <p class="eyebrow">THE NEXT MUSIC CAPITAL IS VIRTUAL</p>
-        <h1>
-          BUILD YOUR SOUND.<br />
-          <span>OWN YOUR JOURNEY.</span>
-        </h1>
-        <p class="hero-copy">
-          Music City Estates is an immersive world where artists, producers, fans,
-          venues, and brands create music, build careers, form labels, perform live,
-          sell merchandise, and rise from local stages to global arenas.
-        </p>
-
-        <div class="hero-actions">
-          <a class="button" href="#world">Explore the City</a>
-          <button class="button button-ghost" id="watchTrailer">Watch Concept Trailer</button>
-        </div>
-
-        <div class="hero-stats" aria-label="Concept highlights">
-          <div><strong>7</strong><span>Music Districts</span></div>
-          <div><strong>1</strong><span>Connected World</span></div>
-          <div><strong>∞</strong><span>Artist Possibilities</span></div>
-        </div>
-      </div>
-
-      <div class="city-visual" aria-hidden="true">
-        <div class="moon"></div>
-        <div class="skyline skyline-back"></div>
-        <div class="skyline skyline-front"></div>
-        <div class="road"></div>
-        <div class="city-sign">
-          <span>WELCOME TO</span>
-          <strong>MUSIC CITY</strong>
-          <em>ESTATES</em>
-        </div>
-        <div class="equalizer">
-          <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
-        </div>
-      </div>
-
-      <a class="scroll-indicator" href="#world" aria-label="Scroll to explore">SCROLL ↓</a>
-    </section>
-
-    <section class="section world-section" id="world">
-      <div class="section-heading">
-        <p class="eyebrow">CHOOSE YOUR SOUND</p>
-        <h2>EVERY DISTRICT HAS A CULTURE.</h2>
-        <p>
-          Start where your music feels at home, then travel across the city to collaborate,
-          compete, perform, and grow your influence.
-        </p>
-      </div>
-
-      <div class="district-grid">
-        <article class="district-card hiphop">
-          <span class="district-number">01</span>
-          <div class="district-icon">🎤</div>
-          <h3>Hip-Hop Heights</h3>
-          <p>Cyphers, beat battles, streetwear, rooftop stages, and underground showcases.</p>
-          <span class="district-tag">BARS • BEATS • BATTLES</span>
-        </article>
-
-        <article class="district-card rnb">
-          <span class="district-number">02</span>
-          <div class="district-icon">🌙</div>
-          <h3>R&amp;B Row</h3>
-          <p>Late-night lounges, vocal showcases, intimate venues, and soulful collaborations.</p>
-          <span class="district-tag">SOUL • STYLE • STORIES</span>
-        </article>
-
-        <article class="district-card rock">
-          <span class="district-number">03</span>
-          <div class="district-icon">⚡</div>
-          <h3>Rock &amp; Roll Ridge</h3>
-          <p>Garage bands, live stages, festival grounds, and high-energy fan experiences.</p>
-          <span class="district-tag">LOUD • LIVE • LEGENDARY</span>
-        </article>
-
-        <article class="district-card latin">
-          <span class="district-number">04</span>
-          <div class="district-icon">🔥</div>
-          <h3>Latin Lights</h3>
-          <p>Dance clubs, global rhythms, colorful plazas, and nonstop celebration.</p>
-          <span class="district-tag">RHYTHM • DANCE • CULTURE</span>
-        </article>
-
-        <article class="district-card gospel">
-          <span class="district-number">05</span>
-          <div class="district-icon">✨</div>
-          <h3>Gospel Gardens</h3>
-          <p>Choirs, inspirational performances, community events, and uplifting music.</p>
-          <span class="district-tag">FAITH • VOICE • COMMUNITY</span>
-        </article>
-
-        <article class="district-card country">
-          <span class="district-number">06</span>
-          <div class="district-icon">🤠</div>
-          <h3>Country Crossings</h3>
-          <p>Honky-tonks, open-air stages, songwriting circles, and hometown storytelling.</p>
-          <span class="district-tag">ROOTS • ROADS • STORIES</span>
-        </article>
-
-        <article class="district-card global">
-          <span class="district-number">07</span>
-          <div class="district-icon">🌍</div>
-          <h3>Global Sound District</h3>
-          <p>Afrobeats, dancehall, K-pop, electronic music, and sounds from around the world.</p>
-          <span class="district-tag">WORLDWIDE • FUSION • FUTURE</span>
-        </article>
-
-        <article class="district-card downtown">
-          <span class="district-number">★</span>
-          <div class="district-icon">🏙️</div>
-          <h3>Downtown Music City</h3>
-          <p>The central hub for labels, luxury estates, arenas, studios, shops, and major events.</p>
-          <span class="district-tag">BUSINESS • FAME • POWER</span>
-        </article>
-      </div>
-    </section>
-
-    <section class="section journey-section" id="journey">
-      <div class="section-heading left">
-        <p class="eyebrow">FROM THE BUS STOP TO THE BIG STAGE</p>
-        <h2>YOUR CAREER IS THE GAME.</h2>
-        <p>
-          Every performance, collaboration, fan, and creative decision moves your story forward.
-        </p>
-      </div>
-
-      <div class="journey-track">
-        <div class="track-line"></div>
-
-        <article class="journey-step">
-          <span>01</span>
-          <div class="journey-visual">🚌</div>
-          <h3>Arrive</h3>
-          <p>Enter the city with a dream, a starter apartment, and your first home studio.</p>
-        </article>
-
-        <article class="journey-step">
-          <span>02</span>
-          <div class="journey-visual">🎧</div>
-          <h3>Create</h3>
-          <p>Make original music, develop your sound, and collaborate with producers and artists.</p>
-        </article>
-
-        <article class="journey-step">
-          <span>03</span>
-          <div class="journey-visual">🎙️</div>
-          <h3>Perform</h3>
-          <p>Play open mics, battles, clubs, festivals, theaters, and stadium events.</p>
-        </article>
-
-        <article class="journey-step">
-          <span>04</span>
-          <div class="journey-visual">🤝</div>
-          <h3>Build</h3>
-          <p>Form a team, launch a label, recruit talent, and grow your influence across the city.</p>
-        </article>
-
-        <article class="journey-step">
-          <span>05</span>
-          <div class="journey-visual">🚁</div>
-          <h3>Rise</h3>
-          <p>Upgrade your lifestyle, own venues, headline arenas, and become a city legend.</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="section features-section" id="features">
-      <div class="section-heading">
-        <p class="eyebrow">MORE THAN A GAME</p>
-        <h2>A LIVING MUSIC ECONOMY.</h2>
-      </div>
-
-      <div class="feature-layout">
-        <div class="feature-list">
-          <button class="feature-tab active" data-feature="studio">
-            <span>01</span>
-            <div><strong>AI-Powered Studios</strong><small>Create original music inside the world.</small></div>
-          </button>
-          <button class="feature-tab" data-feature="collab">
-            <span>02</span>
-            <div><strong>Real Collaboration</strong><small>Find artists, producers, engineers, and teams.</small></div>
-          </button>
-          <button class="feature-tab" data-feature="venues">
-            <span>03</span>
-            <div><strong>Venue Progression</strong><small>Rise from small rooms to massive arenas.</small></div>
-          </button>
-          <button class="feature-tab" data-feature="economy">
-            <span>04</span>
-            <div><strong>Creator Economy</strong><small>Sell merch, tickets, experiences, and services.</small></div>
-          </button>
-          <button class="feature-tab" data-feature="fans">
-            <span>05</span>
-            <div><strong>Fan Influence</strong><small>Build a following that shapes your opportunities.</small></div>
-          </button>
-        </div>
-
-        <div class="feature-display" id="featureDisplay">
-          <div class="feature-screen">
-            <div class="screen-top">
-              <span></span><span></span><span></span>
-              <small>MCE STUDIO</small>
-            </div>
-            <div class="studio-ui">
-              <div class="waveform">
-                <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
-              </div>
-              <div class="track-row"><span>VOCALS</span><b></b></div>
-              <div class="track-row"><span>BEAT</span><b></b></div>
-              <div class="track-row"><span>MELODY</span><b></b></div>
-              <button>CREATE SESSION</button>
-            </div>
-          </div>
-          <div class="feature-copy">
-            <span id="featureKicker">CREATE WITHOUT LEAVING THE WORLD</span>
-            <h3 id="featureTitle">Your apartment becomes your first studio.</h3>
-            <p id="featureText">Develop tracks, invite collaborators, save sessions, and turn ideas into performances without breaking the flow of the game.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section founders-section" id="founders">
-      <div class="founders-panel">
-        <div>
-          <p class="eyebrow">FOUNDING COMMUNITY</p>
-          <h2>HELP BUILD THE CITY BEFORE THE GATES OPEN.</h2>
-          <p>
-            We are inviting artists, producers, developers, designers, venues, brands,
-            and early supporters to help shape the first version of Music City Estates.
-          </p>
-          <ul>
-            <li>Early-access updates</li>
-            <li>Founding-member recognition</li>
-            <li>Opportunities to test and contribute</li>
-            <li>Partnership and sponsorship consideration</li>
-          </ul>
-        </div>
-
-        <form class="signup-form" id="signupForm">
-          <label>
-            Name
-            <input type="text" name="name" placeholder="Your name" required />
-          </label>
-          <label>
-            Email
-            <input type="email" name="email" placeholder="you@example.com" required />
-          </label>
-          <label>
-            I am a...
-            <select name="role" required>
-              <option value="">Choose your role</option>
-              <option>Artist</option>
-              <option>Producer / Engineer</option>
-              <option>Game Developer</option>
-              <option>Designer / Animator</option>
-              <option>Venue / Brand Partner</option>
-              <option>Investor / Sponsor</option>
-              <option>Fan / Early Supporter</option>
-            </select>
-          </label>
-          <button class="button" type="submit">Join the Founding List</button>
-          <p class="form-note" id="formNote">Demo form — connect Formspree, Google Forms, or Supabase to collect responses.</p>
-        </form>
-      </div>
-    </section>
-  </main>
-
-  <footer>
-    <a class="brand footer-brand" href="#home">
-      <span class="brand-mark">MCE</span>
-      <span class="brand-copy"><strong>MUSIC CITY</strong><small>ESTATES</small></span>
-    </a>
-    <p>Where music careers become worlds.</p>
-    <p class="copyright">© <span id="year"></span> Music City Estates. Concept demo.</p>
-  </footer>
-
-  <div class="modal" id="trailerModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" hidden>
-    <div class="modal-card">
-      <button class="modal-close" id="closeModal" aria-label="Close trailer">×</button>
-      <p class="eyebrow">CONCEPT TRAILER</p>
-      <h2 id="modalTitle">Your trailer will play here.</h2>
-      <div class="video-placeholder">
-        <span>▶</span>
-        <p>Add a YouTube, Vimeo, or MP4 embed when your demo video is ready.</p>
-      </div>
-    </div>
   </div>
 
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <dialog id="nameDialog">
+    <form method="dialog" id="nameForm"><small>ARTIST PROFILE</small><h2>Choose your stage name</h2><label for="nameInput">Artist name</label><input id="nameInput" name="artistName" maxlength="18" autocomplete="off" required><div><button value="cancel" class="secondary">Cancel</button><button value="save" id="saveName">Save Name</button></div></form>
+  </dialog>
   <script src="script.js"></script>
 </body>
 </html>
