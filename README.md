@@ -1,26 +1,38 @@
-# Music City Estates Demo
+# Music City Estates MVP
 
-A responsive one-page concept website for Music City Estates.
+A playable browser MVP for a music-career simulation. Start in a bedroom studio, create songs, perform, promote releases, grow a fanbase, and unlock new parts of Music City.
 
-## Publish with GitHub Pages
+## Run locally
 
-1. Create a new GitHub repository.
-2. Upload `index.html`, `style.css`, and `script.js`.
-3. Open the repository's **Settings**.
-4. Select **Pages**.
-5. Under **Build and deployment**, choose **Deploy from a branch**.
-6. Select the `main` branch and `/root` folder.
-7. Save. GitHub will generate a public website link.
+No build step or dependencies are required. From the repository root, start any static file server:
 
-## Customize
+```bash
+python3 -m http.server 8000
+```
 
-- Edit page text in `index.html`.
-- Change colors in the `:root` section of `style.css`.
-- Replace the trailer placeholder with a YouTube, Vimeo, or MP4 embed.
-- Connect the signup form to Formspree, Google Forms, Supabase, Firebase, or another backend.
+Then open [http://localhost:8000](http://localhost:8000).
 
-## Files
+## Gameplay
 
-- `index.html` — page structure and content
-- `style.css` — complete design and responsive layout
-- `script.js` — menu, modal, tabs, and demo form behavior
+- **Create Song** to gain XP, fans, and a release.
+- **Perform Live** to earn cash, fans, and XP after creating a song.
+- **Promote Music** to trade cash for reach.
+- **Enter Battle** after reaching 25 fans.
+- Use **View City** to track location unlocks.
+- Use **View Phone** to see contacts, messages, social activity, and releases.
+
+Progress is saved automatically in the browser with `localStorage`.
+
+## Project structure
+
+- `index.html` — semantic game screens and interface structure.
+- `style.css` — responsive game UI and CSS location/studio artwork.
+- `script.js` — player state, progression, actions, map unlocks, phone content, and persistence.
+
+## Suggested next milestones
+
+1. Add full song creation choices (genre, beat, vocals, polish, title, and cover art).
+2. Turn venues into playable rhythm or choice-based performance events.
+3. Add battle opponents, fan voting, rewards, and branching outcomes.
+4. Add contact relationships, quests, and producer/DJ/A&R storylines.
+5. Add authentication and cloud saves once the core loop is validated.
