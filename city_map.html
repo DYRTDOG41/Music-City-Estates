@@ -1,0 +1,482 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Music City Estates | City Map</title>
+
+<style>
+* {
+box-sizing: border-box;
+}
+
+html,
+body {
+margin: 0;
+width: 100%;
+height: 100%;
+overflow: hidden;
+background: #020814;
+font-family: Arial, sans-serif;
+color: white;
+}
+
+/* Keeps the clickable areas lined up with the map image */
+.map-stage {
+position: absolute;
+width: min(100vw, 177.7778vh);
+height: min(100vh, 56.25vw);
+
+left: 50%;
+top: 50%;
+transform: translate(-50%, -50%);
+
+background-image: url("music_city_map.jpg");
+background-size: 100% 100%;
+background-repeat: no-repeat;
+
+box-shadow: 0 0 50px #000;
+}
+
+/* INVISIBLE MAP BUTTONS */
+.hotspot {
+position: absolute;
+border: 2px solid transparent;
+border-radius: 50%;
+background: transparent;t2
+cursor: pointer;
+z-index: 20;
+transition: .2s;
+}
+
+.hotspot:hover {
+border-color: #38cfff;
+background: rgba(0, 195, 255, .13);
+box-shadow:
+0 0 12px #38cfff,
+0 0 30px rgba(56, 207, 255, .7);
+}
+
+/* DISTRICT POSITIONS */
+
+.bedroom {
+left: 20%;
+top: 56%;
+width: 12%;
+height: 16%;
+}
+
+.hiphop {
+left: 18%;
+top: 35%;
+width: 15%;
+height: 17%;
+}
+
+.country {
+left: 22%;
+top: 13%;
+width: 18%;
+height: 18%;
+}
+
+.rnb {
+left: 43%;
+top: 13%;
+width: 18%;
+height: 18%;
+}
+
+.downtown {
+left: 43%;
+top: 39%;
+width: 15%;
+height: 18%;
+}
+
+.global {
+left: 64%;
+top: 25%;
+width: 16%;
+height: 20%;
+}
+
+.latin {
+left: 55%;
+top: 54%;
+width: 17%;
+height: 19%;
+}
+
+/* Interactive information panel */
+.info-panel {
+position: absolute;
+right: 1.2%;
+top: 8%;
+width: 17%;
+min-height: 52%;
+
+padding: 16px;
+
+background: rgba(2, 11, 27, .94);
+border: 1px solid #278cff;
+border-radius: 12px;
+
+box-shadow:
+0 0 10px rgba(0, 140, 255, .4),
+inset 0 0 20px rgba(0, 70, 150, .25);
+
+z-index: 30;
+}
+
+.info-panel h1 {
+font-size: 21px;
+letter-spacing: 1px;
+margin: 0 0 4px;
+}
+
+.category {
+color: #9bcfff;
+font-size: 12px;
+text-transform: uppercase;
+letter-spacing: 2px;
+margin-bottom: 16px;
+}
+
+.description {
+color: #dbeaff;
+font-size: 13px;
+line-height: 1.45;
+min-height: 80px;
+}
+
+.status {
+margin: 12px 0;
+color: #73caff;
+font-size: 12px;
+font-weight: bold;
+}
+
+.travel {
+width: 100%;
+padding: 13px;
+
+background: #087cea;
+border: 1px solid #54d9ff;
+border-radius: 6px;
+
+color: white;
+font-size: 16px;
+font-weight: bold;
+letter-spacing: 1px;
+
+cursor: pointer;
+
+box-shadow: 0 0 15px rgba(0, 179, 255, .65);
+}
+
+.travel:hover {
+background: #0d9cff;
+}
+
+.travel.locked {
+background: #263341;
+color: #718294;
+border-color: #475666;
+box-shadow: none;
+cursor: not-allowed;
+}
+
+.map-home {
+position: absolute;
+left: 1.5%;
+bottom: 3%;
+z-index: 40;
+
+padding: 8px 14px;
+
+background: rgba(0, 10, 30, .9);
+color: white;
+border: 1px solid #238cff;
+border-radius: 6px;
+
+text-decoration: none;
+font-size: 12px;
+}
+
+.selection-ring {
+position: absolute;
+display: none;
+border: 3px solid #40d9ff;
+border-radius: 50%;
+box-shadow:
+0 0 15px #40d9ff,
+0 0 30px #007cff;
+
+pointer-events: none;
+z-index: 19;
+}
+</style>
+</head>
+
+<body>
+
+<div class="map-stage" id="mapStage">
+
+<!-- CLICKABLE DISTRICTS -->
+
+<button
+class="hotspot bedroom"
+aria-label="Bedroom Studio"
+onclick="selectLocation('bedroom', this)">
+</button>
+
+<button
+class="hotspot hiphop"
+aria-label="Hip-Hop Heights"
+onclick="selectLocation('hiphop', this)">
+</button>
+<button
+
+
+class="hotspot country"
+aria-label="Country Crossings"
+onclick="selectLocation('country', this)">
+</button>
+
+<button
+class="hotspot rnb"
+aria-label="Velvet Grove"
+onclick="selectLocation('rnb', this)">
+</button>
+
+<button
+class="hotspot downtown"
+aria-label="Downtown"
+onclick="selectLocation('downtown', this)">
+</button>
+
+<button
+class="hotspot global"
+aria-label="Global Sound"
+onclick="selectLocation('global', this)">
+</button>
+
+<button
+class="hotspot latin"
+aria-label="Latin Quarter"
+onclick="selectLocation('latin', this)">
+</button>
+
+
+<!-- DYNAMIC LOCATION PANEL -->
+
+<div class="info-panel">
+
+<h1 id="locationName">
+BEDROOM STUDIO
+</h1>
+
+<div class="category" id="locationCategory">
+STARTING HOME
+</div>
+
+<div class="description" id="locationDescription">
+Your journey begins here. Build your first songs,
+gain fans and prepare to enter Music City.
+</div>
+
+<div class="status" id="locationStatus">
+CURRENT LOCATION
+</div>
+
+<button
+class="travel locked"
+id="travelButton"
+onclick="travel()">
+CURRENT LOCATION
+</button>
+
+</div>
+
+<a class="map-home" href="index.html">
+← HOME
+</a>
+
+</div>
+
+
+<script>
+
+let selectedLocation = "bedroom";
+
+const locations = {
+
+bedroom: {
+name: "BEDROOM STUDIO",
+category: "STARTING HOME",
+description:
+"Your journey begins here. Build your first songs, gain fans and prepare to enter Music City.",
+status: "CURRENT LOCATION",
+page: "bedroom_studio.html",
+available: true
+},
+
+hiphop: {
+name: "HIP-HOP HEIGHTS",
+category: "HIP-HOP MUSIC",
+description:
+"Enter the heart of hip-hop culture. Visit BeGenius Studio, Hip-Hop Café, the record store and DA Warehouse.",
+status: "DISTRICT AVAILABLE",
+page: "hip_hop_heights.html",
+available: true
+},
+
+country: {
+name: "COUNTRY CROSSINGS",
+category: "COUNTRY MUSIC",
+description:
+"Build your country career through songwriting, live bands, honky-tonks and festival stages.",
+status: "COMING SOON",
+page: null,
+available: false
+},
+
+rnb: {
+name: "VELVET GROVE",
+category: "R&B & SOUL",
+description:
+"A district built around vocals, soul, songwriting, lounges and R&B performances.",
+status: "COMING SOON",
+page: null,
+available: false
+},
+
+downtown: {
+name: "DOWNTOWN",
+category: "LIVE • CREATE • CONNECT",
+description:
+"The center of Music City. Major venues, industry offices, events and networking opportunities.",
+status: "COMING SOON",
+page: null,
+available: false
+},
+
+global: {
+name: "GLOBAL SOUND",
+category: "WORLD MUSIC",
+description:
+"Connect with international artists and explore sounds and cultures from around the world.",
+status: "COMING SOON",
+page: null,
+available: false
+},
+
+latin: {
+name: "LATIN QUARTER",
+category: "LATIN MUSIC",
+description:
+"Latin music, dance clubs, producers, performances and high-energy nightlife.",
+status: "COMING SOON",
+page: null,
+available: false
+}
+
+};
+
+
+function selectLocation(key, element) {
+
+selectedLocation = key;
+
+const location = locations[key];
+
+document.getElementById("locationName").textContent =
+location.name;
+
+document.getElementById("locationCategory").textContent =
+location.category;
+
+document.getElementById("locationDescription").textContent =
+location.description;
+
+document.getElementById("locationStatus").textContent =
+location.status;
+
+const button =
+document.getElementById("travelButton");
+
+if (location.available) {
+
+button.textContent = "TRAVEL";
+button.classList.remove("locked");
+
+} else {
+
+button.textContent =
+key === "bedroom"
+? "CURRENT LOCATION"
+: "LOCKED";
+
+button.classList.add("locked");
+}
+}
+
+
+function travel() {
+
+const location =
+locations[selectedLocation];
+
+if (
+location.available &&
+location.page
+) {
+
+window.location.href =
+location.page;
+
+}
+
+}
+const savedFans = localStorage.getItem("mceFans");
+const savedCash = localStorage.getItem("mceCash");
+const savedXP = localStorage.getItem("mceXP");
+const savedLevel = localStorage.getItem("mceLevel");
+
+const realFans = savedFans === null ? 0 : Number(savedFans);
+const realCash = savedCash === null ? 500 : Number(savedCash);
+const realXP = savedXP === null ? 0 : Number(savedXP);
+const realLevel = savedLevel === null ? 1 : Number(savedLevel);
+
+const liveStats = document.createElement("div");
+
+liveStats.style.position = "absolute";
+liveStats.style.top = "1.2%";
+liveStats.style.right = "6%";
+liveStats.style.zIndex = "50";
+liveStats.style.padding = "5px 8px";
+liveStats.style.paddingRight = "63px";
+liveStats.style.transform = "translateX(55px)";
+liveStats.style.background = "rgba(0, 8, 22, 0.92)";
+liveStats.style.border = "1px solid #38cfff";
+liveStats.style.borderRadius = "8px";
+liveStats.style.color = "white";
+liveStats.style.fontSize = "11px";
+liveStats.style.fontWeight = "bold";
+liveStats.style.boxShadow = "0 0 15px rgba(56,207,255,.5)";
+
+liveStats.innerHTML =
+"FANS: " + realFans.toLocaleString() +
+" &nbsp;&nbsp; CASH: $" + realCash.toLocaleString() +
+" &nbsp;&nbsp; XP: " + realXP +
+" &nbsp;&nbsp; LEVEL: " + realLevel;
+
+document.getElementById("mapStage").appendChild(liveStats);
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1917 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width, initial-scale=1.0"
+>
+
+<title>
+Begenius Studio | Music City Estates
+</title>
+
+<style>
+
+* {
+box-sizing: border-box;
+}
+
+html,
+body {
+margin: 0;
+width: 100%;
+height: 100%;
+overflow: hidden;
+background: #000;
+font-family: Arial, sans-serif;
+color: white;
+}
+
+canvas {
+position: fixed;
+inset: 0;
+display: block;
+width: 100%;
+height: 100%;
+touch-action: none;
+}
+
+/* TOP HUD */
+
+.hud {
+position: fixed;
+top: 12px;
+left: 12px;
+right: 12px;
+z-index: 20;
+
+display: flex;
+justify-content: space-between;
+align-items: flex-start;
+
+pointer-events: none;
+}
+
+.location {
+padding: 10px 14px;
+
+background: rgba(0, 8, 20, .88);
+
+border: 1px solid #38bfff;
+border-radius: 9px;
+
+box-shadow:
+0 0 18px rgba(40,160,255,.45);
+}
+
+.location strong {
+display: block;
+font-size: 15px;
+}
+
+.location span {
+font-size: 11px;
+color: #9cdcff;
+}
+
+.stats {
+display: flex;
+gap: 14px;
+
+padding: 9px 14px;
+
+background: rgba(0, 8, 20, .9);
+
+border: 1px solid #38bfff;
+border-radius: 9px;
+
+font-size: 12px;
+
+box-shadow:
+0 0 18px rgba(40,160,255,.45);
+}
+
+/* INTERACTION PROMPT */
+
+.interact {
+display: none;
+
+position: fixed;
+left: 50%;
+bottom: 70px;
+
+transform: translateX(-50%);
+
+z-index: 30;
+
+padding: 13px 20px;
+
+background: rgba(0,0,0,.9);
+
+border: 1px solid #67d5ff;
+border-radius: 10px;
+
+color: white;
+
+font-size: 14px;
+font-weight: bold;
+
+cursor: pointer;
+
+box-shadow:
+0 0 22px rgba(50,190,255,.5);
+}
+
+.interact.show {
+display: block;
+}
+
+/* CONTROLS */
+
+.controls {
+position: fixed;
+left: 50%;
+bottom: 18px;
+
+transform: translateX(-50%);
+
+z-index: 20;
+
+padding: 8px 14px;
+
+background: rgba(0,0,0,.65);
+
+border-radius: 20px;
+
+font-size: 11px;
+color: #ddd;
+
+pointer-events: none;
+}
+
+/* BACK BUTTON */
+
+.back {
+position: fixed;
+left: 15px;
+bottom: 15px;
+
+z-index: 40;
+
+padding: 10px 14px;
+
+background: rgba(0,0,0,.9);
+
+border: 1px solid #777;
+border-radius: 7px;
+
+color: white;
+text-decoration: none;
+
+font-size: 12px;
+font-weight: bold;
+}
+
+/* SETUP PANEL */
+
+.setup {
+position: fixed;
+right: 15px;
+top: 80px;
+
+z-index: 40;
+
+width: 245px;
+
+padding: 14px;
+
+background: rgba(0,0,0,.9);
+
+border: 1px solid #ffb323;
+border-radius: 10px;
+
+font-size: 12px;
+
+display: none;
+}
+
+.setup.show {
+display: block;
+}
+
+.setup strong {
+color: #ffcf63;
+}
+
+.setup p {
+line-height: 1.5;
+color: #ddd;
+}
+
+.setup .done {
+color: #64e890;
+}
+
+/* POPUP */
+
+.modal {
+display: none;
+
+position: fixed;
+inset: 0;
+
+z-index: 100;
+
+align-items: center;
+justify-content: center;
+
+background: rgba(0,0,0,.75);
+
+padding: 20px;
+}
+
+.modal.show {
+display: flex;
+}
+
+.modal-box {
+width: 100%;
+max-width: 480px;
+
+padding: 25px;
+
+background: #080d15;
+
+border: 1px solid #42bdff;
+border-radius: 15px;
+
+box-shadow:
+0 20px 70px rgba(0,0,0,.9),
+0 0 25px rgba(40,170,255,.25);
+}
+
+.modal-box h2 {
+margin-top: 0;
+}
+
+.modal-box p {
+line-height: 1.55;
+color: #ddd;
+}
+
+.modal-box button {
+width: 100%;
+
+margin-top: 15px;
+padding: 12px;
+
+border: none;
+border-radius: 7px;
+
+background: #1688dc;
+
+color: white;
+
+font-size: 15px;
+font-weight: bold;
+
+cursor: pointer;
+}
+
+/* LOAD STATUS */
+
+.loading {
+position: fixed;
+left: 15px;
+top: 80px;
+
+z-index: 30;
+
+padding: 8px 12px;
+
+background: rgba(0,0,0,.75);
+
+border-radius: 6px;
+
+font-size: 11px;
+color: #aee6ff;
+}
+
+@media (max-width: 700px) {
+
+.stats {
+gap: 6px;
+font-size: 9px;
+}
+
+.location strong {
+font-size: 12px;
+}
+
+}
+
+</style>
+
+
+<!-- THREE + WORLD LABS SPARK -->
+
+<script type="importmap">
+
+{
+"imports": {
+
+"three":
+"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+
+"three/addons/":
+"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
+
+"@sparkjsdev/spark":
+"https://sparkjs.dev/releases/spark/2.2.0/spark.module.js"
+
+}
+}
+
+</script>
+
+</head>
+
+
+<body>
+
+
+<div class="hud">
+
+<div class="location">
+
+<strong>
+BeGenius Studio
+</strong>
+
+<span>
+Lobby
+</span>
+
+</div>
+
+
+<div class="stats">
+
+<span>
+👥 <strong id="fans">0</strong>
+</span>
+
+<span>
+💵 $<strong id="cash">500</strong>
+</span>
+
+<span>
+⭐ <strong id="xp">0</strong> XP
+</span>
+
+<span>
+🎤 LV <strong id="level">1</strong>
+</span>
+
+</div>
+
+</div>
+
+
+<div
+class="loading"
+id="loading"
+>
+Loading Community Space...
+</div>
+
+
+<!-- THIS APPEARS WHEN PLAYER WALKS NEAR SOMETHING -->
+
+<div
+class="interact"
+id="interactPrompt"
+onclick="interactNow()"
+>
+PRESS E TO INTERACT
+</div>
+
+
+<div class="controls">
+WASD to walk • Drag mouse to look • E to interact
+</div>
+
+
+<a
+class="back"
+href="hip_hop_heights.html"
+>
+← Hip-Hop Heights
+</a>
+
+
+
+<!-- FIRST-TIME INTERACTION PLACEMENT -->
+
+<div
+class="setup"
+id="setupPanel"
+>
+
+<strong>
+INTERACTION SETUP
+</strong>
+
+<p>
+First-time setup only.
+Walk to the exact location
+in the room and press:
+</p>
+
+<p>
+<b>1</b> — Artist Meetup
+<br>
+<b>2</b> — Producer Area
+<br>
+<b>3</b> — Networking Spot
+<br>
+<b>4</b> — Post Music Station
+</p>
+
+<p>
+Each location saves automatically.
+</p>
+
+<p class="done" id="setupStatus">
+</p>
+
+<p>
+Press <b>P</b> anytime
+to show/hide this setup box.
+</p>
+
+</div>
+
+
+
+<!-- INTERACTION POPUP -->
+
+<div
+class="modal"
+id="modal"
+>
+
+<div class="modal-box">
+
+<h2 id="modalTitle">
+Interaction
+</h2>
+
+<p id="modalText">
+</p>
+
+<button onclick="closeModal()">
+CONTINUE EXPLORING
+</button>
+
+</div>
+
+</div>
+
+
+
+<script type="module">
+
+import * as THREE from "three";
+
+import {
+SparkRenderer,
+SplatMesh,
+SparkControls
+}
+from "@sparkjsdev/spark";
+
+import {
+GLTFLoader
+}
+from "three/addons/loaders/GLTFLoader.js";
+
+
+/* ==========================================
+BASIC THREE.JS WORLD
+========================================== */
+
+const scene =
+new THREE.Scene();
+
+scene.background =
+new THREE.Color(0x000000);
+
+
+const camera =
+new THREE.PerspectiveCamera(
+65,
+window.innerWidth /
+window.innerHeight,
+0.05,
+1000
+);
+
+
+/* STARTING PLAYER POSITION */
+
+camera.position.set(
+30,
+1.65,
+0
+);
+
+
+const renderer =
+new THREE.WebGLRenderer({
+antialias: true
+});
+
+
+renderer.setPixelRatio(
+Math.min(
+window.devicePixelRatio,
+2
+)
+);
+
+
+renderer.setSize(
+window.innerWidth,
+window.innerHeight
+);
+
+
+document.body.prepend(
+renderer.domElement
+);
+
+
+renderer.domElement.tabIndex =
+0;
+
+
+renderer.domElement.focus();
+
+
+
+/* ==========================================
+WORLD LABS SPARK
+========================================== */
+
+const spark =
+new SparkRenderer({
+renderer
+});
+
+
+scene.add(
+spark
+);
+
+
+/* YOUR MARBLE COMMUNITY SPACE */
+
+const world =
+new SplatMesh({
+
+url:
+"begenius_studio.spz"
+
+});
+
+
+/*
+Marble / Spark coordinate correction.
+*/
+
+world.quaternion.set(
+0,
+0,
+0,
+1
+);
+
+
+scene.add(
+world
+);
+
+
+
+/* ==========================================
+PLAYER MOVEMENT
+========================================== */
+
+const controls =
+new SparkControls({
+
+canvas:
+renderer.domElement
+
+});
+
+
+/* ==========================================
+COLLIDER
+========================================== */
+
+const colliderMeshes = [];
+
+let colliderReady =
+false;
+
+
+const loader =
+new GLTFLoader();
+
+
+loader.load(
+
+"warehouse_hangout_collider.glb",
+
+
+function(gltf) {
+
+const collider =
+gltf.scene;
+
+
+collider.quaternion.set(
+0,
+0,
+0,
+1
+);
+
+
+collider.traverse(
+
+function(object) {
+
+if (object.isMesh) {
+
+/*
+Keep collider available
+to raycasting but invisible.
+*/
+
+object.material =
+new THREE.MeshBasicMaterial({
+
+transparent: true,
+
+opacity: 0,
+
+depthWrite: false
+
+});
+
+
+colliderMeshes.push(
+object
+);
+
+}
+
+}
+
+);
+
+
+scene.add(
+collider
+);
+
+/* AUTO-FIND FLOOR AND SPAWN PLAYER INSIDE ROOM */
+
+const bounds =
+new THREE.Box3().setFromObject(collider);
+
+const center =
+bounds.getCenter(new THREE.Vector3());
+
+const size =
+bounds.getSize(new THREE.Vector3());
+
+const spawnRay =
+new THREE.Raycaster();
+
+const spawnOrigin =
+new THREE.Vector3(
+center.x,
+bounds.max.y + 5,
+center.z
+);
+
+spawnRay.set(
+spawnOrigin,
+new THREE.Vector3(0, -1, 0)
+);
+
+spawnRay.far =
+size.y + 20;
+
+const spawnHits =
+spawnRay.intersectObjects(
+colliderMeshes,
+true
+);
+
+if (spawnHits.length > 0) {
+
+const floorHit =
+spawnHits[0];
+
+camera.position.set(
+floorHit.point.x + 4,
+floorHit.point.y + EYE_HEIGHT,
+floorHit.point.z + 5
+);
+
+} else {
+
+camera.position.set(
+center.x + 4,
+center.y,
+center.z +5
+);
+
+}
+/* START CAMERA LEVEL — NOT LOOKING AT CEILING */
+
+camera.rotation.set(
+0,
+0,
+0
+);
+
+camera.lookAt(
+camera.position.x,
+camera.position.y,
+camera.position.z - 1
+);
+
+previousPosition.copy(
+camera.position
+);
+
+
+colliderReady =
+true;
+
+
+document
+.getElementById("loading")
+.textContent =
+"Community Space Ready";
+
+
+
+setTimeout(
+function() {
+
+document
+.getElementById("loading")
+.style.display =
+"none";
+
+},
+2000
+);
+
+},
+
+
+undefined,
+
+
+function(error) {
+
+console.error(
+"Collider load error:",
+error
+);
+
+
+document
+.getElementById("loading")
+.textContent =
+"World loaded • Collider unavailable";
+
+}
+
+);
+
+
+
+/* ==========================================
+BASIC COLLISION
+========================================== */
+
+const raycaster =
+new THREE.Raycaster();
+
+
+const down =
+new THREE.Vector3(
+0,
+-1,
+0
+);
+
+
+const previousPosition =
+camera.position.clone();
+
+
+const EYE_HEIGHT =
+1.65;
+
+
+
+function applyCollision() {
+
+if (!colliderReady) {
+return;
+}
+
+
+/*
+-------- WALL COLLISION --------
+*/
+
+const movement =
+camera.position
+.clone()
+.sub(previousPosition);
+
+
+const horizontalMovement =
+new THREE.Vector3(
+movement.x,
+0,
+movement.z
+);
+
+
+const moveDistance =
+horizontalMovement.length();
+
+
+if (moveDistance > 0.001) {
+
+const direction =
+horizontalMovement
+.clone()
+.normalize();
+
+
+const origin =
+previousPosition
+.clone();
+
+
+origin.y -=
+0.35;
+
+
+raycaster.set(
+origin,
+direction
+);
+
+
+raycaster.far =
+moveDistance + 0.35;
+
+
+const wallHits =
+raycaster.intersectObjects(
+colliderMeshes,
+true
+);
+
+
+if (
+wallHits.length > 0 &&
+wallHits[0].distance <
+moveDistance + 0.30
+) {
+
+camera.position.x =
+previousPosition.x;
+
+camera.position.z =
+previousPosition.z;
+
+}
+
+}
+
+
+/*
+-------- FLOOR COLLISION --------
+*/
+
+const floorOrigin =
+camera.position.clone();
+
+
+floorOrigin.y +=
+2;
+
+
+raycaster.set(
+floorOrigin,
+down
+);
+
+
+raycaster.far =
+10;
+
+
+const floorHits =
+raycaster.intersectObjects(
+colliderMeshes,
+true
+);
+
+
+if (floorHits.length > 0) {
+
+camera.position.y =
+floorHits[0].point.y +
+EYE_HEIGHT;
+
+}
+
+}
+
+
+
+/* ==========================================
+GAME STATS
+========================================== */
+
+function getNumber(
+key,
+fallback
+) {
+
+const stored =
+localStorage.getItem(
+key
+);
+
+
+if (stored === null) {
+
+return fallback;
+
+}
+
+
+return Number(
+stored
+);
+
+}
+
+
+let fans =
+getNumber(
+"mceFans",
+0
+);
+
+
+let cash =
+getNumber(
+"mceCash",
+500
+);
+
+
+let xp =
+getNumber(
+"mceXP",
+0
+);
+
+
+let level =
+getNumber(
+"mceLevel",
+1
+);
+
+
+
+function saveStats() {
+
+localStorage.setItem(
+"mceFans",
+fans
+);
+
+localStorage.setItem(
+"mceCash",
+cash
+);
+
+localStorage.setItem(
+"mceXP",
+xp
+);
+
+localStorage.setItem(
+"mceLevel",
+level
+);
+
+}
+
+
+
+function updateStats() {
+
+document
+.getElementById("fans")
+.textContent =
+fans.toLocaleString();
+
+
+document
+.getElementById("cash")
+.textContent =
+cash.toLocaleString();
+
+
+document
+.getElementById("xp")
+.textContent =
+xp.toLocaleString();
+
+
+document
+.getElementById("level")
+.textContent =
+level;
+
+}
+
+
+updateStats();
+
+
+
+/* ==========================================
+INTERACTION LOCATIONS
+========================================== */
+
+const interactionDefinitions = {
+
+artist: {
+
+label:
+"Record Music",
+
+storage:
+"mceHangoutArtistPosition"
+
+},
+
+
+producer: {
+
+label:
+"MEET PRODUCER",
+
+storage:
+"mceHangoutProducerPosition"
+
+},
+
+
+network: {
+
+label:
+"NETWORK",
+
+storage:
+"mceHangoutNetworkPosition"
+
+},
+
+
+post: {
+
+label:
+"POST YOUR MUSIC",
+
+storage:
+"mceHangoutPostPosition"
+
+}
+
+};
+
+
+
+const interactionPoints =
+{};
+
+
+const interactionMarkers =
+{};
+
+
+let currentInteraction =
+null;
+
+
+
+/* ==========================================
+LOAD SAVED INTERACTION LOCATIONS
+========================================== */
+
+function loadInteractionPoints() {
+
+for (
+const key
+in interactionDefinitions
+) {
+
+const saved =
+localStorage.getItem(
+interactionDefinitions[key]
+.storage
+);
+
+
+if (saved) {
+
+interactionPoints[key] =
+JSON.parse(
+saved
+);
+
+
+createMarker(
+key
+);
+
+}
+
+}
+
+
+updateSetupPanel();
+
+}
+
+
+
+function saveInteractionPoint(
+key
+) {
+
+const position = {
+
+x:
+camera.position.x,
+
+y:
+camera.position.y,
+
+z:
+camera.position.z
+
+};
+
+
+interactionPoints[key] =
+position;
+
+
+localStorage.setItem(
+
+interactionDefinitions[key]
+.storage,
+
+JSON.stringify(
+position
+)
+
+);
+
+
+createMarker(
+key
+);
+
+
+updateSetupPanel();
+
+}
+
+
+
+/* ==========================================
+INTERACTION FLOOR MARKERS
+========================================== */
+
+function createMarker(
+key
+) {
+
+if (
+interactionMarkers[key]
+) {
+
+scene.remove(
+interactionMarkers[key]
+);
+
+}
+
+
+const geometry =
+new THREE.TorusGeometry(
+0.45,
+0.035,
+10,
+30
+);
+
+
+const material =
+new THREE.MeshBasicMaterial({
+
+color:
+0x42d7ff,
+
+transparent:
+true,
+
+opacity:
+0.9
+
+});
+
+
+const marker =
+new THREE.Mesh(
+geometry,
+material
+);
+
+
+const saved =
+interactionPoints[key];
+
+
+marker.position.set(
+
+saved.x,
+
+saved.y -
+EYE_HEIGHT +
+0.06,
+
+saved.z
+
+);
+
+
+marker.rotation.x =
+Math.PI / 2;
+
+
+scene.add(
+marker
+);
+
+
+interactionMarkers[key] =
+marker;
+
+}
+
+
+
+/* ==========================================
+FIRST-TIME SETUP BOX
+========================================== */
+
+const setupPanel =
+document.getElementById(
+"setupPanel"
+);
+
+
+function updateSetupPanel() {
+
+const keys =
+Object.keys(
+interactionDefinitions
+);
+
+
+const savedCount =
+keys.filter(
+key =>
+interactionPoints[key]
+).length;
+
+
+document
+.getElementById(
+"setupStatus"
+)
+.textContent =
+savedCount +
+" / 4 locations saved";
+
+
+/*
+Automatically show setup
+until all four positions
+have been placed.
+*/
+
+if (savedCount < 4) {
+
+setupPanel
+.classList
+.add("show");
+
+}
+
+else {
+
+setupPanel
+.classList
+.remove("show");
+
+}
+
+}
+
+
+
+/* ==========================================
+FIND NEARBY INTERACTIONS
+========================================== */
+
+const interactionPrompt =
+document.getElementById(
+"interactPrompt"
+);
+
+
+function checkInteractions() {
+
+currentInteraction =
+null;
+
+
+let closestDistance =
+999;
+
+
+for (
+const key
+in interactionPoints
+) {
+
+const point =
+interactionPoints[key];
+
+
+const dx =
+camera.position.x -
+point.x;
+
+
+const dz =
+camera.position.z -
+point.z;
+
+
+const distance =
+Math.sqrt(
+dx * dx +
+dz * dz
+);
+
+
+if (
+distance < 2.1 &&
+distance <
+closestDistance
+) {
+
+closestDistance =
+distance;
+
+
+currentInteraction =
+key;
+
+}
+
+}
+
+
+if (currentInteraction) {
+
+interactionPrompt
+.classList
+.add("show");
+
+
+interactionPrompt
+.textContent =
+"E / CLICK — " +
+interactionDefinitions[
+currentInteraction
+].label;
+
+}
+
+else {
+
+interactionPrompt
+.classList
+.remove("show");
+
+}
+
+}
+
+
+
+/* ==========================================
+ACTUAL GAME INTERACTIONS
+========================================== */
+
+window.interactNow =
+function() {
+
+if (!currentInteraction) {
+
+return;
+
+}
+
+
+if (
+currentInteraction ===
+"artist"
+) {
+
+window.location.href = "record_music.html";
+
+}
+
+
+if (
+currentInteraction ===
+"producer"
+) {
+
+meetProducer();
+
+}
+
+
+if (
+currentInteraction ===
+"network"
+) {
+
+network();
+
+}
+
+
+if (
+currentInteraction ===
+"post"
+) {
+
+postMusic();
+
+}
+
+};
+
+
+
+function meetArtist() {
+
+const alreadyMet =
+localStorage.getItem(
+"mceMetWarehouseArtist"
+);
+
+
+if (!alreadyMet) {
+
+xp += 3;
+
+localStorage.setItem(
+"mceMetWarehouseArtist",
+"yes"
+);
+
+
+saveStats();
+updateStats();
+
+}
+
+
+openModal(
+
+"🎤 Get In The Booth",
+
+alreadyMet
+?
+"You reconnect with an independent artist you met in the Word Slaughter Community Space."
+:
+"You introduce yourself to an independent artist from Hip-Hop Heights. New connection added. +3 XP."
+
+);
+
+}
+
+
+
+function meetProducer() {
+
+const alreadyMet =
+localStorage.getItem(
+"mceMetWarehouseProducer"
+);
+
+
+if (!alreadyMet) {
+
+xp += 3;
+
+localStorage.setItem(
+"mceMetWarehouseProducer",
+"yes"
+);
+
+
+saveStats();
+updateStats();
+
+}
+
+
+openModal(
+
+"🎹 Producer Connection",
+
+alreadyMet
+?
+"The producer remembers you. More beat-shopping and collaboration features are coming next."
+:
+"You connect with a producer looking for artists. Producer added to your network. +3 XP."
+
+);
+
+}
+
+
+
+function network() {
+
+const already =
+localStorage.getItem(
+"mceWarehouseNetworked"
+);
+
+
+if (!already) {
+
+xp += 5;
+
+localStorage.setItem(
+"mceWarehouseNetworked",
+"yes"
+);
+
+
+saveStats();
+updateStats();
+
+}
+
+
+openModal(
+
+"🤝 Network",
+
+already
+?
+"You continue building relationships around the Community Space."
+:
+"You introduce yourself to DJs, artists and music-industry people. +5 XP."
+
+);
+
+}
+
+
+
+function postMusic() {
+
+if (cash < 25) {
+
+openModal(
+
+"📱 Post Your Music",
+
+"You need $25 to promote your music to the Community Space."
+
+);
+
+
+return;
+
+}
+
+
+cash -= 25;
+
+fans += 5;
+
+xp += 5;
+
+
+saveStats();
+updateStats();
+
+
+openModal(
+
+"📱 Music Posted",
+
+"Your new music post is circulating through Hip-Hop Heights. -$25 • +5 Fans • +5 XP"
+
+);
+
+}
+
+
+
+/* ==========================================
+MODAL
+========================================== */
+
+const modal =
+document.getElementById(
+"modal"
+);
+
+
+window.closeModal =
+function() {
+
+modal
+.classList
+.remove("show");
+
+renderer.domElement.focus();
+
+};
+
+
+function openModal(
+title,
+text
+) {
+
+document
+.getElementById(
+"modalTitle"
+)
+.textContent =
+title;
+
+
+document
+.getElementById(
+"modalText"
+)
+.textContent =
+text;
+
+
+modal
+.classList
+.add("show");
+
+}
+
+
+
+/* ==========================================
+KEYBOARD
+========================================== */
+
+window.addEventListener(
+
+"keydown",
+
+function(event) {
+
+/*
+PLAYER INTERACTION
+*/
+
+if (
+event.key.toLowerCase()
+=== "e"
+) {
+
+window.interactNow();
+
+}
+
+
+/*
+TOGGLE SETUP
+*/
+
+if (
+event.key.toLowerCase()
+=== "p"
+) {
+
+setupPanel
+.classList
+.toggle("show");
+
+}
+
+
+/*
+PLACE INTERACTION LOCATIONS
+*/
+
+if (event.key === "1") {
+
+saveInteractionPoint(
+"artist"
+);
+
+}
+
+
+if (event.key === "2") {
+
+saveInteractionPoint(
+"producer"
+);
+
+}
+
+
+if (event.key === "3") {
+
+saveInteractionPoint(
+"network"
+);
+
+}
+
+
+if (event.key === "4") {
+
+saveInteractionPoint(
+"post"
+);
+
+}
+
+}
+
+);
+
+
+
+/* ==========================================
+RESIZE
+========================================== */
+
+window.addEventListener(
+
+"resize",
+
+function() {
+
+camera.aspect =
+window.innerWidth /
+window.innerHeight;
+
+
+camera
+.updateProjectionMatrix();
+
+
+renderer.setSize(
+window.innerWidth,
+window.innerHeight
+);
+
+}
+
+);
+
+
+
+/* ==========================================
+START
+========================================== */
+
+loadInteractionPoints();
+
+
+let lastTime =
+performance.now();
+
+
+renderer.setAnimationLoop(
+
+function(time) {
+
+const delta =
+(time - lastTime) /
+1000;
+
+
+lastTime =
+time;
+
+
+/*
+Spark handles
+WASD + mouse movement.
+*/
+
+controls.update(
+camera
+);
+
+
+/*
+Stop walking
+through collider.
+*/
+
+applyCollision();
+
+
+/*
+Detect interaction areas.
+*/
+
+checkInteractions();
+
+
+renderer.render(
+scene,
+camera
+);
+
+
+previousPosition.copy(
+camera.position
+);
+
+}
+
+);
+
+</script>
+
+
+</body>
+
+</html>

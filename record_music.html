@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Music City Estates Recording Booth</title>
+
+<style>
+
+* {
+box-sizing: border-box;
+}
+
+body {
+margin: 0;
+background:
+radial-gradient(circle at top, #151c35, #050609 60%);
+color: white;
+font-family: Arial, sans-serif;
+min-height: 100vh;
+}
+
+header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+padding: 18px 25px;
+border-bottom: 1px solid #22d3ee;
+background: rgba(0,0,0,.75);
+}
+
+header h1 {
+margin: 0;
+font-size: 20px;
+}
+
+.back {
+color: white;
+text-decoration: none;
+border: 1px solid #22d3ee;
+padding: 9px 14px;
+border-radius: 8px;
+}
+
+.container {
+width: min(900px, 94%);
+margin: 25px auto;
+}
+
+.studio-badge {
+text-align: center;
+margin-bottom: 20px;
+}
+
+.studio-badge h2 {
+font-size: 30px;
+margin-bottom: 5px;
+}
+
+.studio-badge span {
+color: #22d3ee;
+}
+
+.panel {
+background: rgba(16,18,27,.94);
+border: 1px solid #30374c;
+border-radius: 18px;
+padding: 22px;
+margin-bottom: 18px;
+box-shadow: 0 0 25px rgba(34,211,238,.08);
+}
+
+.panel h3 {
+margin-top: 0;
+}
+
+textarea,
+input,
+select {
+width: 100%;
+padding: 14px;
+margin-top: 10px;
+background: #090b12;
+color: white;
+border: 1px solid #394056;
+border-radius: 10px;
+font-size: 16px;
+}
+
+textarea {
+min-height: 120px;
+resize: vertical;
+}
+
+.row {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 15px;
+}
+
+.tags {
+display: flex;
+gap: 8px;
+flex-wrap: wrap;
+margin-top: 14px;
+}
+
+.tag {
+padding: 9px 14px;
+border-radius: 20px;
+border: 1px solid #3b4258;
+background: #121622;
+cursor: pointer;
+}
+
+.tag:hover {
+border-color: #22d3ee;
+}
+
+.record-area {
+text-align: center;
+padding: 28px 10px;
+}
+
+.record-circle {
+width: 105px;
+height: 105px;
+border-radius: 50%;
+border: none;
+font-size: 18px;
+font-weight: bold;
+background: #ff3b30;
+color: white;
+cursor: pointer;
+box-shadow: 0 0 30px rgba(255,59,48,.35);
+}
+
+.record-circle.recording {
+animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+50% {
+transform: scale(1.08);
+}
+}
+
+#recordStatus {
+margin: 15px 0;
+color: #aab3cc;
+}
+
+audio {
+width: 100%;
+margin-top: 18px;
+}
+
+.actions {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 12px;
+}
+
+button.action {
+border: none;
+padding: 15px;
+border-radius: 10px;
+font-size: 16px;
+cursor: pointer;
+}
+
+.primary {
+background: #22d3ee;
+color: #001018;
+font-weight: bold;
+}
+
+.secondary {
+background: #242938;
+color: white;
+}
+
+.ai-result {
+display: none;
+margin-top: 18px;
+padding: 18px;
+border: 1px solid #22d3ee;
+border-radius: 12px;
+background: #08151c;
+}
+
+.perk {
+color: #ffd86b;
+}
+
+@media(max-width:700px) {
+.row,
+.actions {
+grid-template-columns: 1fr;
+}
+}
+
+/* ===== MUSIC CITY ESTATES - RECORDING BOOTH ===== */
+
+body {
+background:
+linear-gradient(rgba(3,8,18,.84), rgba(3,8,18,.92)),
+repeating-linear-gradient(
+135deg,
+#151b27 0px,
+#151b27 35px,
+#0d121c 35px,
+#0d121c 70px
+);
+min-height:100vh;
+}
+
+.container {
+max-width:1100px;
+margin:30px auto;
+padding:28px;
+border:2px solid #18d8ff;
+border-radius:24px;
+background:
+radial-gradient(circle at top, rgba(0,216,255,.12), transparent 45%),
+rgba(5,10,20,.94);
+box-shadow:
+0 0 30px rgba(0,216,255,.28),
+inset 0 0 45px rgba(0,0,0,.75);
+}
+
+.container:before {
+content:"🎙 VOCAL BOOTH • RECORDING LIVE";
+display:block;
+text-align:center;
+padding:12px;
+margin-bottom:20px;
+border:1px solid #18d8ff;
+border-radius:12px;
+color:#18d8ff;
+background:#07111c;
+font-weight:bold;
+letter-spacing:2px;
+}
+
+.studio-badge {
+text-align:center;
+padding:18px;
+margin-bottom:20px;
+border-radius:16px;
+background:rgba(0,0,0,.45);
+box-shadow:inset 0 0 20px rgba(0,216,255,.12);
+}
+
+.panel {
+margin-top:18px;
+padding:22px;
+border:1px solid rgba(24,216,255,.45);
+border-radius:16px;
+background:rgba(7,14,25,.90);
+box-shadow:inset 0 0 20px rgba(0,0,0,.55);
+}
+
+button {
+background:linear-gradient(#182637,#0d1825) !important;
+color:white !important;
+border:1px solid #18d8ff !important;
+border-radius:10px !important;
+box-shadow:0 0 10px rgba(0,216,255,.15);
+}
+
+button:hover {
+box-shadow:0 0 18px rgba(0,216,255,.55);
+transform:translateY(-2px);
+}
+
+input,
+textarea {
+background:#050b13 !important;
+color:white !important;
+border:1px solid #18d8ff !important;
+border-radius:10px !important;
+}
+
+input:focus,
+textarea:focus {
+outline:none;
+box-shadow:0 0 12px rgba(0,216,255,.45);
+}
+
+h2, h3 {
+color:white;
+}
+
+#studioName {
+color:#18d8ff;
+}
+
+
+</style>
+
+
+<style>
+body {
+background-image:
+linear-gradient(rgba(0,0,0,0.30), rgba(0,0,0,0.45)),
+url("begenius_booth.png") !important;
+
+background-size: cover !important;
+background-position: center center !important;
+background-repeat: no-repeat !important;
+background-attachment: fixed !important;
+min-height: 100vh;
+}
+
+.container {
+display: none !important;
+}
+
+
+</style>
+</head>
+<body>
+
+<header>
+<a class="back" id="backButton" href="begenius_studio_interactive.html">
+← BACK TO STUDIO
+</a>
+
+<h1>MUSIC CITY ESTATES</h1>
+</header>
+
+<div class="container">
+
+<div class="studio-badge">
+<h2>🎙️ Recording Booth</h2>
+<span id="studioName">BeGenius Studio</span>
+</div>
+
+
+<div style="margin:20px 0;">
+<h3>🎧 Beat Library</h3>
+<p style="margin-bottom:15px;">Choose a beat to start your song:</p>
+
+<button type="button"
+onclick="selectBeat('Midnight Drive', this)"
+style="padding:15px; margin:5px; text-align:left;">
+🔥 <strong>Midnight Drive</strong><br>
+<small>Hip-Hop • Trap</small>
+</button>
+
+<button type="button"
+onclick="selectBeat('Velvet Nights', this)"
+style="padding:15px; margin:5px; text-align:left;">
+🌙 <strong>Velvet Nights</strong><br>
+<small>R&B • Smooth</small>
+</button>
+
+<button type="button"
+onclick="selectBeat('808 Pressure', this)"
+style="padding:15px; margin:5px; text-align:left;">
+💥 <strong>808 Pressure</strong><br>
+<small>Trap • Hard</small>
+</button>
+
+<button type="button"
+onclick="selectBeat('Soul Avenue', this)"
+style="padding:15px; margin:5px; text-align:left;">
+🎹 <strong>Soul Avenue</strong><br>
+<small>Hip-Hop • Soul</small>
+</button>
+</div>
+<div class="panel">
+
+<h3>1. Build Your Song</h3>
+
+<input
+id="songTitle"
+placeholder="Song title"
+>
+
+<textarea
+id="lyrics"
+placeholder="Write lyrics, describe your song, or enter a prompt..."
+></textarea>
+
+<input
+id="style"
+placeholder="Describe the sound: melodic trap, soulful R&B, southern hip-hop..."
+>
+
+<div class="tags">
+<div class="tag" onclick="addStyle('Hip-Hop')">Hip-Hop</div>
+<div class="tag" onclick="addStyle('R&B')">R&B</div>
+<div class="tag" onclick="addStyle('Trap')">Trap</div>
+<div class="tag" onclick="addStyle('Soul')">Soul</div>
+<div class="tag" onclick="addStyle('Pop')">Pop</div>
+<div class="tag" onclick="addStyle('Latin')">Latin</div>
+</div>
+
+</div>
+
+
+<div class="panel">
+
+<h3>2. Your Voice</h3>
+
+<p>
+Record a vocal, freestyle, melody, hook or reference.
+</p>
+
+<div class="record-area">
+
+<button
+id="recordButton"
+class="record-circle"
+onclick="toggleRecording()"
+>
+RECORD
+</button>
+
+<div id="recordStatus">
+Tap Record to begin
+</div>
+
+<audio
+id="audioPreview"
+controls
+style="display:none;"
+></audio>
+
+</div>
+
+<input
+type="file"
+id="audioUpload"
+accept="audio/*"
+onchange="loadUploadedAudio(event)"
+>
+
+</div>
+
+
+<div class="panel">
+
+<h3>3. AI Production</h3>
+
+<div class="row">
+
+<div>
+<label>Creation Mode</label>
+
+<select id="creationMode">
+<option>Build Music Around My Voice</option>
+<option>Generate Instrumental</option>
+<option>Create Full Song</option>
+<option>Remix My Recording</option>
+</select>
+</div>
+
+<div>
+<label>Vocal Style</label>
+
+<select id="vocalStyle">
+<option>Use My Voice</option>
+<option>Instrumental Only</option>
+<option>AI Reference Vocal</option>
+</select>
+</div>
+
+</div>
+
+<br>
+
+<label>Creativity</label>
+<input
+id="creativity"
+type="range"
+min="0"
+max="100"
+value="50"
+>
+
+<br><br>
+
+<label>Style Influence</label>
+<input
+id="influence"
+type="range"
+min="0"
+max="100"
+value="50"
+>
+
+<p
+id="studioPerk"
+class="perk"
+>
+⭐ BeGenius Studio Perk: Advanced AI Production
+</p>
+
+</div>
+
+
+<div class="panel">
+
+<div class="actions">
+
+<button
+class="action secondary"
+onclick="saveDraft()"
+>
+SAVE DRAFT
+</button>
+
+<button
+class="action primary"
+onclick="createSong()"
+>
+✨ CREATE WITH AI
+</button>
+
+</div>
+
+<div
+id="aiResult"
+class="ai-result"
+>
+<h3>🎵 AI Session Created</h3>
+
+<p id="resultText"></p>
+
+<p>
+The Music City AI generation engine will connect here.
+</p>
+</div>
+
+</div>
+
+</div>
+
+
+<script>
+
+const params =
+new URLSearchParams(window.location.search);
+
+const studio =
+params.get("studio") || "begenius";
+
+
+if (studio === "bedroom") {
+
+document.getElementById("studioName").textContent =
+"Bedroom Studio";
+
+document.getElementById("studioPerk").textContent =
+"Starter Studio — Basic AI Production";
+
+document.getElementById("backButton").href =
+"bedroom_studio.html";
+
+}
+
+
+if (studio === "begenius") {
+
+document.getElementById("studioName").textContent =
+"BeGenius Studio";
+
+document.getElementById("studioPerk").textContent =
+"⭐ BeGenius Studio Perk: Advanced AI Production";
+
+document.getElementById("backButton").href =
+"begenius_studio_interactive.html";
+
+}
+
+
+function addStyle(style) {
+
+const input =
+document.getElementById("style");
+
+if (input.value.length > 0) {
+input.value += ", ";
+}
+
+input.value += style;
+}
+
+
+let mediaRecorder;
+let audioChunks = [];
+let recording = false;
+
+
+async function toggleRecording() {
+
+const button =
+document.getElementById("recordButton");
+
+const status =
+document.getElementById("recordStatus");
+
+
+if (!recording) {
+
+try {
+
+const stream =
+await navigator.mediaDevices.getUserMedia({
+audio: true
+});
+
+mediaRecorder =
+new MediaRecorder(stream);
+
+audioChunks = [];
+
+
+mediaRecorder.ondataavailable = event => {
+
+audioChunks.push(event.data);
+
+};
+
+
+mediaRecorder.onstop = () => {
+
+const blob =
+new Blob(
+audioChunks,
+{ type: "audio/webm" }
+);
+
+const url =
+URL.createObjectURL(blob);
+
+const audio =
+document.getElementById("audioPreview");
+
+audio.src = url;
+audio.style.display = "block";
+
+status.textContent =
+"Recording complete. Play it back below.";
+
+};
+
+
+mediaRecorder.start();
+
+recording = true;
+
+button.textContent =
+"STOP";
+
+button.classList.add("recording");
+
+status.textContent =
+"Recording...";
+
+}
+
+catch(error) {
+
+status.textContent =
+"Microphone permission is required.";
+
+}
+
+}
+
+else {
+
+mediaRecorder.stop();
+
+recording = false;
+
+button.textContent =
+"RECORD";
+
+button.classList.remove("recording");
+
+}
+}
+
+
+function loadUploadedAudio(event) {
+
+const file =
+event.target.files[0];
+
+if (!file) return;
+
+const url =
+URL.createObjectURL(file);
+
+const audio =
+document.getElementById("audioPreview");
+
+audio.src = url;
+
+audio.style.display =
+"block";
+
+document.getElementById("recordStatus")
+.textContent =
+"Uploaded audio ready.";
+}
+
+
+function saveDraft() {
+
+const draft = {
+
+title:
+document.getElementById("songTitle").value,
+
+lyrics:
+document.getElementById("lyrics").value,
+
+style:
+document.getElementById("style").value,
+
+studio:
+studio
+
+};
+
+localStorage.setItem(
+"musicCitySongDraft",
+JSON.stringify(draft)
+);
+
+alert("Song draft saved.");
+}
+
+
+function createSong() {
+
+const title =
+document.getElementById("songTitle").value
+|| "Untitled Song";
+
+const style =
+document.getElementById("style").value
+|| "Original Style";
+
+const mode =
+document.getElementById("creationMode").value;
+document.getElementById("aiResult")
+.style.display =
+"block";
+
+
+document.getElementById("resultText")
+.innerHTML =
+"<strong>" + title + "</strong><br>" +
+"Style: " + style + "<br>" +
+"Mode: " + mode;
+
+}
+
+</script>
+
+</body>
+</html>

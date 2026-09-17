@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width, initial-scale=1.0"
+>
+
+<title>
+Word Slaughter Warehouse | Music City Estates
+</title>
+
+<style>
+
+* {
+box-sizing: border-box;
+}
+
+html,
+body {
+margin: 0;
+width: 100%;
+height: 100%;
+overflow: hidden;
+background: #020308;
+font-family: Arial, sans-serif;
+}
+
+
+/* =========================================
+FULL MOCKUP IMAGE
+========================================= */
+
+.warehouse-stage {
+
+position: absolute;
+
+width: min(
+100vw,
+150vh
+);
+
+height: min(
+100vh,
+66.6667vw
+);
+
+left: 50%;
+top: 50%;
+
+transform:
+translate(-50%, -50%);
+
+background-image:
+url("warehouse_exterior_page.png");
+
+background-size:
+100% 100%;
+
+background-repeat:
+no-repeat;
+
+background-position:
+center;
+
+box-shadow:
+0 0 60px #000;
+
+}
+
+
+/* =========================================
+REAL PLAYER STATS
+========================================= */
+
+.live-stats {
+
+position: absolute;
+
+top: 1.8%;
+right: 2%;
+
+z-index: 50;
+
+padding:
+9px 18px;
+
+display: flex;
+
+gap: 18px;
+
+align-items: center;
+
+background:
+rgba(2, 10, 22, .96);
+
+border:
+1px solid #5bbcff;
+
+border-radius:
+10px;
+
+color: white;
+
+font-size:
+13px;
+
+font-weight:
+bold;
+
+box-shadow:
+0 0 18px
+rgba(40, 160, 255, .55);
+
+}
+
+.live-stats span {
+
+white-space:
+nowrap;
+
+}
+
+
+/* =========================================
+CLICKABLE SCENE AREAS
+========================================= */
+
+.hotspot {
+
+position: absolute;
+
+bottom: 8.2%;
+
+height: 29%;
+
+z-index: 20;
+
+cursor: pointer;
+
+border:
+2px solid transparent;
+
+border-radius:
+14px;
+
+background:
+transparent;
+
+transition:
+.2s;
+
+}
+
+.hotspot:hover {
+
+background:
+rgba(255,255,255,.04);
+
+box-shadow:
+inset 0 0 25px
+rgba(255,255,255,.14);
+
+}
+
+
+/* Battle Stage */
+
+.battle {
+
+left: 4.2%;
+
+width: 29.5%;
+
+}
+
+
+/* Community */
+
+.community {
+
+left: 34.5%;
+
+width: 31%;
+
+}
+
+
+/* Merch */
+
+.merch {
+
+left: 66.2%;
+
+width: 29.5%;
+
+}
+
+
+/* =========================================
+BATTLE LOCK
+========================================= */
+
+.battle-lock {
+
+display: none;
+
+position: absolute;
+
+left: 4.2%;
+
+bottom: 8.2%;
+
+width: 29.5%;
+
+height: 29%;
+
+z-index: 40;
+
+align-items: center;
+
+justify-content: center;
+
+text-align: center;
+
+background:
+rgba(0,0,0,.72);
+
+border:
+2px solid #d92b2b;
+
+border-radius:
+14px;
+
+color:
+white;
+
+cursor:
+pointer;
+
+}
+
+.battle-lock.show {
+
+display: flex;
+
+}
+
+.lock-box {
+
+padding:
+15px;
+
+}
+
+.lock-icon {
+
+font-size:
+34px;
+
+}
+
+.lock-title {
+
+margin-top:
+5px;
+
+font-size:
+19px;
+
+font-weight:
+bold;
+
+}
+
+.lock-message {
+
+margin-top:
+6px;
+
+color:
+#ffb5b5;
+
+font-size:
+13px;
+
+}
+
+
+/* =========================================
+SMALL MESSAGE POPUP
+========================================= */
+
+.message {
+
+display:
+none;
+
+position:
+absolute;
+
+left:
+50%;
+
+top:
+50%;
+
+transform:
+translate(-50%, -50%);
+
+z-index:
+100;
+
+width:
+90%;
+
+max-width:
+480px;
+
+padding:
+25px;
+
+text-align:
+center;
+
+color:
+white;
+
+background:
+rgba(4, 5, 8, .97);
+
+border:
+1px solid #555;
+
+border-radius:
+14px;
+
+box-shadow:
+0 20px 60px
+rgba(0,0,0,.8);
+
+}
+
+.message.show {
+
+display:
+block;
+
+}
+
+.message h2 {
+
+margin-top:
+0;
+
+}
+
+.message p {
+
+color:
+#ccc;
+
+line-height:
+1.5;
+
+}
+
+.close-button {
+
+width:
+100%;
+
+padding:
+12px;
+
+border:
+none;
+
+border-radius:
+7px;
+
+background:
+#222;
+
+color:
+white;
+
+font-size:
+15px;
+
+cursor:
+pointer;
+
+}
+
+
+/* =========================================
+BACK BUTTON
+========================================= */
+
+.back {
+
+position:
+absolute;
+
+left:
+2.2%;
+
+bottom:
+1.8%;
+
+z-index:
+60;
+
+padding:
+8px 14px;
+
+color:
+white;
+
+text-decoration:
+none;
+
+font-size:
+12px;
+
+background:
+rgba(0,0,0,.85);
+
+border:
+1px solid #555;
+
+border-radius:
+6px;
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<div
+class="warehouse-stage"
+id="warehouseStage"
+>
+
+
+<!-- REAL GAME STATS -->
+
+<div class="live-stats">
+
+<span>
+👥 FANS:
+<strong id="fans">0</strong>
+</span>
+
+<span>
+💵 CASH:
+$<strong id="cash">500</strong>
+</span>
+
+<span>
+⭐ XP:
+<strong id="xp">0</strong>
+</span>
+
+<span>
+🎤 MIC LEVEL:
+<strong id="level">1</strong>
+</span>
+
+</div>
+
+
+
+<!-- BATTLE STAGE CLICK AREA -->
+
+<div
+class="hotspot battle"
+onclick="openBattle()"
+title="Battle Stage"
+>
+</div>
+
+
+
+<!-- COMMUNITY CLICK AREA -->
+
+<div
+class="hotspot community"
+onclick="openCommunity()"
+title="Community Space"
+>
+</div>
+
+
+
+<!-- MERCH CLICK AREA -->
+
+<div
+class="hotspot merch"
+onclick="openMerch()"
+title="Merch & Backstage"
+>
+</div>
+
+
+
+<!-- BATTLE LOCK -->
+
+<div
+class="battle-lock"
+id="battleLock"
+onclick="showBattleLocked()"
+>
+
+<div class="lock-box">
+
+<div class="lock-icon">
+🔒
+</div>
+
+<div class="lock-title">
+BATTLE STAGE LOCKED
+</div>
+
+<div
+class="lock-message"
+id="lockMessage"
+>
+25 fans required.
+</div>
+
+</div>
+
+</div>
+
+
+
+<!-- POPUP -->
+
+<div
+class="message"
+id="messageBox"
+>
+
+<h2 id="messageTitle">
+Word Slaughter Warehouse
+</h2>
+
+<p id="messageText">
+</p>
+
+<button
+class="close-button"
+onclick="closeMessage()"
+>
+RETURN
+</button>
+
+</div>
+
+
+
+<!-- BACK -->
+
+<a
+class="back"
+href="hip_hop_heights.html"
+>
+← HIP-HOP HEIGHTS
+</a>
+
+
+</div>
+
+
+
+<script>
+
+/* =========================================
+LOAD PLAYER DATA
+========================================= */
+
+function getNumber(
+key,
+fallback
+) {
+
+const value =
+localStorage.getItem(key);
+
+if (value === null) {
+
+return fallback;
+
+}
+
+return Number(value);
+
+}
+
+
+const fans =
+getNumber(
+"mceFans",
+0
+);
+
+const cash =
+getNumber(
+"mceCash",
+500
+);
+
+const xp =
+getNumber(
+"mceXP",
+0
+);
+
+const level =
+getNumber(
+"mceLevel",
+1
+);
+
+
+
+document
+.getElementById("fans")
+.textContent =
+fans.toLocaleString();
+
+
+document
+.getElementById("cash")
+.textContent =
+cash.toLocaleString();
+
+
+document
+.getElementById("xp")
+.textContent =
+xp.toLocaleString();
+
+
+document
+.getElementById("level")
+.textContent =
+level;
+
+
+
+/* =========================================
+BATTLE REQUIREMENT
+========================================= */
+
+const battleLock =
+document.getElementById(
+"battleLock"
+);
+
+
+if (fans < 25) {
+
+const needed =
+25 - fans;
+
+battleLock
+.classList
+.add("show");
+
+document
+.getElementById(
+"lockMessage"
+)
+.textContent =
+"You have " +
+fans +
+" fans. Earn " +
+needed +
+" more fans to unlock.";
+
+}
+
+
+
+/* =========================================
+BATTLE STAGE
+========================================= */
+
+function openBattle() {
+
+if (fans < 25) {
+
+showBattleLocked();
+
+return;
+
+}
+
+
+window.location.href =
+"warehouse_battle.html";
+
+}
+
+
+function showBattleLocked() {
+
+showMessage(
+"🎤 Battle Stage Locked",
+"Word Slaughter requires 25 fans before you can enter a rap battle. You currently have " +
+fans +
+" fans."
+);
+
+}
+
+
+
+/* =========================================
+COMMUNITY SPACE
+========================================= */
+
+function openCommunity() {
+
+/*
+We will create this page next.
+*/
+
+const page =
+"warehouse_hangout_interactive.html";
+
+window.location.href =
+page;
+
+
+}
+
+
+
+/* =========================================
+MERCH
+========================================= */
+
+function openMerch() {
+
+/*
+We will create this page next.
+*/
+
+const page =
+"warehouse_merch.html";
+
+window.location.href =
+page;
+
+}
+
+
+
+/* =========================================
+MESSAGE POPUP
+========================================= */
+
+function showMessage(
+title,
+text
+) {
+
+document
+.getElementById(
+"messageTitle"
+)
+.textContent =
+title;
+
+
+document
+.getElementById(
+"messageText"
+)
+.textContent =
+text;
+
+
+document
+.getElementById(
+"messageBox"
+)
+.classList
+.add("show");
+
+}
+
+
+function closeMessage() {
+
+document
+.getElementById(
+"messageBox"
+)
+.classList
+.remove("show");
+
+}
+
+</script>
+
+
+</body>
+
+</html>

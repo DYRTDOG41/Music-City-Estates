@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Hip-Hop Heights | Music City Estates</title>
+
+<style>
+* {
+box-sizing: border-box;
+}
+
+html,
+body {
+margin: 0;
+width: 100%;
+height: 100%;
+overflow: hidden;
+font-family: Arial, sans-serif;
+background: #000;
+color: white;
+}
+
+#world {
+position: fixed;
+inset: 0;
+width: 100%;
+height: 100%;
+border: none;
+}
+
+.top-bar {
+position: fixed;
+top: 0;
+left: 0;
+right: 0;
+z-index: 10;
+
+display: flex;
+justify-content: space-between;
+align-items: center;
+
+padding: 12px 18px;
+
+background: rgba(0, 0, 0, 0.72);
+backdrop-filter: blur(8px);
+}
+
+.title {
+font-size: 22px;
+font-weight: bold;
+}
+
+.stats {
+display: flex;
+gap: 18px;
+font-size: 15px;
+}
+
+.back-button {
+background: white;
+color: black;
+text-decoration: none;
+padding: 9px 14px;
+border-radius: 8px;
+font-weight: bold;
+}
+
+.location-panel {
+position: fixed;
+left: 18px;
+bottom: 18px;
+z-index: 10;
+
+width: 250px;
+padding: 15px;
+
+background: rgba(0, 0, 0, 0.76);
+border-radius: 12px;
+}
+
+.location-panel h2 {
+margin: 0 0 10px;
+font-size: 18px;
+}
+
+.location-button {
+display: block;
+width: 100%;
+
+margin-top: 8px;
+padding: 10px;
+
+border: none;
+border-radius: 7px;
+
+background: white;
+color: black;
+
+font-size: 14px;
+font-weight: bold;
+cursor: pointer;
+}
+
+.location-button:hover {
+background: #ddd;
+}
+
+.status {
+margin-top: 10px;
+font-size: 13px;
+color: #ddd;
+}
+</style>
+</head>
+
+<body>
+
+<!-- WORKING MARBLE HIP-HOP HEIGHTS WORLD -->
+<iframe
+id="world"
+src="hip_hop_heights_viewer.html"
+allow="fullscreen"
+></iframe>
+
+<!-- MUSIC CITY ESTATES HUD -->
+<div class="top-bar">
+
+<a class="back-button" href="index.html">
+← MUSIC CITY
+</a>
+
+<div class="title">
+HIP-HOP HEIGHTS
+</div>
+
+<div class="stats">
+<span>Fans: <strong id="fans">0</strong></span>
+<span>Cash: $<strong id="cash">500</strong></span>
+<span>XP: <strong id="xp">0</strong></span>
+</div>
+
+</div>
+
+<!-- LOCATION MENU -->
+<div class="location-panel">
+
+<h2>Explore Hip-Hop Heights</h2>
+
+<button class="location-button" onclick="window.location.href='begenius_studio_interactive.html'">
+BeGenius Studio
+</button>
+
+<button class="location-button" onclick="visit('Hip-Hop Café', 3)">
+Hip-Hop Café
+</button>
+
+<button class="location-button" onclick="visit('Record Store', 4)">
+Record Store
+</button>
+
+<button class="location-button" onclick="visit('DA Warehouse', 8)">
+DA Warehouse
+</button>
+
+<div class="status" id="status">
+Welcome to Hip-Hop Heights.
+</div>
+
+</div>
+
+<script>
+let fans = 0;
+let cash = 500;
+let xp = 0;
+
+function visit(place, reward) {
+xp += reward;
+
+document.getElementById("xp").textContent = xp;
+
+document.getElementById("status").textContent =
+"Selected: " + place + " | +" + reward + " XP";
+}
+</script>
+
+</body>
+</html>

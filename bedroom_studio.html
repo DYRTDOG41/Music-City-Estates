@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Bedroom Studio | Music City Estates</title>
+
+<style>
+* {
+box-sizing: border-box;
+}
+
+body {
+margin: 0;
+min-height: 100vh;
+font-family: Arial, sans-serif;
+color: white;
+background:
+radial-gradient(circle at center, #24344d 0%, #101722 55%, #05070b 100%);
+}
+
+.top-bar {
+display: flex;
+justify-content: space-between;
+align-items: center;
+padding: 15px 22px;
+background: rgba(0,0,0,.75);
+border-bottom: 1px solid #333;
+}
+
+.title {
+font-size: 22px;
+font-weight: bold;
+}
+
+.stats {
+display: flex;
+gap: 18px;
+font-size: 15px;
+}
+
+.studio {
+max-width: 700px;
+margin: 70px auto;
+padding: 30px;
+text-align: center;
+background: rgba(0,0,0,.72);
+border: 1px solid #555;
+border-radius: 18px;
+box-shadow: 0 15px 40px rgba(0,0,0,.55);
+}
+
+.studio h1 {
+margin-top: 0;
+font-size: 36px;
+}
+
+.subtitle {
+color: #bbb;
+margin-bottom: 30px;
+}
+
+input {
+width: 100%;
+padding: 15px;
+font-size: 17px;
+border-radius: 9px;
+border: none;
+margin-bottom: 12px;
+}
+
+button,
+.map-button {
+width: 100%;
+display: block;
+padding: 15px;
+margin-top: 12px;
+border: none;
+border-radius: 9px;
+font-size: 17px;
+font-weight: bold;
+cursor: pointer;
+}
+
+.create {
+background: white;
+color: black;
+}
+
+.release {
+background: #1487ff;
+color: white;
+}
+
+.map-button {
+text-decoration: none;
+background: #252c35;
+color: white;
+}
+
+.status {
+min-height: 55px;
+margin-top: 22px;
+padding: 15px;
+background: #111821;
+border-radius: 9px;
+color: #9ed7ff;
+}
+</style>
+</head>
+
+<body>
+
+<div class="top-bar">
+
+<div class="title">
+BEDROOM STUDIO
+</div>
+
+<div class="stats">
+<span>Level: <strong id="level">1</strong></span>
+<span>Fans: <strong id="fans">0</strong></span>
+<span>Cash: $<strong id="cash">500</strong></span>
+<span>XP: <strong id="xp">0</strong></span>
+</div>
+
+</div>
+
+<div class="studio">
+
+<h1>🎙️ Your Bedroom Studio</h1>
+
+<div class="subtitle">
+Every superstar starts somewhere.
+</div>
+
+<input
+id="songName"
+type="text"
+placeholder="Name your first song">
+
+<button class="create" onclick="createSong()">
+CREATE SONG
+</button>
+
+<button class="release" onclick="releaseSong()">
+RELEASE SONG
+</button>
+
+<div class="status" id="status">
+Name your first record and start your career.
+</div>
+
+<a class="map-button" href="city_map.html">
+🗺️ OPEN CITY MAP
+</a>
+
+</div>
+
+
+<script>
+
+let fans = Number(localStorage.getItem("mceFans")) || 0;
+let cash = Number(localStorage.getItem("mceCash")) || 500;
+let xp = Number(localStorage.getItem("mceXP")) || 0;
+let level = Number(localStorage.getItem("mceLevel")) || 1;
+
+let currentSong = "";
+
+function updateStats() {
+
+document.getElementById("fans").textContent = fans;
+document.getElementById("cash").textContent = cash;
+document.getElementById("xp").textContent = xp;
+document.getElementById("level").textContent = level;
+
+localStorage.setItem("mceFans", fans);
+localStorage.setItem("mceCash", cash);
+localStorage.setItem("mceXP", xp);
+localStorage.setItem("mceLevel", level);
+}
+
+function createSong() {
+
+const name =
+document.getElementById("songName").value.trim();
+
+if (!name) {
+
+document.getElementById("status").textContent =
+"Give your song a name first.";
+
+return;
+}
+
+currentSong = name;
+
+document.getElementById("status").textContent =
+"🎧 \"" + currentSong +
+"\" has been recorded in your bedroom studio. Ready to release.";
+
+}
+
+function releaseSong() {
+
+if (!currentSong) {
+
+document.getElementById("status").textContent =
+"Create a song before releasing it.";
+
+return;
+}
+
+fans += 10;
+xp += 15;
+
+if (xp >= 100) {
+level = 2;
+}
+
+updateStats();
+
+document.getElementById("status").textContent =
+"🔥 \"" + currentSong +
+"\" released! +10 Fans • +15 XP";
+
+currentSong = "";
+
+document.getElementById("songName").value = "";
+}
+
+updateStats();
+
+</script>
+
+</body>
+</html>
