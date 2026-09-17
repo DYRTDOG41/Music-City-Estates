@@ -159,12 +159,14 @@ Name your first record and start your career.
 </div>
 
 
+<script src="player-state.js"></script>
 <script>
 
-let fans = Number(localStorage.getItem("mceFans")) || 0;
-let cash = Number(localStorage.getItem("mceCash")) || 500;
-let xp = Number(localStorage.getItem("mceXP")) || 0;
-let level = Number(localStorage.getItem("mceLevel")) || 1;
+const player = window.MCE.load();
+let fans = player.fans;
+let cash = player.cash;
+let xp = player.xp;
+let level = player.level;
 
 let currentSong = "";
 
@@ -175,10 +177,7 @@ document.getElementById("cash").textContent = cash;
 document.getElementById("xp").textContent = xp;
 document.getElementById("level").textContent = level;
 
-localStorage.setItem("mceFans", fans);
-localStorage.setItem("mceCash", cash);
-localStorage.setItem("mceXP", xp);
-localStorage.setItem("mceLevel", level);
+window.MCE.save({ fans: fans, cash: cash, xp: xp, level: level });
 }
 
 function createSong() {
@@ -214,10 +213,14 @@ return;
 
 fans += 10;
 xp += 15;
+level = window.MCE.numericLevel(xp, level);
 
-if (xp >= 100) {
-level = 2;
-}
+window.MCE.addRelease({ title: currentSong, source: "bedroom" });
+const saved = window.MCE.save({ fans: fans, cash: cash, xp: xp, level: level });
+fans = saved.fans;
+cash = saved.cash;
+xp = saved.xp;
+level = saved.level;
 
 updateStats();
 

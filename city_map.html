@@ -308,6 +308,7 @@ CURRENT LOCATION
 </div>
 
 
+<script src="player-state.js"></script>
 <script>
 
 let selectedLocation = "bedroom";
@@ -441,15 +442,11 @@ location.page;
 }
 
 }
-const savedFans = localStorage.getItem("mceFans");
-const savedCash = localStorage.getItem("mceCash");
-const savedXP = localStorage.getItem("mceXP");
-const savedLevel = localStorage.getItem("mceLevel");
-
-const realFans = savedFans === null ? 0 : Number(savedFans);
-const realCash = savedCash === null ? 500 : Number(savedCash);
-const realXP = savedXP === null ? 0 : Number(savedXP);
-const realLevel = savedLevel === null ? 1 : Number(savedLevel);
+const player = window.MCE.load();
+const realFans = player.fans;
+const realCash = player.cash;
+const realXP = player.xp;
+const realLevel = player.level;
 
 const liveStats = document.createElement("div");
 

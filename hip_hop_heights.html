@@ -170,14 +170,25 @@ Welcome to Hip-Hop Heights.
 
 </div>
 
+<script src="player-state.js"></script>
 <script>
-let fans = 0;
-let cash = 500;
-let xp = 0;
+const player = window.MCE.load();
+let fans = player.fans;
+let cash = player.cash;
+let xp = player.xp;
+
+document.getElementById("fans").textContent = fans;
+document.getElementById("cash").textContent = cash;
+document.getElementById("xp").textContent = xp;
 
 function visit(place, reward) {
-xp += reward;
+const saved = window.MCE.add({ xp: reward });
+fans = saved.fans;
+cash = saved.cash;
+xp = saved.xp;
 
+document.getElementById("fans").textContent = fans;
+document.getElementById("cash").textContent = cash;
 document.getElementById("xp").textContent = xp;
 
 document.getElementById("status").textContent =

@@ -584,54 +584,30 @@ href="hip_hop_heights.html"
 
 
 
+<script src="player-state.js"></script>
 <script>
 
 /* =========================================
 LOAD PLAYER DATA
 ========================================= */
 
-function getNumber(
-key,
-fallback
-) {
-
-const value =
-localStorage.getItem(key);
-
-if (value === null) {
-
-return fallback;
-
-}
-
-return Number(value);
-
-}
-
+const player =
+window.MCE.load();
 
 const fans =
-getNumber(
-"mceFans",
-0
-);
+player.fans;
 
 const cash =
-getNumber(
-"mceCash",
-500
-);
+player.cash;
 
 const xp =
-getNumber(
-"mceXP",
-0
-);
+player.xp;
 
 const level =
-getNumber(
-"mceLevel",
-1
-);
+player.level;
+
+const battleFansNeeded =
+window.MCE.UNLOCKS.battle.fans;
 
 
 
@@ -670,10 +646,10 @@ document.getElementById(
 );
 
 
-if (fans < 25) {
+if (fans < battleFansNeeded) {
 
 const needed =
-25 - fans;
+battleFansNeeded - fans;
 
 battleLock
 .classList
@@ -700,7 +676,7 @@ BATTLE STAGE
 
 function openBattle() {
 
-if (fans < 25) {
+if (fans < battleFansNeeded) {
 
 showBattleLocked();
 
@@ -719,7 +695,9 @@ function showBattleLocked() {
 
 showMessage(
 "🎤 Battle Stage Locked",
-"Word Slaughter requires 25 fans before you can enter a rap battle. You currently have " +
+"Word Slaughter requires " +
+battleFansNeeded +
+" fans before you can enter a rap battle. You currently have " +
 fans +
 " fans."
 );

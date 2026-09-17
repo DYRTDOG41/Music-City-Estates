@@ -1,13 +1,14 @@
-const STARTING_STATE = { name: "Rookie", cash: 100, fans: 0, xp: 0, day: 1, songs: 0, battles: 0 };
+const UNLOCKS = window.MCE.UNLOCKS;
+const STARTING_STATE = window.MCE.DEFAULTS;
 
 const locations = [
-  { id: "studio", name: "Bedroom Studio", icon: "🎧", requirement: () => true, label: "Your home base", bg: "linear-gradient(135deg,#2c1b62,#b03d87)" },
-  { id: "cafe", name: "Small Cafe", icon: "☕", requirement: s => s.xp >= 10, label: "Requires 10 XP", bg: "linear-gradient(135deg,#4a261e,#ca6d44)" },
-  { id: "battle", name: "Music Battle", icon: "⚡", requirement: s => s.fans >= 25, label: "Requires 25 fans", bg: "linear-gradient(135deg,#471247,#db3c92)" },
-  { id: "nightclub", name: "Nightclub", icon: "🪩", requirement: s => s.fans >= 50 && s.xp >= 75, label: "50 fans · 75 XP", bg: "linear-gradient(135deg,#131f5c,#6341cf)" },
-  { id: "hiphop", name: "Hip-Hop District", icon: "🎤", requirement: s => s.fans >= 100 && s.xp >= 150, label: "100 fans · 150 XP", bg: "linear-gradient(135deg,#42210d,#e4891c)" },
-  { id: "rnb", name: "R&B District", icon: "🌙", requirement: s => s.fans >= 175 && s.xp >= 250, label: "175 fans · 250 XP", bg: "linear-gradient(135deg,#2b164e,#b23e93)" },
-  { id: "downtown", name: "Downtown", icon: "🏙️", requirement: s => s.fans >= 300 && s.xp >= 400, label: "300 fans · 400 XP", bg: "linear-gradient(135deg,#153647,#159a9e)" }
+  { id: "studio", name: "Bedroom Studio", icon: "🎧", requirement: () => true, label: UNLOCKS.studio.label, bg: "linear-gradient(135deg,#2c1b62,#b03d87)" },
+  { id: "cafe", name: "Small Cafe", icon: "☕", requirement: s => window.MCE.meets(UNLOCKS.cafe, s), label: UNLOCKS.cafe.label, bg: "linear-gradient(135deg,#4a261e,#ca6d44)" },
+  { id: "battle", name: "Music Battle", icon: "⚡", requirement: s => window.MCE.meets(UNLOCKS.battle, s), label: UNLOCKS.battle.label, bg: "linear-gradient(135deg,#471247,#db3c92)" },
+  { id: "nightclub", name: "Nightclub", icon: "🪩", requirement: s => window.MCE.meets(UNLOCKS.nightclub, s), label: UNLOCKS.nightclub.label, bg: "linear-gradient(135deg,#131f5c,#6341cf)" },
+  { id: "hiphop", name: "Hip-Hop District", icon: "🎤", requirement: s => window.MCE.meets(UNLOCKS.hiphop, s), label: UNLOCKS.hiphop.label, bg: "linear-gradient(135deg,#42210d,#e4891c)" },
+  { id: "rnb", name: "R&B District", icon: "🌙", requirement: s => window.MCE.meets(UNLOCKS.rnb, s), label: UNLOCKS.rnb.label, bg: "linear-gradient(135deg,#2b164e,#b23e93)" },
+  { id: "downtown", name: "Downtown", icon: "🏙️", requirement: s => window.MCE.meets(UNLOCKS.downtown, s), label: UNLOCKS.downtown.label, bg: "linear-gradient(135deg,#153647,#159a9e)" }
 ];
 
 const phonePanels = {
@@ -20,12 +21,8 @@ const phonePanels = {
 let state = loadState();
 let toastTimer;
 
-function loadState() {
-  try { return { ...STARTING_STATE, ...JSON.parse(localStorage.getItem("mce-save")) }; }
-  catch { return { ...STARTING_STATE }; }
-}
-
-function saveState() { localStorage.setItem("mce-save", JSON.stringify(state)); }
+function loadState() { return window.MCE.load(); }
+function saveState() { state = window.MCE.save(state); }
 function escapeHtml(value) { const node = document.createElement("div"); node.textContent = value; return node.innerHTML; }
 
 function getLevel() {
@@ -53,11 +50,11 @@ function render() {
   document.getElementById("dayLabel").textContent = `DAY ${state.day} · 8:00 PM`;
   document.getElementById("phoneTime").textContent = `${8 + (state.day % 4)}:00`;
 
-  const battleOpen = state.fans >= 25;
+  const battleOpen = window.MCE.meets(UNLOCKS.battle, state);
   const battleButton = document.querySelector('[data-action="battle"]');
   battleButton.classList.toggle("locked-action", !battleOpen);
   battleButton.querySelector(".lock-icon")?.replaceWith(Object.assign(document.createElement("b"), { textContent: battleOpen ? "→" : "🔒", className: battleOpen ? "" : "lock-icon" }));
-  document.getElementById("battleRequirement").textContent = battleOpen ? "Challenge a local rival" : `Reach 25 fans to unlock · ${state.fans}/25`;
+  document.getElementById("battleRequirement").textContent = battleOpen ? "Challenge a local rival" : `Reach ${UNLOCKS.battle.fans} fans to unlock · ${state.fans}/${UNLOCKS.battle.fans}`;
 
   const goal = getNextGoal();
   const goalEl = document.getElementById("nextGoal");
@@ -92,11 +89,11 @@ function applyAction(action) {
   }
   if (action === "perform") {
     if (!state.songs) return showToast("Create a song before booking a performance.");
-    const cafeOpen = state.xp >= 10; state.cash += cafeOpen ? 35 : 15; state.fans += cafeOpen ? 8 : 4; state.xp += cafeOpen ? 15 : 8; state.day += 1;
+    const cafeOpen = window.MCE.meets(UNLOCKS.cafe, state); state.cash += cafeOpen ? 35 : 15; state.fans += cafeOpen ? 8 : 4; state.xp += cafeOpen ? 15 : 8; state.day += 1;
     showToast(cafeOpen ? "Cafe show complete! +$35 · +8 fans · +15 XP" : "Livestream complete! +$15 · +4 fans · +8 XP");
   }
   if (action === "battle") {
-    if (state.fans < 25) return showToast(`You need ${25-state.fans} more fans to enter a battle.`);
+    if (!window.MCE.meets(UNLOCKS.battle, state)) return showToast(`You need ${UNLOCKS.battle.fans-state.fans} more fans to enter a battle.`);
     state.cash += 50; state.fans += 15; state.xp += 25; state.battles += 1; state.day += 1; showToast("Battle won! +$50 · +15 fans · +25 XP");
   }
   saveState(); render();
