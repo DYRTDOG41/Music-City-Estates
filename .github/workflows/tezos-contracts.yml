@@ -1,0 +1,59 @@
+name: Tezos Contract Validation
+
+on:
+  pull_request:
+    paths:
+      - "contracts/**"
+      - ".github/workflows/tezos-contracts.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "contracts/**"
+      - ".github/workflows/tezos-contracts.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  smartpy:
+    name: Compile and test SmartPy FA2 contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install stable SmartPy
+        run: python -m pip install --upgrade pip smartpy-tezos==0.24.1
+
+      - name: Compile Certified Record contract
+        env:
+          SMARTPY_OUTPUT_DIR: build
+        run: python contracts/music_city_certified_records.py
+
+      - name: Compile collectibles contract
+        env:
+          SMARTPY_OUTPUT_DIR: build
+        run: python contracts/music_city_collectibles.py
+
+      - name: Verify Michelson output exists
+        run: |
+          find build -type f \( -name "*_contract.tz" -o -name "*_storage.tz" \) -print
+          test "$(find build -type f -name '*_contract.tz' | wc -l)" -ge 2
+
+      - name: Upload compiled Michelson
+        uses: actions/upload-artifact@v4
+        with:
+          name: music-city-tezos-michelson
+          path: |
+            build/**/*_contract.tz
+            build/**/*_storage.tz
+            build/**/log.txt
+          if-no-files-found: error
