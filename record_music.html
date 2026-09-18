@@ -305,7 +305,7 @@ color:#18d8ff;
 body {
 background-image:
 linear-gradient(rgba(0,0,0,0.30), rgba(0,0,0,0.45)),
-url("begenius_booth.png") !important;
+url("begenius_booth.PNG") !important;
 
 background-size: cover !important;
 background-position: center center !important;
@@ -315,7 +315,8 @@ min-height: 100vh;
 }
 
 .container {
-display: none !important;
+display: block;
+background: rgba(3, 8, 18, 0.88);
 }
 
 
@@ -751,6 +752,18 @@ document.getElementById("style").value
 
 const mode =
 document.getElementById("creationMode").value;
+
+localStorage.setItem(
+"musicCitySongDraft",
+JSON.stringify({
+title: title,
+lyrics: document.getElementById("lyrics").value,
+style: style,
+studio: studio,
+mode: mode
+})
+);
+
 document.getElementById("aiResult")
 .style.display =
 "block";

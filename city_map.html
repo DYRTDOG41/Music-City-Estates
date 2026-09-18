@@ -45,7 +45,7 @@ box-shadow: 0 0 50px #000;
 position: absolute;
 border: 2px solid transparent;
 border-radius: 50%;
-background: transparent;t2
+background: transparent;
 cursor: pointer;
 z-index: 20;
 transition: .2s;
@@ -289,14 +289,14 @@ gain fans and prepare to enter Music City.
 </div>
 
 <div class="status" id="locationStatus">
-CURRENT LOCATION
+AVAILABLE
 </div>
 
 <button
-class="travel locked"
+class="travel"
 id="travelButton"
 onclick="travel()">
-CURRENT LOCATION
+TRAVEL
 </button>
 
 </div>
@@ -316,7 +316,7 @@ name: "BEDROOM STUDIO",
 category: "STARTING HOME",
 description:
 "Your journey begins here. Build your first songs, gain fans and prepare to enter Music City.",
-status: "CURRENT LOCATION",
+status: "AVAILABLE",
 page: "bedroom_studio.html",
 available: true
 },
@@ -352,13 +352,13 @@ available: false
 },
 
 downtown: {
-name: "DOWNTOWN",
-category: "LIVE • CREATE • CONNECT",
+name: "DOWNTOWN RADIO",
+category: "MUSIC CITY RADIO",
 description:
-"The center of Music City. Major venues, industry offices, events and networking opportunities.",
-status: "COMING SOON",
-page: null,
-available: false
+"Visit Music City Estates Radio, explore district stations and work toward earning airplay for your songs.",
+status: "STATION AVAILABLE",
+page: "music_city_radio.html",
+available: true
 },
 
 global: {

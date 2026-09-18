@@ -135,13 +135,8 @@ BEDROOM STUDIO
 Every superstar starts somewhere.
 </div>
 
-<input
-id="songName"
-type="text"
-placeholder="Name your first song">
-
 <button class="create" onclick="createSong()">
-CREATE SONG
+ENTER RECORDING BOOTH
 </button>
 
 <button class="release" onclick="releaseSong()">
@@ -168,7 +163,8 @@ let cash = player.cash;
 let xp = player.xp;
 let level = player.level;
 
-let currentSong = "";
+const savedDraft = JSON.parse(localStorage.getItem("musicCitySongDraft") || "null");
+let currentSong = savedDraft && savedDraft.studio === "bedroom" ? savedDraft.title : "";
 
 function updateStats() {
 
@@ -181,24 +177,7 @@ window.MCE.save({ fans: fans, cash: cash, xp: xp, level: level });
 }
 
 function createSong() {
-
-const name =
-document.getElementById("songName").value.trim();
-
-if (!name) {
-
-document.getElementById("status").textContent =
-"Give your song a name first.";
-
-return;
-}
-
-currentSong = name;
-
-document.getElementById("status").textContent =
-"🎧 \"" + currentSong +
-"\" has been recorded in your bedroom studio. Ready to release.";
-
+window.location.href = "record_music.html?studio=bedroom";
 }
 
 function releaseSong() {
@@ -229,11 +208,15 @@ document.getElementById("status").textContent =
 "\" released! +10 Fans • +15 XP";
 
 currentSong = "";
-
-document.getElementById("songName").value = "";
+localStorage.removeItem("musicCitySongDraft");
 }
 
 updateStats();
+
+if (currentSong) {
+document.getElementById("status").textContent =
+"🎧 \"" + currentSong + "\" is ready to release.";
+}
 
 </script>
 

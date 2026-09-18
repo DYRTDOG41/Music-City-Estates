@@ -581,11 +581,22 @@ spark
 
 /* YOUR MARBLE COMMUNITY SPACE */
 
+const worldUrl =
+"begenius_studio" + ".spz";
+
+const worldResponse =
+await fetch(worldUrl, { method: "HEAD" });
+
+if (!worldResponse.ok) {
+window.location.replace("begenius_studio.html");
+throw new Error("BeGenius Studio world asset is not available.");
+}
+
 const world =
 new SplatMesh({
 
 url:
-"begenius_studio.spz"
+worldUrl
 
 });
 
