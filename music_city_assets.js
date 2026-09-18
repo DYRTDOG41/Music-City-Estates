@@ -328,6 +328,22 @@
     });
   }
 
+  async function saveItem(item) {
+    if (!item || !clean(item.id)) {
+      throw new Error("A Music City asset needs an ID.");
+    }
+
+    var value = Object.assign({
+      type: "collectible",
+      rarity: "standard",
+      createdAt: new Date().toISOString(),
+      chainStatus: "not-minted"
+    }, item);
+
+    await storeValue(ITEM_STORE, value);
+    return value;
+  }
+
   function createRemoteMintAdapter(config) {
     var options = config && typeof config === "object" ? config : {};
     var endpoint = clean(options.endpoint);
@@ -406,6 +422,7 @@
       tokenId: clean(result.tokenId),
       transactionId: clean(result.transactionId),
       explorerUrl: clean(result.explorerUrl),
+      contractAddress: clean(result.contractAddress),
       mintedAt: new Date().toISOString()
     };
 
@@ -421,7 +438,10 @@
       createdAt: certificate.chain.mintedAt,
       chainStatus: "minted",
       provider: certificate.chain.provider,
-      tokenId: certificate.chain.tokenId
+      tokenId: certificate.chain.tokenId,
+      transactionId: certificate.chain.transactionId,
+      explorerUrl: certificate.chain.explorerUrl,
+      contractAddress: certificate.chain.contractAddress
     });
 
     if (root.MCE && typeof root.MCE.markReleaseCertified === "function") {
@@ -442,6 +462,7 @@
     getCertificateForTrack: getCertificateForTrack,
     listCertificates: listCertificates,
     listItems: listItems,
+    saveItem: saveItem,
     createRemoteMintAdapter: createRemoteMintAdapter,
     registerChainAdapter: registerChainAdapter,
     mintCertificate: mintCertificate

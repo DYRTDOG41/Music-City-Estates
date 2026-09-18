@@ -30,7 +30,8 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <header>
 <nav>
 <a href="artist_catalog.html">← ARTIST CATALOG</a>
-<a href="certify_record.html">✅ CERTIFICATION DESK</a>
+<a href="certify_record.html">🪪 RECORD PASSPORT</a>
+<a href="tezos_mint_lab.html">🟢 TEZOS / KUKAI MINT LAB</a>
 </nav>
 <strong>🔐 MUSIC CITY LOCKER</strong>
 </header>
@@ -42,20 +43,32 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <div class="stats">
 <div class="pill">Record Passports: <b id="certCount">0</b></div>
 <div class="pill">Music City Certified: <b id="mintCount">0</b></div>
-<div class="pill">Wallet Layer: <b>Adapter Ready</b></div>
+<div class="pill">Wallet Layer: <b>Tezos Testnet Ready</b></div>
+<div class="pill">Collectibles: <b id="itemCount">0</b></div>
 </div>
 </section>
 
+<h2 style="margin-top:24px">Record Passports</h2>
 <div id="locker" class="grid"></div>
+
+<h2 style="margin-top:30px">Wallet Collectibles & Editions</h2>
+<div id="collectibles" class="grid"></div>
 </div>
 
 <script src="music_city_assets.js"></script>
 <script>
 async function renderLocker() {
   const certificates = await window.MusicCityAssets.listCertificates();
+  const items = await window.MusicCityAssets.listItems();
+  const collectibles = items.filter(item =>
+    item.type !== "record-passport" &&
+    item.type !== "certified-record"
+  );
+
   document.getElementById("certCount").textContent = certificates.length;
   document.getElementById("mintCount").textContent =
     certificates.filter(cert => cert.chain && cert.chain.status === "minted").length;
+  document.getElementById("itemCount").textContent = collectibles.length;
 
   const locker = document.getElementById("locker");
   if (!certificates.length) {
@@ -86,14 +99,71 @@ async function renderLocker() {
 
     const button = document.createElement("button");
     if (minted) {
-      button.textContent = "✓ BLOCKCHAIN MINT CONFIRMED";
-      button.disabled = true;
+      const testnet = String(cert.chain.network || "").toLowerCase() !== "mainnet";
+      button.textContent = testnet
+        ? "✓ TEZOS TESTNET CERTIFIED"
+        : "✓ MUSIC CITY CERTIFIED";
+      if (cert.chain.explorerUrl) {
+        button.onclick = () => window.open(cert.chain.explorerUrl, "_blank", "noopener");
+      } else {
+        button.disabled = true;
+      }
     } else {
-      button.textContent = "CONNECT WALLET + MINT TO CERTIFY — COMING NEXT";
-      button.disabled = true;
+      button.textContent = "🟢 CONNECT KUKAI / TEZOS + TEST MINT";
+      button.onclick = () => {
+        window.location.href = "tezos_mint_lab.html";
+      };
     }
     card.appendChild(button);
     locker.appendChild(card);
+  });
+
+  const collectibleGrid = document.getElementById("collectibles");
+  if (!collectibles.length) {
+    collectibleGrid.innerHTML =
+      '<div class="empty">No visual/video editions yet. Open the Tezos / Kukai Mint Lab to create a Shadownet multimedia edition tied to a Record Passport.</div>';
+    return;
+  }
+
+  collectibleGrid.innerHTML = "";
+
+  collectibles.forEach(item => {
+    const card = document.createElement("article");
+    card.className = "card";
+
+    card.innerHTML =
+      '<div><span class="badge">' +
+      (item.type === "video-edition" ? "VIDEO EDITION" : "COLLECTIBLE") +
+      '</span><span class="badge">TEZOS TESTNET</span></div>' +
+      '<h2>' + (item.name || "Music City Asset") + '</h2>' +
+      '<div class="meta">Record Passport: ' + (item.certificateId || "—") + '</div>' +
+      '<div class="meta">Owner: ' + (item.owner || "wallet") + '</div>' +
+      '<div class="meta">Contract: ' + (item.contractAddress || "—") + '</div>' +
+      '<div class="meta">Token ID: ' + (item.tokenId || "resolve in explorer") + '</div>' +
+      (item.mediaHash
+        ? '<div class="hash">Media SHA-256: ' + item.mediaHash + '</div>'
+        : '');
+
+    if (item.artifactUri && /^https:\/\//i.test(item.artifactUri)) {
+      if (/^video\//i.test(item.mimeType || "")) {
+        const video = document.createElement("video");
+        video.controls = true;
+        video.style.width = "100%";
+        video.style.marginTop = "12px";
+        video.src = item.artifactUri;
+        card.appendChild(video);
+      }
+    }
+
+    const view = document.createElement("button");
+    view.textContent = "VIEW TEZOS TRANSACTION";
+    view.disabled = !item.explorerUrl;
+    if (item.explorerUrl) {
+      view.onclick = () => window.open(item.explorerUrl, "_blank", "noopener");
+    }
+    card.appendChild(view);
+
+    collectibleGrid.appendChild(card);
   });
 }
 

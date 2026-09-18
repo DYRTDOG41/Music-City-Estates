@@ -217,6 +217,7 @@ test("Music City certification requires a confirmed blockchain mint", function (
     metadataHash: { sha256: "metadatahash" },
     chain: {
       status: "minted",
+      network: "mainnet",
       tokenId: "token-77",
       transactionId: "tx-88",
       mintedAt: "2026-09-18T13:00:00.000Z"
@@ -227,6 +228,31 @@ test("Music City certification requires a confirmed blockchain mint", function (
   assert.strictEqual(release.certificationStatus, "certified");
   assert.strictEqual(release.certificationId, "token-77");
   assert.strictEqual(release.blockchainStatus, "minted");
+  assert.strictEqual(release.blockchainNetwork, "mainnet");
+});
+
+test("Shadownet mint is labeled testnet certified, not production certified", function () {
+  start();
+  MCE.addRelease({ id: "testnet-song", title: "Testnet Mint" });
+
+  var certified = MCE.markReleaseCertified("testnet-song", {
+    id: "MCE-TESTNET",
+    master: { sha256: "masterhash" },
+    metadataHash: { sha256: "metadatahash" },
+    chain: {
+      status: "minted",
+      network: "shadownet",
+      contractAddress: "KT1TEST",
+      transactionId: "opTEST",
+      mintedAt: "2026-09-18T13:00:00.000Z"
+    }
+  });
+
+  var release = certified.releases[0];
+  assert.strictEqual(release.certificationStatus, "certified-testnet");
+  assert.strictEqual(release.blockchainNetwork, "shadownet");
+  assert.strictEqual(release.blockchainContract, "KT1TEST");
+  assert.strictEqual(release.blockchainTransaction, "opTEST");
 });
 
 test("releasing a song rewards fans and XP once", function () {

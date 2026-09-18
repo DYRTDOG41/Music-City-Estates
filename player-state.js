@@ -635,7 +635,13 @@
       certificationMetadataHash:
         item.certificationMetadataHash == null ? undefined : String(item.certificationMetadataHash),
       blockchainStatus:
-        item.blockchainStatus == null ? "not-minted" : String(item.blockchainStatus)
+        item.blockchainStatus == null ? "not-minted" : String(item.blockchainStatus),
+      blockchainNetwork:
+        item.blockchainNetwork == null ? undefined : String(item.blockchainNetwork),
+      blockchainContract:
+        item.blockchainContract == null ? undefined : String(item.blockchainContract),
+      blockchainTransaction:
+        item.blockchainTransaction == null ? undefined : String(item.blockchainTransaction)
     };
   }
 
@@ -853,7 +859,10 @@
     if (index < 0) throw new Error("Song not found in Music City releases.");
 
     var release = next.releases[index];
-    release.certificationStatus = "certified";
+    var network = String(certificate.chain.network || "");
+    var isMainnet = network.toLowerCase() === "mainnet";
+
+    release.certificationStatus = isMainnet ? "certified" : "certified-testnet";
     release.passportId = String(certificate.id);
     release.certificationId = String(certificate.chain.tokenId || certificate.id);
     release.passportReadyAt = release.passportReadyAt || certificate.passportReadyAt || certificate.certifiedAt;
@@ -863,6 +872,9 @@
       certificate.metadataHash && certificate.metadataHash.sha256 || ""
     );
     release.blockchainStatus = "minted";
+    release.blockchainNetwork = network;
+    release.blockchainContract = String(certificate.chain.contractAddress || "");
+    release.blockchainTransaction = String(certificate.chain.transactionId || "");
 
     next.releases[index] = normalizeRelease(release, index);
     return save(next);
