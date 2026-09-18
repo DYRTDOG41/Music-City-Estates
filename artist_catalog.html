@@ -181,8 +181,12 @@ async function renderCatalog() {
     const craftScore = Number(release.craftScore || track.craftScore || 0);
     const craftTier = release.craftTier || track.craftTier || "Quick Draft";
     const certificate = certificateMap[String(track.id)] || null;
-    const isCertified =
+    const hasPassport =
       Boolean(certificate) ||
+      release.certificationStatus === "passport-ready" ||
+      release.certificationStatus === "certified";
+    const isCertified =
+      Boolean(certificate && certificate.chain.status === "minted") ||
       release.certificationStatus === "certified";
 
     const card = document.createElement("article");
@@ -219,14 +223,12 @@ async function renderCatalog() {
       "CRAFT " + craftScore + " • " + String(craftTier).toUpperCase();
     badges.appendChild(craftBadge);
 
-    if (isCertified) {
+    if (hasPassport) {
       const certified = document.createElement("span");
       certified.className = "badge certified";
-      certified.textContent =
-        "✓ MUSIC CITY CERTIFIED" +
-        (certificate && certificate.chain.status === "minted"
-          ? " • ON-CHAIN"
-          : " • NOT MINTED");
+      certified.textContent = isCertified
+        ? "✓ MUSIC CITY CERTIFIED • ON-CHAIN"
+        : "RECORD PASSPORT READY • NOT CERTIFIED";
       badges.appendChild(certified);
     }
 
@@ -327,10 +329,12 @@ async function renderCatalog() {
     const certifyButton = document.createElement("button");
     certifyButton.textContent = isCertified
       ? "🔐 VIEW CERTIFIED ASSET"
-      : "✅ CERTIFY THIS MASTER";
+      : hasPassport
+        ? "🪪 VIEW RECORD PASSPORT"
+        : "🪪 PREPARE RECORD PASSPORT";
     certifyButton.disabled = !track.audioBlob;
     certifyButton.onclick = () => {
-      window.location.href = isCertified
+      window.location.href = hasPassport
         ? "music_city_locker.html"
         : "certify_record.html?id=" + encodeURIComponent(track.id);
     };
@@ -341,7 +345,7 @@ async function renderCatalog() {
     const reward = document.createElement("div");
     reward.className = "reward";
     reward.textContent = !isReleased
-      ? "Release reward: +3 fans, +5 XP • Certification is separate from release quality and becomes available once the master, credits, splits, and rights are ready."
+      ? "Release reward: +3 fans, +5 XP • Record Passport preparation is separate from release quality. Music City Certification happens only after the finalized passport is minted on-chain."
       : !hasManager
         ? "Professional promotion and radio require a manager. Starter management begins at $" + economy.managerHiringFee + "."
         : !isPromoted
