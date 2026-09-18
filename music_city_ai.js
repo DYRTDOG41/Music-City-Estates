@@ -16,7 +16,7 @@
     elevenlabs: {
       id: "elevenlabs",
       name: "ElevenLabs Music",
-      live: false,
+      live: true,
       requiresBackend: true
     },
     "stable-audio": {
@@ -39,7 +39,28 @@
     }
   };
 
-  let backendEndpoint = "";
+  const storedEndpoint = (() => {
+    try {
+      return localStorage.getItem("musicCityAIBackend") || "";
+    } catch (error) {
+      return "";
+    }
+  })();
+
+  let backendEndpoint =
+    String(global.MUSIC_CITY_AI_BACKEND || storedEndpoint || "").trim();
+
+  const queryBackend =
+    new URLSearchParams(global.location.search).get("aiBackend");
+
+  if (queryBackend && /^https?:\/\//i.test(queryBackend)) {
+    backendEndpoint = queryBackend.trim();
+    try {
+      localStorage.setItem("musicCityAIBackend", backendEndpoint);
+    } catch (error) {
+      // Storage is optional. The current page can still use the endpoint.
+    }
+  }
 
   function clean(value, fallback) {
     const text = String(value == null ? "" : value).trim();
@@ -64,7 +85,8 @@
       influence: Number(request.influence || 50),
       studio: clean(request.studio, "begenius"),
       beat: clean(request.beat, "No beat selected"),
-      audioAttached: Boolean(request.audioAttached)
+      audioAttached: Boolean(request.audioAttached),
+      musicLengthMs: Number(request.musicLengthMs || 12000)
     };
   }
 
@@ -90,11 +112,33 @@
     };
   }
 
+  async function readError(response) {
+    const contentType = response.headers.get("content-type") || "";
+
+    if (contentType.includes("application/json")) {
+      try {
+        const payload = await response.json();
+        return payload && payload.error
+          ? payload.error
+          : "Music generation request failed.";
+      } catch (error) {
+        return "Music generation request failed.";
+      }
+    }
+
+    try {
+      const message = (await response.text()).trim();
+      return message || "Music generation request failed.";
+    } catch (error) {
+      return "Music generation request failed.";
+    }
+  }
+
   async function generateThroughBackend(request) {
     if (!backendEndpoint) {
       throw new Error(
         "This provider needs the Music City secure backend. " +
-        "The interface is ready, but no backend endpoint is configured yet."
+        "The backend code is ready, but its live URL has not been connected yet."
       );
     }
 
@@ -106,19 +150,41 @@
       body: JSON.stringify(request)
     });
 
-    let payload = null;
+    if (!response.ok) {
+      throw new Error(await readError(response));
+    }
+
+    const contentType = response.headers.get("content-type") || "";
+
+    if (contentType.startsWith("audio/")) {
+      const blob = await response.blob();
+      const audioUrl = URL.createObjectURL(blob);
+      const songId =
+        response.headers.get("x-music-city-song-id") || makeId("song");
+
+      return {
+        id: songId,
+        provider: request.provider,
+        providerName:
+          (providers[request.provider] && providers[request.provider].name) ||
+          request.provider,
+        status: "audio-ready",
+        title: request.title,
+        summary: request.style,
+        beat: request.beat,
+        audioUrl: audioUrl,
+        message:
+          "Music City generated a live AI music preview. " +
+          "Play it below.",
+        createdAt: new Date().toISOString()
+      };
+    }
+
+    let payload = {};
     try {
       payload = await response.json();
     } catch (error) {
       payload = {};
-    }
-
-    if (!response.ok) {
-      throw new Error(
-        payload && payload.error
-          ? payload.error
-          : "Music generation request failed."
-      );
     }
 
     return {
@@ -142,6 +208,15 @@
       const config = options || {};
       if (typeof config.backendEndpoint === "string") {
         backendEndpoint = config.backendEndpoint.trim();
+        try {
+          if (backendEndpoint) {
+            localStorage.setItem("musicCityAIBackend", backendEndpoint);
+          } else {
+            localStorage.removeItem("musicCityAIBackend");
+          }
+        } catch (error) {
+          // Storage is optional.
+        }
       }
       return this.getStatus();
     },
