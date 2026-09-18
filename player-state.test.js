@@ -156,6 +156,11 @@ test("AI release metadata survives normalization", function () {
     beat: "Midnight Drive",
     provider: "ElevenLabs Music",
     audioKey: "ai-song-1",
+    craftScore: 78,
+    craftTier: "Standout",
+    craftBreakdown: { authorship: 24, revision: 17 },
+    revisionCount: 3,
+    originalLyricsConfirmed: true,
     radioStatus: "not-submitted"
   });
   var release = state.releases[0];
@@ -164,6 +169,11 @@ test("AI release metadata survives normalization", function () {
   assert.strictEqual(release.beat, "Midnight Drive");
   assert.strictEqual(release.provider, "ElevenLabs Music");
   assert.strictEqual(release.audioKey, "ai-song-1");
+  assert.strictEqual(release.craftScore, 78);
+  assert.strictEqual(release.craftTier, "Standout");
+  assert.strictEqual(release.craftBreakdown.authorship, 24);
+  assert.strictEqual(release.revisionCount, 3);
+  assert.strictEqual(release.originalLyricsConfirmed, true);
   assert.strictEqual(release.radioStatus, "not-submitted");
 });
 
@@ -177,6 +187,57 @@ test("releasing a song rewards fans and XP once", function () {
   var second = MCE.releaseSong("release-loop-1");
   assert.strictEqual(second.fans, 3);
   assert.strictEqual(second.xp, 5);
+});
+
+test("high Song Craft adds a controlled release bonus", function () {
+  start();
+  MCE.addRelease({
+    id: "craft-release",
+    title: "Signature Song",
+    craftScore: 90,
+    craftTier: "Signature Record"
+  });
+
+  var released = MCE.releaseSong("craft-release");
+  assert.strictEqual(released.fans, 9);
+  assert.strictEqual(released.xp, 10);
+  assert.strictEqual(released.releases[0].releaseCraftBonusFans, 6);
+  assert.strictEqual(released.releases[0].releaseCraftBonusXp, 5);
+});
+
+test("Song Craft strengthens manager promotion without replacing manager value", function () {
+  start();
+  MCE.save({ cash: 500 });
+  MCE.addRelease({
+    id: "craft-promo",
+    title: "Developed Song",
+    craftScore: 80,
+    craftTier: "Standout"
+  });
+  MCE.releaseSong("craft-promo");
+  MCE.hireManager("hustler");
+
+  var before = MCE.get();
+  var promoted = MCE.promoteRelease("craft-promo");
+  assert.strictEqual(promoted.fans - before.fans, 10);
+  assert.strictEqual(promoted.xp - before.xp, 7);
+});
+
+test("Song Craft contributes transparent radio influence", function () {
+  start();
+  MCE.save({ cash: 1000, fans: 100, xp: 150 });
+  MCE.addRelease({
+    id: "craft-radio",
+    title: "Radio Craft",
+    craftScore: 90,
+    craftTier: "Signature Record"
+  });
+  MCE.releaseSong("craft-radio");
+  MCE.hireManager("hustler");
+
+  var submitted = MCE.submitReleaseToRadio("craft-radio");
+  assert.strictEqual(submitted.releases[0].radioCraftInfluence, 9);
+  assert.strictEqual(submitted.releases[0].radioInfluence, 9);
 });
 
 test("managed promotion requires manager, costs cash, and rewards once", function () {
