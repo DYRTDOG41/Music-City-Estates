@@ -374,4 +374,8 @@
     registerChainAdapter: registerChainAdapter,
     mintCertificate: mintCertificate
   };
-})(window);
+
+  if (typeof module !== "undefined" && module.exports) {
+    module.exports = root.MusicCityAssets;
+  }
+})(typeof window !== "undefined" ? window : globalThis);
