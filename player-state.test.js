@@ -191,15 +191,16 @@ test("managed promotion requires manager, costs cash, and rewards once", functio
 
   var promoted = MCE.promoteRelease("release-loop-2");
   assert.strictEqual(promoted.cash, 75);
-  assert.strictEqual(promoted.fans, 11);
-  assert.strictEqual(promoted.xp, 10);
+  assert.strictEqual(promoted.fans, 9);
+  assert.strictEqual(promoted.xp, 9);
   assert.strictEqual(promoted.releases[0].promotionCount, 1);
   assert.strictEqual(promoted.releases[0].promotionSpend, 25);
+  assert.strictEqual(promoted.releases[0].promotionManager, "The Hustler");
 
   var again = MCE.promoteRelease("release-loop-2");
   assert.strictEqual(again.cash, 75);
-  assert.strictEqual(again.fans, 11);
-  assert.strictEqual(again.xp, 10);
+  assert.strictEqual(again.fans, 9);
+  assert.strictEqual(again.xp, 9);
 });
 
 test("radio submission requires manager, eligibility, and the submission fee", function () {
@@ -218,10 +219,12 @@ test("radio submission requires manager, eligibility, and the submission fee", f
   assert.strictEqual(before.cash, 200);
 
   var submitted = MCE.submitReleaseToRadio("release-loop-3");
-  assert.strictEqual(submitted.cash, 150);
+  assert.strictEqual(submitted.cash, 140);
   assert.strictEqual(submitted.releases[0].radioStatus, "submitted");
-  assert.strictEqual(submitted.releases[0].radioFeePaid, 50);
-  assert.strictEqual(submitted.manager.radioSpend, 50);
+  assert.strictEqual(submitted.releases[0].radioFeePaid, 60);
+  assert.strictEqual(submitted.releases[0].radioManager, "The Hustler");
+  assert.strictEqual(submitted.releases[0].radioInfluence, 0);
+  assert.strictEqual(submitted.manager.radioSpend, 60);
   assert.ok(submitted.releases[0].radioSubmittedAt);
 });
 
@@ -245,14 +248,74 @@ test("manager commission is deducted from paid shows", function () {
 
   var quote = MCE.getShowPayout(100);
   assert.strictEqual(quote.gross, 100);
+  assert.strictEqual(quote.commission, 10);
+  assert.strictEqual(quote.net, 90);
+
+  var paid = MCE.payShow({ cash: 100, fans: 4, xp: 6 });
+  assert.strictEqual(paid.cash, 140);
+  assert.strictEqual(paid.fans, 4);
+  assert.strictEqual(paid.xp, 6);
+  assert.strictEqual(paid.manager.totalCommission, 10);
+});
+
+test("manager profiles create distinct career strategies", function () {
+  start();
+  assert.strictEqual(MCE.MANAGER_PROFILES.hustler.commissionPct, 10);
+  assert.strictEqual(MCE.MANAGER_PROFILES.hustler.radioFee, 60);
+  assert.strictEqual(MCE.MANAGER_PROFILES.connector.promotionFans, 11);
+  assert.strictEqual(MCE.MANAGER_PROFILES.connector.radioInfluence, 12);
+  assert.strictEqual(MCE.MANAGER_PROFILES.executive.promotionFans, 18);
+  assert.strictEqual(MCE.MANAGER_PROFILES.executive.radioFee, 25);
+  assert.strictEqual(MCE.MANAGER_PROFILES.executive.radioInfluence, 25);
+});
+
+test("manager upgrades require career milestones and only move upward", function () {
+  start();
+  MCE.save({ cash: 1200 });
+  MCE.hireManager("hustler");
+
+  assert.throws(function () {
+    MCE.hireManager("connector");
+  });
+
+  MCE.save({ fans: 50, xp: 75 });
+  var connector = MCE.hireManager("connector");
+  assert.strictEqual(connector.manager.profileId, "connector");
+  assert.strictEqual(connector.manager.role, "The Connector");
+
+  assert.throws(function () {
+    MCE.hireManager("hustler");
+  });
+
+  assert.throws(function () {
+    MCE.hireManager("executive");
+  });
+
+  MCE.save({ fans: 100, xp: 150, cash: 1000 });
+  var executive = MCE.hireManager("executive");
+  assert.strictEqual(executive.manager.profileId, "executive");
+  assert.strictEqual(executive.manager.role, "The Executive");
+});
+
+test("connector changes commission promotion and radio economics", function () {
+  start();
+  MCE.save({ cash: 1000, fans: 50, xp: 75 });
+  MCE.hireManager("connector");
+
+  var quote = MCE.getShowPayout(100);
   assert.strictEqual(quote.commission, 15);
   assert.strictEqual(quote.net, 85);
 
-  var paid = MCE.payShow({ cash: 100, fans: 4, xp: 6 });
-  assert.strictEqual(paid.cash, 135);
-  assert.strictEqual(paid.fans, 4);
-  assert.strictEqual(paid.xp, 6);
-  assert.strictEqual(paid.manager.totalCommission, 15);
+  MCE.addRelease({ id: "connector-song", title: "Network Record" });
+  MCE.releaseSong("connector-song");
+  var promoted = MCE.promoteRelease("connector-song");
+  assert.strictEqual(promoted.releases[0].promotionManager, "The Connector");
+  assert.strictEqual(promoted.releases[0].promotionSpend, 35);
+
+  MCE.save({ fans: 100, xp: 150 });
+  var submitted = MCE.submitReleaseToRadio("connector-song");
+  assert.strictEqual(submitted.releases[0].radioFeePaid, 40);
+  assert.strictEqual(submitted.releases[0].radioInfluence, 12);
 });
 
 test("shared progression gates match the venue plan", function () {
