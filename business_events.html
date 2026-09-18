@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Music Business Deck | Music City Estates</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:
+radial-gradient(circle at 15% 10%,rgba(22,211,238,.14),transparent 25%),
+radial-gradient(circle at 85% 20%,rgba(139,92,246,.13),transparent 28%),
+#05070d;color:#fff;font-family:Arial,sans-serif}
+header{position:sticky;top:0;z-index:20;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:15px 18px;background:#05070df2;border-bottom:1px solid #23334a}
+nav{display:flex;gap:8px;flex-wrap:wrap}
+nav a{color:#fff;text-decoration:none;padding:9px 11px;border:1px solid #22d3ee;border-radius:9px;background:#08111d}
+.brand{font-weight:900;letter-spacing:.08em}
+.wrap{width:min(1100px,94%);margin:24px auto 60px}
+.hero,.panel,.event-card{border:1px solid #2b3c56;border-radius:18px;background:#0a111ddd;box-shadow:0 14px 35px #0005}
+.hero{padding:20px}
+.hero h1{margin:0 0 8px;color:#7be8ff}
+.stats{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
+.pill{padding:8px 11px;border-radius:18px;border:1px solid #34445c;background:#111827}
+.grid{display:grid;grid-template-columns:1.25fr .75fr;gap:16px;margin-top:18px}
+.event-card{padding:22px;min-height:360px;position:relative;overflow:hidden}
+.event-card.ready{border-color:#22d3ee;box-shadow:0 0 35px #22d3ee25}
+.event-card:before{content:"";position:absolute;inset:0;background:linear-gradient(130deg,transparent 0 55%,rgba(34,211,238,.05) 55% 70%,transparent 70%);pointer-events:none}
+.category{font-size:11px;font-weight:900;letter-spacing:.15em;color:#8ca4c2;text-transform:uppercase}
+.event-card h2{font-size:30px;margin:8px 0 10px}
+.event-card p{color:#bdc9d9;line-height:1.55}
+.choices{display:grid;gap:10px;margin-top:18px}
+.choice{padding:14px;border:1px solid #36516e;border-radius:12px;background:#101b2a;color:#fff;text-align:left;cursor:pointer}
+.choice:hover{border-color:#22d3ee;transform:translateY(-1px)}
+.choice:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.choice strong{display:block;font-size:14px}
+.choice small{display:block;color:#8fa2bb;margin-top:5px}
+.waiting{display:grid;place-items:center;min-height:280px;text-align:center;color:#9fb0c6}
+.meter{height:12px;background:#151f2d;border-radius:99px;overflow:hidden;margin-top:14px}
+.meter span{display:block;height:100%;background:linear-gradient(90deg,#22d3ee,#8b5cf6)}
+.panel{padding:18px}
+.panel h3{margin-top:0}
+.effect{padding:9px 0;border-bottom:1px solid #1e2c40;font-size:13px;color:#b7c4d4}
+.effect b{color:#fff}
+.none{color:#7f90a6;font-size:13px}
+.history{margin-top:16px}
+.history-item{padding:12px;margin-top:9px;border:1px solid #27374d;border-radius:12px;background:#0b141f}
+.history-item strong{display:block}
+.history-item small{color:#8fa1b8;display:block;margin-top:4px;line-height:1.4}
+.notice{display:none;margin-top:14px;padding:12px;border-radius:11px;border:1px solid #24566b;background:#08212b;color:#b9efff}
+.rep-good{color:#8ff0aa}.rep-mid{color:#ffd27b}.rep-risk{color:#ff9aa8}
+@media(max-width:800px){header{align-items:flex-start;flex-direction:column}.grid{grid-template-columns:1fr}.event-card h2{font-size:25px}}
+</style>
+</head>
+<body>
+<header>
+<nav>
+<a href="city_map.html">← CITY MAP</a>
+<a href="manager.html">🧑‍💼 MANAGER</a>
+<a href="artist_catalog.html">💿 CATALOG</a>
+</nav>
+<div class="brand">🎴 MUSIC BUSINESS DECK</div>
+</header>
+
+<div class="wrap">
+<section class="hero">
+<h1>Career Decisions</h1>
+<p>Every few meaningful career moves, the business side of Music City throws something at you. Some cards are opportunities. Some are bills. Some are reputation traps. The decision is yours.</p>
+<div class="stats">
+<div class="pill">Cash: $<b id="cash">0</b></div>
+<div class="pill">Fans: <b id="fans">0</b></div>
+<div class="pill">XP: <b id="xp">0</b></div>
+<div class="pill">Reputation: <b id="reputation">50</b>/100</div>
+<div class="pill">Day: <b id="day">1</b></div>
+</div>
+<div id="notice" class="notice"></div>
+</section>
+
+<div class="grid">
+<section class="event-card" id="eventCard"></section>
+
+<div>
+<section class="panel">
+<h3>⚡ Active Business Effects</h3>
+<div id="effects"></div>
+</section>
+
+<section class="panel history">
+<h3>📚 Decision History</h3>
+<div id="history"></div>
+</section>
+</div>
+</div>
+</div>
+
+<script src="player-state.js"></script>
+<script>
+const eventCard = document.getElementById("eventCard");
+const effectsEl = document.getElementById("effects");
+const historyEl = document.getElementById("history");
+const notice = document.getElementById("notice");
+
+function repLabel(value) {
+  if (value >= 75) return {text:"RESPECTED", cls:"rep-good"};
+  if (value >= 45) return {text:"SOLID", cls:"rep-mid"};
+  return {text:"RISKY", cls:"rep-risk"};
+}
+
+function describeEffects(effects) {
+  const items = [];
+  if (!effects) return items;
+  if (effects.showCashBonus) items.push("next show cash " + signedMoney(effects.showCashBonus));
+  if (effects.showFanBonus) items.push("next show fans " + signed(effects.showFanBonus));
+  if (effects.showXpBonus) items.push("next show XP " + signed(effects.showXpBonus));
+  if (effects.promotionFanBonus) items.push("next promotion fans " + signed(effects.promotionFanBonus));
+  if (effects.promotionXpBonus) items.push("next promotion XP " + signed(effects.promotionXpBonus));
+  if (effects.radioDiscount) items.push("next radio fee -$" + effects.radioDiscount);
+  if (effects.radioInfluenceBonus) items.push("next radio influence +" + effects.radioInfluenceBonus);
+  return items;
+}
+
+function signed(value) {
+  return (value >= 0 ? "+" : "") + value;
+}
+
+function signedMoney(value) {
+  return (value >= 0 ? "+$" : "-$") + Math.abs(value);
+}
+
+function choicePreview(choice) {
+  const parts = [];
+  if (choice.cost) parts.push("cost $" + choice.cost);
+  const delta = choice.delta || {};
+  if (delta.cash) parts.push("cash " + signedMoney(delta.cash));
+  if (delta.fans) parts.push("fans " + signed(delta.fans));
+  if (delta.xp) parts.push("XP " + signed(delta.xp));
+  if (delta.reputation) parts.push("reputation " + signed(delta.reputation));
+  parts.push(...describeEffects(choice.effects));
+  return parts.join(" • ") || "No immediate stat change";
+}
+
+function resolveChoice(choiceId) {
+  try {
+    const event = window.MCE.getPendingBusinessEvent();
+    const choice = event.choices.find(item => item.id === choiceId);
+    const next = window.MCE.resolveBusinessEvent(choiceId);
+    notice.style.display = "block";
+    notice.textContent = choice.result;
+    render(next);
+  } catch (error) {
+    notice.style.display = "block";
+    notice.textContent = error.message || "Music City could not resolve this business decision.";
+  }
+}
+
+function renderEvent(state) {
+  const event = window.MCE.drawBusinessEvent();
+  const progress = window.MCE.businessEventProgress(state);
+
+  eventCard.className = "event-card" + (event ? " ready" : "");
+
+  if (!event) {
+    const percent = Math.min(100, (progress.meter / 2) * 100);
+    eventCard.innerHTML =
+      '<div class="waiting"><div>' +
+      '<div class="category">BUSINESS DECK</div>' +
+      '<h2>No Card Waiting</h2>' +
+      '<p>Keep building the career. Releases, paid shows, manager moves, promotions, and radio submissions advance the deck.</p>' +
+      '<p><b>' + progress.actionsUntilNext + '</b> meaningful career action' +
+      (progress.actionsUntilNext === 1 ? '' : 's') + ' until the next business card.</p>' +
+      '<div class="meter"><span style="width:' + percent + '%"></span></div>' +
+      '</div></div>';
+    return;
+  }
+
+  const choices = event.choices.map(choice => {
+    const disabled = state.cash < Number(choice.cost || 0);
+    return (
+      '<button class="choice" ' +
+      (disabled ? 'disabled' : '') +
+      ' onclick="resolveChoice(\'' + choice.id + '\')">' +
+      '<strong>' + choice.label + '</strong>' +
+      '<small>' + choicePreview(choice) +
+      (disabled ? ' • NOT ENOUGH CASH' : '') +
+      '</small></button>'
+    );
+  }).join("");
+
+  eventCard.innerHTML =
+    '<div class="category">' + event.category + ' • BUSINESS EVENT</div>' +
+    '<h2>' + event.title + '</h2>' +
+    '<p>' + event.description + '</p>' +
+    '<div class="choices">' + choices + '</div>';
+}
+
+function renderEffects(state) {
+  const effects = state.business.effects;
+  const items = describeEffects(effects);
+
+  if (!items.length) {
+    effectsEl.innerHTML =
+      '<div class="none">No carry-over effects are active. Your next show, promotion, and radio submission use normal terms.</div>';
+    return;
+  }
+
+  effectsEl.innerHTML = items
+    .map(item => '<div class="effect"><b>ACTIVE:</b> ' + item + '</div>')
+    .join("");
+}
+
+function renderHistory(state) {
+  const history = (state.business.history || []).slice().reverse();
+
+  if (!history.length) {
+    historyEl.innerHTML =
+      '<div class="none">Your business story has not started yet.</div>';
+    return;
+  }
+
+  historyEl.innerHTML = history.slice(0, 10).map(entry =>
+    '<div class="history-item">' +
+    '<strong>' + entry.eventTitle + '</strong>' +
+    '<small>Day ' + entry.day + ' • ' + entry.choiceLabel + '</small>' +
+    '<small>' + entry.result + '</small>' +
+    '</div>'
+  ).join("");
+}
+
+function render(inputState) {
+  const state = inputState || window.MCE.get();
+  const rep = repLabel(state.reputation);
+
+  document.getElementById("cash").textContent = state.cash;
+  document.getElementById("fans").textContent = state.fans;
+  document.getElementById("xp").textContent = state.xp;
+  document.getElementById("day").textContent = state.day;
+  document.getElementById("reputation").innerHTML =
+    '<span class="' + rep.cls + '">' + state.reputation + ' ' + rep.text + '</span>';
+
+  renderEvent(state);
+  renderEffects(state);
+  renderHistory(state);
+}
+
+window.MCE.load();
+render();
+</script>
+</body>
+</html>
