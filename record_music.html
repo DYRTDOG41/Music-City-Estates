@@ -513,6 +513,13 @@ onchange="loadUploadedAudio(event)"
 <p id="aiEngineStatus" class="engine-status ready">
 Demo mode is ready. It tests the complete Music City generation workflow without using paid AI credits.
 </p>
+
+<label style="display:block; margin-top:14px;">Preview Length</label>
+<select id="musicLength">
+<option value="8000">8 seconds — quick test</option>
+<option value="12000" selected>12 seconds — standard preview</option>
+<option value="15000">15 seconds — longer preview</option>
+</select>
 </div>
 
 <br>
@@ -646,17 +653,24 @@ document.getElementById("recordStatus").textContent =
 function updateEngineStatus() {
 const provider = document.getElementById("aiProvider").value;
 const status = document.getElementById("aiEngineStatus");
+const engine = window.MusicCityAI
+? window.MusicCityAI.getStatus()
+: { backendConnected:false };
 
 const messages = {
 demo: "Demo mode is ready. It tests the complete Music City generation workflow without using paid AI credits.",
-elevenlabs: "ElevenLabs Music is supported by the Music City architecture. A secure backend and API key are required for live audio.",
-"stable-audio": "Stable Audio is supported by the Music City architecture. A secure backend and API key are required for live audio.",
-"google-lyria": "Google Lyria is supported by the Music City architecture. A secure Vertex AI backend is required for live audio.",
+elevenlabs: engine.backendConnected
+? "ElevenLabs Music is connected to the Music City secure backend. Live AI previews are ready."
+: "ElevenLabs Music is wired in. Connect the secure backend URL and API key to enable live audio.",
+"stable-audio": "Stable Audio is reserved as a future provider adapter.",
+"google-lyria": "Google Lyria is reserved as a future provider adapter.",
 partner: "Partner mode is reserved for Suno, MyTunes, or another approved commercial API partnership."
 };
 
 status.textContent = messages[provider] || "Select an AI provider.";
-status.className = provider === "demo"
+status.className =
+provider === "demo" ||
+(provider === "elevenlabs" && engine.backendConnected)
 ? "engine-status ready"
 : "engine-status";
 }
@@ -850,7 +864,9 @@ creativity: document.getElementById("creativity").value,
 influence: document.getElementById("influence").value,
 beat: selectedBeat,
 audioAttached:
-Boolean(document.getElementById("audioPreview").src)
+Boolean(document.getElementById("audioPreview").src),
+musicLengthMs:
+Number(document.getElementById("musicLength").value || 12000)
 };
 
 localStorage.setItem(
@@ -930,6 +946,8 @@ document.getElementById("aiEngineStatus").className =
 }
 
 }
+
+updateEngineStatus();
 
 </script>
 
