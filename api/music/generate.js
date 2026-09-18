@@ -134,7 +134,7 @@ module.exports = async function handler(req, res) {
   );
 
   const musicLengthMs = clamp(
-    body.durationMs,
+    body.musicLengthMs ?? body.durationMs,
     3000,
     maxGenerationMs,
     12000
@@ -154,7 +154,7 @@ module.exports = async function handler(req, res) {
   let providerResponse;
   try {
     providerResponse = await fetch(
-      `${ELEVENLABS_MUSIC_URL}?output_format=mp3_44100_128`,
+      `${ELEVENLABS_MUSIC_URL}?output_format=mp3_48000_192`,
       {
         method: "POST",
         headers: {
