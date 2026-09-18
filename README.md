@@ -28,6 +28,7 @@ configured in `begenius_catalog.js`.
 - Tour the walkable **Word Slaughter Warehouse** battle venue at any fan level; the three-round battle itself unlocks at 25 fans.
 - Explore the Warehouse **Community Space** to meet resident artists, build connections, join a collaboration challenge, showcase releases, and check in with an A&R.
 - Visit **Merch & Backstage** for click-ready product displays, optional verified store or sponsor links, and artist battle check-in.
+- Perform at the walkable **Hip-Hop Café** to select a release, play a three-part open-mic set, and grow toward the 50-fan venue milestone.
 
 Progress is saved automatically in the browser with `localStorage`.
 
