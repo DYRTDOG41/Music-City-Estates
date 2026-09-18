@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tezos Mint Lab | Music City Estates</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(circle at top,#10263b,#05070d 68%);color:#fff;font-family:Arial,sans-serif}
+header{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:16px 20px;background:#05070df2;border-bottom:1px solid #34d399;position:sticky;top:0;z-index:5}
+nav{display:flex;gap:8px;flex-wrap:wrap}
+nav a{color:#fff;text-decoration:none;padding:9px 12px;border:1px solid #34d399;border-radius:8px;background:#071510}
+.wrap{width:min(1100px,94%);margin:24px auto 60px}
+.hero,.panel{border:1px solid #2d4a48;border-radius:18px;background:#081513dd}
+.hero{padding:22px}
+.hero h1{margin:0 0 8px;color:#6ee7b7}
+.warning{margin-top:12px;padding:12px;border-radius:10px;border:1px solid #a16207;background:#291c05;color:#fde68a}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px}
+.panel{padding:18px}
+.panel h2{margin-top:0}
+label{display:block;margin-top:12px;font-size:13px;color:#b9c9c7}
+input,select,textarea{width:100%;padding:11px;margin-top:6px;border:1px solid #3f5c5a;border-radius:8px;background:#050d0c;color:#fff}
+textarea{min-height:190px;resize:vertical;font-family:monospace;font-size:11px}
+button{width:100%;padding:12px;border:1px solid #34d399;border-radius:9px;background:#34d399;color:#03110d;font-weight:900;cursor:pointer;margin-top:12px}
+button.secondary{background:#0c1b18;color:#fff}
+button:disabled{opacity:.45;cursor:not-allowed}
+.wallet{padding:12px;border:1px solid #31534e;border-radius:10px;background:#07110f}
+.wallet .address{font-family:monospace;font-size:11px;word-break:break-all;color:#a7f3d0}
+.status{margin-top:12px;padding:11px;border:1px solid #225b4b;border-radius:10px;background:#06251b;color:#b7f7dc;line-height:1.45}
+.hash{font-family:monospace;font-size:10px;word-break:break-all;color:#a7f3d0}
+.badge{display:inline-block;padding:5px 8px;border-radius:9px;background:#15382f;color:#a7f3d0;font-size:11px;font-weight:900;margin-right:5px}
+.small{font-size:12px;color:#96aaa8;line-height:1.5}
+.preview{max-width:100%;max-height:220px;margin-top:10px;border-radius:10px;display:none}
+a.out{color:#6ee7b7}
+@media(max-width:800px){header{align-items:flex-start;flex-direction:column}.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+<nav>
+<a href="music_city_locker.html">← MUSIC CITY LOCKER</a>
+<a href="certify_record.html">🪪 RECORD PASSPORT</a>
+</nav>
+<strong>TEZOS / KUKAI MINT LAB</strong>
+</header>
+
+<div class="wrap">
+<section class="hero">
+<h1>🟢 Tezos Testnet Mint Prototype</h1>
+<p>Connect a Tezos wallet through the current octez.connect/Taquito wallet flow, prepare a Record Passport-backed NFT, and test-mint it on Shadownet.</p>
+<div class="warning">
+<strong>TESTNET ONLY:</strong> this prototype uses Tezos' public tutorial FA2 mint contract on Shadownet. It proves wallet connection, metadata and on-chain minting, but it is not our final Music City production contract.
+</div>
+</section>
+
+<div class="grid">
+<section class="panel">
+<h2>1. Connect Tezos Wallet</h2>
+<div class="wallet">
+<div id="walletState">No wallet connected.</div>
+<div id="walletAddress" class="address"></div>
+<div id="walletBalance" class="small"></div>
+</div>
+<button id="connectButton">CONNECT TEZOS / KUKAI WALLET</button>
+<button id="disconnectButton" class="secondary" disabled>DISCONNECT</button>
+
+<h2>2. Choose Record Passport</h2>
+<label>Record Passport
+<select id="passportSelect"></select>
+</label>
+
+<label>Asset class
+<select id="assetClass">
+<option value="certified-record">Certified Record Credential — Testnet</option>
+<option value="video-edition">Official Video / Visual Edition</option>
+</select>
+</label>
+
+<label>Edition title
+<input id="editionTitle" placeholder="Optional custom edition title">
+</label>
+
+<h2>3. Verify Media</h2>
+<label>Choose the exact local audio/video file
+<input id="mediaFile" type="file" accept="audio/*,video/*,image/*">
+</label>
+<div id="mediaInfo" class="small">Local file is optional, but strongly recommended so Music City can hash it before minting.</div>
+<video id="videoPreview" class="preview" controls></video>
+<audio id="audioPreview" class="preview" controls></audio>
+
+<label>Artifact URI — usually ipfs://...
+<input id="artifactUri" placeholder="ipfs://...">
+</label>
+
+<label>Display/poster URI
+<input id="displayUri" placeholder="ipfs://...">
+</label>
+
+<label>Thumbnail URI
+<input id="thumbnailUri" placeholder="ipfs://...">
+</label>
+
+<label>Optional TZIP-21 metadata JSON URI
+<input id="metadataUri" placeholder="ipfs://...">
+</label>
+
+<button id="prepareButton" class="secondary">PREPARE TZIP-21 METADATA</button>
+</section>
+
+<section class="panel">
+<h2>4. Metadata Preview</h2>
+<div>
+<span class="badge">FA2</span>
+<span class="badge">TZIP-21 READY</span>
+<span class="badge">SHADOWNET</span>
+</div>
+<textarea id="metadataPreview" readonly placeholder="Prepare metadata to preview the Tezos token document."></textarea>
+
+<h2>5. Test Mint</h2>
+<p class="small">
+The Shadownet tutorial contract is:
+<span class="hash">KT1NbqYinUijW68V3fxboo4EzQPFgRcdfaYQ</span>.
+The wallet must approve the transaction. Music City never asks for or stores your seed phrase/private key.
+</p>
+<button id="mintButton" disabled>MINT TEST NFT ON TEZOS</button>
+<div id="status" class="status">Connect a wallet and prepare valid metadata.</div>
+<div id="result"></div>
+</section>
+</div>
+</div>
+
+<script src="player-state.js"></script>
+<script src="music_city_assets.js"></script>
+<script src="music_city_tezos.js"></script>
+
+<script type="module">
+globalThis.global = globalThis;
+const { Buffer } = await import("https://esm.sh/buffer@6.0.3");
+globalThis.Buffer = Buffer;
+
+const [
+  { TezosToolkit, MichelsonMap },
+  { BeaconWallet },
+  { NetworkType },
+  { stringToBytes }
+] = await Promise.all([
+  import("https://esm.sh/@taquito/taquito@25.0.0"),
+  import("https://esm.sh/@taquito/beacon-wallet@25.0.0"),
+  import("https://esm.sh/@tezos-x/octez.connect-types@5.0.4"),
+  import("https://esm.sh/@taquito/utils@25.0.0")
+]);
+
+const config = window.MusicCityTezos.CONFIG;
+const Tezos = new TezosToolkit(config.rpcUrl);
+let wallet = null;
+let walletAddress = "";
+let passports = [];
+let selectedPassport = null;
+let localMedia = null;
+let localMediaHash = "";
+let preparedMedia = null;
+let preparedMetadata = null;
+
+const connectButton = document.getElementById("connectButton");
+const disconnectButton = document.getElementById("disconnectButton");
+const walletState = document.getElementById("walletState");
+const walletAddressEl = document.getElementById("walletAddress");
+const walletBalanceEl = document.getElementById("walletBalance");
+const passportSelect = document.getElementById("passportSelect");
+const assetClass = document.getElementById("assetClass");
+const editionTitle = document.getElementById("editionTitle");
+const mediaFile = document.getElementById("mediaFile");
+const artifactUri = document.getElementById("artifactUri");
+const displayUri = document.getElementById("displayUri");
+const thumbnailUri = document.getElementById("thumbnailUri");
+const metadataUri = document.getElementById("metadataUri");
+const mediaInfo = document.getElementById("mediaInfo");
+const metadataPreview = document.getElementById("metadataPreview");
+const prepareButton = document.getElementById("prepareButton");
+const mintButton = document.getElementById("mintButton");
+const status = document.getElementById("status");
+const result = document.getElementById("result");
+const videoPreview = document.getElementById("videoPreview");
+const audioPreview = document.getElementById("audioPreview");
+
+function setStatus(message) {
+  status.textContent = message;
+}
+
+function short(value) {
+  const text = String(value || "");
+  return text.length > 16 ? text.slice(0, 8) + "…" + text.slice(-6) : text;
+}
+
+async function refreshWallet() {
+  if (!wallet) {
+    walletState.textContent = "No wallet connected.";
+    walletAddressEl.textContent = "";
+    walletBalanceEl.textContent = "";
+    disconnectButton.disabled = true;
+    updateMintButton();
+    return;
+  }
+
+  walletAddress = await wallet.getPKH();
+  const balance = await Tezos.tz.getBalance(walletAddress);
+
+  walletState.textContent = "Connected on Shadownet";
+  walletAddressEl.textContent = walletAddress;
+  walletBalanceEl.textContent =
+    "Balance: " + balance.div(1000000).toFormat(3) + " tez (testnet)";
+  disconnectButton.disabled = false;
+  updateMintButton();
+}
+
+connectButton.addEventListener("click", async () => {
+  try {
+    setStatus("Opening the Tezos wallet connection…");
+    const newWallet = new BeaconWallet({
+      name: "Music City Estates",
+      network: {
+        type: NetworkType.SHADOWNET
+      }
+    });
+
+    if (newWallet.client && newWallet.client.beaconIDB) {
+      await newWallet.client.beaconIDB.initDB().catch(() => {});
+    }
+
+    await newWallet.requestPermissions();
+    wallet = newWallet;
+    Tezos.setWalletProvider(wallet);
+    await refreshWallet();
+    setStatus("Wallet connected. Kukai and other compatible Tezos wallets can approve the mint from the wallet prompt.");
+  } catch (error) {
+    setStatus(error.message || "Wallet connection was not completed.");
+  }
+});
+
+disconnectButton.addEventListener("click", async () => {
+  if (wallet && wallet.client) {
+    await wallet.client.clearActiveAccount();
+  }
+  wallet = null;
+  walletAddress = "";
+  await refreshWallet();
+  setStatus("Wallet disconnected.");
+});
+
+async function loadPassports() {
+  passports = await window.MusicCityAssets.listCertificates();
+  passportSelect.innerHTML = "";
+
+  if (!passports.length) {
+    const option = document.createElement("option");
+    option.value = "";
+    option.textContent = "No Record Passports available";
+    passportSelect.appendChild(option);
+    prepareButton.disabled = true;
+    return;
+  }
+
+  passports.forEach(passport => {
+    const option = document.createElement("option");
+    option.value = passport.id;
+    option.textContent = passport.title + " • " + passport.id;
+    passportSelect.appendChild(option);
+  });
+
+  passportSelect.addEventListener("change", choosePassport);
+  choosePassport();
+}
+
+function choosePassport() {
+  selectedPassport =
+    passports.find(passport => passport.id === passportSelect.value) || null;
+
+  if (selectedPassport) {
+    editionTitle.value = assetClass.value === "video-edition"
+      ? selectedPassport.title + " — Official Visual Edition"
+      : selectedPassport.title + " — Music City Certified Record";
+  }
+
+  preparedMetadata = null;
+  metadataPreview.value = "";
+  updateMintButton();
+}
+
+assetClass.addEventListener("change", () => {
+  if (selectedPassport) {
+    editionTitle.value = assetClass.value === "video-edition"
+      ? selectedPassport.title + " — Official Visual Edition"
+      : selectedPassport.title + " — Music City Certified Record";
+  }
+  preparedMetadata = null;
+  updateMintButton();
+});
+
+mediaFile.addEventListener("change", async () => {
+  localMedia = mediaFile.files && mediaFile.files[0] || null;
+  localMediaHash = "";
+
+  videoPreview.style.display = "none";
+  audioPreview.style.display = "none";
+
+  if (!localMedia) {
+    mediaInfo.textContent = "No local media selected.";
+    return;
+  }
+
+  try {
+    localMediaHash = await window.MusicCityAssets.sha256Blob(localMedia);
+    mediaInfo.innerHTML =
+      "File: <b>" + localMedia.name + "</b><br>" +
+      "Type: " + (localMedia.type || "unknown") + " • " +
+      "Size: " + localMedia.size.toLocaleString() + " bytes<br>" +
+      "SHA-256: <span class='hash'>" + localMediaHash + "</span>";
+
+    const url = URL.createObjectURL(localMedia);
+    if (/^video\//i.test(localMedia.type)) {
+      videoPreview.src = url;
+      videoPreview.style.display = "block";
+    } else if (/^audio\//i.test(localMedia.type)) {
+      audioPreview.src = url;
+      audioPreview.style.display = "block";
+    }
+  } catch (error) {
+    mediaInfo.textContent = error.message || "Could not hash that media file.";
+  }
+});
+
+function mediaInput() {
+  return {
+    assetClass: assetClass.value,
+    title: editionTitle.value,
+    artifactUri: artifactUri.value,
+    displayUri: displayUri.value,
+    thumbnailUri: thumbnailUri.value,
+    metadataUri: metadataUri.value,
+    mimeType: localMedia ? localMedia.type : (
+      assetClass.value === "video-edition" ? "video/mp4" : "audio/mpeg"
+    ),
+    fileSize: localMedia ? localMedia.size : 0,
+    fileName: localMedia ? localMedia.name : "",
+    mediaHash: localMediaHash
+  };
+}
+
+prepareButton.addEventListener("click", () => {
+  try {
+    if (!selectedPassport) throw new Error("Choose a Record Passport.");
+
+    const media = mediaInput();
+    const validation =
+      window.MusicCityTezos.validateMintPreparation(selectedPassport, media);
+
+    if (!validation.valid) {
+      throw new Error(validation.errors.join(" "));
+    }
+
+    if (
+      assetClass.value === "certified-record" &&
+      localMediaHash &&
+      selectedPassport.master &&
+      selectedPassport.master.sha256 &&
+      localMediaHash !== selectedPassport.master.sha256
+    ) {
+      throw new Error(
+        "The local audio file does not match the Record Passport master SHA-256. Use the exact certified master."
+      );
+    }
+
+    preparedMedia = media;
+    preparedMetadata =
+      window.MusicCityTezos.buildTzip21Metadata(selectedPassport, media);
+
+    metadataPreview.value =
+      JSON.stringify(preparedMetadata, null, 2);
+
+    setStatus(
+      assetClass.value === "video-edition"
+        ? "Video Edition metadata is ready. The video URI, wallet preview media and Record Passport provenance are bound together."
+        : "Certified Record test metadata is ready. The exact Record Passport hashes are bound into the token metadata."
+    );
+
+    updateMintButton();
+  } catch (error) {
+    preparedMetadata = null;
+    metadataPreview.value = "";
+    setStatus(error.message || "Could not prepare Tezos metadata.");
+    updateMintButton();
+  }
+});
+
+function updateMintButton() {
+  mintButton.disabled =
+    !wallet ||
+    !walletAddress ||
+    !selectedPassport ||
+    !preparedMetadata;
+}
+
+function metadataMapFrom(fields) {
+  const map = new MichelsonMap();
+  Object.keys(fields).forEach(key => {
+    map.set(key, stringToBytes(String(fields[key])));
+  });
+  return map;
+}
+
+async function predictedTokenId(contract) {
+  try {
+    const storage = await contract.storage();
+    const candidates = [
+      storage.next_token_id,
+      storage.nextTokenId,
+      storage.next_token,
+      storage.nextToken
+    ];
+
+    for (const candidate of candidates) {
+      if (candidate == null) continue;
+      if (typeof candidate.toString === "function") {
+        const value = candidate.toString();
+        if (/^\d+$/.test(value)) return value;
+      }
+    }
+  } catch (error) {}
+  return "";
+}
+
+async function mintOnTutorialContract(passport, media) {
+  const contractAddress = config.tutorialMintContract;
+  const contract = await Tezos.wallet.at(contractAddress);
+  const tokenId = await predictedTokenId(contract);
+
+  const fields =
+    window.MusicCityTezos.buildDirectTokenFields(passport, media);
+  const metadata = metadataMapFrom(fields);
+
+  const mintParameter = [{
+    to_: walletAddress,
+    metadata: metadata
+  }];
+
+  const op = await contract.methodsObject.mint(mintParameter).send();
+
+  setStatus(
+    "Transaction sent. Waiting for two Shadownet confirmations: " +
+    short(op.opHash)
+  );
+
+  await op.confirmation(2);
+
+  return {
+    network: "shadownet",
+    tokenId: tokenId,
+    transactionId: op.opHash,
+    explorerUrl:
+      window.MusicCityTezos.explorerOperationUrl(op.opHash),
+    contractAddress: contractAddress
+  };
+}
+
+mintButton.addEventListener("click", async () => {
+  mintButton.disabled = true;
+  result.innerHTML = "";
+
+  try {
+    if (!wallet || !preparedMetadata || !selectedPassport) {
+      throw new Error("Connect a wallet and prepare metadata first.");
+    }
+
+    const media = preparedMedia || mediaInput();
+
+    if (assetClass.value === "certified-record") {
+      window.MusicCityAssets.registerChainAdapter(
+        "tezos-shadownet",
+        {
+          mint: async passport =>
+            mintOnTutorialContract(passport, media)
+        }
+      );
+
+      const certificate =
+        await window.MusicCityAssets.mintCertificate(
+          selectedPassport.id,
+          "tezos-shadownet"
+        );
+
+      setStatus(
+        "Testnet mint confirmed. This record is now Music City Testnet Certified. Mainnet certification will require our production FA2 contract."
+      );
+
+      result.innerHTML =
+        '<p><b>✓ TESTNET CERTIFIED</b></p>' +
+        '<p class="small">Owner: ' + walletAddress + '</p>' +
+        '<p class="small">Contract: ' + certificate.chain.contractAddress + '</p>' +
+        '<p class="small">Token ID: ' + (certificate.chain.tokenId || "resolve in explorer") + '</p>' +
+        '<a class="out" target="_blank" rel="noopener" href="' +
+        certificate.chain.explorerUrl +
+        '">View confirmed transaction on TzKT ↗</a>';
+    } else {
+      const minted = await mintOnTutorialContract(
+        selectedPassport,
+        media
+      );
+
+      await window.MusicCityAssets.saveItem({
+        id: "tezos-video-" + minted.transactionId,
+        type: "video-edition",
+        rarity: "official-edition",
+        name: preparedMetadata.name,
+        certificateId: selectedPassport.id,
+        trackId: selectedPassport.trackId,
+        assetClass: "video-edition",
+        artifactUri: media.artifactUri,
+        displayUri: media.displayUri,
+        thumbnailUri: media.thumbnailUri,
+        mediaHash: media.mediaHash,
+        mimeType: media.mimeType,
+        owner: walletAddress,
+        createdAt: new Date().toISOString(),
+        chainStatus: "minted",
+        provider: "tezos-shadownet",
+        network: minted.network,
+        contractAddress: minted.contractAddress,
+        tokenId: minted.tokenId,
+        transactionId: minted.transactionId,
+        explorerUrl: minted.explorerUrl
+      });
+
+      setStatus(
+        "Video Edition mint confirmed on Shadownet and added to your Music City Locker."
+      );
+
+      result.innerHTML =
+        '<p><b>✓ VIDEO EDITION MINTED</b></p>' +
+        '<p class="small">Owner: ' + walletAddress + '</p>' +
+        '<a class="out" target="_blank" rel="noopener" href="' +
+        minted.explorerUrl +
+        '">View confirmed transaction on TzKT ↗</a>';
+    }
+
+    await refreshWallet();
+  } catch (error) {
+    setStatus(error.message || "The Tezos mint did not complete.");
+  } finally {
+    updateMintButton();
+  }
+});
+
+window.MCE.load();
+await loadPassports();
+await refreshWallet();
+</script>
+</body>
+</html>
