@@ -37,6 +37,9 @@ test("empty storage uses career defaults", function () {
   assert.strictEqual(state.cash, 100);
   assert.strictEqual(state.fans, 0);
   assert.strictEqual(state.xp, 0);
+  assert.strictEqual(state.reputation, 50);
+  assert.strictEqual(state.business.meter, 0);
+  assert.strictEqual(state.business.pendingEventId, null);
   assert.strictEqual(state.day, 1);
   assert.strictEqual(state.level, 1);
   assert.strictEqual(state.songs, 0);
@@ -350,6 +353,154 @@ test("manager cannot bypass radio career eligibility", function () {
   MCE.save({ fans: 100, xp: 150 });
   var submitted = MCE.submitReleaseToRadio("radio-gate");
   assert.strictEqual(submitted.releases[0].radioStatus, "submitted");
+});
+
+test("Business Deck queues after two meaningful career actions", function () {
+  start();
+  MCE.addRelease({ id: "deck-song", title: "Deck Song" });
+  var afterRelease = MCE.releaseSong("deck-song");
+  assert.strictEqual(afterRelease.business.meter, 1);
+  assert.strictEqual(afterRelease.business.pendingEventId, null);
+
+  var afterShow = MCE.payShow({ cash: 20, fans: 2, xp: 1 });
+  assert.strictEqual(afterShow.business.meter, 2);
+  assert.strictEqual(afterShow.business.pendingEventId, "viral-street-clip");
+
+  var event = MCE.getPendingBusinessEvent();
+  assert.strictEqual(event.id, "viral-street-clip");
+});
+
+test("Business Deck choices apply reputation and cannot overspend", function () {
+  start();
+  MCE.addRelease({ id: "deck-choice", title: "Choice Song" });
+  MCE.releaseSong("deck-choice");
+  MCE.payShow({ cash: 0, fans: 0, xp: 0 });
+
+  MCE.save({ cash: 0 });
+  assert.throws(function () {
+    MCE.resolveBusinessEvent("boost");
+  });
+
+  var resolved = MCE.resolveBusinessEvent("organic");
+  assert.strictEqual(resolved.reputation, 52);
+  assert.strictEqual(resolved.business.pendingEventId, null);
+  assert.strictEqual(resolved.business.meter, 0);
+  assert.strictEqual(resolved.business.history.length, 1);
+  assert.strictEqual(resolved.day, 2);
+});
+
+test("opening slot card boosts the next show once", function () {
+  start();
+  MCE.save({
+    cash: 400,
+    xp: 10,
+    business: {
+      actionCount: 0,
+      meter: 0,
+      drawCursor: 1,
+      pendingEventId: null,
+      history: [],
+      effects: {}
+    }
+  });
+  MCE.addRelease({ id: "opening-song", title: "Opening Song" });
+  MCE.releaseSong("opening-song");
+  MCE.hireManager("hustler");
+
+  var queued = MCE.get();
+  assert.strictEqual(queued.business.pendingEventId, "opening-slot");
+  var event = MCE.getPendingBusinessEvent();
+  assert.strictEqual(event.id, "opening-slot");
+
+  var resolved = MCE.resolveBusinessEvent("take-slot");
+  assert.strictEqual(resolved.business.effects.showCashBonus, 45);
+  assert.strictEqual(resolved.business.effects.showFanBonus, 6);
+  assert.strictEqual(resolved.business.effects.showXpBonus, 3);
+
+  var quote = MCE.getShowPayout(50);
+  assert.strictEqual(quote.gross, 95);
+  assert.strictEqual(quote.commission, 9);
+  assert.strictEqual(quote.net, 86);
+
+  var beforeFans = MCE.get().fans;
+  var beforeXp = MCE.get().xp;
+  var paid = MCE.payShow({ cash: 50, fans: 2, xp: 1 });
+  assert.strictEqual(paid.fans, beforeFans + 8);
+  assert.strictEqual(paid.xp, beforeXp + 4);
+  assert.strictEqual(paid.business.effects.showCashBonus, 0);
+  assert.strictEqual(paid.business.effects.showFanBonus, 0);
+  assert.strictEqual(paid.business.effects.showXpBonus, 0);
+});
+
+test("content package card boosts the next manager promotion once", function () {
+  start();
+  MCE.save({ cash: 1200, fans: 60, xp: 80 });
+  MCE.hireManager("connector");
+  MCE.addRelease({ id: "promo-event", title: "Promo Event" });
+  MCE.releaseSong("promo-event");
+
+  MCE.save({
+    business: {
+      actionCount: 0,
+      meter: 2,
+      drawCursor: 0,
+      pendingEventId: "studio-bundle",
+      history: [],
+      effects: {}
+    }
+  });
+
+  var resolved = MCE.resolveBusinessEvent("buy-package");
+  assert.strictEqual(resolved.business.effects.promotionFanBonus, 8);
+  assert.strictEqual(resolved.business.effects.promotionXpBonus, 4);
+
+  var fansBefore = resolved.fans;
+  var xpBefore = resolved.xp;
+  var promoted = MCE.promoteRelease("promo-event");
+  assert.strictEqual(promoted.fans, fansBefore + 19);
+  assert.strictEqual(promoted.xp, xpBefore + 10);
+  assert.strictEqual(promoted.business.effects.promotionFanBonus, 0);
+  assert.strictEqual(promoted.business.effects.promotionXpBonus, 0);
+});
+
+test("DJ pool card discounts and strengthens the next radio submission", function () {
+  start();
+  MCE.save({ cash: 1000, fans: 100, xp: 150 });
+  MCE.hireManager("hustler");
+  MCE.addRelease({ id: "radio-event", title: "Radio Event" });
+  MCE.releaseSong("radio-event");
+
+  MCE.save({
+    business: {
+      actionCount: 0,
+      meter: 2,
+      drawCursor: 0,
+      pendingEventId: "dj-pool",
+      history: [],
+      effects: {}
+    }
+  });
+
+  var resolved = MCE.resolveBusinessEvent("service-record");
+  assert.strictEqual(resolved.business.effects.radioDiscount, 20);
+  assert.strictEqual(resolved.business.effects.radioInfluenceBonus, 5);
+
+  var cashBefore = resolved.cash;
+  var submitted = MCE.submitReleaseToRadio("radio-event");
+  assert.strictEqual(submitted.cash, cashBefore - 40);
+  assert.strictEqual(submitted.releases[0].radioFeePaid, 40);
+  assert.strictEqual(submitted.releases[0].radioInfluence, 5);
+  assert.strictEqual(submitted.business.effects.radioDiscount, 0);
+  assert.strictEqual(submitted.business.effects.radioInfluenceBonus, 0);
+});
+
+test("every Business Deck card has a no-cash escape choice", function () {
+  MCE.BUSINESS_EVENTS.forEach(function (event) {
+    var freeChoice = event.choices.some(function (choice) {
+      return Number(choice.cost || 0) === 0;
+    });
+    assert.strictEqual(freeChoice, true, event.id + " must have a free choice");
+  });
 });
 
 test("NaN world values are ignored", function () {

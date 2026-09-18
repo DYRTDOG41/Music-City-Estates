@@ -12,6 +12,7 @@
     cash: 100,
     fans: 0,
     xp: 0,
+    reputation: 50,
     day: 1,
     level: 1,
     songs: 0,
@@ -24,6 +25,22 @@
       totalCommission: 0,
       promotionSpend: 0,
       radioSpend: 0
+    },
+    business: {
+      actionCount: 0,
+      meter: 0,
+      drawCursor: 0,
+      pendingEventId: null,
+      history: [],
+      effects: {
+        showCashBonus: 0,
+        showFanBonus: 0,
+        showXpBonus: 0,
+        promotionFanBonus: 0,
+        promotionXpBonus: 0,
+        radioDiscount: 0,
+        radioInfluenceBonus: 0
+      }
     },
     releases: [],
     flags: {},
@@ -92,6 +109,311 @@
     managedPromotionFee: MANAGER_PROFILES.hustler.promotionFee,
     radioSubmissionFee: MANAGER_PROFILES.hustler.radioFee
   };
+
+  var BUSINESS_EVENTS = [
+    {
+      id: "viral-street-clip",
+      title: "The Clip Is Moving",
+      category: "Buzz",
+      description: "A fan posts a performance clip and it starts moving around Music City overnight.",
+      requires: {},
+      choices: [
+        {
+          id: "boost",
+          label: "Put $20 behind the clip",
+          cost: 20,
+          delta: { fans: 10, xp: 3, reputation: 1 },
+          result: "The paid boost catches the wave while it is hot."
+        },
+        {
+          id: "organic",
+          label: "Let the fans carry it",
+          cost: 0,
+          delta: { fans: 4, reputation: 2 },
+          result: "The smaller organic bump feels authentic and helps your reputation."
+        }
+      ]
+    },
+    {
+      id: "opening-slot",
+      title: "Last-Minute Opening Slot",
+      category: "Live Opportunity",
+      description: "A promoter has a hole on tonight's bill. You can take the stage, but travel and crew costs come out of your pocket.",
+      requires: { xp: 10 },
+      choices: [
+        {
+          id: "take-slot",
+          label: "Pay $30 and take the slot",
+          cost: 30,
+          delta: { reputation: 2 },
+          effects: { showCashBonus: 45, showFanBonus: 6, showXpBonus: 3 },
+          result: "Your next paid show gets a stronger crowd and a better check."
+        },
+        {
+          id: "pass",
+          label: "Pass and protect the cash",
+          cost: 0,
+          delta: {},
+          result: "You keep your money and wait for a cleaner opportunity."
+        }
+      ]
+    },
+    {
+      id: "equipment-breakdown",
+      title: "Mic Pack Failure",
+      category: "Expense",
+      description: "Your wireless mic pack starts cutting out right before a run of shows.",
+      requires: { xp: 10 },
+      choices: [
+        {
+          id: "replace",
+          label: "Replace it properly — $35",
+          cost: 35,
+          delta: { reputation: 1 },
+          result: "The problem is handled before it reaches the stage."
+        },
+        {
+          id: "patch",
+          label: "Patch it and keep moving — $10",
+          cost: 10,
+          delta: { reputation: -2 },
+          effects: { showFanBonus: -3 },
+          result: "The cheap fix works, but your next crowd may notice the rough edges."
+        },
+        {
+          id: "borrow",
+          label: "Borrow a house mic",
+          cost: 0,
+          delta: { reputation: -4 },
+          effects: { showFanBonus: -5 },
+          result: "You survive without spending cash, but the next performance looks less professional."
+        }
+      ]
+    },
+    {
+      id: "merch-pop-up",
+      title: "Merch Pop-Up",
+      category: "Investment",
+      description: "A local printer offers a short-run merch deal before your next show.",
+      requires: { fans: 25 },
+      choices: [
+        {
+          id: "full-run",
+          label: "Invest $50 in a full run",
+          cost: 50,
+          effects: { showCashBonus: 90 },
+          result: "If you perform again, the merch table can turn that investment into extra show income."
+        },
+        {
+          id: "small-run",
+          label: "Test a small run — $20",
+          cost: 20,
+          effects: { showCashBonus: 30 },
+          result: "Lower upside, lower risk."
+        },
+        {
+          id: "skip",
+          label: "Skip merch for now",
+          cost: 0,
+          delta: {},
+          result: "You keep your cash liquid."
+        }
+      ]
+    },
+    {
+      id: "brand-sponsor",
+      title: "Local Brand Wants In",
+      category: "Sponsor",
+      description: "A fast-growing streetwear brand offers cash for a post and stage mention.",
+      requires: { fans: 25 },
+      choices: [
+        {
+          id: "take-money",
+          label: "Take the $120 deal",
+          cost: 0,
+          delta: { cash: 120, reputation: -4 },
+          result: "The check clears, but some fans think the partnership feels forced."
+        },
+        {
+          id: "protect-brand",
+          label: "Turn it down",
+          cost: 0,
+          delta: { reputation: 3, xp: 2 },
+          result: "You sacrifice the money and protect the artist brand."
+        }
+      ]
+    },
+    {
+      id: "charity-benefit",
+      title: "Community Benefit Show",
+      category: "Reputation",
+      description: "A neighborhood organizer asks you to support a benefit event with your name and time.",
+      requires: { fans: 25 },
+      choices: [
+        {
+          id: "show-up",
+          label: "Cover $20 in costs and show up",
+          cost: 20,
+          delta: { fans: 10, xp: 8, reputation: 6 },
+          result: "The community remembers that you showed up before the cameras did."
+        },
+        {
+          id: "decline",
+          label: "Decline the event",
+          cost: 0,
+          delta: { reputation: -1 },
+          result: "You keep moving, but the missed goodwill costs a little."
+        }
+      ]
+    },
+    {
+      id: "press-controversy",
+      title: "Blog Headline Goes Sideways",
+      category: "Crisis",
+      description: "A local blog clips a quote out of context and the comments are getting ugly.",
+      requires: { fans: 50 },
+      choices: [
+        {
+          id: "publicist",
+          label: "Pay $35 for a clean response",
+          cost: 35,
+          delta: { reputation: 6, xp: 2 },
+          result: "The response slows the story and makes your team look professional."
+        },
+        {
+          id: "clapback",
+          label: "Clap back publicly",
+          cost: 0,
+          delta: { fans: 6, reputation: -6 },
+          result: "The argument brings attention, but your reputation takes the hit."
+        },
+        {
+          id: "ignore",
+          label: "Ignore it",
+          cost: 0,
+          delta: { reputation: -2 },
+          result: "The story cools off, but not before leaving a mark."
+        }
+      ]
+    },
+    {
+      id: "dj-pool",
+      title: "DJ Pool Window",
+      category: "Radio",
+      description: "Your manager gets a limited window with a DJ pool before your next radio push.",
+      requires: { manager: true },
+      choices: [
+        {
+          id: "service-record",
+          label: "Spend $40 to service the record",
+          cost: 40,
+          delta: { reputation: 1 },
+          effects: { radioDiscount: 20, radioInfluenceBonus: 5 },
+          result: "Your next radio submission gets a discount and extra influence."
+        },
+        {
+          id: "save-money",
+          label: "Save the money",
+          cost: 0,
+          delta: { xp: 1 },
+          result: "Your team passes on the window and keeps the budget intact."
+        }
+      ]
+    },
+    {
+      id: "studio-bundle",
+      title: "Content Package Deal",
+      category: "Promotion",
+      description: "A content crew offers a one-day package: cover art, vertical clips, and behind-the-scenes footage.",
+      requires: { xp: 75, manager: true },
+      choices: [
+        {
+          id: "buy-package",
+          label: "Buy the package — $80",
+          cost: 80,
+          effects: { promotionFanBonus: 8, promotionXpBonus: 4 },
+          result: "Your next manager campaign has more content to work with."
+        },
+        {
+          id: "pass",
+          label: "Keep the budget for shows",
+          cost: 0,
+          delta: {},
+          result: "No campaign boost, but no new expense either."
+        }
+      ]
+    },
+    {
+      id: "festival-deposit",
+      title: "Festival Hold",
+      category: "Big Bet",
+      description: "A regional festival offers a performance hold if you can put down a deposit before the slot disappears.",
+      requires: { fans: 50, xp: 75 },
+      choices: [
+        {
+          id: "deposit",
+          label: "Risk $75 on the slot",
+          cost: 75,
+          effects: { showCashBonus: 150, showFanBonus: 10, showXpBonus: 8 },
+          result: "Your next show becomes a bigger-money, bigger-audience opportunity."
+        },
+        {
+          id: "pass",
+          label: "Pass on the festival",
+          cost: 0,
+          delta: {},
+          result: "You avoid the risk and keep your bankroll."
+        }
+      ]
+    },
+    {
+      id: "rival-diss",
+      title: "A Rival Calls You Out",
+      category: "Competition",
+      description: "Another artist uses your name in a freestyle and the city is waiting to see what you do.",
+      requires: { fans: 50 },
+      choices: [
+        {
+          id: "respond",
+          label: "Respond with a record",
+          cost: 15,
+          delta: { fans: 8, xp: 7, reputation: -3 },
+          result: "The city loves the smoke, even if the business side looks a little messier."
+        },
+        {
+          id: "outgrow",
+          label: "Stay focused on the career",
+          cost: 0,
+          delta: { xp: 4, reputation: 3 },
+          result: "You refuse the distraction and look more professional."
+        }
+      ]
+    },
+    {
+      id: "business-license",
+      title: "Paperwork Day",
+      category: "Business Expense",
+      description: "A permit and business filing come due at the worst possible time.",
+      requires: { xp: 75 },
+      choices: [
+        {
+          id: "pay-now",
+          label: "Handle it now — $30",
+          cost: 30,
+          delta: { reputation: 2 },
+          result: "The paperwork is clean and your operation stays professional."
+        },
+        {
+          id: "delay",
+          label: "Delay the filing",
+          cost: 0,
+          delta: { reputation: -4 },
+          effects: { showCashBonus: -20 },
+          result: "You keep the cash today, but the delay creates friction around your next paid show."
+        }
+      ]
+    }
+  ];
 
   var CAREER_TITLES = [
     { xp: 400, title: "City Headliner" },
@@ -177,6 +499,88 @@
     };
   }
 
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function normalizeBusiness(item) {
+    var source = item && typeof item === "object" ? item : {};
+    var effects = source.effects && typeof source.effects === "object" ? source.effects : {};
+    var history = Array.isArray(source.history) ? source.history.slice(-20) : [];
+    return {
+      actionCount: toCount(source.actionCount, 0),
+      meter: toCount(source.meter, 0),
+      drawCursor: toCount(source.drawCursor, 0),
+      pendingEventId: source.pendingEventId == null ? null : String(source.pendingEventId),
+      history: history,
+      effects: {
+        showCashBonus: Math.floor(toNumber(effects.showCashBonus, 0)),
+        showFanBonus: Math.floor(toNumber(effects.showFanBonus, 0)),
+        showXpBonus: Math.floor(toNumber(effects.showXpBonus, 0)),
+        promotionFanBonus: Math.floor(toNumber(effects.promotionFanBonus, 0)),
+        promotionXpBonus: Math.floor(toNumber(effects.promotionXpBonus, 0)),
+        radioDiscount: Math.max(0, Math.floor(toNumber(effects.radioDiscount, 0))),
+        radioInfluenceBonus: Math.max(0, Math.floor(toNumber(effects.radioInfluenceBonus, 0)))
+      }
+    };
+  }
+
+  function businessEventById(id) {
+    for (var i = 0; i < BUSINESS_EVENTS.length; i++) {
+      if (BUSINESS_EVENTS[i].id === id) return BUSINESS_EVENTS[i];
+    }
+    return null;
+  }
+
+  function businessEventEligible(event, state) {
+    var req = event && event.requires ? event.requires : {};
+    if (req.fans != null && state.fans < req.fans) return false;
+    if (req.xp != null && state.xp < req.xp) return false;
+    if (req.manager && !(state.manager && state.manager.hired)) return false;
+    return true;
+  }
+
+  function recentBusinessEventIds(state) {
+    return (state.business.history || [])
+      .slice(-3)
+      .map(function (entry) { return entry.eventId; });
+  }
+
+  function queueBusinessEvent(state) {
+    if (state.business.pendingEventId) return state;
+    var recent = recentBusinessEventIds(state);
+    var start = state.business.drawCursor % BUSINESS_EVENTS.length;
+    var fallback = null;
+
+    for (var offset = 0; offset < BUSINESS_EVENTS.length; offset++) {
+      var index = (start + offset) % BUSINESS_EVENTS.length;
+      var event = BUSINESS_EVENTS[index];
+      if (!businessEventEligible(event, state)) continue;
+      if (!fallback) fallback = { event: event, index: index };
+      if (recent.indexOf(event.id) >= 0) continue;
+
+      state.business.pendingEventId = event.id;
+      state.business.drawCursor = index + 1;
+      return state;
+    }
+
+    if (fallback) {
+      state.business.pendingEventId = fallback.event.id;
+      state.business.drawCursor = fallback.index + 1;
+    }
+    return state;
+  }
+
+  function advanceBusinessAction(state, trigger) {
+    state.business.actionCount += 1;
+    state.business.meter += 1;
+    state.flags.lastBusinessAction = trigger || "career";
+    if (state.business.meter >= 2 && !state.business.pendingEventId) {
+      queueBusinessEvent(state);
+    }
+    return state;
+  }
+
   function normalizeRelease(item, index) {
     if (!item || typeof item !== "object") {
       return {
@@ -221,11 +625,13 @@
       cash: toCount(src.cash, DEFAULTS.cash),
       fans: toCount(src.fans, DEFAULTS.fans),
       xp: toCount(src.xp, DEFAULTS.xp),
+      reputation: clamp(toCount(src.reputation, DEFAULTS.reputation), 0, 100),
       day: Math.max(1, toCount(src.day, DEFAULTS.day)),
       level: numericLevel(src.xp, src.level),
       songs: songs,
       battles: toCount(src.battles, DEFAULTS.battles),
       manager: normalizeManager(src.manager),
+      business: normalizeBusiness(src.business),
       releases: releases,
       flags: flags,
       version: 1
@@ -262,11 +668,13 @@
       merged.cash = toCount(career.cash, merged.cash);
       merged.fans = toCount(career.fans, merged.fans);
       merged.xp = toCount(career.xp, merged.xp);
+      merged.reputation = clamp(toCount(career.reputation, merged.reputation), 0, 100);
       merged.day = Math.max(1, toCount(career.day, merged.day));
       merged.songs = toCount(career.songs, merged.songs);
       merged.battles = toCount(career.battles, merged.battles);
       merged.level = toCount(career.level, merged.level);
       merged.manager = normalizeManager(career.manager);
+      merged.business = normalizeBusiness(career.business);
       if (Array.isArray(career.releases)) merged.releases = career.releases.map(normalizeRelease);
       if (career.flags && typeof career.flags === "object") merged.flags = clone(career.flags);
     }
@@ -288,11 +696,13 @@
       cash: state.cash,
       fans: state.fans,
       xp: state.xp,
+      reputation: state.reputation,
       day: state.day,
       songs: state.songs,
       battles: state.battles,
       level: state.level,
       manager: state.manager,
+      business: state.business,
       releases: state.releases,
       flags: state.flags,
       version: 1
@@ -333,6 +743,13 @@
     for (var i = 0; i < keys.length; i++) {
       var key = keys[i];
       if (delta && delta[key] != null) next[key] = toNumber(next[key], 0) + toNumber(delta[key], 0);
+    }
+    if (delta && delta.reputation != null) {
+      next.reputation = clamp(
+        toNumber(next.reputation, DEFAULTS.reputation) + toNumber(delta.reputation, 0),
+        0,
+        100
+      );
     }
     if (delta && delta.name) next.name = delta.name;
     return save(next);
@@ -389,6 +806,7 @@
     next.fans += 3;
     next.xp += 5;
 
+    advanceBusinessAction(next, "release");
     return save(next);
   }
 
@@ -443,9 +861,12 @@
     release.promotionManager = managerProfile.name;
     next.releases[index] = normalizeRelease(release, index);
 
-    next.fans += managerProfile.promotionFans;
-    next.xp += managerProfile.promotionXp;
+    next.fans += managerProfile.promotionFans + next.business.effects.promotionFanBonus;
+    next.xp += managerProfile.promotionXp + next.business.effects.promotionXpBonus;
+    next.business.effects.promotionFanBonus = 0;
+    next.business.effects.promotionXpBonus = 0;
 
+    advanceBusinessAction(next, "promotion");
     return save(next);
   }
 
@@ -475,7 +896,10 @@
     if (release.radioStatus === "submitted") return snapshot();
 
     var managerProfile = getManagerProfile(next);
-    var radioFee = managerProfile.radioFee;
+    var radioFee = Math.max(
+      0,
+      managerProfile.radioFee - next.business.effects.radioDiscount
+    );
 
     if (next.cash < radioFee) {
       throw new Error(
@@ -494,9 +918,12 @@
     release.radioManager =
       managerProfile.name;
     release.radioInfluence =
-      managerProfile.radioInfluence;
+      managerProfile.radioInfluence + next.business.effects.radioInfluenceBonus;
+    next.business.effects.radioDiscount = 0;
+    next.business.effects.radioInfluenceBonus = 0;
     next.releases[index] = normalizeRelease(release, index);
 
+    advanceBusinessAction(next, "radio");
     return save(next);
   }
 
@@ -543,6 +970,7 @@
     next.manager.role = profile.name;
     next.manager.hiredAt = new Date().toISOString();
 
+    advanceBusinessAction(next, "manager");
     return save(next);
   }
 
@@ -553,7 +981,11 @@
 
   function getShowPayout(grossCash, state) {
     var s = state || current || load();
-    var gross = Math.max(0, toCount(grossCash, 0));
+    var gross = Math.max(
+      0,
+      toCount(grossCash, 0) +
+      (s.business ? s.business.effects.showCashBonus : 0)
+    );
     var profile = getManagerProfile(s);
     var commission = profile
       ? Math.floor(gross * profile.commissionPct / 100)
@@ -573,14 +1005,128 @@
     var payout = getShowPayout(input.cash, next);
 
     next.cash += payout.net;
-    next.fans += toCount(input.fans, 0);
-    next.xp += toCount(input.xp, 0);
+    next.fans += Math.max(
+      0,
+      toCount(input.fans, 0) + next.business.effects.showFanBonus
+    );
+    next.xp += Math.max(
+      0,
+      toCount(input.xp, 0) + next.business.effects.showXpBonus
+    );
+
+    next.business.effects.showCashBonus = 0;
+    next.business.effects.showFanBonus = 0;
+    next.business.effects.showXpBonus = 0;
 
     if (next.manager.hired) {
       next.manager.totalCommission += payout.commission;
     }
 
+    advanceBusinessAction(next, "show");
     return save(next);
+  }
+
+  function getPendingBusinessEvent(state) {
+    var s = state || current || load();
+    return businessEventById(s.business.pendingEventId);
+  }
+
+  function drawBusinessEvent() {
+    if (!current) load();
+    var next = snapshot();
+
+    if (!next.business.pendingEventId && next.business.meter >= 2) {
+      queueBusinessEvent(next);
+      save(next);
+    }
+
+    return getPendingBusinessEvent();
+  }
+
+  function resolveBusinessEvent(choiceId) {
+    if (!current) load();
+    var next = snapshot();
+    var event = businessEventById(next.business.pendingEventId);
+
+    if (!event) {
+      throw new Error("There is no Music City business event waiting.");
+    }
+
+    var choice = null;
+    for (var i = 0; i < event.choices.length; i++) {
+      if (event.choices[i].id === choiceId) {
+        choice = event.choices[i];
+        break;
+      }
+    }
+
+    if (!choice) {
+      throw new Error("That event choice is not available.");
+    }
+
+    var cost = Math.max(0, toCount(choice.cost, 0));
+    if (next.cash < cost) {
+      throw new Error(
+        "That choice costs $" + cost + ". You currently have $" + next.cash + "."
+      );
+    }
+
+    next.cash -= cost;
+
+    var delta = choice.delta || {};
+    next.cash = Math.max(0, next.cash + Math.floor(toNumber(delta.cash, 0)));
+    next.fans = Math.max(0, next.fans + Math.floor(toNumber(delta.fans, 0)));
+    next.xp = Math.max(0, next.xp + Math.floor(toNumber(delta.xp, 0)));
+    next.reputation = clamp(
+      next.reputation + Math.floor(toNumber(delta.reputation, 0)),
+      0,
+      100
+    );
+
+    var effects = choice.effects || {};
+    var effectKeys = [
+      "showCashBonus",
+      "showFanBonus",
+      "showXpBonus",
+      "promotionFanBonus",
+      "promotionXpBonus",
+      "radioDiscount",
+      "radioInfluenceBonus"
+    ];
+
+    for (var j = 0; j < effectKeys.length; j++) {
+      var key = effectKeys[j];
+      if (effects[key] != null) {
+        next.business.effects[key] += Math.floor(toNumber(effects[key], 0));
+      }
+    }
+
+    next.business.history.push({
+      eventId: event.id,
+      eventTitle: event.title,
+      choiceId: choice.id,
+      choiceLabel: choice.label,
+      result: choice.result,
+      day: next.day,
+      resolvedAt: new Date().toISOString()
+    });
+    next.business.history = next.business.history.slice(-20);
+    next.business.pendingEventId = null;
+    next.business.meter = 0;
+    next.day += 1;
+
+    return save(next);
+  }
+
+  function businessEventProgress(state) {
+    var s = state || current || load();
+    return {
+      meter: s.business.meter,
+      ready: Boolean(s.business.pendingEventId),
+      actionsUntilNext: s.business.pendingEventId
+        ? 0
+        : Math.max(0, 2 - s.business.meter)
+    };
   }
 
   function meets(req, state) {
@@ -625,6 +1171,7 @@
     UNLOCKS: UNLOCKS,
     CAREER_TITLES: CAREER_TITLES,
     ECONOMY: ECONOMY,
+    BUSINESS_EVENTS: BUSINESS_EVENTS,
     MANAGER_PROFILES: MANAGER_PROFILES,
     KEYS: {
       career: CAREER_KEY,
@@ -653,6 +1200,10 @@
     managerRequirementMet: managerRequirementMet,
     getShowPayout: getShowPayout,
     payShow: payShow,
+    getPendingBusinessEvent: getPendingBusinessEvent,
+    drawBusinessEvent: drawBusinessEvent,
+    resolveBusinessEvent: resolveBusinessEvent,
+    businessEventProgress: businessEventProgress,
     meets: meets,
     isUnlocked: isUnlocked,
     needed: needed,

@@ -326,6 +326,7 @@ TRAVEL
 <a href="music_city_feed.html">📱 CITY FEED</a>
 <a href="artist_catalog.html">💿 ARTIST CATALOG</a>
 <a href="manager.html">🧑‍💼 MANAGER OFFICE</a>
+<a href="business_events.html" id="businessDeckLink">🎴 BUSINESS DECK</a>
 </div>
 
 </div>
@@ -492,7 +493,16 @@ liveStats.innerHTML =
 "FANS: " + realFans.toLocaleString() +
 " &nbsp;&nbsp; CASH: $" + realCash.toLocaleString() +
 " &nbsp;&nbsp; XP: " + realXP +
+" &nbsp;&nbsp; REP: " + player.reputation +
 " &nbsp;&nbsp; LEVEL: " + realLevel;
+
+const deckProgress = window.MCE.businessEventProgress(player);
+const deckLink = document.getElementById("businessDeckLink");
+if (deckLink && deckProgress.ready) {
+  deckLink.textContent = "🎴 BUSINESS EVENT READY";
+  deckLink.style.borderColor = "#ffcc4d";
+  deckLink.style.boxShadow = "0 0 15px rgba(255,204,77,.55)";
+}
 
 document.getElementById("mapStage").appendChild(liveStats);
 
