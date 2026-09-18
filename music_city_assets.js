@@ -290,8 +290,8 @@
 
     await storeValue(ITEM_STORE, {
       id: "item-" + id,
-      type: "certified-record",
-      rarity: "certified",
+      type: "record-passport",
+      rarity: "passport-ready",
       name: clean(input.title),
       certificateId: id,
       trackId: clean(input.trackId),
@@ -326,6 +326,58 @@
     return values.sort(function (a, b) {
       return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
     });
+  }
+
+  function createRemoteMintAdapter(config) {
+    var options = config && typeof config === "object" ? config : {};
+    var endpoint = clean(options.endpoint);
+    var provider = clean(options.provider, "blockchain");
+    var network = clean(options.network);
+
+    if (!endpoint) {
+      throw new Error("A secure Music City mint backend endpoint is required.");
+    }
+
+    return {
+      mint: async function (passport) {
+        var response = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            provider: provider,
+            network: network,
+            passport: passport
+          })
+        });
+
+        var payload = {};
+        try {
+          payload = await response.json();
+        } catch (error) {}
+
+        if (!response.ok) {
+          throw new Error(
+            payload.error ||
+            "The blockchain provider could not mint this Music City record."
+          );
+        }
+
+        if (!payload.tokenId || !payload.transactionId) {
+          throw new Error(
+            "The mint backend did not return a confirmed token and transaction ID."
+          );
+        }
+
+        return {
+          network: payload.network || network,
+          tokenId: payload.tokenId,
+          transactionId: payload.transactionId,
+          explorerUrl: payload.explorerUrl || ""
+        };
+      }
+    };
   }
 
   function registerChainAdapter(name, adapter) {
@@ -390,6 +442,7 @@
     getCertificateForTrack: getCertificateForTrack,
     listCertificates: listCertificates,
     listItems: listItems,
+    createRemoteMintAdapter: createRemoteMintAdapter,
     registerChainAdapter: registerChainAdapter,
     mintCertificate: mintCertificate
   };
