@@ -30,7 +30,7 @@ for (let z = -43; z <= 35; z += 13) {
 }
 
 const materials = {
-  glassGold: new THREE.MeshStandardMaterial({ color: 0xd5a944, emissive: 0x6b4810, emissiveIntensity: .85, transparent: true, opacity: .58, roughness: .18, metalness: .25 }),
+  glassGold: new THREE.MeshStandardMaterial({ color: 0x80b9ff, emissive: 0x31207f, emissiveIntensity: .95, transparent: true, opacity: .42, roughness: .12, metalness: .32 }),
   glassOrange: new THREE.MeshStandardMaterial({ color: 0xff824f, emissive: 0x8d2f12, emissiveIntensity: .85, transparent: true, opacity: .58, roughness: .2 }),
   glassPurple: new THREE.MeshStandardMaterial({ color: 0xd76aff, emissive: 0x571a76, emissiveIntensity: .9, transparent: true, opacity: .56, roughness: .18 }),
   glassCyan: new THREE.MeshStandardMaterial({ color: 0x65dfff, emissive: 0x164f6c, emissiveIntensity: .9, transparent: true, opacity: .55, roughness: .17 })
@@ -88,11 +88,57 @@ function addStorefront(config) {
   room.box(config.name + ' doorway frame top', [.5, .28, 4.2], [innerX - side * .06, 5.75, z], config.trim, { material: trimMaterial });
   for (const offset of [-2.05, 2.05]) room.box(config.name + ' doorway frame', [.5, 5, .22], [innerX - side * .06, 3.3, z + offset], config.trim, { material: trimMaterial });
 
-  room.label(config.name.toUpperCase(), [innerX - side * .3, 7.55, z], config.label, [6.8, 1]);
-  room.label('CLICK DOOR TO ENTER', [innerX - side * .36, 6.55, z], '#ffffff', [4.5, .46]);
+  if (!config.customSign) {
+    room.label(config.name.toUpperCase(), [innerX - side * .3, 7.55, z], config.label, [6.8, 1]);
+    room.label('CLICK DOOR TO ENTER', [innerX - side * .36, 6.55, z], '#ffffff', [4.5, .46]);
+  }
 
   room.interact('ENTER ' + config.name.toUpperCase(), [innerX - side * 1.35, 1.7, z], action, 3.25, config.glow);
   config.decorate({ xCenter, innerX, outerX, z, side });
+  if (config.decorateExterior) config.decorateExterior({ xCenter, innerX, outerX, z, side });
+}
+
+
+function beGeniusExterior({ innerX, z, side }) {
+  const facadeX = innerX - side * .42;
+  const neonBlue = new THREE.MeshStandardMaterial({ color: 0xb8d8ff, emissive: 0x276dff, emissiveIntensity: 2.2, metalness: .35, roughness: .2 });
+  const stone = new THREE.MeshStandardMaterial({ color: 0x171a22, roughness: .72, metalness: .18 });
+
+  // Deep black-stone entrance and illuminated canopy from the approved reference.
+  room.box('BeGenius stone sign wall', [.62, 2.8, 16.4], [innerX - side * .12, 7.35, z], 0x11151e, { material: stone });
+  room.box('BeGenius entrance canopy', [3.4, .34, 16.6], [innerX - side * 1.55, 5.82, z], 0x11131a, { metalness: .62, roughness: .28 });
+  room.box('BeGenius blue canopy strip', [3.45, .1, 16.8], [innerX - side * 1.57, 5.62, z], 0x80baff, { material: neonBlue });
+  for (const dz of [-5.8, -2.9, 0, 2.9, 5.8]) {
+    room.cylinder('BeGenius canopy downlight', .11, .08, [innerX - side * 2.35, 5.55, z + dz], 0xeef6ff, { metalness: .7, roughness: .14 });
+  }
+
+  room.label('♛', [facadeX, 8.38, z], '#a9ceff', [2.1, .72]);
+  room.label('BeGenius Studio', [facadeX, 7.52, z], '#b9d8ff', [9.6, 1.18]);
+  room.label('RECORD  •  CREATE  •  MIX  •  BELONG', [facadeX, 6.62, z], '#d7e8ff', [7.5, .46]);
+
+  // Matching service board and brand poster flank the glass entry.
+  room.box('BeGenius service board', [.16, 4.55, 3.35], [facadeX - side * .06, 3.2, z - 6.35], 0x080b12, { metalness: .4, roughness: .3 });
+  room.label('VOCALS\nBEATS\nMIXING\nMASTERING\nARTIST DEVELOPMENT', [facadeX - side * .18, 3.38, z - 6.35], '#c9dcff', [3.05, 3.15]);
+  room.box('BeGenius quote poster', [.16, 4.45, 3.15], [facadeX - side * .06, 3.2, z + 6.35], 0x0c1018, { metalness: .35, roughness: .35 });
+  room.label('Good Music\nBetter People', [facadeX - side * .18, 3.42, z + 6.35], '#d4ddff', [2.65, 1.7]);
+
+  // Double glass-door details.
+  room.box('BeGenius door divider', [.22, 4.65, .09], [facadeX - side * .08, 3.22, z], 0x1b2130, { metalness: .85, roughness: .18 });
+  for (const dz of [-.72, .72]) {
+    room.cylinder('BeGenius door handle', .045, 1.15, [facadeX - side * .22, 3.15, z + dz], 0xbec9dc, { metalness: .95, roughness: .12 });
+  }
+
+  // Street planters soften the entrance like the reference.
+  for (const dz of [-7.35, 7.35]) {
+    room.cylinder('BeGenius planter', .55, 1.45, [innerX - side * 1.35, .76, z + dz], 0x161922, { metalness: .25, roughness: .5 });
+    for (let i = 0; i < 5; i++) {
+      const leaf = new THREE.Mesh(new THREE.SphereGeometry(.2, 8, 6), room.material(0x2d6845, .82, .02));
+      leaf.scale.set(.6, 2.5, .6);
+      leaf.position.set(innerX - side * (1.35 + i * .05), 1.7 + (i % 2) * .22, z + dz + (i - 2) * .18);
+      leaf.rotation.z = (i - 2) * .22;
+      scene.add(leaf);
+    }
+  }
 }
 
 function plaquesInterior({ outerX, z, side }) {
@@ -100,8 +146,11 @@ function plaquesInterior({ outerX, z, side }) {
     const plaque = room.box('gold record plaque', [.13, 1.25, 1.15], [outerX - side * .28, 4.2, z + i * 2.1], 0x1b1712, { metalness: .55, roughness: .35 });
     room.cylinder('gold record', .34, .06, [outerX - side * .38, 4.2, z + i * 2.1], 0xe0bd52, { metalness: .92, roughness: .2 }).rotation.z = Math.PI / 2;
   }
-  room.box('BeGenius reception desk', [3, 1.25, 5.4], [-25.4, .72, z], 0x161319, { metalness: .25, roughness: .48 });
-  room.light(0xeac454, 12, [-25, 4.8, z], 13).castShadow = false;
+  room.box('BeGenius reception desk', [3, 1.25, 5.4], [-25.4, .72, z], 0x11141c, { metalness: .32, roughness: .42 });
+  room.box('BeGenius reception glow', [.14, .16, 4.9], [-23.86, .7, z], 0x6f8cff, { material: new THREE.MeshStandardMaterial({ color: 0x8ab7ff, emissive: 0x3926c9, emissiveIntensity: 2 }) });
+  room.label('♛', [outerX - side * .38, 3.1, z], '#e1bf57', [2.3, .85]);
+  room.light(0x6e77ff, 14, [-25, 4.8, z], 13).castShadow = false;
+  room.light(0xeac454, 6, [-28, 3.8, z], 10).castShadow = false;
 }
 
 function cafeInterior({ outerX, z, side }) {
@@ -128,8 +177,8 @@ function recordStoreInterior({ outerX, z, side }) {
 
 addStorefront({
   name: 'BeGenius Studio', side: -1, z: 17, destination: 'begenius_studio.html',
-  wall: 0x17141a, trim: 0xc79c3c, floor: 0x2b2529, roof: 0x0d0c10, glow: 0xe6bd53,
-  glass: materials.glassGold, label: '#f4d779', decorate: plaquesInterior
+  wall: 0x151820, trim: 0x29344d, floor: 0x20242d, roof: 0x0b0d12, glow: 0x6f8cff,
+  glass: materials.glassGold, label: '#b9d8ff', customSign: true, decorate: plaquesInterior, decorateExterior: beGeniusExterior
 });
 addStorefront({
   name: 'Hip-Hop Café', side: 1, z: 17, destination: 'hiphop_cafe.html',
