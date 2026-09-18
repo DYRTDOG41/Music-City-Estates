@@ -143,6 +143,13 @@ async function renderFeed() {
     releasedBadge.textContent = "NEW RELEASE";
     badges.appendChild(releasedBadge);
 
+    const craft = document.createElement("span");
+    craft.className = "badge";
+    craft.textContent =
+      "A&R " + Number(release.craftScore || 0) +
+      " • " + String(release.craftTier || "Quick Draft").toUpperCase();
+    badges.appendChild(craft);
+
     if (Number(release.promotionCount || 0) > 0) {
       const promoted = document.createElement("span");
       promoted.className = "badge hot";
