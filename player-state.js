@@ -121,7 +121,12 @@
       beat: item.beat == null ? undefined : String(item.beat),
       provider: item.provider == null ? undefined : String(item.provider),
       audioKey: item.audioKey == null ? undefined : String(item.audioKey),
-      radioStatus: item.radioStatus == null ? undefined : String(item.radioStatus)
+      releaseStatus: item.releaseStatus == null ? "draft" : String(item.releaseStatus),
+      releasedAt: item.releasedAt || undefined,
+      promotedAt: item.promotedAt || undefined,
+      promotionCount: toCount(item.promotionCount, 0),
+      radioStatus: item.radioStatus == null ? "not-submitted" : String(item.radioStatus),
+      radioSubmittedAt: item.radioSubmittedAt || undefined
     };
   }
 
@@ -263,6 +268,89 @@
     return save(next);
   }
 
+  function findReleaseIndex(id, state) {
+    var s = state || current || load();
+    var target = String(id);
+    for (var i = 0; i < s.releases.length; i++) {
+      if (String(s.releases[i].id) === target) return i;
+    }
+    return -1;
+  }
+
+  function updateRelease(id, patch) {
+    if (!current) load();
+    var next = snapshot();
+    var index = findReleaseIndex(id, next);
+    if (index < 0) throw new Error("Song not found in Music City releases.");
+
+    next.releases[index] = normalizeRelease(
+      Object.assign({}, next.releases[index], patch || {}),
+      index
+    );
+
+    return save(next);
+  }
+
+  function releaseSong(id) {
+    if (!current) load();
+    var next = snapshot();
+    var index = findReleaseIndex(id, next);
+    if (index < 0) throw new Error("Song not found in Music City releases.");
+
+    var release = next.releases[index];
+    if (release.releaseStatus === "released") return snapshot();
+
+    release.releaseStatus = "released";
+    release.releasedAt = new Date().toISOString();
+    next.releases[index] = normalizeRelease(release, index);
+    next.fans += 3;
+    next.xp += 5;
+
+    return save(next);
+  }
+
+  function promoteRelease(id) {
+    if (!current) load();
+    var next = snapshot();
+    var index = findReleaseIndex(id, next);
+    if (index < 0) throw new Error("Song not found in Music City releases.");
+
+    var release = next.releases[index];
+    if (release.releaseStatus !== "released") {
+      throw new Error("Release the song before promoting it.");
+    }
+
+    if (release.promotionCount > 0) return snapshot();
+
+    release.promotionCount = 1;
+    release.promotedAt = new Date().toISOString();
+    next.releases[index] = normalizeRelease(release, index);
+    next.fans += 5;
+    next.xp += 3;
+
+    return save(next);
+  }
+
+  function submitReleaseToRadio(id) {
+    if (!current) load();
+    var next = snapshot();
+    var index = findReleaseIndex(id, next);
+    if (index < 0) throw new Error("Song not found in Music City releases.");
+
+    var release = next.releases[index];
+    if (release.releaseStatus !== "released") {
+      throw new Error("Release the song before submitting it to radio.");
+    }
+
+    if (release.radioStatus === "submitted") return snapshot();
+
+    release.radioStatus = "submitted";
+    release.radioSubmittedAt = new Date().toISOString();
+    next.releases[index] = normalizeRelease(release, index);
+
+    return save(next);
+  }
+
   function meets(req, state) {
     var s = state || current || load();
     if (!req) return true;
@@ -321,6 +409,10 @@
     set: save,
     add: add,
     addRelease: addRelease,
+    updateRelease: updateRelease,
+    releaseSong: releaseSong,
+    promoteRelease: promoteRelease,
+    submitReleaseToRadio: submitReleaseToRadio,
     meets: meets,
     isUnlocked: isUnlocked,
     needed: needed,
