@@ -141,6 +141,28 @@ test("named releases increase song count", function () {
   assert.strictEqual(state.releases[0].title, "Night Drive");
 });
 
+test("AI release metadata survives normalization", function () {
+  start();
+  var state = MCE.addRelease({
+    id: "ai-song-1",
+    title: "Neon Block",
+    source: "ai-elevenlabs",
+    style: "melodic trap",
+    studio: "begenius",
+    beat: "Midnight Drive",
+    provider: "ElevenLabs Music",
+    audioKey: "ai-song-1",
+    radioStatus: "not-submitted"
+  });
+  var release = state.releases[0];
+  assert.strictEqual(release.style, "melodic trap");
+  assert.strictEqual(release.studio, "begenius");
+  assert.strictEqual(release.beat, "Midnight Drive");
+  assert.strictEqual(release.provider, "ElevenLabs Music");
+  assert.strictEqual(release.audioKey, "ai-song-1");
+  assert.strictEqual(release.radioStatus, "not-submitted");
+});
+
 test("NaN world values are ignored", function () {
   var state = start({
     mceFans: "nope",
