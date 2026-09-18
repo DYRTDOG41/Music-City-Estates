@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Music City Feed | Music City Estates</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:#05070d;color:#fff;font-family:Arial,sans-serif}
+header{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:15px 18px;background:#05070df2;border-bottom:1px solid #26364d}
+.brand{font-weight:900;letter-spacing:.05em}
+.nav{display:flex;gap:8px;flex-wrap:wrap}
+.nav a{color:#fff;text-decoration:none;padding:8px 11px;border:1px solid #22d3ee;border-radius:9px;background:#08111d}
+.wrap{width:min(760px,95%);margin:22px auto 50px}
+.hero{padding:18px;border:1px solid #27374f;border-radius:16px;background:linear-gradient(145deg,#0c1524,#080c14);margin-bottom:16px}
+.hero h1{margin:0 0 7px;color:#22d3ee;font-size:24px}
+.hero p{margin:0;color:#aebbd1}
+.post{border:1px solid #25334a;border-radius:17px;background:#0a101a;margin-bottom:16px;overflow:hidden;box-shadow:0 12px 28px #0005}
+.postHead{display:flex;align-items:center;gap:11px;padding:15px}
+.avatar{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#123449;border:1px solid #22d3ee;font-weight:bold}
+.artist{font-weight:800}
+.time{font-size:12px;color:#8796af;margin-top:3px}
+.body{padding:0 15px 15px}
+.title{font-size:21px;font-weight:900;margin:4px 0 7px}
+.meta{color:#9cacbf;font-size:13px;line-height:1.5}
+.badges{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}
+.badge{padding:5px 8px;border-radius:10px;background:#102638;color:#88eaff;font-size:11px;font-weight:800}
+.badge.hot{background:#311d23;color:#ffabbc}
+.badge.radio{background:#2c2040;color:#dabdff}
+audio{width:100%;margin-top:9px}
+.footer{display:flex;gap:8px;align-items:center;padding:12px 15px;border-top:1px solid #202b3c;color:#95a4bb;font-size:13px}
+.empty{padding:32px;text-align:center;border:1px dashed #37465e;border-radius:16px;color:#a7b2c3}
+@media(max-width:620px){header{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body>
+<header>
+<div class="brand">📱 MUSIC CITY FEED</div>
+<div class="nav">
+<a href="artist_catalog.html">💿 Catalog</a>
+<a href="music_city_radio.html">📻 Radio</a>
+<a href="city_map.html">🗺 City Map</a>
+</div>
+</header>
+
+<div class="wrap">
+<section class="hero">
+<h1>What’s Dropping in Music City</h1>
+<p>Released songs from your current Music City career appear here automatically.</p>
+</section>
+<div id="feed"></div>
+</div>
+
+<script src="player-state.js"></script>
+<script src="music_city_catalog.js"></script>
+<script>
+let objectUrls = [];
+
+function formatWhen(value) {
+  if (!value) return "Just released";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Released";
+  return date.toLocaleString();
+}
+
+async function renderFeed() {
+  objectUrls.forEach(url => URL.revokeObjectURL(url));
+  objectUrls = [];
+
+  const state = window.MCE.get();
+  const artistName = state.name || "Rookie";
+  const releases = state.releases
+    .filter(release => release.releaseStatus === "released")
+    .sort((a, b) =>
+      String(b.releasedAt || b.createdAt || "")
+        .localeCompare(String(a.releasedAt || a.createdAt || ""))
+    );
+
+  const feed = document.getElementById("feed");
+
+  if (!releases.length) {
+    feed.innerHTML =
+      '<div class="empty">No public releases yet. Go to the Artist Catalog and release a saved song to make your first Music City post.</div>';
+    return;
+  }
+
+  const tracks = await window.MusicCityCatalog.listTracks();
+  const trackMap = {};
+  tracks.forEach(track => {
+    trackMap[String(track.id)] = track;
+  });
+
+  feed.innerHTML = "";
+
+  releases.forEach(release => {
+    const track = trackMap[String(release.audioKey || release.id)] || null;
+
+    const post = document.createElement("article");
+    post.className = "post";
+
+    const head = document.createElement("div");
+    head.className = "postHead";
+
+    const avatar = document.createElement("div");
+    avatar.className = "avatar";
+    avatar.textContent = artistName.slice(0, 1).toUpperCase();
+
+    const identity = document.createElement("div");
+    const artist = document.createElement("div");
+    artist.className = "artist";
+    artist.textContent = artistName + " released a new track";
+    const time = document.createElement("div");
+    time.className = "time";
+    time.textContent = formatWhen(release.releasedAt);
+    identity.appendChild(artist);
+    identity.appendChild(time);
+
+    head.appendChild(avatar);
+    head.appendChild(identity);
+    post.appendChild(head);
+
+    const body = document.createElement("div");
+    body.className = "body";
+
+    const title = document.createElement("div");
+    title.className = "title";
+    title.textContent = release.title || "Untitled Song";
+    body.appendChild(title);
+
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    meta.textContent =
+      [release.style, release.beat, release.studio]
+        .filter(Boolean)
+        .join(" • ");
+    body.appendChild(meta);
+
+    const badges = document.createElement("div");
+    badges.className = "badges";
+
+    const releasedBadge = document.createElement("span");
+    releasedBadge.className = "badge";
+    releasedBadge.textContent = "NEW RELEASE";
+    badges.appendChild(releasedBadge);
+
+    if (Number(release.promotionCount || 0) > 0) {
+      const promoted = document.createElement("span");
+      promoted.className = "badge hot";
+      promoted.textContent = "PROMOTED";
+      badges.appendChild(promoted);
+    }
+
+    if (release.radioStatus === "submitted") {
+      const radio = document.createElement("span");
+      radio.className = "badge radio";
+      radio.textContent = "RADIO SUBMITTED";
+      badges.appendChild(radio);
+    }
+
+    body.appendChild(badges);
+
+    if (track && track.audioBlob) {
+      const audio = document.createElement("audio");
+      audio.controls = true;
+      const url = URL.createObjectURL(track.audioBlob);
+      objectUrls.push(url);
+      audio.src = url;
+      body.appendChild(audio);
+    }
+
+    post.appendChild(body);
+
+    const footer = document.createElement("div");
+    footer.className = "footer";
+    footer.textContent =
+      "👥 " + state.fans +
+      " fans • ⭐ " + state.xp +
+      " XP • " +
+      (release.provider || "Music City release");
+    post.appendChild(footer);
+
+    feed.appendChild(post);
+  });
+}
+
+renderFeed().catch(error => {
+  document.getElementById("feed").innerHTML =
+    '<div class="empty">' + (error.message || "Could not load Music City Feed.") + '</div>';
+});
+</script>
+</body>
+</html>

@@ -7,38 +7,54 @@
 <style>
 *{box-sizing:border-box}
 body{margin:0;min-height:100vh;background:radial-gradient(circle at top,#17213a,#05070d 62%);color:#fff;font-family:Arial,sans-serif}
-header{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;background:#05070de8;border-bottom:1px solid #22d3ee;position:sticky;top:0;z-index:5}
+header{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;background:#05070de8;border-bottom:1px solid #22d3ee;position:sticky;top:0;z-index:5;gap:10px}
 header h1{font-size:19px;margin:0}
-.back{color:#fff;text-decoration:none;border:1px solid #22d3ee;border-radius:9px;padding:9px 13px}
-.wrap{width:min(980px,94%);margin:26px auto 50px}
+.nav{display:flex;gap:8px;flex-wrap:wrap}
+.back{color:#fff;text-decoration:none;border:1px solid #22d3ee;border-radius:9px;padding:9px 13px;background:#08111d}
+.wrap{width:min(1050px,94%);margin:26px auto 50px}
 .hero{padding:22px;border:1px solid #22d3ee55;border-radius:18px;background:#09101dcc;box-shadow:0 0 25px #22d3ee18}
 .hero h2{margin:0 0 8px;color:#22d3ee}
 .stats{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
 .pill{padding:8px 11px;border-radius:18px;background:#111827;border:1px solid #334155}
-#catalog{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px;margin-top:18px}
-.card{padding:18px;border:1px solid #30384c;border-radius:16px;background:#0b111cee}
+.notice{margin-top:14px;padding:11px 13px;border-radius:11px;background:#081a23;border:1px solid #164e63;color:#b9efff;display:none}
+#catalog{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px;margin-top:18px}
+.card{padding:18px;border:1px solid #30384c;border-radius:16px;background:#0b111cee;box-shadow:0 8px 24px #0005}
 .card h3{margin:0 0 7px}
-.meta{font-size:13px;color:#a8b3ca;line-height:1.55}
+.meta{font-size:13px;color:#a8b3ca;line-height:1.55;min-height:20px}
 audio{width:100%;margin-top:13px}
 .empty{padding:28px;text-align:center;border:1px dashed #3b455f;border-radius:16px;color:#a8b3ca;margin-top:18px}
-.badge{display:inline-block;margin-top:10px;padding:5px 8px;border-radius:10px;background:#0d2d36;color:#7be8ff;font-size:11px;font-weight:bold}
+.badges{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.badge{display:inline-block;padding:5px 8px;border-radius:10px;background:#0d2d36;color:#7be8ff;font-size:11px;font-weight:bold}
+.badge.live{background:#16311f;color:#8ff0aa}
+.badge.radio{background:#2c2040;color:#d6b7ff}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+button{padding:11px 10px;border:1px solid #22d3ee;border-radius:9px;background:#122033;color:#fff;font-weight:bold;cursor:pointer}
+button.primary{background:#22d3ee;color:#041019}
+button:disabled{opacity:.45;cursor:not-allowed}
+.reward{font-size:12px;color:#96a3bb;margin-top:10px}
+@media(max-width:700px){header{align-items:flex-start;flex-direction:column}.actions{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <header>
+<div class="nav">
 <a class="back" href="record_music.html">← RECORDING BOOTH</a>
+<a class="back" href="music_city_feed.html">📱 CITY FEED</a>
+</div>
 <h1>MUSIC CITY ESTATES</h1>
 </header>
 
 <div class="wrap">
 <section class="hero">
 <h2>💿 Artist Catalog</h2>
-<p>Your saved Music City songs live here on this device. Career metadata is tied to your existing player state.</p>
+<p>Save tracks, release them into Music City, promote them, and submit released songs for radio consideration.</p>
 <div class="stats">
 <div class="pill">Songs: <strong id="songCount">0</strong></div>
 <div class="pill">Fans: <strong id="fanCount">0</strong></div>
 <div class="pill">XP: <strong id="xpCount">0</strong></div>
+<div class="pill">Career: <strong id="careerTitle">Bedroom Artist</strong></div>
 </div>
+<div id="notice" class="notice"></div>
 </section>
 
 <div id="catalog"></div>
@@ -47,11 +63,58 @@ audio{width:100%;margin-top:13px}
 <script src="player-state.js"></script>
 <script src="music_city_catalog.js"></script>
 <script>
+let objectUrls = [];
+
+function showNotice(message) {
+  const notice = document.getElementById("notice");
+  notice.textContent = message;
+  notice.style.display = "block";
+}
+
+function releaseById(id) {
+  try {
+    window.MCE.releaseSong(id);
+    showNotice("Song released. +3 fans and +5 XP. It is now visible in the Music City Feed.");
+    renderCatalog();
+  } catch (error) {
+    showNotice(error.message || "Could not release this song.");
+  }
+}
+
+function promoteById(id) {
+  try {
+    window.MCE.promoteRelease(id);
+    showNotice("Promotion completed. +5 fans and +3 XP.");
+    renderCatalog();
+  } catch (error) {
+    showNotice(error.message || "Could not promote this song.");
+  }
+}
+
+function submitRadioById(id) {
+  try {
+    window.MCE.submitReleaseToRadio(id);
+    showNotice("Submitted to Music City Radio for consideration. Submission does not guarantee airplay.");
+    renderCatalog();
+  } catch (error) {
+    showNotice(error.message || "Could not submit this song to radio.");
+  }
+}
+
 async function renderCatalog() {
+  objectUrls.forEach(url => URL.revokeObjectURL(url));
+  objectUrls = [];
+
   const state = window.MCE.get();
   document.getElementById("songCount").textContent = state.songs;
   document.getElementById("fanCount").textContent = state.fans;
   document.getElementById("xpCount").textContent = state.xp;
+  document.getElementById("careerTitle").textContent = window.MCE.getCareerTitle(state);
+
+  const releaseMap = {};
+  state.releases.forEach(release => {
+    releaseMap[String(release.id)] = release;
+  });
 
   const catalog = document.getElementById("catalog");
   const tracks = await window.MusicCityCatalog.listTracks();
@@ -65,6 +128,11 @@ async function renderCatalog() {
   catalog.innerHTML = "";
 
   tracks.forEach(track => {
+    const release = releaseMap[String(track.id)] || {};
+    const isReleased = release.releaseStatus === "released";
+    const isPromoted = Number(release.promotionCount || 0) > 0;
+    const radioSubmitted = release.radioStatus === "submitted";
+
     const card = document.createElement("article");
     card.className = "card";
 
@@ -80,17 +148,79 @@ async function renderCatalog() {
         .join(" • ");
     card.appendChild(meta);
 
-    const badge = document.createElement("span");
-    badge.className = "badge";
-    badge.textContent = track.provider || "Music City AI";
-    card.appendChild(badge);
+    const badges = document.createElement("div");
+    badges.className = "badges";
+
+    const provider = document.createElement("span");
+    provider.className = "badge";
+    provider.textContent = track.provider || "Music City AI";
+    badges.appendChild(provider);
+
+    const status = document.createElement("span");
+    status.className = "badge" + (isReleased ? " live" : "");
+    status.textContent = isReleased ? "RELEASED" : "UNRELEASED";
+    badges.appendChild(status);
+
+    if (radioSubmitted) {
+      const radio = document.createElement("span");
+      radio.className = "badge radio";
+      radio.textContent = "RADIO SUBMITTED";
+      badges.appendChild(radio);
+    }
+
+    card.appendChild(badges);
 
     if (track.audioBlob) {
       const audio = document.createElement("audio");
       audio.controls = true;
-      audio.src = URL.createObjectURL(track.audioBlob);
+      const url = URL.createObjectURL(track.audioBlob);
+      objectUrls.push(url);
+      audio.src = url;
       card.appendChild(audio);
     }
+
+    const actions = document.createElement("div");
+    actions.className = "actions";
+
+    const releaseButton = document.createElement("button");
+    releaseButton.className = "primary";
+    releaseButton.textContent = isReleased ? "✓ RELEASED" : "🚀 RELEASE SONG";
+    releaseButton.disabled = isReleased;
+    releaseButton.onclick = () => releaseById(track.id);
+    actions.appendChild(releaseButton);
+
+    const promoteButton = document.createElement("button");
+    promoteButton.textContent = isPromoted ? "✓ PROMOTED" : "📣 PROMOTE";
+    promoteButton.disabled = !isReleased || isPromoted;
+    promoteButton.onclick = () => promoteById(track.id);
+    actions.appendChild(promoteButton);
+
+    const radioButton = document.createElement("button");
+    radioButton.textContent = radioSubmitted ? "✓ RADIO SUBMITTED" : "📻 SUBMIT TO RADIO";
+    radioButton.disabled = !isReleased || radioSubmitted;
+    radioButton.onclick = () => submitRadioById(track.id);
+    actions.appendChild(radioButton);
+
+    const feedButton = document.createElement("button");
+    feedButton.textContent = "📱 VIEW FEED";
+    feedButton.disabled = !isReleased;
+    feedButton.onclick = () => {
+      window.location.href = "music_city_feed.html";
+    };
+    actions.appendChild(feedButton);
+
+    card.appendChild(actions);
+
+    const reward = document.createElement("div");
+    reward.className = "reward";
+    reward.textContent = !isReleased
+      ? "Release reward: +3 fans, +5 XP"
+      : !isPromoted
+        ? "Promotion available: +5 fans, +3 XP"
+        : radioSubmitted
+          ? "Radio submission is pending consideration."
+          : "Eligible for Music City Radio submission.";
+    card.appendChild(reward);
 
     catalog.appendChild(card);
   });

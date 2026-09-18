@@ -206,6 +206,27 @@ text-decoration: none;
 font-size: 12px;
 }
 
+.city-tools {
+position: absolute;
+left: 1.5%;
+bottom: 3%;
+z-index: 45;
+display: flex;
+gap: 8px;
+}
+
+.city-tools a {
+padding: 8px 12px;
+background: rgba(0, 10, 30, .92);
+color: white;
+border: 1px solid #238cff;
+border-radius: 6px;
+text-decoration: none;
+font-size: 12px;
+font-weight: bold;
+box-shadow: 0 0 12px rgba(0, 140, 255, .35);
+}
+
 .selection-ring {
 position: absolute;
 display: none;
@@ -299,6 +320,11 @@ onclick="travel()">
 TRAVEL
 </button>
 
+</div>
+
+<div class="city-tools">
+<a href="music_city_feed.html">📱 CITY FEED</a>
+<a href="artist_catalog.html">💿 ARTIST CATALOG</a>
 </div>
 
 </div>

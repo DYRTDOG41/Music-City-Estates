@@ -163,6 +163,46 @@ test("AI release metadata survives normalization", function () {
   assert.strictEqual(release.radioStatus, "not-submitted");
 });
 
+test("releasing a song rewards fans and XP once", function () {
+  start();
+  MCE.addRelease({ id: "release-loop-1", title: "First Drop" });
+  var first = MCE.releaseSong("release-loop-1");
+  assert.strictEqual(first.fans, 3);
+  assert.strictEqual(first.xp, 5);
+  assert.strictEqual(first.releases[0].releaseStatus, "released");
+  var second = MCE.releaseSong("release-loop-1");
+  assert.strictEqual(second.fans, 3);
+  assert.strictEqual(second.xp, 5);
+});
+
+test("promotion requires release and rewards once", function () {
+  start();
+  MCE.addRelease({ id: "release-loop-2", title: "Promo Song" });
+  assert.throws(function () {
+    MCE.promoteRelease("release-loop-2");
+  });
+  MCE.releaseSong("release-loop-2");
+  var promoted = MCE.promoteRelease("release-loop-2");
+  assert.strictEqual(promoted.fans, 8);
+  assert.strictEqual(promoted.xp, 8);
+  assert.strictEqual(promoted.releases[0].promotionCount, 1);
+  var again = MCE.promoteRelease("release-loop-2");
+  assert.strictEqual(again.fans, 8);
+  assert.strictEqual(again.xp, 8);
+});
+
+test("radio submission requires a released song", function () {
+  start();
+  MCE.addRelease({ id: "release-loop-3", title: "Radio Song" });
+  assert.throws(function () {
+    MCE.submitReleaseToRadio("release-loop-3");
+  });
+  MCE.releaseSong("release-loop-3");
+  var submitted = MCE.submitReleaseToRadio("release-loop-3");
+  assert.strictEqual(submitted.releases[0].radioStatus, "submitted");
+  assert.ok(submitted.releases[0].radioSubmittedAt);
+});
+
 test("NaN world values are ignored", function () {
   var state = start({
     mceFans: "nope",

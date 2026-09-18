@@ -5,18 +5,121 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Music City Radio | Music City Estates</title>
 <style>
-html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: Arial, sans-serif; }
-iframe { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; }
-.hud { position: fixed; top: 14px; left: 14px; right: 14px; z-index: 5; display: flex; justify-content: space-between; align-items: center; pointer-events: none; }
-.title, .back { padding: 10px 14px; border: 1px solid #38cfff; border-radius: 8px; background: rgba(0,8,20,.9); color: white; font-weight: bold; box-shadow: 0 0 15px rgba(56,207,255,.45); }
-.back { text-decoration: none; pointer-events: auto; }
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;font-family:Arial,sans-serif;color:#fff}
+iframe{position:fixed;inset:0;width:100%;height:100%;border:0}
+.hud{position:fixed;top:14px;left:14px;right:14px;z-index:5;display:flex;justify-content:space-between;align-items:center;pointer-events:none;gap:10px}
+.title,.back,.submissionsBtn{padding:10px 14px;border:1px solid #38cfff;border-radius:8px;background:rgba(0,8,20,.9);color:white;font-weight:bold;box-shadow:0 0 15px rgba(56,207,255,.45)}
+.back{text-decoration:none;pointer-events:auto}
+.submissionsBtn{pointer-events:auto;cursor:pointer}
+.radioPanel{position:fixed;z-index:8;right:14px;top:68px;width:min(390px,calc(100% - 28px));max-height:72vh;overflow:auto;padding:16px;border:1px solid #38cfff;border-radius:14px;background:rgba(2,8,18,.96);box-shadow:0 0 30px #38cfff40;display:none}
+.radioPanel.show{display:block}
+.radioPanel h2{margin:0 0 5px;color:#7be8ff;font-size:20px}
+.radioPanel p{color:#aab8cc;font-size:13px;line-height:1.45}
+.submission{padding:13px;margin-top:11px;border:1px solid #2c4159;border-radius:12px;background:#09111c}
+.submission h3{margin:0 0 6px;font-size:16px}
+.meta{font-size:12px;color:#98a8bd}
+.status{display:inline-block;margin-top:8px;padding:4px 7px;border-radius:9px;background:#2c2040;color:#dbbfff;font-size:10px;font-weight:900}
+audio{width:100%;margin-top:10px}
+.empty{padding:18px;text-align:center;border:1px dashed #41516a;border-radius:10px;color:#a5b3c7}
+.links{display:flex;gap:8px;margin-top:12px}
+.links a{flex:1;text-align:center;color:#fff;text-decoration:none;padding:9px;border:1px solid #35506a;border-radius:8px;background:#0d1825}
 </style>
 </head>
 <body>
 <iframe allow="fullscreen" src="https://marble.worldlabs.ai/viewer.html?splatUrl=https%3A%2F%2Fcdn.marble.worldlabs.ai%2Fa61b5c20-8d09-4d1b-bb1d-394f2b1d2083%2Fd748d18c-95ed-4313-b405-6d546494a618_ceramic.spz&amp;mobileUrl=https%3A%2F%2Fcdn.marble.worldlabs.ai%2Fa61b5c20-8d09-4d1b-bb1d-394f2b1d2083%2Fbc81ecbb-38f1-46da-938d-c3153f3a3615_ceramic_500k.spz&amp;marbleWorldId=a61b5c20-8d09-4d1b-bb1d-394f2b1d2083"></iframe>
+
 <div class="hud">
 <a class="back" href="city_map.html">← CITY MAP</a>
 <div class="title">📻 MUSIC CITY ESTATES RADIO</div>
+<button class="submissionsBtn" onclick="toggleSubmissions()">MY SUBMISSIONS</button>
 </div>
+
+<section class="radioPanel" id="radioPanel">
+<h2>📡 Artist Submissions</h2>
+<p>Released songs submitted from your Artist Catalog appear here for Music City Radio consideration. Submission does not guarantee airplay.</p>
+<div id="submissionList"></div>
+<div class="links">
+<a href="artist_catalog.html">Artist Catalog</a>
+<a href="music_city_feed.html">City Feed</a>
+</div>
+</section>
+
+<script src="player-state.js"></script>
+<script src="music_city_catalog.js"></script>
+<script>
+let radioUrls = [];
+
+function toggleSubmissions() {
+  const panel = document.getElementById("radioPanel");
+  panel.classList.toggle("show");
+  if (panel.classList.contains("show")) {
+    renderSubmissions();
+  }
+}
+
+async function renderSubmissions() {
+  radioUrls.forEach(url => URL.revokeObjectURL(url));
+  radioUrls = [];
+
+  const state = window.MCE.get();
+  const submissions = state.releases
+    .filter(release => release.radioStatus === "submitted")
+    .sort((a, b) =>
+      String(b.radioSubmittedAt || "")
+        .localeCompare(String(a.radioSubmittedAt || ""))
+    );
+
+  const list = document.getElementById("submissionList");
+
+  if (!submissions.length) {
+    list.innerHTML =
+      '<div class="empty">No radio submissions yet. Release a song in your Artist Catalog, then choose Submit to Radio.</div>';
+    return;
+  }
+
+  const tracks = await window.MusicCityCatalog.listTracks();
+  const trackMap = {};
+  tracks.forEach(track => {
+    trackMap[String(track.id)] = track;
+  });
+
+  list.innerHTML = "";
+
+  submissions.forEach(release => {
+    const track = trackMap[String(release.audioKey || release.id)] || null;
+
+    const card = document.createElement("article");
+    card.className = "submission";
+
+    const title = document.createElement("h3");
+    title.textContent = release.title || "Untitled Song";
+    card.appendChild(title);
+
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    meta.textContent =
+      [release.style, release.beat, release.provider]
+        .filter(Boolean)
+        .join(" • ");
+    card.appendChild(meta);
+
+    const status = document.createElement("span");
+    status.className = "status";
+    status.textContent = "PENDING CONSIDERATION";
+    card.appendChild(status);
+
+    if (track && track.audioBlob) {
+      const audio = document.createElement("audio");
+      audio.controls = true;
+      const url = URL.createObjectURL(track.audioBlob);
+      radioUrls.push(url);
+      audio.src = url;
+      card.appendChild(audio);
+    }
+
+    list.appendChild(card);
+  });
+}
+</script>
 </body>
 </html>
