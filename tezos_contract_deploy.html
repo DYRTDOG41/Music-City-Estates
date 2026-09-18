@@ -127,18 +127,15 @@ globalThis.Buffer = Buffer;
 const [
   { TezosToolkit },
   { BeaconWallet },
-  { NetworkType },
-  { Parser }
+  { NetworkType }
 ] = await Promise.all([
   import("https://esm.sh/@taquito/taquito@25.0.0"),
   import("https://esm.sh/@taquito/beacon-wallet@25.0.0"),
-  import("https://esm.sh/@tezos-x/octez.connect-types@5.0.4"),
-  import("https://esm.sh/@taquito/michel-codec@25.0.0")
+  import("https://esm.sh/@taquito/beacon-wallet@25.0.0/types")
 ]);
 
 const config = window.MusicCityTezos.CONFIG;
 const Tezos = new TezosToolkit(config.rpcUrl);
-const parser = new Parser();
 
 let wallet = null;
 let walletAddress = "";
@@ -342,26 +339,21 @@ function updateButtons() {
     !(certified && collectibles);
 }
 
-function injectAdmin(storageValue) {
-  const copy =
-    typeof structuredClone === "function"
-      ? structuredClone(storageValue)
-      : JSON.parse(JSON.stringify(storageValue));
+function injectAdmin(storageText) {
+  const source = String(storageText || "").trim();
 
-  if (
-    !copy ||
-    copy.prim !== "Pair" ||
-    !Array.isArray(copy.args) ||
-    !copy.args[0] ||
-    typeof copy.args[0].string !== "string"
-  ) {
+  const replaced = source.replace(
+    /^(\(Pair\s+")[^"]+(")/,
+    "$1" + walletAddress + "$2"
+  );
+
+  if (replaced === source || !replaced.startsWith("(Pair \"tz")) {
     throw new Error(
       "Compiled storage shape was not recognized. Deployment stopped before signing."
     );
   }
 
-  copy.args[0].string = walletAddress;
-  return copy;
+  return replaced;
 }
 
 async function loadCompiled(kind) {
@@ -375,17 +367,13 @@ async function loadCompiled(kind) {
     fetchText(storageUrl)
   ]);
 
-  const code = parser.parseScript(codeText);
-  const rawStorage =
-    parser.parseMichelineExpression(storageText);
-
-  if (!code || !rawStorage) {
-    throw new Error("Taquito could not parse the compiled SmartPy build.");
+  if (!codeText.trim() || !storageText.trim()) {
+    throw new Error("The compiled SmartPy build is empty.");
   }
 
   return {
-    code: code,
-    init: injectAdmin(rawStorage)
+    code: codeText,
+    init: injectAdmin(storageText)
   };
 }
 
