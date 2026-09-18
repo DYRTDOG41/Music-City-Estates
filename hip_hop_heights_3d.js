@@ -95,11 +95,68 @@ function addStorefront(config) {
 
   room.interact('ENTER ' + config.name.toUpperCase(), [innerX - side * 1.35, 1.7, z], action, 3.25, config.glow);
   config.decorate({ xCenter, innerX, outerX, z, side });
-  if (config.decorateExterior) config.decorateExterior({ xCenter, innerX, outerX, z, side });
+  if (config.decorateExterior) config.decorateExterior({ xCenter, innerX, outerX, z, side, action, name: config.name });
 }
 
 
-function beGeniusExterior({ innerX, z, side }) {
+function createBeGeniusLogoSign(position, action) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1536;
+  canvas.height = 480;
+  const context = canvas.getContext('2d');
+
+  context.fillStyle = '#070b13';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  const glow = '#73a9ff';
+  context.strokeStyle = glow;
+  context.lineWidth = 13;
+  context.lineJoin = 'round';
+  context.shadowColor = '#397cff';
+  context.shadowBlur = 38;
+
+  // BeGenius crown mark.
+  context.beginPath();
+  context.moveTo(625, 105);
+  context.lineTo(680, 172);
+  context.lineTo(753, 86);
+  context.lineTo(826, 172);
+  context.lineTo(884, 105);
+  context.lineTo(861, 225);
+  context.lineTo(648, 225);
+  context.closePath();
+  context.stroke();
+  context.beginPath();
+  context.arc(753, 58, 12, 0, Math.PI * 2);
+  context.stroke();
+
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.fillStyle = '#eaf3ff';
+  context.font = '900 118px Arial, sans-serif';
+  context.fillText('BeGenius Studio', 768, 315);
+  context.shadowBlur = 18;
+  context.fillStyle = '#bfd7ff';
+  context.font = '700 34px Arial, sans-serif';
+  context.fillText('RECORD  •  CREATE  •  MIX  •  BELONG', 768, 415);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  const material = new THREE.MeshBasicMaterial({
+    map: texture,
+    side: THREE.DoubleSide,
+    toneMapped: false
+  });
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(14.7, 4.6), material);
+  sign.name = 'illuminated BeGenius crown logo';
+  sign.position.fromArray(position);
+  sign.rotation.y = Math.PI / 2;
+  scene.add(sign);
+  addClickable(sign, action, 'BeGenius Studio');
+  return sign;
+}
+
+function beGeniusExterior({ innerX, z, side, action }) {
   const facadeX = innerX - side * .42;
   const neonBlue = new THREE.MeshStandardMaterial({ color: 0xb8d8ff, emissive: 0x276dff, emissiveIntensity: 2.2, metalness: .35, roughness: .2 });
   const stone = new THREE.MeshStandardMaterial({ color: 0x171a22, roughness: .72, metalness: .18 });
@@ -112,9 +169,9 @@ function beGeniusExterior({ innerX, z, side }) {
     room.cylinder('BeGenius canopy downlight', .11, .08, [innerX - side * 2.35, 5.55, z + dz], 0xeef6ff, { metalness: .7, roughness: .14 });
   }
 
-  room.label('♛', [facadeX, 8.38, z], '#a9ceff', [2.1, .72]);
-  room.label('BeGenius Studio', [facadeX, 7.52, z], '#b9d8ff', [9.6, 1.18]);
-  room.label('RECORD  •  CREATE  •  MIX  •  BELONG', [facadeX, 6.62, z], '#d7e8ff', [7.5, .46]);
+  createBeGeniusLogoSign([facadeX - side * .08, 7.42, z], action);
+  const logoLight = room.light(0x4d86ff, 9, [innerX - side * 2.6, 7.2, z], 13);
+  logoLight.castShadow = false;
 
   // Matching service board and brand poster flank the glass entry.
   room.box('BeGenius service board', [.16, 4.55, 3.35], [facadeX - side * .06, 3.2, z - 6.35], 0x080b12, { metalness: .4, roughness: .3 });
