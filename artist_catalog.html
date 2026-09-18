@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Artist Catalog | Music City Estates</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(circle at top,#17213a,#05070d 62%);color:#fff;font-family:Arial,sans-serif}
+header{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;background:#05070de8;border-bottom:1px solid #22d3ee;position:sticky;top:0;z-index:5}
+header h1{font-size:19px;margin:0}
+.back{color:#fff;text-decoration:none;border:1px solid #22d3ee;border-radius:9px;padding:9px 13px}
+.wrap{width:min(980px,94%);margin:26px auto 50px}
+.hero{padding:22px;border:1px solid #22d3ee55;border-radius:18px;background:#09101dcc;box-shadow:0 0 25px #22d3ee18}
+.hero h2{margin:0 0 8px;color:#22d3ee}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.pill{padding:8px 11px;border-radius:18px;background:#111827;border:1px solid #334155}
+#catalog{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px;margin-top:18px}
+.card{padding:18px;border:1px solid #30384c;border-radius:16px;background:#0b111cee}
+.card h3{margin:0 0 7px}
+.meta{font-size:13px;color:#a8b3ca;line-height:1.55}
+audio{width:100%;margin-top:13px}
+.empty{padding:28px;text-align:center;border:1px dashed #3b455f;border-radius:16px;color:#a8b3ca;margin-top:18px}
+.badge{display:inline-block;margin-top:10px;padding:5px 8px;border-radius:10px;background:#0d2d36;color:#7be8ff;font-size:11px;font-weight:bold}
+</style>
+</head>
+<body>
+<header>
+<a class="back" href="record_music.html">← RECORDING BOOTH</a>
+<h1>MUSIC CITY ESTATES</h1>
+</header>
+
+<div class="wrap">
+<section class="hero">
+<h2>💿 Artist Catalog</h2>
+<p>Your saved Music City songs live here on this device. Career metadata is tied to your existing player state.</p>
+<div class="stats">
+<div class="pill">Songs: <strong id="songCount">0</strong></div>
+<div class="pill">Fans: <strong id="fanCount">0</strong></div>
+<div class="pill">XP: <strong id="xpCount">0</strong></div>
+</div>
+</section>
+
+<div id="catalog"></div>
+</div>
+
+<script src="player-state.js"></script>
+<script src="music_city_catalog.js"></script>
+<script>
+async function renderCatalog() {
+  const state = window.MCE.get();
+  document.getElementById("songCount").textContent = state.songs;
+  document.getElementById("fanCount").textContent = state.fans;
+  document.getElementById("xpCount").textContent = state.xp;
+
+  const catalog = document.getElementById("catalog");
+  const tracks = await window.MusicCityCatalog.listTracks();
+
+  if (!tracks.length) {
+    catalog.innerHTML =
+      '<div class="empty">No saved AI tracks yet. Create one in the Recording Booth, then choose <strong>Save to Artist Catalog</strong>.</div>';
+    return;
+  }
+
+  catalog.innerHTML = "";
+
+  tracks.forEach(track => {
+    const card = document.createElement("article");
+    card.className = "card";
+
+    const title = document.createElement("h3");
+    title.textContent = track.title || "Untitled Song";
+    card.appendChild(title);
+
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    meta.textContent =
+      [track.style, track.beat, track.studio]
+        .filter(Boolean)
+        .join(" • ");
+    card.appendChild(meta);
+
+    const badge = document.createElement("span");
+    badge.className = "badge";
+    badge.textContent = track.provider || "Music City AI";
+    card.appendChild(badge);
+
+    if (track.audioBlob) {
+      const audio = document.createElement("audio");
+      audio.controls = true;
+      audio.src = URL.createObjectURL(track.audioBlob);
+      card.appendChild(audio);
+    }
+
+    catalog.appendChild(card);
+  });
+}
+
+renderCatalog().catch(error => {
+  document.getElementById("catalog").innerHTML =
+    '<div class="empty">' + (error.message || "Could not load catalog.") + '</div>';
+});
+</script>
+</body>
+</html>
