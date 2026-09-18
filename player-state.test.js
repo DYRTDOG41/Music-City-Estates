@@ -177,24 +177,56 @@ test("AI release metadata survives normalization", function () {
   assert.strictEqual(release.radioStatus, "not-submitted");
 });
 
-test("Certified Record metadata survives career state", function () {
+test("Record Passport metadata survives career state before minting", function () {
   start();
   MCE.addRelease({ id: "cert-song", title: "Certified Test" });
 
-  var certified = MCE.markReleaseCertified("cert-song", {
+  var ready = MCE.markReleasePassportReady("cert-song", {
     id: "MCE-ABC123",
-    certifiedAt: "2026-09-18T12:00:00.000Z",
+    passportReadyAt: "2026-09-18T12:00:00.000Z",
     master: { sha256: "masterhash" },
     metadataHash: { sha256: "metadatahash" },
     chain: { status: "not-minted" }
   });
 
-  var release = certified.releases[0];
-  assert.strictEqual(release.certificationStatus, "certified");
-  assert.strictEqual(release.certificationId, "MCE-ABC123");
+  var release = ready.releases[0];
+  assert.strictEqual(release.certificationStatus, "passport-ready");
+  assert.strictEqual(release.passportId, "MCE-ABC123");
   assert.strictEqual(release.certificationMasterHash, "masterhash");
   assert.strictEqual(release.certificationMetadataHash, "metadatahash");
   assert.strictEqual(release.blockchainStatus, "not-minted");
+});
+
+test("Music City certification requires a confirmed blockchain mint", function () {
+  start();
+  MCE.addRelease({ id: "mint-song", title: "Mint Test" });
+
+  assert.throws(function () {
+    MCE.markReleaseCertified("mint-song", {
+      id: "MCE-PASSPORT",
+      master: { sha256: "masterhash" },
+      metadataHash: { sha256: "metadatahash" },
+      chain: { status: "not-minted" }
+    });
+  });
+
+  var certified = MCE.markReleaseCertified("mint-song", {
+    id: "MCE-PASSPORT",
+    passportReadyAt: "2026-09-18T12:00:00.000Z",
+    master: { sha256: "masterhash" },
+    metadataHash: { sha256: "metadatahash" },
+    chain: {
+      status: "minted",
+      tokenId: "token-77",
+      transactionId: "tx-88",
+      mintedAt: "2026-09-18T13:00:00.000Z"
+    }
+  });
+
+  var release = certified.releases[0];
+  assert.strictEqual(release.certificationStatus, "certified");
+  assert.strictEqual(release.certificationId, "token-77");
+  assert.strictEqual(release.blockchainStatus, "minted");
 });
 
 test("releasing a song rewards fans and XP once", function () {
