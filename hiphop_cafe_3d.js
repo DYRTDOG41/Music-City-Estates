@@ -183,6 +183,20 @@ function nightclubUnlocked() {
     ? window.MCE.isUnlocked('nightclub', state)
     : state.fans >= 50 && state.xp >= 75;
 }
+function refreshNightclubButton() {
+  if (nightclubUnlocked()) {
+    nightclubButton.disabled = false;
+    nightclubButton.textContent = '🌃 ENTER MUSIC CITY NIGHTCLUB';
+  } else {
+    const gap = window.MCE
+      ? window.MCE.needed(window.MCE.UNLOCKS.nightclub, state)
+      : { fans: Math.max(0, 50 - state.fans), xp: Math.max(0, 75 - state.xp) };
+    nightclubButton.disabled = true;
+    nightclubButton.textContent =
+      '🔒 NIGHTCLUB — NEED ' + gap.fans + ' FANS / ' + gap.xp + ' XP';
+  }
+}
+
 function refreshPerformancePanel() {
   const releases = releaseOptions();
   songSelect.replaceChildren(...releases.map((release, index) => {
@@ -220,17 +234,7 @@ function refreshPerformancePanel() {
   energy.style.width = '0%';
   actionButtons.forEach((button) => { button.disabled = true; });
 
-  if (nightclubUnlocked()) {
-    nightclubButton.disabled = false;
-    nightclubButton.textContent = '🌃 ENTER MUSIC CITY NIGHTCLUB';
-  } else {
-    const gap = window.MCE
-      ? window.MCE.needed(window.MCE.UNLOCKS.nightclub, state)
-      : { fans: Math.max(0, 50 - state.fans), xp: Math.max(0, 75 - state.xp) };
-    nightclubButton.disabled = true;
-    nightclubButton.textContent =
-      '🔒 NIGHTCLUB — NEED ' + gap.fans + ' FANS / ' + gap.xp + ' XP';
-  }
+  refreshNightclubButton();
 }
 function openPerformancePanel() {
   refreshPerformancePanel();
@@ -256,6 +260,7 @@ function completePerformance() {
   refreshProgressOnly();
 }
 function refreshProgressOnly() {
+  refreshNightclubButton();
   const remaining = Math.max(0, 50 - state.fans);
   const nightclubXp = Math.max(0, 75 - state.xp);
   if (nightclubUnlocked()) {
