@@ -825,7 +825,10 @@ let referenceAudioBlob = null;
 let referenceAudioDurationMs = 0;
 let lastGeneratedResult = null;
 let generationPasses = 0;
+let meaningfulRevisionCount = 0;
 let craftSongKey = "";
+let lastCraftSnapshot = null;
+let referenceVersion = 0;
 
 
 async function toggleRecording() {
@@ -870,6 +873,7 @@ audioChunks,
 );
 
 referenceAudioBlob = blob;
+referenceVersion += 1;
 referenceAudioDurationMs =
 Math.max(
 50,
@@ -991,6 +995,7 @@ return;
 }
 
 referenceAudioBlob = file;
+referenceVersion += 1;
 referenceAudioDurationMs = durationMs;
 
 status.textContent =
@@ -1026,7 +1031,7 @@ originalLyricsConfirmed:
 document.getElementById("originalLyricsConfirmed").checked,
 
 revisionCount:
-Math.max(0, generationPasses - 1),
+meaningfulRevisionCount,
 
 studio:
 studio
@@ -1042,6 +1047,44 @@ alert("Song draft saved.");
 }
 
 
+function buildCraftSnapshot(title, style, mode) {
+return {
+title: String(title || "").trim().toLowerCase(),
+lyrics: document.getElementById("lyrics").value.trim(),
+style: String(style || "").trim().toLowerCase(),
+beat: selectedBeat || "",
+originalLyricsConfirmed:
+document.getElementById("originalLyricsConfirmed").checked,
+referenceVersion: referenceVersion,
+mode: mode,
+vocalStyle: document.getElementById("vocalStyle").value,
+creativity: Number(document.getElementById("creativity").value || 50),
+influence: Number(document.getElementById("influence").value || 50)
+};
+}
+
+function hasMeaningfulRevision(before, after) {
+if (!before) return false;
+
+const textChanged =
+before.lyrics !== after.lyrics ||
+before.style !== after.style;
+
+const creativeChoiceChanged =
+before.beat !== after.beat ||
+before.originalLyricsConfirmed !== after.originalLyricsConfirmed ||
+before.referenceVersion !== after.referenceVersion ||
+before.mode !== after.mode ||
+before.vocalStyle !== after.vocalStyle;
+
+const controlChanged =
+Math.abs(before.creativity - after.creativity) >= 8 ||
+Math.abs(before.influence - after.influence) >= 8;
+
+return textChanged || creativeChoiceChanged || controlChanged;
+}
+
+
 function buildCraftInput(title, style, mode) {
 return {
 title: title,
@@ -1052,7 +1095,7 @@ document.getElementById("originalLyricsConfirmed").checked,
 audioAttached: Boolean(referenceAudioBlob),
 referenceDurationMs: referenceAudioDurationMs,
 beat: selectedBeat,
-revisionCount: Math.max(0, generationPasses - 1),
+revisionCount: meaningfulRevisionCount,
 creativity: Number(document.getElementById("creativity").value || 50),
 influence: Number(document.getElementById("influence").value || 50),
 mode: mode,
@@ -1217,6 +1260,8 @@ title.trim().toLowerCase();
 if (craftSongKey !== nextCraftKey) {
 craftSongKey = nextCraftKey;
 generationPasses = 0;
+meaningfulRevisionCount = 0;
+lastCraftSnapshot = null;
 }
 
 const request = {
@@ -1314,7 +1359,16 @@ engineMessage.textContent =
 const result =
 await window.MusicCityAI.generate(request);
 
+const currentCraftSnapshot =
+buildCraftSnapshot(title, style, mode);
+
+if (generationPasses > 0 &&
+hasMeaningfulRevision(lastCraftSnapshot, currentCraftSnapshot)) {
+meaningfulRevisionCount += 1;
+}
+
 generationPasses += 1;
+lastCraftSnapshot = currentCraftSnapshot;
 
 const craftReport =
 window.MusicCitySongCraft.scoreSong(
@@ -1325,7 +1379,7 @@ result.craftReport = craftReport;
 result.craftScore = craftReport.score;
 result.craftTier = craftReport.tier;
 result.craftBreakdown = craftReport.breakdown;
-result.revisionCount = craftReport.signals.revisionCount;
+result.revisionCount = meaningfulRevisionCount;
 result.originalLyricsConfirmed =
 craftReport.signals.originalLyricsConfirmed;
 
