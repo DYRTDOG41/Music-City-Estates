@@ -189,7 +189,8 @@ function completeSet() {
   const xpReward = strong ? 15 : 10;
   const cashReward = strong ? 75 : 50;
 
-  state = window.MCE.add({
+  const payout = window.MCE.getShowPayout(cashReward, state);
+  state = window.MCE.payShow({
     fans: fanReward,
     xp: xpReward,
     cash: cashReward
@@ -201,7 +202,15 @@ function completeSet() {
 
   energy.style.width = Math.min(score, 100) + "%";
   log.innerHTML =
-    "<b>SET COMPLETE!</b><br>+" + fanReward + " Fans • +$" + cashReward + " • +" + xpReward + " XP";
+    "<b>SET COMPLETE!</b><br>+" + fanReward + " Fans • +" + xpReward +
+    " XP • Show pay $" + payout.gross;
+  if (payout.commission > 0) {
+    log.innerHTML +=
+      "<br>Manager commission: -$" + payout.commission +
+      " • Artist net: $" + payout.net;
+  } else {
+    log.innerHTML += "<br>Artist net: $" + payout.net;
+  }
   if (fanReward === 0) {
     log.innerHTML += "<br>You have reached the 100-fan Nightclub ceiling. Keep building XP toward radio eligibility.";
   }

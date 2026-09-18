@@ -40,6 +40,7 @@ test("empty storage uses career defaults", function () {
   assert.strictEqual(state.day, 1);
   assert.strictEqual(state.level, 1);
   assert.strictEqual(state.songs, 0);
+  assert.strictEqual(state.manager.hired, false);
 });
 
 test("career save is preserved and copied to world keys", function () {
@@ -175,36 +176,83 @@ test("releasing a song rewards fans and XP once", function () {
   assert.strictEqual(second.xp, 5);
 });
 
-test("promotion requires release and rewards once", function () {
+test("managed promotion requires manager, costs cash, and rewards once", function () {
   start();
+  MCE.save({ cash: 300 });
   MCE.addRelease({ id: "release-loop-2", title: "Promo Song" });
+  MCE.releaseSong("release-loop-2");
+
   assert.throws(function () {
     MCE.promoteRelease("release-loop-2");
   });
-  MCE.releaseSong("release-loop-2");
+
+  var managed = MCE.hireManager();
+  assert.strictEqual(managed.cash, 100);
+
   var promoted = MCE.promoteRelease("release-loop-2");
-  assert.strictEqual(promoted.fans, 8);
-  assert.strictEqual(promoted.xp, 8);
+  assert.strictEqual(promoted.cash, 75);
+  assert.strictEqual(promoted.fans, 11);
+  assert.strictEqual(promoted.xp, 10);
   assert.strictEqual(promoted.releases[0].promotionCount, 1);
+  assert.strictEqual(promoted.releases[0].promotionSpend, 25);
+
   var again = MCE.promoteRelease("release-loop-2");
-  assert.strictEqual(again.fans, 8);
-  assert.strictEqual(again.xp, 8);
+  assert.strictEqual(again.cash, 75);
+  assert.strictEqual(again.fans, 11);
+  assert.strictEqual(again.xp, 10);
 });
 
-test("radio submission requires a released song and career eligibility", function () {
+test("radio submission requires manager, eligibility, and the submission fee", function () {
   start();
+  MCE.save({ cash: 400 });
   MCE.addRelease({ id: "release-loop-3", title: "Radio Song" });
-  assert.throws(function () {
-    MCE.submitReleaseToRadio("release-loop-3");
-  });
   MCE.releaseSong("release-loop-3");
+
+  MCE.save({ fans: 100, xp: 150 });
   assert.throws(function () {
     MCE.submitReleaseToRadio("release-loop-3");
   });
-  MCE.save({ fans: 100, xp: 150 });
+
+  MCE.hireManager();
+  var before = MCE.get();
+  assert.strictEqual(before.cash, 200);
+
   var submitted = MCE.submitReleaseToRadio("release-loop-3");
+  assert.strictEqual(submitted.cash, 150);
   assert.strictEqual(submitted.releases[0].radioStatus, "submitted");
+  assert.strictEqual(submitted.releases[0].radioFeePaid, 50);
+  assert.strictEqual(submitted.manager.radioSpend, 50);
   assert.ok(submitted.releases[0].radioSubmittedAt);
+});
+
+test("manager hiring requires cash and charges the signing fee", function () {
+  start();
+  assert.throws(function () {
+    MCE.hireManager();
+  });
+
+  MCE.save({ cash: 250 });
+  var hired = MCE.hireManager();
+  assert.strictEqual(hired.manager.hired, true);
+  assert.strictEqual(hired.cash, 50);
+  assert.strictEqual(MCE.ECONOMY.managerHiringFee, 200);
+});
+
+test("manager commission is deducted from paid shows", function () {
+  start();
+  MCE.save({ cash: 250 });
+  MCE.hireManager();
+
+  var quote = MCE.getShowPayout(100);
+  assert.strictEqual(quote.gross, 100);
+  assert.strictEqual(quote.commission, 15);
+  assert.strictEqual(quote.net, 85);
+
+  var paid = MCE.payShow({ cash: 100, fans: 4, xp: 6 });
+  assert.strictEqual(paid.cash, 135);
+  assert.strictEqual(paid.fans, 4);
+  assert.strictEqual(paid.xp, 6);
+  assert.strictEqual(paid.manager.totalCommission, 15);
 });
 
 test("shared progression gates match the venue plan", function () {
@@ -225,10 +273,12 @@ test("shared progression gates match the venue plan", function () {
   assert.strictEqual(MCE.isUnlocked("radio", state), true);
 });
 
-test("radio submission requires career eligibility", function () {
+test("manager cannot bypass radio career eligibility", function () {
   start();
+  MCE.save({ cash: 300 });
   MCE.addRelease({ id: "radio-gate", title: "Gate Test" });
   MCE.releaseSong("radio-gate");
+  MCE.hireManager();
 
   assert.throws(function () {
     MCE.submitReleaseToRadio("radio-gate");

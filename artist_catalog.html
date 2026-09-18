@@ -40,6 +40,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <div class="nav">
 <a class="back" href="record_music.html">← RECORDING BOOTH</a>
 <a class="back" href="music_city_feed.html">📱 CITY FEED</a>
+<a class="back" href="manager.html">🧑‍💼 MANAGER</a>
 </div>
 <h1>MUSIC CITY ESTATES</h1>
 </header>
@@ -52,6 +53,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <div class="pill">Songs: <strong id="songCount">0</strong></div>
 <div class="pill">Fans: <strong id="fanCount">0</strong></div>
 <div class="pill">XP: <strong id="xpCount">0</strong></div>
+<div class="pill">Cash: $<strong id="cashCount">0</strong></div>
 <div class="pill">Career: <strong id="careerTitle">Bedroom Artist</strong></div>
 </div>
 <div id="notice" class="notice"></div>
@@ -84,7 +86,11 @@ function releaseById(id) {
 function promoteById(id) {
   try {
     window.MCE.promoteRelease(id);
-    showNotice("Promotion completed. +5 fans and +3 XP.");
+    showNotice(
+      "Manager promotion completed. -$" +
+      window.MCE.ECONOMY.managedPromotionFee +
+      " • +8 fans • +5 XP."
+    );
     renderCatalog();
   } catch (error) {
     showNotice(error.message || "Could not promote this song.");
@@ -94,7 +100,11 @@ function promoteById(id) {
 function submitRadioById(id) {
   try {
     window.MCE.submitReleaseToRadio(id);
-    showNotice("Submitted to Music City Radio for consideration. Submission does not guarantee airplay.");
+    showNotice(
+      "Your manager submitted the track to Music City Radio. -$" +
+      window.MCE.ECONOMY.radioSubmissionFee +
+      ". Submission pays for consideration only and does not guarantee airplay."
+    );
     renderCatalog();
   } catch (error) {
     showNotice(error.message || "Could not submit this song to radio.");
@@ -109,6 +119,7 @@ async function renderCatalog() {
   document.getElementById("songCount").textContent = state.songs;
   document.getElementById("fanCount").textContent = state.fans;
   document.getElementById("xpCount").textContent = state.xp;
+  document.getElementById("cashCount").textContent = state.cash;
   document.getElementById("careerTitle").textContent = window.MCE.getCareerTitle(state);
 
   const releaseMap = {};
@@ -134,6 +145,10 @@ async function renderCatalog() {
     const radioSubmitted = release.radioStatus === "submitted";
     const radioUnlocked = window.MCE.isUnlocked("radio", state);
     const radioGap = window.MCE.needed(window.MCE.UNLOCKS.radio, state);
+    const hasManager = window.MCE.hasManager(state);
+    const economy = window.MCE.ECONOMY;
+    const canAffordPromotion = state.cash >= economy.managedPromotionFee;
+    const canAffordRadio = state.cash >= economy.radioSubmissionFee;
 
     const card = document.createElement("article");
     card.className = "card";
@@ -192,19 +207,47 @@ async function renderCatalog() {
     actions.appendChild(releaseButton);
 
     const promoteButton = document.createElement("button");
-    promoteButton.textContent = isPromoted ? "✓ PROMOTED" : "📣 PROMOTE";
-    promoteButton.disabled = !isReleased || isPromoted;
-    promoteButton.onclick = () => promoteById(track.id);
+    promoteButton.textContent = isPromoted
+      ? "✓ PROMOTED"
+      : !hasManager
+        ? "🧑‍💼 HIRE MANAGER"
+        : canAffordPromotion
+          ? "📣 MANAGER PROMOTE — $" + economy.managedPromotionFee
+          : "🔒 PROMO NEED $" + economy.managedPromotionFee;
+    promoteButton.disabled =
+      !isReleased ||
+      isPromoted ||
+      (hasManager && !canAffordPromotion);
+    promoteButton.onclick = () => {
+      if (!hasManager) {
+        window.location.href = "manager.html";
+        return;
+      }
+      promoteById(track.id);
+    };
     actions.appendChild(promoteButton);
 
     const radioButton = document.createElement("button");
     radioButton.textContent = radioSubmitted
       ? "✓ RADIO SUBMITTED"
-      : radioUnlocked
-        ? "📻 SUBMIT TO RADIO"
-        : "🔒 RADIO LOCKED";
-    radioButton.disabled = !isReleased || radioSubmitted || !radioUnlocked;
-    radioButton.onclick = () => submitRadioById(track.id);
+      : !hasManager
+        ? "🧑‍💼 HIRE MANAGER"
+        : !radioUnlocked
+          ? "🔒 RADIO LOCKED"
+          : !canAffordRadio
+            ? "🔒 RADIO NEED $" + economy.radioSubmissionFee
+            : "📻 MANAGER SUBMIT — $" + economy.radioSubmissionFee;
+    radioButton.disabled =
+      !isReleased ||
+      radioSubmitted ||
+      (hasManager && (!radioUnlocked || !canAffordRadio));
+    radioButton.onclick = () => {
+      if (!hasManager) {
+        window.location.href = "manager.html";
+        return;
+      }
+      submitRadioById(track.id);
+    };
     actions.appendChild(radioButton);
 
     const feedButton = document.createElement("button");
@@ -221,13 +264,15 @@ async function renderCatalog() {
     reward.className = "reward";
     reward.textContent = !isReleased
       ? "Release reward: +3 fans, +5 XP"
-      : !isPromoted
-        ? "Promotion available: +5 fans, +3 XP"
-        : radioSubmitted
-          ? "Radio submission is pending consideration."
-          : radioUnlocked
-            ? "Eligible for Music City Radio submission."
-            : "Radio unlock: " + radioGap.fans + " more fans and " + radioGap.xp + " more XP.";
+      : !hasManager
+        ? "Professional promotion and radio require a manager. Hiring fee: $" + economy.managerHiringFee + "."
+        : !isPromoted
+          ? "Managed promotion: $" + economy.managedPromotionFee + " • reward +8 fans, +5 XP."
+          : radioSubmitted
+            ? "Radio submission fee paid: $" + (release.radioFeePaid || economy.radioSubmissionFee) + " • pending consideration."
+            : radioUnlocked
+              ? "Radio submission through manager: $" + economy.radioSubmissionFee + "."
+              : "Radio unlock: " + radioGap.fans + " more fans and " + radioGap.xp + " more XP.";
     card.appendChild(reward);
 
     catalog.appendChild(card);

@@ -12,7 +12,11 @@ const updateStats = () => {
   document.getElementById('xp').textContent = state.xp;
 };
 const addProgress = (delta) => {
-  if (window.MCE) state = window.MCE.add(delta);
+  if (window.MCE) {
+    state = delta && delta.cash
+      ? window.MCE.payShow(delta)
+      : window.MCE.add(delta);
+  }
   else {
     state = { ...state, fans: state.fans + (delta.fans || 0), cash: state.cash + (delta.cash || 0), xp: state.xp + (delta.xp || 0) };
     localStorage.setItem('mceFans', state.fans);
@@ -247,12 +251,20 @@ function completePerformance() {
   const fanReward = Math.min(score >= 60 ? 8 : 5, Math.max(0, 50 - state.fans));
   const cashReward = score >= 60 ? 35 : 25;
   const xpReward = score >= 60 ? 12 : 8;
+  const payout = window.MCE
+    ? window.MCE.getShowPayout(cashReward, state)
+    : { gross: cashReward, commission: 0, net: cashReward };
   addProgress({ fans: fanReward, cash: cashReward, xp: xpReward });
   const performances = Number(localStorage.getItem('mceCafePerformances')) || 0;
   localStorage.setItem('mceCafePerformances', String(performances + 1));
   localStorage.setItem('mceLastCafeSong', selected.title);
   energy.style.width = `${Math.min(score, 100)}%`;
-  log.innerHTML = `<b class="unlock">SET COMPLETE!</b><br>${selected.title} earned +${fanReward} Fans • +$${cashReward} • +${xpReward} XP`;
+  log.innerHTML = `<b class="unlock">SET COMPLETE!</b><br>${selected.title} earned +${fanReward} Fans • +${xpReward} XP • Show pay ${payout.gross}`;
+  if (payout.commission > 0) {
+    log.innerHTML += `<br>Manager commission: -${payout.commission} • Artist net: ${payout.net}`;
+  } else {
+    log.innerHTML += `<br>Artist net: ${payout.net}`;
+  }
   if (fanReward === 0) log.innerHTML += '<br>You have graduated from the café circuit. Your next performances belong on a larger stage.';
   roundText.textContent = 'The crowd applauds your final song.';
   startButton.disabled = false;
