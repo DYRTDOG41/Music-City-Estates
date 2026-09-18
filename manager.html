@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Manager Office | Music City Estates</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(circle at top,#17213a,#05070d 65%);color:#fff;font-family:Arial,sans-serif}
+header{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:16px 20px;background:#05070deb;border-bottom:1px solid #22d3ee;position:sticky;top:0;z-index:5}
+nav{display:flex;gap:8px;flex-wrap:wrap}
+nav a{color:#fff;text-decoration:none;padding:9px 12px;border:1px solid #22d3ee;border-radius:8px;background:#08111d}
+.wrap{width:min(980px,94%);margin:26px auto 50px}
+.hero,.card{border:1px solid #2d415e;border-radius:18px;background:#0a111ddd}
+.hero{padding:22px}
+.hero h1{margin:0 0 8px;color:#7be8ff}
+.stats{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
+.pill{padding:8px 11px;border:1px solid #334155;border-radius:18px;background:#111827}
+.grid{display:grid;grid-template-columns:1.15fr .85fr;gap:16px;margin-top:18px}
+.card{padding:20px}
+.card h2{margin-top:0}
+.big{font-size:34px;font-weight:900;color:#7be8ff}
+.fee{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #243247}
+button{width:100%;padding:14px;border:1px solid #22d3ee;border-radius:10px;background:#22d3ee;color:#031016;font-weight:900;cursor:pointer;margin-top:15px}
+button:disabled{opacity:.45;cursor:not-allowed}
+.note{margin-top:12px;padding:11px;border-radius:10px;background:#081a23;border:1px solid #164e63;color:#b9efff}
+.good{color:#8ff0aa;font-weight:800}
+.small{font-size:13px;color:#aab6c7;line-height:1.55}
+@media(max-width:760px){header{align-items:flex-start;flex-direction:column}.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+<nav>
+<a href="artist_catalog.html">← ARTIST CATALOG</a>
+<a href="music_city_feed.html">📱 CITY FEED</a>
+<a href="music_city_radio.html">📻 RADIO</a>
+</nav>
+<strong>MANAGER OFFICE</strong>
+</header>
+
+<div class="wrap">
+<section class="hero">
+<h1>🧑‍💼 Career Management</h1>
+<p>Managers sit between the artist and the professional music business. They handle paid promotion, radio submissions, and take a commission from live show income.</p>
+<div class="stats">
+<div class="pill">Cash: $<b id="cash">0</b></div>
+<div class="pill">Fans: <b id="fans">0</b></div>
+<div class="pill">XP: <b id="xp">0</b></div>
+<div class="pill">Manager: <b id="managerStatus">Not Hired</b></div>
+</div>
+</section>
+
+<div class="grid">
+<section class="card">
+<h2 id="contractTitle">Hire an Independent Manager</h2>
+<div class="big" id="hirePrice">$200</div>
+<p class="small">This is your first professional business relationship. Once hired, your manager can promote released tracks and submit eligible tracks to Music City Radio.</p>
+<button id="hireButton">HIRE MANAGER — $200</button>
+<div id="message" class="note"></div>
+</section>
+
+<section class="card">
+<h2>Manager Economics</h2>
+<div class="fee"><span>Signing / hiring fee</span><strong id="signingFee">$200</strong></div>
+<div class="fee"><span>Commission on paid shows</span><strong id="commissionRate">15%</strong></div>
+<div class="fee"><span>Managed song promotion</span><strong id="promotionFee">$25</strong></div>
+<div class="fee"><span>Radio submission</span><strong id="radioFee">$50</strong></div>
+<p class="small">Radio submission pays for consideration only. It never guarantees airplay.</p>
+</section>
+
+<section class="card">
+<h2>Contract Activity</h2>
+<div class="fee"><span>Total manager commission</span><strong id="totalCommission">$0</strong></div>
+<div class="fee"><span>Promotion spend</span><strong id="promotionSpend">$0</strong></div>
+<div class="fee"><span>Radio submission spend</span><strong id="radioSpend">$0</strong></div>
+<p id="activityMessage" class="small"></p>
+</section>
+
+<section class="card">
+<h2>Why Hire a Manager?</h2>
+<p class="small">The artist can still create music, release songs, perform shows, and build fans without one. The manager becomes necessary when the career moves into professional promotion and radio.</p>
+<p class="small">That keeps early gameplay accessible while making money and business decisions matter later.</p>
+</section>
+</div>
+</div>
+
+<script src="player-state.js"></script>
+<script>
+const cashEl = document.getElementById("cash");
+const fansEl = document.getElementById("fans");
+const xpEl = document.getElementById("xp");
+const managerStatus = document.getElementById("managerStatus");
+const hireButton = document.getElementById("hireButton");
+const hirePrice = document.getElementById("hirePrice");
+const signingFee = document.getElementById("signingFee");
+const commissionRate = document.getElementById("commissionRate");
+const promotionFee = document.getElementById("promotionFee");
+const radioFee = document.getElementById("radioFee");
+const totalCommission = document.getElementById("totalCommission");
+const promotionSpend = document.getElementById("promotionSpend");
+const radioSpend = document.getElementById("radioSpend");
+const message = document.getElementById("message");
+const activityMessage = document.getElementById("activityMessage");
+const contractTitle = document.getElementById("contractTitle");
+
+function render() {
+  const state = window.MCE.get();
+  const economy = window.MCE.ECONOMY;
+  const manager = state.manager;
+
+  cashEl.textContent = state.cash;
+  fansEl.textContent = state.fans;
+  xpEl.textContent = state.xp;
+
+  signingFee.textContent = "$" + economy.managerHiringFee;
+  hirePrice.textContent = "$" + economy.managerHiringFee;
+  commissionRate.textContent = economy.managerCommissionPct + "%";
+  promotionFee.textContent = "$" + economy.managedPromotionFee;
+  radioFee.textContent = "$" + economy.radioSubmissionFee;
+
+  totalCommission.textContent = "$" + manager.totalCommission;
+  promotionSpend.textContent = "$" + manager.promotionSpend;
+  radioSpend.textContent = "$" + manager.radioSpend;
+
+  if (manager.hired) {
+    managerStatus.textContent = manager.role;
+    managerStatus.className = "good";
+    contractTitle.textContent = "Manager Under Contract";
+    hireButton.textContent = "✓ MANAGER HIRED";
+    hireButton.disabled = true;
+    message.textContent =
+      "Your manager can now handle professional promotion and radio submissions from the Artist Catalog.";
+    activityMessage.textContent =
+      "Every future paid show automatically deducts the " +
+      economy.managerCommissionPct +
+      "% manager commission before the artist receives the net payout.";
+  } else {
+    managerStatus.textContent = "Not Hired";
+    contractTitle.textContent = "Hire an Independent Manager";
+    const needed = Math.max(0, economy.managerHiringFee - state.cash);
+    hireButton.disabled = state.cash < economy.managerHiringFee;
+    hireButton.textContent = state.cash >= economy.managerHiringFee
+      ? "HIRE MANAGER — $" + economy.managerHiringFee
+      : "NEED $" + needed + " MORE";
+    message.textContent = state.cash >= economy.managerHiringFee
+      ? "You have enough cash to hire a manager."
+      : "Keep earning show money. You need $" + needed + " more before you can hire a manager.";
+    activityMessage.textContent =
+      "Before hiring a manager, the artist keeps 100% of show pay but cannot use managed promotion or submit to radio.";
+  }
+}
+
+hireButton.addEventListener("click", () => {
+  try {
+    window.MCE.hireManager();
+    render();
+  } catch (error) {
+    message.textContent = error.message || "Could not hire manager.";
+  }
+});
+
+window.MCE.load();
+render();
+</script>
+</body>
+</html>
