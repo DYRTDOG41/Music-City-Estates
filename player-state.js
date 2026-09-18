@@ -18,6 +18,7 @@
     battles: 0,
     manager: {
       hired: false,
+      profileId: null,
       role: "Independent Manager",
       hiredAt: null,
       totalCommission: 0,
@@ -40,11 +41,56 @@
     downtown: { fans: 300, xp: 400, label: "300 fans · 400 XP" }
   };
 
+  var MANAGER_PROFILES = {
+    hustler: {
+      id: "hustler",
+      name: "The Hustler",
+      rank: 1,
+      signingFee: 200,
+      commissionPct: 10,
+      promotionFee: 25,
+      promotionFans: 6,
+      promotionXp: 4,
+      radioFee: 60,
+      radioInfluence: 0,
+      requires: { fans: 0, xp: 0 },
+      specialty: "Keeps more of your show money."
+    },
+    connector: {
+      id: "connector",
+      name: "The Connector",
+      rank: 2,
+      signingFee: 450,
+      commissionPct: 15,
+      promotionFee: 35,
+      promotionFans: 11,
+      promotionXp: 6,
+      radioFee: 40,
+      radioInfluence: 12,
+      requires: { fans: 50, xp: 75 },
+      specialty: "Balanced promotion and stronger industry access."
+    },
+    executive: {
+      id: "executive",
+      name: "The Executive",
+      rank: 3,
+      signingFee: 900,
+      commissionPct: 22,
+      promotionFee: 50,
+      promotionFans: 18,
+      promotionXp: 9,
+      radioFee: 25,
+      radioInfluence: 25,
+      requires: { fans: 100, xp: 150 },
+      specialty: "Aggressive career growth and the strongest radio leverage."
+    }
+  };
+
   var ECONOMY = {
-    managerHiringFee: 200,
-    managerCommissionPct: 15,
-    managedPromotionFee: 25,
-    radioSubmissionFee: 50
+    managerHiringFee: MANAGER_PROFILES.hustler.signingFee,
+    managerCommissionPct: MANAGER_PROFILES.hustler.commissionPct,
+    managedPromotionFee: MANAGER_PROFILES.hustler.promotionFee,
+    radioSubmissionFee: MANAGER_PROFILES.hustler.radioFee
   };
 
   var CAREER_TITLES = [
@@ -122,6 +168,7 @@
     var source = item && typeof item === "object" ? item : {};
     return {
       hired: Boolean(source.hired),
+      profileId: source.profileId == null ? null : String(source.profileId),
       role: String(source.role || "Independent Manager"),
       hiredAt: source.hiredAt || null,
       totalCommission: toCount(source.totalCommission, 0),
@@ -154,9 +201,12 @@
       promotedAt: item.promotedAt || undefined,
       promotionCount: toCount(item.promotionCount, 0),
       promotionSpend: toCount(item.promotionSpend, 0),
+      promotionManager: item.promotionManager == null ? undefined : String(item.promotionManager),
       radioStatus: item.radioStatus == null ? "not-submitted" : String(item.radioStatus),
       radioSubmittedAt: item.radioSubmittedAt || undefined,
-      radioFeePaid: toCount(item.radioFeePaid, 0)
+      radioFeePaid: toCount(item.radioFeePaid, 0),
+      radioManager: item.radioManager == null ? undefined : String(item.radioManager),
+      radioInfluence: toCount(item.radioInfluence, 0)
     };
   }
 
@@ -342,6 +392,20 @@
     return save(next);
   }
 
+  function getManagerProfile(state) {
+    var s = state || current || load();
+    if (!s.manager || !s.manager.hired) return null;
+    return MANAGER_PROFILES[s.manager.profileId] || MANAGER_PROFILES.hustler;
+  }
+
+  function managerRequirementMet(profile, state) {
+    var s = state || current || load();
+    var req = profile && profile.requires ? profile.requires : {};
+    if (req.fans != null && s.fans < req.fans) return false;
+    if (req.xp != null && s.xp < req.xp) return false;
+    return true;
+  }
+
   function promoteRelease(id) {
     if (!current) load();
     var next = snapshot();
@@ -359,24 +423,28 @@
 
     if (release.promotionCount > 0) return snapshot();
 
-    if (next.cash < ECONOMY.managedPromotionFee) {
+    var managerProfile = getManagerProfile(next);
+    var promotionFee = managerProfile.promotionFee;
+
+    if (next.cash < promotionFee) {
       throw new Error(
-        "Managed promotion costs $" + ECONOMY.managedPromotionFee +
+        managerProfile.name + " promotion costs $" + promotionFee +
         ". You currently have $" + next.cash + "."
       );
     }
 
-    next.cash -= ECONOMY.managedPromotionFee;
-    next.manager.promotionSpend += ECONOMY.managedPromotionFee;
+    next.cash -= promotionFee;
+    next.manager.promotionSpend += promotionFee;
 
     release.promotionCount = 1;
     release.promotedAt = new Date().toISOString();
     release.promotionSpend =
-      toCount(release.promotionSpend, 0) + ECONOMY.managedPromotionFee;
+      toCount(release.promotionSpend, 0) + promotionFee;
+    release.promotionManager = managerProfile.name;
     next.releases[index] = normalizeRelease(release, index);
 
-    next.fans += 8;
-    next.xp += 5;
+    next.fans += managerProfile.promotionFans;
+    next.xp += managerProfile.promotionXp;
 
     return save(next);
   }
@@ -406,40 +474,73 @@
 
     if (release.radioStatus === "submitted") return snapshot();
 
-    if (next.cash < ECONOMY.radioSubmissionFee) {
+    var managerProfile = getManagerProfile(next);
+    var radioFee = managerProfile.radioFee;
+
+    if (next.cash < radioFee) {
       throw new Error(
-        "Radio submission costs $" + ECONOMY.radioSubmissionFee +
+        managerProfile.name + " radio submission costs $" + radioFee +
         ". You currently have $" + next.cash + "."
       );
     }
 
-    next.cash -= ECONOMY.radioSubmissionFee;
-    next.manager.radioSpend += ECONOMY.radioSubmissionFee;
+    next.cash -= radioFee;
+    next.manager.radioSpend += radioFee;
 
     release.radioStatus = "submitted";
     release.radioSubmittedAt = new Date().toISOString();
     release.radioFeePaid =
-      toCount(release.radioFeePaid, 0) + ECONOMY.radioSubmissionFee;
+      toCount(release.radioFeePaid, 0) + radioFee;
+    release.radioManager =
+      managerProfile.name;
+    release.radioInfluence =
+      managerProfile.radioInfluence;
     next.releases[index] = normalizeRelease(release, index);
 
     return save(next);
   }
 
-  function hireManager() {
+  function hireManager(profileId) {
     if (!current) load();
     var next = snapshot();
+    var id = String(profileId || "hustler");
+    var profile = MANAGER_PROFILES[id];
 
-    if (next.manager.hired) return snapshot();
+    if (!profile) {
+      throw new Error("That manager is not available.");
+    }
 
-    if (next.cash < ECONOMY.managerHiringFee) {
+    if (!managerRequirementMet(profile, next)) {
+      var fansNeeded = Math.max(0, toCount(profile.requires.fans, 0) - next.fans);
+      var xpNeeded = Math.max(0, toCount(profile.requires.xp, 0) - next.xp);
       throw new Error(
-        "Hiring a manager costs $" + ECONOMY.managerHiringFee +
+        profile.name + " requires " +
+        profile.requires.fans + " fans and " +
+        profile.requires.xp + " XP. You still need " +
+        fansNeeded + " fans and " + xpNeeded + " XP."
+      );
+    }
+
+    if (next.manager.hired && next.manager.profileId === id) {
+      return snapshot();
+    }
+
+    var currentProfile = getManagerProfile(next);
+    if (currentProfile && currentProfile.rank >= profile.rank) {
+      throw new Error("You can only move up to a higher management tier.");
+    }
+
+    if (next.cash < profile.signingFee) {
+      throw new Error(
+        "Signing " + profile.name + " costs $" + profile.signingFee +
         ". You currently have $" + next.cash + "."
       );
     }
 
-    next.cash -= ECONOMY.managerHiringFee;
+    next.cash -= profile.signingFee;
     next.manager.hired = true;
+    next.manager.profileId = profile.id;
+    next.manager.role = profile.name;
     next.manager.hiredAt = new Date().toISOString();
 
     return save(next);
@@ -453,8 +554,9 @@
   function getShowPayout(grossCash, state) {
     var s = state || current || load();
     var gross = Math.max(0, toCount(grossCash, 0));
-    var commission = hasManager(s)
-      ? Math.floor(gross * ECONOMY.managerCommissionPct / 100)
+    var profile = getManagerProfile(s);
+    var commission = profile
+      ? Math.floor(gross * profile.commissionPct / 100)
       : 0;
 
     return {
@@ -523,6 +625,7 @@
     UNLOCKS: UNLOCKS,
     CAREER_TITLES: CAREER_TITLES,
     ECONOMY: ECONOMY,
+    MANAGER_PROFILES: MANAGER_PROFILES,
     KEYS: {
       career: CAREER_KEY,
       fans: WORLD_KEYS.fans,
@@ -546,6 +649,8 @@
     submitReleaseToRadio: submitReleaseToRadio,
     hireManager: hireManager,
     hasManager: hasManager,
+    getManagerProfile: getManagerProfile,
+    managerRequirementMet: managerRequirementMet,
     getShowPayout: getShowPayout,
     payShow: payShow,
     meets: meets,

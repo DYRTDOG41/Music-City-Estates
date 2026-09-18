@@ -11,18 +11,20 @@ iframe{position:fixed;inset:0;width:100%;height:100%;border:0}
 .title,.back,.submissionsBtn{padding:10px 14px;border:1px solid #38cfff;border-radius:8px;background:rgba(0,8,20,.9);color:white;font-weight:bold;box-shadow:0 0 15px rgba(56,207,255,.45)}
 .back{text-decoration:none;pointer-events:auto}
 .submissionsBtn{pointer-events:auto;cursor:pointer}
-.radioPanel{position:fixed;z-index:8;right:14px;top:68px;width:min(390px,calc(100% - 28px));max-height:72vh;overflow:auto;padding:16px;border:1px solid #38cfff;border-radius:14px;background:rgba(2,8,18,.96);box-shadow:0 0 30px #38cfff40;display:none}
+.radioPanel{position:fixed;z-index:8;right:14px;top:68px;width:min(420px,calc(100% - 28px));max-height:76vh;overflow:auto;padding:16px;border:1px solid #38cfff;border-radius:14px;background:rgba(2,8,18,.96);box-shadow:0 0 30px #38cfff40;display:none}
 .radioPanel.show{display:block}
 .radioPanel h2{margin:0 0 5px;color:#7be8ff;font-size:20px}
 .radioPanel p{color:#aab8cc;font-size:13px;line-height:1.45}
 .submission{padding:13px;margin-top:11px;border:1px solid #2c4159;border-radius:12px;background:#09111c}
 .submission h3{margin:0 0 6px;font-size:16px}
-.meta{font-size:12px;color:#98a8bd}
+.meta{font-size:12px;color:#98a8bd;line-height:1.5}
 .status{display:inline-block;margin-top:8px;padding:4px 7px;border-radius:9px;background:#2c2040;color:#dbbfff;font-size:10px;font-weight:900}
+.influence{margin-top:10px;height:9px;background:#152131;border-radius:99px;overflow:hidden}
+.influence span{display:block;height:100%;background:linear-gradient(90deg,#38cfff,#9f6fff)}
 audio{width:100%;margin-top:10px}
 .empty{padding:18px;text-align:center;border:1px dashed #41516a;border-radius:10px;color:#a5b3c7}
-.links{display:flex;gap:8px;margin-top:12px}
-.links a{flex:1;text-align:center;color:#fff;text-decoration:none;padding:9px;border:1px solid #35506a;border-radius:8px;background:#0d1825}
+.links{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.links a{flex:1;min-width:110px;text-align:center;color:#fff;text-decoration:none;padding:9px;border:1px solid #35506a;border-radius:8px;background:#0d1825}
 </style>
 </head>
 <body>
@@ -31,12 +33,12 @@ audio{width:100%;margin-top:10px}
 <div class="hud">
 <a class="back" href="city_map.html">← CITY MAP</a>
 <div class="title">📻 MUSIC CITY ESTATES RADIO</div>
-<button class="submissionsBtn" onclick="toggleSubmissions()">MY SUBMISSIONS</button>
+<button class="submissionsBtn" id="submissionsButton">MY SUBMISSIONS</button>
 </div>
 
 <section class="radioPanel" id="radioPanel">
 <h2>📡 Artist Submissions</h2>
-<p>Music City Radio accepts professional submissions through an artist's manager. The submission fee pays for station consideration only and never guarantees airplay.</p>
+<p>Music City Radio accepts professional submissions through an artist's manager. Paying for consideration never guarantees airplay.</p>
 <div id="eligibility" class="submission"></div>
 <div id="submissionList"></div>
 <div class="links">
@@ -51,13 +53,13 @@ audio{width:100%;margin-top:10px}
 <script>
 let radioUrls = [];
 
-function toggleSubmissions() {
+document.getElementById("submissionsButton").addEventListener("click", () => {
   const panel = document.getElementById("radioPanel");
   panel.classList.toggle("show");
   if (panel.classList.contains("show")) {
     renderSubmissions();
   }
-}
+});
 
 async function renderSubmissions() {
   radioUrls.forEach(url => URL.revokeObjectURL(url));
@@ -67,23 +69,28 @@ async function renderSubmissions() {
   const eligible = window.MCE.isUnlocked("radio", state);
   const gap = window.MCE.needed(window.MCE.UNLOCKS.radio, state);
   const represented = window.MCE.hasManager(state);
-  const fee = window.MCE.ECONOMY.radioSubmissionFee;
+  const manager = window.MCE.getManagerProfile(state);
   const eligibility = document.getElementById("eligibility");
 
   if (!represented) {
     eligibility.innerHTML =
       '<h3>🧑‍💼 MANAGER REQUIRED</h3>' +
-      '<div class="meta">Music City Radio only accepts artist submissions through a manager. Hire one in the Manager Office before submitting tracks.</div>';
+      '<div class="meta">Music City Radio only accepts artist submissions through a manager. Hire representation in the Manager Office first.</div>';
   } else if (!eligible) {
     eligibility.innerHTML =
       '<h3>🔒 BUILD YOUR RADIO PROFILE</h3>' +
-      '<div class="meta">Manager under contract • Requires 100 fans + 150 XP • Need ' +
+      '<div class="meta">' + manager.name +
+      ' under contract • Requires 100 fans + 150 XP • Need ' +
       gap.fans + ' more fans and ' + gap.xp + ' more XP.</div>';
   } else {
+    const influenceWidth = Math.min(100, 20 + manager.radioInfluence * 3);
     eligibility.innerHTML =
-      '<h3>✅ MANAGER CAN SUBMIT</h3>' +
+      '<h3>✅ ' + manager.name.toUpperCase() + ' CAN SUBMIT</h3>' +
       '<div class="meta">' + state.fans + ' fans • ' + state.xp +
-      ' XP • Submission consideration fee: 
+      ' XP • Submission fee $' + manager.radioFee +
+      ' • Radio influence +' + manager.radioInfluence + '</div>' +
+      '<div class="influence"><span style="width:' + influenceWidth + '%"></span></div>';
+  }
 
   const submissions = state.releases
     .filter(release => release.radioStatus === "submitted")
@@ -96,7 +103,7 @@ async function renderSubmissions() {
 
   if (!submissions.length) {
     list.innerHTML =
-      '<div class="empty">No radio submissions yet. Release a song in your Artist Catalog, then choose Submit to Radio.</div>';
+      '<div class="empty">No radio submissions yet. Build your profile, sign a manager, and submit an eligible released song from the Artist Catalog.</div>';
     return;
   }
 
@@ -126,73 +133,20 @@ async function renderSubmissions() {
         .join(" • ");
     card.appendChild(meta);
 
-    const status = document.createElement("span");
-    status.className = "status";
-    status.textContent = "PENDING CONSIDERATION • FEE $" + (release.radioFeePaid || window.MCE.ECONOMY.radioSubmissionFee);
-    card.appendChild(status);
-
-    if (track && track.audioBlob) {
-      const audio = document.createElement("audio");
-      audio.controls = true;
-      const url = URL.createObjectURL(track.audioBlob);
-      radioUrls.push(url);
-      audio.src = url;
-      card.appendChild(audio);
-    }
-
-    list.appendChild(card);
-  });
-}
-</script>
-</body>
-</html>
- + fee + '</div>';
-  }
-
-  const submissions = state.releases
-    .filter(release => release.radioStatus === "submitted")
-    .sort((a, b) =>
-      String(b.radioSubmittedAt || "")
-        .localeCompare(String(a.radioSubmittedAt || ""))
-    );
-
-  const list = document.getElementById("submissionList");
-
-  if (!submissions.length) {
-    list.innerHTML =
-      '<div class="empty">No radio submissions yet. Release a song in your Artist Catalog, then choose Submit to Radio.</div>';
-    return;
-  }
-
-  const tracks = await window.MusicCityCatalog.listTracks();
-  const trackMap = {};
-  tracks.forEach(track => {
-    trackMap[String(track.id)] = track;
-  });
-
-  list.innerHTML = "";
-
-  submissions.forEach(release => {
-    const track = trackMap[String(release.audioKey || release.id)] || null;
-
-    const card = document.createElement("article");
-    card.className = "submission";
-
-    const title = document.createElement("h3");
-    title.textContent = release.title || "Untitled Song";
-    card.appendChild(title);
-
-    const meta = document.createElement("div");
-    meta.className = "meta";
-    meta.textContent =
-      [release.style, release.beat, release.provider]
-        .filter(Boolean)
-        .join(" • ");
-    card.appendChild(meta);
+    const managerLine = document.createElement("div");
+    managerLine.className = "meta";
+    managerLine.textContent =
+      "Submitted by " +
+      (release.radioManager || "artist management") +
+      " • Fee $" +
+      (release.radioFeePaid || 0) +
+      " • Influence +" +
+      (release.radioInfluence || 0);
+    card.appendChild(managerLine);
 
     const status = document.createElement("span");
     status.className = "status";
-    status.textContent = "PENDING CONSIDERATION";
+    status.textContent = "PENDING PROGRAMMING REVIEW";
     card.appendChild(status);
 
     if (track && track.audioBlob) {
