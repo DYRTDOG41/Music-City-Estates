@@ -621,7 +621,18 @@
       radioFeePaid: toCount(item.radioFeePaid, 0),
       radioManager: item.radioManager == null ? undefined : String(item.radioManager),
       radioInfluence: toCount(item.radioInfluence, 0),
-      radioCraftInfluence: toCount(item.radioCraftInfluence, 0)
+      radioCraftInfluence: toCount(item.radioCraftInfluence, 0),
+      certificationStatus:
+        item.certificationStatus == null ? "not-certified" : String(item.certificationStatus),
+      certificationId:
+        item.certificationId == null ? undefined : String(item.certificationId),
+      certifiedAt: item.certifiedAt || undefined,
+      certificationMasterHash:
+        item.certificationMasterHash == null ? undefined : String(item.certificationMasterHash),
+      certificationMetadataHash:
+        item.certificationMetadataHash == null ? undefined : String(item.certificationMetadataHash),
+      blockchainStatus:
+        item.blockchainStatus == null ? "not-minted" : String(item.blockchainStatus)
     };
   }
 
@@ -799,6 +810,32 @@
       index
     );
 
+    return save(next);
+  }
+
+  function markReleaseCertified(id, certificate) {
+    if (!current) load();
+    var next = snapshot();
+    var index = findReleaseIndex(id, next);
+    if (index < 0) throw new Error("Song not found in Music City releases.");
+    if (!certificate || !certificate.id || !certificate.master) {
+      throw new Error("A valid Music City certificate is required.");
+    }
+
+    var release = next.releases[index];
+    release.certificationStatus = "certified";
+    release.certificationId = String(certificate.id);
+    release.certifiedAt = certificate.certifiedAt || new Date().toISOString();
+    release.certificationMasterHash = String(certificate.master.sha256 || "");
+    release.certificationMetadataHash = String(
+      certificate.metadataHash && certificate.metadataHash.sha256 || ""
+    );
+    release.blockchainStatus =
+      certificate.chain && certificate.chain.status
+        ? String(certificate.chain.status)
+        : "not-minted";
+
+    next.releases[index] = normalizeRelease(release, index);
     return save(next);
   }
 
@@ -1246,6 +1283,7 @@
     add: add,
     addRelease: addRelease,
     updateRelease: updateRelease,
+    markReleaseCertified: markReleaseCertified,
     releaseSong: releaseSong,
     promoteRelease: promoteRelease,
     submitReleaseToRadio: submitReleaseToRadio,
