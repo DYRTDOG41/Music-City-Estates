@@ -119,7 +119,7 @@ module.exports = async function handler(req, res) {
       body: JSON.stringify({
         prompt: buildPrompt(body),
         music_length_ms: musicLengthMs,
-        model_id: "music_v2",
+        model_id: "music_v2_5",
         force_instrumental: forceInstrumental
       })
     }
