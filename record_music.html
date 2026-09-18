@@ -470,7 +470,7 @@ onchange="loadUploadedAudio(event)"
 >
 
 <p class="engine-status">
-Reference clips are limited to 30 seconds and 5 MB. The reference guides production style, tempo, instrumentation, and mood; it does not clone or preserve the exact singer voice.
+Reference clips are limited to 30 seconds and 3 MB. The reference guides production style, tempo, instrumentation, and mood; it does not clone or preserve the exact singer voice.
 </p>
 
 </div>
@@ -831,9 +831,9 @@ if (!file) return;
 const status =
 document.getElementById("recordStatus");
 
-if (file.size > 5 * 1024 * 1024) {
+if (file.size > 3 * 1024 * 1024) {
 status.textContent =
-"Reference audio must be 5 MB or smaller.";
+"Reference audio must be 3 MB or smaller.";
 event.target.value = "";
 return;
 }
