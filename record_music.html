@@ -591,6 +591,23 @@ The Music City AI generation engine is ready.
 </p>
 
 <audio id="generatedAudio" controls></audio>
+
+<div class="actions" id="catalogActions" style="display:none; margin-top:14px;">
+<button
+class="action primary"
+id="saveToCatalogButton"
+onclick="saveGeneratedToCatalog()"
+>
+💿 SAVE TO ARTIST CATALOG
+</button>
+
+<button
+class="action secondary"
+onclick="window.location.href='artist_catalog.html'"
+>
+VIEW ARTIST CATALOG
+</button>
+</div>
 </div>
 
 </div>
@@ -598,6 +615,8 @@ The Music City AI generation engine is ready.
 </div>
 
 
+<script src="player-state.js"></script>
+<script src="music_city_catalog.js"></script>
 <script src="music_city_ai.js"></script>
 
 <script>
@@ -699,6 +718,7 @@ let recordingStartedAt = 0;
 let autoStopTimer = null;
 let referenceAudioBlob = null;
 let referenceAudioDurationMs = 0;
+let lastGeneratedResult = null;
 
 
 async function toggleRecording() {
@@ -909,6 +929,92 @@ alert("Song draft saved.");
 }
 
 
+async function saveGeneratedToCatalog() {
+
+const button =
+document.getElementById("saveToCatalogButton");
+
+const engineMessage =
+document.getElementById("engineMessage");
+
+if (!lastGeneratedResult ||
+!lastGeneratedResult.audioBlob) {
+engineMessage.textContent =
+"Generate a live AI track before saving it to the catalog.";
+return;
+}
+
+button.disabled = true;
+button.textContent =
+"SAVING...";
+
+try {
+
+const trackId =
+lastGeneratedResult.id ||
+("track-" + Date.now());
+
+await window.MusicCityCatalog.saveTrack({
+id: trackId,
+title: lastGeneratedResult.title,
+style: lastGeneratedResult.style || "",
+studio: lastGeneratedResult.studio || studio,
+beat: lastGeneratedResult.beat || "",
+provider: lastGeneratedResult.providerName || lastGeneratedResult.provider,
+createdAt: lastGeneratedResult.createdAt,
+audioBlob: lastGeneratedResult.audioBlob
+});
+
+const current =
+window.MCE.get();
+
+const alreadySaved =
+current.releases.some(release =>
+String(release.id) === String(trackId)
+);
+
+if (!alreadySaved) {
+window.MCE.addRelease({
+id: trackId,
+title: lastGeneratedResult.title,
+source:
+"ai-" +
+(lastGeneratedResult.provider || "music-city"),
+createdAt: lastGeneratedResult.createdAt,
+style: lastGeneratedResult.style || "",
+studio: lastGeneratedResult.studio || studio,
+beat: lastGeneratedResult.beat || "",
+provider:
+lastGeneratedResult.providerName ||
+lastGeneratedResult.provider ||
+"Music City AI",
+audioKey: trackId,
+radioStatus: "not-submitted"
+});
+}
+
+button.textContent =
+"✓ SAVED TO CATALOG";
+
+engineMessage.textContent =
+"Saved to your Artist Catalog. The track is now part of your Music City career on this device.";
+
+}
+catch(error) {
+
+button.disabled = false;
+button.textContent =
+"💿 SAVE TO ARTIST CATALOG";
+
+engineMessage.textContent =
+error.message ||
+"Music City could not save this track.";
+
+}
+
+}
+
+
 async function createSong() {
 
 const title =
@@ -1016,6 +1122,28 @@ engineMessage.textContent =
 const result =
 await window.MusicCityAI.generate(request);
 
+result.style = style;
+result.studio = studio;
+result.beat = result.beat || selectedBeat || "";
+
+lastGeneratedResult = result;
+
+const catalogActions =
+document.getElementById("catalogActions");
+
+const saveButton =
+document.getElementById("saveToCatalogButton");
+
+if (result.audioBlob) {
+catalogActions.style.display = "grid";
+saveButton.disabled = false;
+saveButton.textContent =
+"💿 SAVE TO ARTIST CATALOG";
+}
+else {
+catalogActions.style.display = "none";
+}
+
 resultText.innerHTML =
 "<strong>" + result.title + "</strong><br>" +
 "Style: " + style + "<br>" +
@@ -1037,7 +1165,12 @@ JSON.parse(
 localStorage.getItem("musicCityAISessions") || "[]"
 );
 
-sessions.unshift(result);
+const storedSession =
+Object.assign({}, result);
+
+delete storedSession.audioBlob;
+
+sessions.unshift(storedSession);
 
 localStorage.setItem(
 "musicCityAISessions",

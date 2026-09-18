@@ -115,7 +115,13 @@
       title: String(item.title || "Untitled"),
       source: String(item.source || "unknown"),
       day: item.day == null ? undefined : toCount(item.day, undefined),
-      createdAt: item.createdAt || undefined
+      createdAt: item.createdAt || undefined,
+      style: item.style == null ? undefined : String(item.style),
+      studio: item.studio == null ? undefined : String(item.studio),
+      beat: item.beat == null ? undefined : String(item.beat),
+      provider: item.provider == null ? undefined : String(item.provider),
+      audioKey: item.audioKey == null ? undefined : String(item.audioKey),
+      radioStatus: item.radioStatus == null ? undefined : String(item.radioStatus)
     };
   }
 

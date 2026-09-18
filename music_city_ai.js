@@ -244,6 +244,7 @@
         summary: request.style,
         beat: request.beat,
         audioUrl: audioUrl,
+        audioBlob: blob,
         message:
           "Music City generated a live AI music preview. " +
           "Play it below.",
