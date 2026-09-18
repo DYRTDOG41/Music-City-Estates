@@ -289,10 +289,23 @@ function showPassport(certificate) {
   document.getElementById("splitHash").textContent = certificate.splitAgreement.sha256;
   document.getElementById("metadataHash").textContent = certificate.metadataHash.sha256;
   const minted = certificate.chain.status === "minted";
+  const mainnet =
+    minted &&
+    String(certificate.chain.network || "").toLowerCase() === "mainnet";
+
   document.getElementById("passportBadge").textContent =
-    minted ? "✓ MUSIC CITY CERTIFIED" : "PASSPORT READY";
+    mainnet
+      ? "✓ MUSIC CITY CERTIFIED"
+      : minted
+        ? "✓ MUSIC CITY TESTNET CERTIFIED"
+        : "PASSPORT READY";
+
   document.getElementById("chainBadge").textContent =
-    minted ? "ON-CHAIN" : "NOT CERTIFIED ON-CHAIN";
+    mainnet
+      ? "MAINNET"
+      : minted
+        ? String(certificate.chain.network || "TESTNET").toUpperCase()
+        : "NOT CERTIFIED ON-CHAIN";
 }
 
 async function init() {
