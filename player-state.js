@@ -16,6 +16,14 @@
     level: 1,
     songs: 0,
     battles: 0,
+    manager: {
+      hired: false,
+      role: "Independent Manager",
+      hiredAt: null,
+      totalCommission: 0,
+      promotionSpend: 0,
+      radioSpend: 0
+    },
     releases: [],
     flags: {},
     version: 1
@@ -30,6 +38,13 @@
     hiphop: { fans: 100, xp: 150, label: "100 fans · 150 XP" },
     rnb: { fans: 175, xp: 250, label: "175 fans · 250 XP" },
     downtown: { fans: 300, xp: 400, label: "300 fans · 400 XP" }
+  };
+
+  var ECONOMY = {
+    managerHiringFee: 200,
+    managerCommissionPct: 15,
+    managedPromotionFee: 25,
+    radioSubmissionFee: 50
   };
 
   var CAREER_TITLES = [
@@ -103,6 +118,18 @@
     return Math.max(1, toCount(stored, 1), fromXp);
   }
 
+  function normalizeManager(item) {
+    var source = item && typeof item === "object" ? item : {};
+    return {
+      hired: Boolean(source.hired),
+      role: String(source.role || "Independent Manager"),
+      hiredAt: source.hiredAt || null,
+      totalCommission: toCount(source.totalCommission, 0),
+      promotionSpend: toCount(source.promotionSpend, 0),
+      radioSpend: toCount(source.radioSpend, 0)
+    };
+  }
+
   function normalizeRelease(item, index) {
     if (!item || typeof item !== "object") {
       return {
@@ -126,8 +153,10 @@
       releasedAt: item.releasedAt || undefined,
       promotedAt: item.promotedAt || undefined,
       promotionCount: toCount(item.promotionCount, 0),
+      promotionSpend: toCount(item.promotionSpend, 0),
       radioStatus: item.radioStatus == null ? "not-submitted" : String(item.radioStatus),
-      radioSubmittedAt: item.radioSubmittedAt || undefined
+      radioSubmittedAt: item.radioSubmittedAt || undefined,
+      radioFeePaid: toCount(item.radioFeePaid, 0)
     };
   }
 
@@ -146,6 +175,7 @@
       level: numericLevel(src.xp, src.level),
       songs: songs,
       battles: toCount(src.battles, DEFAULTS.battles),
+      manager: normalizeManager(src.manager),
       releases: releases,
       flags: flags,
       version: 1
@@ -186,6 +216,7 @@
       merged.songs = toCount(career.songs, merged.songs);
       merged.battles = toCount(career.battles, merged.battles);
       merged.level = toCount(career.level, merged.level);
+      merged.manager = normalizeManager(career.manager);
       if (Array.isArray(career.releases)) merged.releases = career.releases.map(normalizeRelease);
       if (career.flags && typeof career.flags === "object") merged.flags = clone(career.flags);
     }
@@ -211,6 +242,7 @@
       songs: state.songs,
       battles: state.battles,
       level: state.level,
+      manager: state.manager,
       releases: state.releases,
       flags: state.flags,
       version: 1
@@ -321,13 +353,30 @@
       throw new Error("Release the song before promoting it.");
     }
 
+    if (!next.manager.hired) {
+      throw new Error("Hire a manager before running professional promotion.");
+    }
+
     if (release.promotionCount > 0) return snapshot();
+
+    if (next.cash < ECONOMY.managedPromotionFee) {
+      throw new Error(
+        "Managed promotion costs $" + ECONOMY.managedPromotionFee +
+        ". You currently have $" + next.cash + "."
+      );
+    }
+
+    next.cash -= ECONOMY.managedPromotionFee;
+    next.manager.promotionSpend += ECONOMY.managedPromotionFee;
 
     release.promotionCount = 1;
     release.promotedAt = new Date().toISOString();
+    release.promotionSpend =
+      toCount(release.promotionSpend, 0) + ECONOMY.managedPromotionFee;
     next.releases[index] = normalizeRelease(release, index);
-    next.fans += 5;
-    next.xp += 3;
+
+    next.fans += 8;
+    next.xp += 5;
 
     return save(next);
   }
@@ -343,6 +392,10 @@
       throw new Error("Release the song before submitting it to radio.");
     }
 
+    if (!next.manager.hired) {
+      throw new Error("Your manager must handle radio submissions.");
+    }
+
     if (!meets(UNLOCKS.radio, next)) {
       var gap = needed(UNLOCKS.radio, next);
       throw new Error(
@@ -353,9 +406,77 @@
 
     if (release.radioStatus === "submitted") return snapshot();
 
+    if (next.cash < ECONOMY.radioSubmissionFee) {
+      throw new Error(
+        "Radio submission costs $" + ECONOMY.radioSubmissionFee +
+        ". You currently have $" + next.cash + "."
+      );
+    }
+
+    next.cash -= ECONOMY.radioSubmissionFee;
+    next.manager.radioSpend += ECONOMY.radioSubmissionFee;
+
     release.radioStatus = "submitted";
     release.radioSubmittedAt = new Date().toISOString();
+    release.radioFeePaid =
+      toCount(release.radioFeePaid, 0) + ECONOMY.radioSubmissionFee;
     next.releases[index] = normalizeRelease(release, index);
+
+    return save(next);
+  }
+
+  function hireManager() {
+    if (!current) load();
+    var next = snapshot();
+
+    if (next.manager.hired) return snapshot();
+
+    if (next.cash < ECONOMY.managerHiringFee) {
+      throw new Error(
+        "Hiring a manager costs $" + ECONOMY.managerHiringFee +
+        ". You currently have $" + next.cash + "."
+      );
+    }
+
+    next.cash -= ECONOMY.managerHiringFee;
+    next.manager.hired = true;
+    next.manager.hiredAt = new Date().toISOString();
+
+    return save(next);
+  }
+
+  function hasManager(state) {
+    var s = state || current || load();
+    return Boolean(s.manager && s.manager.hired);
+  }
+
+  function getShowPayout(grossCash, state) {
+    var s = state || current || load();
+    var gross = Math.max(0, toCount(grossCash, 0));
+    var commission = hasManager(s)
+      ? Math.floor(gross * ECONOMY.managerCommissionPct / 100)
+      : 0;
+
+    return {
+      gross: gross,
+      commission: commission,
+      net: Math.max(0, gross - commission)
+    };
+  }
+
+  function payShow(delta) {
+    if (!current) load();
+    var next = snapshot();
+    var input = delta && typeof delta === "object" ? delta : {};
+    var payout = getShowPayout(input.cash, next);
+
+    next.cash += payout.net;
+    next.fans += toCount(input.fans, 0);
+    next.xp += toCount(input.xp, 0);
+
+    if (next.manager.hired) {
+      next.manager.totalCommission += payout.commission;
+    }
 
     return save(next);
   }
@@ -401,6 +522,7 @@
     DEFAULTS: clone(DEFAULTS),
     UNLOCKS: UNLOCKS,
     CAREER_TITLES: CAREER_TITLES,
+    ECONOMY: ECONOMY,
     KEYS: {
       career: CAREER_KEY,
       fans: WORLD_KEYS.fans,
@@ -422,6 +544,10 @@
     releaseSong: releaseSong,
     promoteRelease: promoteRelease,
     submitReleaseToRadio: submitReleaseToRadio,
+    hireManager: hireManager,
+    hasManager: hasManager,
+    getShowPayout: getShowPayout,
+    payShow: payShow,
     meets: meets,
     isUnlocked: isUnlocked,
     needed: needed,
