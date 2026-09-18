@@ -36,11 +36,12 @@ audio{width:100%;margin-top:10px}
 
 <section class="radioPanel" id="radioPanel">
 <h2>📡 Artist Submissions</h2>
-<p>Released songs submitted from your Artist Catalog appear here for Music City Radio consideration. Submission does not guarantee airplay.</p>
+<p>Music City Radio accepts professional submissions through an artist's manager. The submission fee pays for station consideration only and never guarantees airplay.</p>
 <div id="eligibility" class="submission"></div>
 <div id="submissionList"></div>
 <div class="links">
 <a href="artist_catalog.html">Artist Catalog</a>
+<a href="manager.html">Manager Office</a>
 <a href="music_city_feed.html">City Feed</a>
 </div>
 </section>
@@ -65,10 +66,88 @@ async function renderSubmissions() {
   const state = window.MCE.get();
   const eligible = window.MCE.isUnlocked("radio", state);
   const gap = window.MCE.needed(window.MCE.UNLOCKS.radio, state);
+  const represented = window.MCE.hasManager(state);
+  const fee = window.MCE.ECONOMY.radioSubmissionFee;
   const eligibility = document.getElementById("eligibility");
-  eligibility.innerHTML = eligible
-    ? '<h3>✅ RADIO CONSIDERATION UNLOCKED</h3><div class="meta">' + state.fans + ' fans • ' + state.xp + ' XP</div>'
-    : '<h3>🔒 BUILD YOUR RADIO PROFILE</h3><div class="meta">Requires 100 fans + 150 XP • Need ' + gap.fans + ' more fans and ' + gap.xp + ' more XP.</div>';
+
+  if (!represented) {
+    eligibility.innerHTML =
+      '<h3>🧑‍💼 MANAGER REQUIRED</h3>' +
+      '<div class="meta">Music City Radio only accepts artist submissions through a manager. Hire one in the Manager Office before submitting tracks.</div>';
+  } else if (!eligible) {
+    eligibility.innerHTML =
+      '<h3>🔒 BUILD YOUR RADIO PROFILE</h3>' +
+      '<div class="meta">Manager under contract • Requires 100 fans + 150 XP • Need ' +
+      gap.fans + ' more fans and ' + gap.xp + ' more XP.</div>';
+  } else {
+    eligibility.innerHTML =
+      '<h3>✅ MANAGER CAN SUBMIT</h3>' +
+      '<div class="meta">' + state.fans + ' fans • ' + state.xp +
+      ' XP • Submission consideration fee: 
+
+  const submissions = state.releases
+    .filter(release => release.radioStatus === "submitted")
+    .sort((a, b) =>
+      String(b.radioSubmittedAt || "")
+        .localeCompare(String(a.radioSubmittedAt || ""))
+    );
+
+  const list = document.getElementById("submissionList");
+
+  if (!submissions.length) {
+    list.innerHTML =
+      '<div class="empty">No radio submissions yet. Release a song in your Artist Catalog, then choose Submit to Radio.</div>';
+    return;
+  }
+
+  const tracks = await window.MusicCityCatalog.listTracks();
+  const trackMap = {};
+  tracks.forEach(track => {
+    trackMap[String(track.id)] = track;
+  });
+
+  list.innerHTML = "";
+
+  submissions.forEach(release => {
+    const track = trackMap[String(release.audioKey || release.id)] || null;
+
+    const card = document.createElement("article");
+    card.className = "submission";
+
+    const title = document.createElement("h3");
+    title.textContent = release.title || "Untitled Song";
+    card.appendChild(title);
+
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    meta.textContent =
+      [release.style, release.beat, release.provider]
+        .filter(Boolean)
+        .join(" • ");
+    card.appendChild(meta);
+
+    const status = document.createElement("span");
+    status.className = "status";
+    status.textContent = "PENDING CONSIDERATION • FEE $" + (release.radioFeePaid || window.MCE.ECONOMY.radioSubmissionFee);
+    card.appendChild(status);
+
+    if (track && track.audioBlob) {
+      const audio = document.createElement("audio");
+      audio.controls = true;
+      const url = URL.createObjectURL(track.audioBlob);
+      radioUrls.push(url);
+      audio.src = url;
+      card.appendChild(audio);
+    }
+
+    list.appendChild(card);
+  });
+}
+</script>
+</body>
+</html>
+ + fee + '</div>';
+  }
 
   const submissions = state.releases
     .filter(release => release.radioStatus === "submitted")
