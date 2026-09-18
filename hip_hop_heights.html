@@ -3,198 +3,90 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Hip-Hop Heights | Music City Estates</title>
-
 <style>
-* {
-box-sizing: border-box;
-}
-
-html,
-body {
-margin: 0;
-width: 100%;
-height: 100%;
-overflow: hidden;
-font-family: Arial, sans-serif;
-background: #000;
-color: white;
-}
-
-#world {
-position: fixed;
-inset: 0;
-width: 100%;
-height: 100%;
-border: none;
-}
-
-.top-bar {
-position: fixed;
-top: 0;
-left: 0;
-right: 0;
-z-index: 10;
-
-display: flex;
-justify-content: space-between;
-align-items: center;
-
-padding: 12px 18px;
-
-background: rgba(0, 0, 0, 0.72);
-backdrop-filter: blur(8px);
-}
-
-.title {
-font-size: 22px;
-font-weight: bold;
-}
-
-.stats {
-display: flex;
-gap: 18px;
-font-size: 15px;
-}
-
-.back-button {
-background: white;
-color: black;
-text-decoration: none;
-padding: 9px 14px;
-border-radius: 8px;
-font-weight: bold;
-}
-
-.location-panel {
-position: fixed;
-left: 18px;
-bottom: 18px;
-z-index: 10;
-
-width: 250px;
-padding: 15px;
-
-background: rgba(0, 0, 0, 0.76);
-border-radius: 12px;
-}
-
-.location-panel h2 {
-margin: 0 0 10px;
-font-size: 18px;
-}
-
-.location-button {
-display: block;
-width: 100%;
-
-margin-top: 8px;
-padding: 10px;
-
-border: none;
-border-radius: 7px;
-
-background: white;
-color: black;
-
-font-size: 14px;
-font-weight: bold;
-cursor: pointer;
-}
-
-.location-button:hover {
-background: #ddd;
-}
-
-.status {
-margin-top: 10px;
-font-size: 13px;
-color: #ddd;
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:Arial,sans-serif;background:#000;color:#fff}
+#world{position:fixed;inset:0;width:100%;height:100%;border:0}
+.top-bar{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:linear-gradient(180deg,rgba(0,0,0,.83),rgba(0,0,0,.25),transparent);pointer-events:none}
+.title{font-size:20px;font-weight:900;letter-spacing:.08em;text-shadow:0 2px 12px #000}
+.stats{display:flex;gap:12px;padding:7px 10px;border:1px solid #ffffff26;border-radius:18px;background:#050505a8;font-size:13px;backdrop-filter:blur(7px)}
+.back-button{pointer-events:auto;background:#070707b8;color:#fff;text-decoration:none;padding:8px 11px;border:1px solid #ffffff35;border-radius:18px;font-weight:800;font-size:12px;backdrop-filter:blur(7px)}
+.hotspots{position:fixed;inset:0;z-index:12;pointer-events:none}
+.building-hotspot{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:5px;border:0;background:transparent;color:#fff;cursor:pointer;pointer-events:auto;filter:drop-shadow(0 3px 8px #000);touch-action:manipulation}
+.marker{position:relative;width:28px;height:28px;border:2px solid #fff;border-radius:50%;background:var(--color);box-shadow:0 0 0 5px #0007,0 0 24px var(--color);transition:transform .2s,box-shadow .2s}
+.marker::before{content:"";position:absolute;inset:-10px;border:1px solid var(--color);border-radius:50%;animation:pulse 1.8s infinite}
+.marker::after{content:"";position:absolute;left:50%;bottom:-9px;transform:translateX(-50%);border-left:6px solid transparent;border-right:6px solid transparent;border-top:9px solid var(--color)}
+.hotspot-label{padding:5px 8px;border:1px solid #ffffff3d;border-radius:12px;background:#050505c9;font-size:11px;font-weight:900;white-space:nowrap;letter-spacing:.03em;backdrop-filter:blur(6px);transition:background .2s,transform .2s}
+.building-hotspot:hover .marker,.building-hotspot:focus-visible .marker{transform:scale(1.2);box-shadow:0 0 0 6px #0009,0 0 32px var(--color)}
+.building-hotspot:hover .hotspot-label,.building-hotspot:focus-visible .hotspot-label{background:var(--color);color:#080808;transform:scale(1.05)}
+.look-hint{position:fixed;z-index:15;left:50%;bottom:16px;transform:translateX(-50%);padding:8px 13px;border:1px solid #ffffff2b;border-radius:20px;background:#050505b8;font-size:11px;font-weight:800;white-space:nowrap;pointer-events:none;backdrop-filter:blur(7px)}
+.toast{display:none;position:fixed;z-index:40;left:50%;bottom:58px;transform:translateX(-50%);width:min(360px,90%);padding:12px 15px;border:1px solid #ffd45e;border-radius:12px;background:#080808e8;text-align:center;font-size:13px;box-shadow:0 0 25px #000}
+.toast.show{display:block}
+@keyframes pulse{0%{transform:scale(.75);opacity:.9}75%,100%{transform:scale(1.65);opacity:0}}
+@media(max-width:720px){
+  .top-bar{align-items:flex-start;padding:8px}
+  .title{font-size:14px;margin-top:8px}
+  .stats{gap:7px;font-size:10px;margin-top:2px}
+  .back-button{padding:7px 9px;font-size:10px}
+  .marker{width:25px;height:25px}
+  .hotspot-label{font-size:9px;padding:4px 6px}
+  .look-hint{bottom:10px;font-size:10px}
 }
 </style>
 </head>
-
 <body>
+<iframe id="world" src="hip_hop_heights_viewer.html" allow="fullscreen"></iframe>
 
-<!-- WORKING MARBLE HIP-HOP HEIGHTS WORLD -->
-<iframe
-id="world"
-src="hip_hop_heights_viewer.html"
-allow="fullscreen"
-></iframe>
-
-<!-- MUSIC CITY ESTATES HUD -->
 <div class="top-bar">
-
-<a class="back-button" href="city_map.html">
-← MUSIC CITY
-</a>
-
-<div class="title">
-HIP-HOP HEIGHTS
+  <a class="back-button" href="city_map.html">← MUSIC CITY</a>
+  <div class="title">HIP-HOP HEIGHTS</div>
+  <div class="stats">
+    <span>👥 <strong id="fans">0</strong></span>
+    <span>💵 $<strong id="cash">100</strong></span>
+    <span>⭐ <strong id="xp">0</strong></span>
+  </div>
 </div>
 
-<div class="stats">
-<span>Fans: <strong id="fans">0</strong></span>
-<span>Cash: $<strong id="cash">500</strong></span>
-<span>XP: <strong id="xp">0</strong></span>
+<div class="hotspots" aria-label="Hip-Hop Heights buildings">
+  <button class="building-hotspot" style="--x:25%;--y:42%;--color:#efc95d" data-destination="begenius_studio.html" aria-label="Enter BeGenius Studio">
+    <span class="marker"></span><span class="hotspot-label">BEGENIUS STUDIO</span>
+  </button>
+  <button class="building-hotspot" style="--x:48%;--y:62%;--color:#ff7848" data-destination="hiphop_cafe.html" aria-label="Enter Hip-Hop Café">
+    <span class="marker"></span><span class="hotspot-label">HIP-HOP CAFÉ</span>
+  </button>
+  <button class="building-hotspot" style="--x:72%;--y:40%;--color:#67d7ff" data-coming-soon="Record Store" aria-label="View Record Store">
+    <span class="marker"></span><span class="hotspot-label">RECORD STORE</span>
+  </button>
+  <button class="building-hotspot" style="--x:81%;--y:67%;--color:#dd67ff" data-destination="warehouse.html" aria-label="Enter DA Warehouse">
+    <span class="marker"></span><span class="hotspot-label">DA WAREHOUSE</span>
+  </button>
 </div>
 
-</div>
-
-<!-- LOCATION MENU -->
-<div class="location-panel">
-
-<h2>Explore Hip-Hop Heights</h2>
-
-<button class="location-button" onclick="window.location.href='begenius_studio.html'">
-BeGenius Studio
-</button>
-
-<button class="location-button" onclick="window.location.href='hiphop_cafe.html'">
-Hip-Hop Café
-</button>
-
-<button class="location-button" onclick="visit('Record Store', 4)">
-Record Store
-</button>
-
-<button class="location-button" onclick="window.location.href='warehouse.html'">
-DA Warehouse
-</button>
-
-<div class="status" id="status">
-Welcome to Hip-Hop Heights.
-</div>
-
-</div>
+<div class="look-hint">LOOK AROUND • TAP A BUILDING MARKER TO ENTER</div>
+<div class="toast" id="toast" role="status"></div>
 
 <script src="player-state.js"></script>
 <script>
-const player = window.MCE.load();
-let fans = player.fans;
-let cash = player.cash;
-let xp = player.xp;
+const player=window.MCE.load();
+document.getElementById("fans").textContent=player.fans;
+document.getElementById("cash").textContent=player.cash;
+document.getElementById("xp").textContent=player.xp;
 
-document.getElementById("fans").textContent = fans;
-document.getElementById("cash").textContent = cash;
-document.getElementById("xp").textContent = xp;
-
-function visit(place, reward) {
-const saved = window.MCE.add({ xp: reward });
-fans = saved.fans;
-cash = saved.cash;
-xp = saved.xp;
-
-document.getElementById("fans").textContent = fans;
-document.getElementById("cash").textContent = cash;
-document.getElementById("xp").textContent = xp;
-
-document.getElementById("status").textContent =
-"Selected: " + place + " | +" + reward + " XP";
-}
+document.querySelectorAll(".building-hotspot").forEach((hotspot)=>{
+  hotspot.addEventListener("click",()=>{
+    const destination=hotspot.dataset.destination;
+    if(destination){
+      window.location.href=destination;
+      return;
+    }
+    const toast=document.getElementById("toast");
+    toast.textContent=hotspot.dataset.comingSoon+" interior is coming soon.";
+    toast.classList.add("show");
+    clearTimeout(window.mceToastTimer);
+    window.mceToastTimer=setTimeout(()=>toast.classList.remove("show"),2400);
+  });
+});
 </script>
-
 </body>
 </html>
