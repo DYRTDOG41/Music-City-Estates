@@ -86,10 +86,12 @@ function releaseById(id) {
 function promoteById(id) {
   try {
     window.MCE.promoteRelease(id);
+    const manager = window.MCE.getManagerProfile();
     showNotice(
-      "Manager promotion completed. -$" +
-      window.MCE.ECONOMY.managedPromotionFee +
-      " • +8 fans • +5 XP."
+      manager.name + " completed the campaign. -$" +
+      manager.promotionFee +
+      " • +" + manager.promotionFans +
+      " fans • +" + manager.promotionXp + " XP."
     );
     renderCatalog();
   } catch (error) {
@@ -100,9 +102,11 @@ function promoteById(id) {
 function submitRadioById(id) {
   try {
     window.MCE.submitReleaseToRadio(id);
+    const manager = window.MCE.getManagerProfile();
     showNotice(
-      "Your manager submitted the track to Music City Radio. -$" +
-      window.MCE.ECONOMY.radioSubmissionFee +
+      manager.name + " submitted the track to Music City Radio. -$" +
+      manager.radioFee +
+      " • Radio influence +" + manager.radioInfluence +
       ". Submission pays for consideration only and does not guarantee airplay."
     );
     renderCatalog();
@@ -146,9 +150,14 @@ async function renderCatalog() {
     const radioUnlocked = window.MCE.isUnlocked("radio", state);
     const radioGap = window.MCE.needed(window.MCE.UNLOCKS.radio, state);
     const hasManager = window.MCE.hasManager(state);
+    const manager = window.MCE.getManagerProfile(state);
     const economy = window.MCE.ECONOMY;
-    const canAffordPromotion = state.cash >= economy.managedPromotionFee;
-    const canAffordRadio = state.cash >= economy.radioSubmissionFee;
+    const promotionFee = manager ? manager.promotionFee : economy.managedPromotionFee;
+    const radioFee = manager ? manager.radioFee : economy.radioSubmissionFee;
+    const promotionFans = manager ? manager.promotionFans : 0;
+    const promotionXp = manager ? manager.promotionXp : 0;
+    const canAffordPromotion = state.cash >= promotionFee;
+    const canAffordRadio = state.cash >= radioFee;
 
     const card = document.createElement("article");
     card.className = "card";
@@ -212,8 +221,8 @@ async function renderCatalog() {
       : !hasManager
         ? "🧑‍💼 HIRE MANAGER"
         : canAffordPromotion
-          ? "📣 MANAGER PROMOTE — $" + economy.managedPromotionFee
-          : "🔒 PROMO NEED $" + economy.managedPromotionFee;
+          ? "📣 " + manager.name.toUpperCase() + " PROMOTE — $" + promotionFee
+          : "🔒 PROMO NEED $" + promotionFee;
     promoteButton.disabled =
       !isReleased ||
       isPromoted ||
@@ -235,8 +244,8 @@ async function renderCatalog() {
         : !radioUnlocked
           ? "🔒 RADIO LOCKED"
           : !canAffordRadio
-            ? "🔒 RADIO NEED $" + economy.radioSubmissionFee
-            : "📻 MANAGER SUBMIT — $" + economy.radioSubmissionFee;
+            ? "🔒 RADIO NEED $" + radioFee
+            : "📻 " + manager.name.toUpperCase() + " SUBMIT — $" + radioFee;
     radioButton.disabled =
       !isReleased ||
       radioSubmitted ||
@@ -265,13 +274,18 @@ async function renderCatalog() {
     reward.textContent = !isReleased
       ? "Release reward: +3 fans, +5 XP"
       : !hasManager
-        ? "Professional promotion and radio require a manager. Hiring fee: $" + economy.managerHiringFee + "."
+        ? "Professional promotion and radio require a manager. Starter management begins at $" + economy.managerHiringFee + "."
         : !isPromoted
-          ? "Managed promotion: $" + economy.managedPromotionFee + " • reward +8 fans, +5 XP."
+          ? manager.name + " promotion: $" + promotionFee +
+            " • reward +" + promotionFans + " fans, +" + promotionXp + " XP."
           : radioSubmitted
-            ? "Radio submission fee paid: $" + (release.radioFeePaid || economy.radioSubmissionFee) + " • pending consideration."
+            ? "Radio submission handled by " + (release.radioManager || manager.name) +
+              " • fee paid $" + (release.radioFeePaid || radioFee) +
+              " • influence +" + (release.radioInfluence || manager.radioInfluence) +
+              " • pending consideration."
             : radioUnlocked
-              ? "Radio submission through manager: $" + economy.radioSubmissionFee + "."
+              ? manager.name + " radio submission: $" + radioFee +
+                " • influence +" + manager.radioInfluence + "."
               : "Radio unlock: " + radioGap.fans + " more fans and " + radioGap.xp + " more XP.";
     card.appendChild(reward);
 
