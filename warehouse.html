@@ -545,7 +545,7 @@ onclick="showBattleLocked()"
 </div>
 
 <div class="lock-title">
-BATTLE STAGE LOCKED
+BATTLE LOCKED • 3D TOUR OPEN
 </div>
 
 <div
@@ -709,9 +709,9 @@ document
 .textContent =
 "You have " +
 fans +
-" fans. Earn " +
+" fans. Tap here to tour the stage. Earn " +
 needed +
-" more fans to unlock.";
+" more fans to compete.";
 
 }
 
@@ -722,29 +722,13 @@ BATTLE STAGE
 ========================================= */
 
 function openBattle() {
-
-if (fans < 25) {
-
-showBattleLocked();
-
-return;
-
-}
-
-
 window.location.href = "battle_room.html";
 
 }
 
 
 function showBattleLocked() {
-
-showMessage(
-"🎤 Battle Stage Locked",
-"Word Slaughter requires 25 fans before you can enter a rap battle. You currently have " +
-fans +
-" fans."
-);
+window.location.href = "battle_room.html";
 
 }
 
