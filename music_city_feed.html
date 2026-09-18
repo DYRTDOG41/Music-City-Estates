@@ -146,14 +146,18 @@ async function renderFeed() {
     if (Number(release.promotionCount || 0) > 0) {
       const promoted = document.createElement("span");
       promoted.className = "badge hot";
-      promoted.textContent = "MANAGER PROMOTED";
+      promoted.textContent =
+        "PROMOTED BY " +
+        (release.promotionManager || "MANAGEMENT").toUpperCase();
       badges.appendChild(promoted);
     }
 
     if (release.radioStatus === "submitted") {
       const radio = document.createElement("span");
       radio.className = "badge radio";
-      radio.textContent = "RADIO SUBMITTED";
+      radio.textContent =
+        "RADIO SUBMITTED" +
+        (release.radioManager ? " • " + release.radioManager.toUpperCase() : "");
       badges.appendChild(radio);
     }
 
