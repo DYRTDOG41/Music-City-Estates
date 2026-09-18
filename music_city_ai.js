@@ -174,8 +174,8 @@
       throw new Error("Record or upload an audio reference first.");
     }
 
-    if (blob.size > 5 * 1024 * 1024) {
-      throw new Error("Reference audio must be 5 MB or smaller.");
+    if (blob.size > 3 * 1024 * 1024) {
+      throw new Error("Reference audio must be 3 MB or smaller.");
     }
 
     const config = options || {};
