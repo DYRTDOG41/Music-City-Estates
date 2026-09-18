@@ -191,13 +191,17 @@ test("promotion requires release and rewards once", function () {
   assert.strictEqual(again.xp, 8);
 });
 
-test("radio submission requires a released song", function () {
+test("radio submission requires a released song and career eligibility", function () {
   start();
   MCE.addRelease({ id: "release-loop-3", title: "Radio Song" });
   assert.throws(function () {
     MCE.submitReleaseToRadio("release-loop-3");
   });
   MCE.releaseSong("release-loop-3");
+  assert.throws(function () {
+    MCE.submitReleaseToRadio("release-loop-3");
+  });
+  MCE.save({ fans: 100, xp: 150 });
   var submitted = MCE.submitReleaseToRadio("release-loop-3");
   assert.strictEqual(submitted.releases[0].radioStatus, "submitted");
   assert.ok(submitted.releases[0].radioSubmittedAt);
