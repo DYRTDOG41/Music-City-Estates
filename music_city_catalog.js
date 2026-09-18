@@ -79,6 +79,14 @@
       beat: String(track.beat || ""),
       provider: String(track.provider || ""),
       createdAt: track.createdAt || new Date().toISOString(),
+      craftScore: Number(track.craftScore || 0),
+      craftTier: String(track.craftTier || "Quick Draft"),
+      craftBreakdown:
+        track.craftBreakdown && typeof track.craftBreakdown === "object"
+          ? track.craftBreakdown
+          : {},
+      revisionCount: Number(track.revisionCount || 0),
+      originalLyricsConfirmed: Boolean(track.originalLyricsConfirmed),
       audioBlob: track.audioBlob || null
     };
 
