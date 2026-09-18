@@ -37,6 +37,7 @@ audio{width:100%;margin-top:10px}
 <section class="radioPanel" id="radioPanel">
 <h2>📡 Artist Submissions</h2>
 <p>Released songs submitted from your Artist Catalog appear here for Music City Radio consideration. Submission does not guarantee airplay.</p>
+<div id="eligibility" class="submission"></div>
 <div id="submissionList"></div>
 <div class="links">
 <a href="artist_catalog.html">Artist Catalog</a>
@@ -62,6 +63,13 @@ async function renderSubmissions() {
   radioUrls = [];
 
   const state = window.MCE.get();
+  const eligible = window.MCE.isUnlocked("radio", state);
+  const gap = window.MCE.needed(window.MCE.UNLOCKS.radio, state);
+  const eligibility = document.getElementById("eligibility");
+  eligibility.innerHTML = eligible
+    ? '<h3>✅ RADIO CONSIDERATION UNLOCKED</h3><div class="meta">' + state.fans + ' fans • ' + state.xp + ' XP</div>'
+    : '<h3>🔒 BUILD YOUR RADIO PROFILE</h3><div class="meta">Requires 100 fans + 150 XP • Need ' + gap.fans + ' more fans and ' + gap.xp + ' more XP.</div>';
+
   const submissions = state.releases
     .filter(release => release.radioStatus === "submitted")
     .sort((a, b) =>
