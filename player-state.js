@@ -973,7 +973,11 @@
 
   function getShowPayout(grossCash, state) {
     var s = state || current || load();
-    var gross = Math.max(0, toCount(grossCash, 0));
+    var gross = Math.max(
+      0,
+      toCount(grossCash, 0) +
+      (s.business ? s.business.effects.showCashBonus : 0)
+    );
     var profile = getManagerProfile(s);
     var commission = profile
       ? Math.floor(gross * profile.commissionPct / 100)
@@ -990,12 +994,7 @@
     if (!current) load();
     var next = snapshot();
     var input = delta && typeof delta === "object" ? delta : {};
-    var grossWithEvents =
-      Math.max(
-        0,
-        toCount(input.cash, 0) + next.business.effects.showCashBonus
-      );
-    var payout = getShowPayout(grossWithEvents, next);
+    var payout = getShowPayout(input.cash, next);
 
     next.cash += payout.net;
     next.fans += Math.max(
