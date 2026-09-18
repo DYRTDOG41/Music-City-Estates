@@ -25,9 +25,9 @@ Progress is saved automatically in the browser with `localStorage`.
 
 ## Project structure
 
-- `index.html` — semantic game screens and interface structure.
-- `style.css` — responsive game UI and CSS location/studio artwork.
-- `script.js` — player state, progression, actions, map unlocks, phone content, and persistence.
+- `index.html` — lightweight launcher that opens the city map.
+- `city_map.html` — the main starting screen for the current game world.
+- `player-state.js` — shared player progress used by the current map and location pages.
 
 ## Suggested next milestones
 

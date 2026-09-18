@@ -483,6 +483,7 @@ CONTINUE EXPLORING
 
 
 
+<script src="player-state.js"></script>
 <script type="module">
 
 import * as THREE from "three";
@@ -963,81 +964,35 @@ EYE_HEIGHT;
 GAME STATS
 ========================================== */
 
-function getNumber(
-key,
-fallback
-) {
-
-const stored =
-localStorage.getItem(
-key
-);
-
-
-if (stored === null) {
-
-return fallback;
-
-}
-
-
-return Number(
-stored
-);
-
-}
+const player =
+window.MCE.load();
 
 
 let fans =
-getNumber(
-"mceFans",
-0
-);
+player.fans;
 
 
 let cash =
-getNumber(
-"mceCash",
-500
-);
+player.cash;
 
 
 let xp =
-getNumber(
-"mceXP",
-0
-);
+player.xp;
 
 
 let level =
-getNumber(
-"mceLevel",
-1
-);
+player.level;
 
 
 
 function saveStats() {
 
-localStorage.setItem(
-"mceFans",
-fans
-);
-
-localStorage.setItem(
-"mceCash",
-cash
-);
-
-localStorage.setItem(
-"mceXP",
-xp
-);
-
-localStorage.setItem(
-"mceLevel",
-level
-);
+window.MCE.save({
+fans: fans,
+cash: cash,
+xp: xp,
+level: level
+});
 
 }
 
