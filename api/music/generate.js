@@ -1,23 +1,36 @@
-const DEFAULT_ALLOWED_ORIGIN = "https://dyrtdog41.github.io";
+const ELEVENLABS_MUSIC_URL = "https://api.elevenlabs.io/v1/music";
+
+function allowedOrigins() {
+  return [
+    "https://dyrtdog41.github.io",
+    "http://localhost:8000",
+    "http://localhost:8001",
+    "http://127.0.0.1:8000",
+    "http://127.0.0.1:8001",
+    ...String(process.env.MUSIC_CITY_ALLOWED_ORIGINS || "")
+      .split(",")
+      .map(value => value.trim())
+      .filter(Boolean)
+  ];
+}
+
+function originAllowed(origin) {
+  return !origin || allowedOrigins().includes(origin);
+}
 
 function setCors(req, res) {
-  const configured = process.env.MUSIC_CITY_ALLOWED_ORIGIN || DEFAULT_ALLOWED_ORIGIN;
-  const requestOrigin = req.headers.origin || "";
-  const localOrigin =
-    /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(requestOrigin);
+  const origin = req.headers.origin || "";
 
-  if (requestOrigin === configured || localOrigin) {
-    res.setHeader("Access-Control-Allow-Origin", requestOrigin);
-  } else {
-    res.setHeader("Access-Control-Allow-Origin", configured);
+  if (origin && originAllowed(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
   }
 
-  res.setHeader("Vary", "Origin");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   res.setHeader(
     "Access-Control-Expose-Headers",
-    "X-Music-City-Song-Id, X-Music-City-Provider"
+    "Content-Type, X-Music-City-Song-Id, X-Music-City-Provider"
   );
 }
 
@@ -26,33 +39,42 @@ function clean(value, fallback = "") {
   return text || fallback;
 }
 
-function clamp(number, min, max) {
+function clamp(value, min, max, fallback) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return fallback;
   return Math.max(min, Math.min(max, number));
 }
 
 function buildPrompt(body) {
   const title = clean(body.title, "Untitled Song");
-  const style = clean(body.style, "original contemporary production");
+  const style = clean(body.style, "original contemporary music");
   const mode = clean(body.mode, "Create Full Song");
-  const vocalStyle = clean(body.vocalStyle, "Use My Voice");
-  const beat = clean(body.beat, "No beat selected");
+  const beat = clean(body.beat, "no specific Music City beat selected");
+  const studio = clean(body.studio, "Music City studio");
   const lyrics = clean(body.lyrics);
+  const instrumental =
+    mode === "Generate Instrumental" ||
+    clean(body.vocalStyle) === "Instrumental Only";
 
   const parts = [
-    `Create a polished music track for a fictional game recording studio called Music City Estates.`,
-    `Song title: ${title}.`,
-    `Style: ${style}.`,
-    `Creation mode: ${mode}.`,
-    `Vocal direction: ${vocalStyle}.`,
-    `Beat selection/reference label: ${beat}.`,
-    "Use an original composition and arrangement."
+    "Create an original track for the Music City Estates game.",
+    `Working title: "${title}".`,
+    `Style and production direction: ${style}.`,
+    `Session location: ${studio}.`,
+    `Music City beat selection/reference label: ${beat}.`,
+    "Use professional arrangement, polished mix balance, a memorable structure, and an original composition."
   ];
 
-  if (lyrics) {
-    parts.push(`Lyrics or creative direction:\n${lyrics}`);
+  if (instrumental) {
+    parts.push("Instrumental only. Do not include vocals or lyrics.");
+  } else if (lyrics) {
+    parts.push("Use the following user-supplied original lyrics as creative direction:");
+    parts.push(lyrics);
+  } else {
+    parts.push("Create an original vocal concept and lyrics that fit the requested style.");
   }
 
-  return parts.join("\n").slice(0, 4000);
+  return parts.join("\n").slice(0, 4100);
 }
 
 module.exports = async function handler(req, res) {
@@ -66,11 +88,15 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed." });
   }
 
+  if (!originAllowed(req.headers.origin || "")) {
+    return res.status(403).json({ error: "Origin is not allowed." });
+  }
+
   const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) {
     return res.status(503).json({
       error:
-        "ElevenLabs is not connected yet. Add ELEVENLABS_API_KEY to the secure server environment."
+        "Music City live generation is deployed, but ELEVENLABS_API_KEY has not been configured on the server yet."
     });
   }
 
@@ -85,81 +111,104 @@ module.exports = async function handler(req, res) {
 
   if (clean(body.provider, "elevenlabs") !== "elevenlabs") {
     return res.status(400).json({
-      error: "This endpoint currently supports the ElevenLabs provider only."
+      error: "This endpoint currently supports the ElevenLabs Music adapter only."
     });
   }
 
-  const maxConfigured = Number(process.env.MUSIC_CITY_MAX_MUSIC_MS || 15000);
-  const maxMusicMs = clamp(
-    Number.isFinite(maxConfigured) ? maxConfigured : 15000,
+  const mode = clean(body.mode);
+  if (
+    Boolean(body.audioAttached) &&
+    (mode === "Build Music Around My Voice" || mode === "Remix My Recording")
+  ) {
+    return res.status(422).json({
+      error:
+        "The first live ElevenLabs adapter is prompt-to-music only. Recorded-voice/audio-reference generation is the next adapter and is not enabled yet."
+    });
+  }
+
+  const maxGenerationMs = clamp(
+    process.env.MUSIC_CITY_MAX_GENERATION_MS,
     3000,
+    30000,
     30000
   );
 
-  const requestedLength = Number(body.musicLengthMs || 12000);
   const musicLengthMs = clamp(
-    Number.isFinite(requestedLength) ? requestedLength : 12000,
+    body.durationMs,
     3000,
-    maxMusicMs
+    maxGenerationMs,
+    12000
   );
 
-  const mode = clean(body.mode);
-  const vocalStyle = clean(body.vocalStyle);
   const forceInstrumental =
-    /instrumental/i.test(mode) || /instrumental/i.test(vocalStyle);
+    mode === "Generate Instrumental" ||
+    clean(body.vocalStyle) === "Instrumental Only";
 
-  const elevenLabsResponse = await fetch(
-    "https://api.elevenlabs.io/v1/music?output_format=mp3_48000_192",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "xi-api-key": apiKey
-      },
-      body: JSON.stringify({
-        prompt: buildPrompt(body),
-        music_length_ms: musicLengthMs,
-        model_id: "music_v2_5",
-        force_instrumental: forceInstrumental
-      })
-    }
-  );
+  const providerRequest = {
+    prompt: buildPrompt(body),
+    music_length_ms: musicLengthMs,
+    model_id: process.env.ELEVENLABS_MUSIC_MODEL || "music_v2_5",
+    force_instrumental: forceInstrumental
+  };
 
-  if (!elevenLabsResponse.ok) {
-    let providerMessage = "";
-    try {
-      providerMessage = (await elevenLabsResponse.text()).slice(0, 500);
-    } catch (error) {
-      providerMessage = "";
-    }
-
-    console.error(
-      "ElevenLabs Music request failed",
-      elevenLabsResponse.status,
-      providerMessage
+  let providerResponse;
+  try {
+    providerResponse = await fetch(
+      `${ELEVENLABS_MUSIC_URL}?output_format=mp3_44100_128`,
+      {
+        method: "POST",
+        headers: {
+          "xi-api-key": apiKey,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(providerRequest)
+      }
     );
-
-    return res.status(elevenLabsResponse.status).json({
-      error:
-        elevenLabsResponse.status === 401 ||
-        elevenLabsResponse.status === 403
-          ? "ElevenLabs rejected the secure API credentials."
-          : "ElevenLabs could not generate this music preview."
+  } catch (error) {
+    console.error("ElevenLabs request failed", error);
+    return res.status(502).json({
+      error: "Music City could not reach the music provider."
     });
   }
 
-  const audioBuffer = Buffer.from(await elevenLabsResponse.arrayBuffer());
-  const songId = elevenLabsResponse.headers.get("song-id") || "";
+  if (!providerResponse.ok) {
+    let details = null;
+    try {
+      details = await providerResponse.json();
+    } catch (error) {
+      details = null;
+    }
 
-  res.statusCode = 200;
+    console.error("ElevenLabs music error", {
+      status: providerResponse.status,
+      details
+    });
+
+    const providerMessage =
+      details?.detail?.data?.prompt_suggestion ||
+      details?.detail?.message ||
+      details?.detail?.status ||
+      details?.message;
+
+    return res.status(providerResponse.status).json({
+      error: providerMessage
+        ? `Music provider: ${providerMessage}`
+        : "The music provider rejected this generation request."
+    });
+  }
+
+  const audio = Buffer.from(await providerResponse.arrayBuffer());
+  const songId = providerResponse.headers.get("song-id") || "";
+
   res.setHeader("Content-Type", "audio/mpeg");
-  res.setHeader("Content-Length", String(audioBuffer.length));
-  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("Content-Length", String(audio.length));
   res.setHeader("Content-Disposition", 'inline; filename="music-city-preview.mp3"');
+  res.setHeader("Cache-Control", "private, no-store");
   res.setHeader("X-Music-City-Provider", "elevenlabs");
+
   if (songId) {
     res.setHeader("X-Music-City-Song-Id", songId);
   }
 
-  return res.end(audioBuffer);
+  return res.status(200).send(audio);
 };
