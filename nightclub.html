@@ -223,12 +223,21 @@ function completeSet() {
 
 startSet.onclick = () => {
   if (!nightclubUnlocked() || !songSelect.value) return;
+  const selectedRelease =
+    state.releases.find(release => String(release.id) === String(songSelect.value)) || {};
+  const craftScore = Number(selectedRelease.craftScore || 0);
+  const craftEnergy = Math.floor(craftScore / 10);
   round = 1;
-  score = 0;
+  score = craftEnergy;
   active = true;
-  energy.style.width = "8%";
+  energy.style.width = Math.max(8, craftEnergy) + "%";
   roundText.textContent = "Part 1 of 3 • Establish the room";
-  log.textContent = "The DJ brings your track in. The dance floor turns toward the stage.";
+  log.textContent =
+    "The DJ brings your track in. The dance floor turns toward the stage." +
+    (craftEnergy
+      ? " Your " + (selectedRelease.craftTier || "developed") +
+        " record starts with +" + craftEnergy + " crowd energy."
+      : "");
   startSet.disabled = true;
   songSelect.disabled = true;
   setActions(true);
