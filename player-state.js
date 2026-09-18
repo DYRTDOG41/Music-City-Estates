@@ -600,6 +600,14 @@
       beat: item.beat == null ? undefined : String(item.beat),
       provider: item.provider == null ? undefined : String(item.provider),
       audioKey: item.audioKey == null ? undefined : String(item.audioKey),
+      craftScore: clamp(toCount(item.craftScore, 0), 0, 100),
+      craftTier: item.craftTier == null ? "Quick Draft" : String(item.craftTier),
+      craftBreakdown:
+        item.craftBreakdown && typeof item.craftBreakdown === "object"
+          ? clone(item.craftBreakdown)
+          : {},
+      revisionCount: toCount(item.revisionCount, 0),
+      originalLyricsConfirmed: Boolean(item.originalLyricsConfirmed),
       releaseStatus: item.releaseStatus == null ? "draft" : String(item.releaseStatus),
       releasedAt: item.releasedAt || undefined,
       promotedAt: item.promotedAt || undefined,
@@ -791,6 +799,36 @@
     return save(next);
   }
 
+  function getSongCraftImpact(release) {
+    var score = clamp(toCount(release && release.craftScore, 0), 0, 100);
+
+    var releaseFans = 0;
+    var releaseXp = 0;
+
+    if (score >= 85) {
+      releaseFans = 6;
+      releaseXp = 5;
+    } else if (score >= 70) {
+      releaseFans = 4;
+      releaseXp = 3;
+    } else if (score >= 55) {
+      releaseFans = 2;
+      releaseXp = 2;
+    } else if (score >= 35) {
+      releaseFans = 1;
+      releaseXp = 1;
+    }
+
+    return {
+      score: score,
+      releaseFans: releaseFans,
+      releaseXp: releaseXp,
+      promotionFans: Math.floor(score / 20),
+      promotionXp: Math.floor(score / 25),
+      radioInfluence: Math.floor(score / 10)
+    };
+  }
+
   function releaseSong(id) {
     if (!current) load();
     var next = snapshot();
@@ -802,9 +840,12 @@
 
     release.releaseStatus = "released";
     release.releasedAt = new Date().toISOString();
+    var craftImpact = getSongCraftImpact(release);
+    release.releaseCraftBonusFans = craftImpact.releaseFans;
+    release.releaseCraftBonusXp = craftImpact.releaseXp;
     next.releases[index] = normalizeRelease(release, index);
-    next.fans += 3;
-    next.xp += 5;
+    next.fans += 3 + craftImpact.releaseFans;
+    next.xp += 5 + craftImpact.releaseXp;
 
     advanceBusinessAction(next, "release");
     return save(next);
@@ -861,8 +902,15 @@
     release.promotionManager = managerProfile.name;
     next.releases[index] = normalizeRelease(release, index);
 
-    next.fans += managerProfile.promotionFans + next.business.effects.promotionFanBonus;
-    next.xp += managerProfile.promotionXp + next.business.effects.promotionXpBonus;
+    var craftImpact = getSongCraftImpact(release);
+    next.fans +=
+      managerProfile.promotionFans +
+      craftImpact.promotionFans +
+      next.business.effects.promotionFanBonus;
+    next.xp +=
+      managerProfile.promotionXp +
+      craftImpact.promotionXp +
+      next.business.effects.promotionXpBonus;
     next.business.effects.promotionFanBonus = 0;
     next.business.effects.promotionXpBonus = 0;
 
@@ -917,8 +965,12 @@
       toCount(release.radioFeePaid, 0) + radioFee;
     release.radioManager =
       managerProfile.name;
+    var craftImpact = getSongCraftImpact(release);
     release.radioInfluence =
-      managerProfile.radioInfluence + next.business.effects.radioInfluenceBonus;
+      managerProfile.radioInfluence +
+      craftImpact.radioInfluence +
+      next.business.effects.radioInfluenceBonus;
+    release.radioCraftInfluence = craftImpact.radioInfluence;
     next.business.effects.radioDiscount = 0;
     next.business.effects.radioInfluenceBonus = 0;
     next.releases[index] = normalizeRelease(release, index);
@@ -1198,6 +1250,7 @@
     hasManager: hasManager,
     getManagerProfile: getManagerProfile,
     managerRequirementMet: managerRequirementMet,
+    getSongCraftImpact: getSongCraftImpact,
     getShowPayout: getShowPayout,
     payShow: payShow,
     getPendingBusinessEvent: getPendingBusinessEvent,
