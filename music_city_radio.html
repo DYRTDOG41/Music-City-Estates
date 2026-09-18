@@ -140,9 +140,17 @@ async function renderSubmissions() {
       (release.radioManager || "artist management") +
       " • Fee $" +
       (release.radioFeePaid || 0) +
-      " • Influence +" +
+      " • Total influence +" +
       (release.radioInfluence || 0);
     card.appendChild(managerLine);
+
+    const craftLine = document.createElement("div");
+    craftLine.className = "meta";
+    craftLine.textContent =
+      "A&R Craft " + Number(release.craftScore || 0) + "/100 • " +
+      (release.craftTier || "Quick Draft") +
+      " • Craft influence +" + Number(release.radioCraftInfluence || 0);
+    card.appendChild(craftLine);
 
     const status = document.createElement("span");
     status.className = "status";
