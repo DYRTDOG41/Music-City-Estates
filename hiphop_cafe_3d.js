@@ -160,6 +160,7 @@ const log = document.getElementById('performanceLog');
 const roundText = document.getElementById('roundText');
 const energy = document.getElementById('crowdEnergy');
 const progress = document.getElementById('venueProgress');
+const nightclubButton = document.getElementById('nightclubButton');
 let round = 0;
 let score = 0;
 let active = false;
@@ -218,6 +219,18 @@ function refreshPerformancePanel() {
   }
   energy.style.width = '0%';
   actionButtons.forEach((button) => { button.disabled = true; });
+
+  if (nightclubUnlocked()) {
+    nightclubButton.disabled = false;
+    nightclubButton.textContent = '🌃 ENTER MUSIC CITY NIGHTCLUB';
+  } else {
+    const gap = window.MCE
+      ? window.MCE.needed(window.MCE.UNLOCKS.nightclub, state)
+      : { fans: Math.max(0, 50 - state.fans), xp: Math.max(0, 75 - state.xp) };
+    nightclubButton.disabled = true;
+    nightclubButton.textContent =
+      '🔒 NIGHTCLUB — NEED ' + gap.fans + ' FANS / ' + gap.xp + ' XP';
+  }
 }
 function openPerformancePanel() {
   refreshPerformancePanel();
@@ -293,6 +306,11 @@ function closePerformancePanel() {
   songSelect.disabled = false;
   panel.classList.remove('show');
 }
+nightclubButton.onclick = () => {
+  if (!nightclubUnlocked()) return;
+  location.href = 'nightclub.html';
+};
+
 document.getElementById('closePerformance').onclick = closePerformancePanel;
 document.getElementById('closeCounter').onclick = () => document.getElementById('counterPanel').classList.remove('show');
 for (const modal of document.querySelectorAll('.modal')) modal.addEventListener('click', (event) => {
