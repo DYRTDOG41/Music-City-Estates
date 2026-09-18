@@ -137,7 +137,7 @@ globalThis.Buffer = Buffer;
 
 const [
   { TezosToolkit, MichelsonMap },
-  { BeaconWallet },
+  { BeaconWallet, BeaconEvent },
   { NetworkType },
   { stringToBytes }
 ] = await Promise.all([
@@ -222,7 +222,7 @@ function short(value) {
   return text.length > 16 ? text.slice(0, 8) + "…" + text.slice(-6) : text;
 }
 
-async function refreshWallet() {
+async function refreshWallet(knownAddress) {
   if (!wallet) {
     walletState.textContent = "No wallet connected.";
     walletAddressEl.textContent = "";
@@ -232,7 +232,21 @@ async function refreshWallet() {
     return;
   }
 
-  walletAddress = await wallet.getPKH();
+  if (knownAddress) {
+    walletAddress = knownAddress;
+  } else if (!walletAddress) {
+    try {
+      walletAddress = await wallet.getPKH();
+    } catch (error) {
+      walletState.textContent = "No wallet connected.";
+      walletAddressEl.textContent = "";
+      walletBalanceEl.textContent = "";
+      disconnectButton.disabled = true;
+      updateMintButton();
+      return;
+    }
+  }
+
   const balance = await Tezos.tz.getBalance(walletAddress);
 
   walletState.textContent = "Connected on Shadownet";
@@ -243,38 +257,98 @@ async function refreshWallet() {
   updateMintButton();
 }
 
+async function makeWallet() {
+  const instance = new BeaconWallet({
+    name: "Music City Estates",
+    network: {
+      type: NetworkType.SHADOWNET
+    }
+  });
+
+  if (instance.client && instance.client.beaconIDB) {
+    await instance.client.beaconIDB.initDB().catch(() => {});
+  }
+
+  await instance.client.subscribeToEvent(
+    BeaconEvent.ACTIVE_ACCOUNT_SET,
+    async account => {
+      if (!account || !account.address) {
+        walletAddress = "";
+        await refreshWallet();
+        return;
+      }
+
+      wallet = instance;
+      walletAddress = account.address;
+      Tezos.setWalletProvider(wallet);
+      await refreshWallet(account.address);
+
+      setStatus(
+        "Wallet session restored on Shadownet. You can continue without reconnecting."
+      );
+    }
+  );
+
+  return instance;
+}
+
+async function restoreWalletSession() {
+  try {
+    if (!wallet) {
+      wallet = await makeWallet();
+      Tezos.setWalletProvider(wallet);
+    }
+
+    const restoredAddress = await wallet.getPKH();
+    walletAddress = restoredAddress;
+    await refreshWallet(restoredAddress);
+
+    setStatus(
+      "Existing Tezos wallet session restored. You can continue where you left off."
+    );
+
+    return true;
+  } catch (error) {
+    walletAddress = "";
+    await refreshWallet();
+    return false;
+  }
+}
+
 connectButton.addEventListener("click", async () => {
   try {
     setStatus("Opening the Tezos wallet connection…");
-    const newWallet = new BeaconWallet({
-      name: "Music City Estates",
+
+    if (!wallet) {
+      wallet = await makeWallet();
+      Tezos.setWalletProvider(wallet);
+    }
+
+    await wallet.requestPermissions({
       network: {
         type: NetworkType.SHADOWNET
       }
     });
 
-    if (newWallet.client && newWallet.client.beaconIDB) {
-      await newWallet.client.beaconIDB.initDB().catch(() => {});
-    }
+    walletAddress = await wallet.getPKH();
+    await refreshWallet(walletAddress);
 
-    await newWallet.requestPermissions();
-    wallet = newWallet;
-    Tezos.setWalletProvider(wallet);
-    await refreshWallet();
-    setStatus("Wallet connected. Kukai and other compatible Tezos wallets can approve the mint from the wallet prompt.");
+    setStatus(
+      "Wallet connected. If Kukai opens in another app or tab, Music City will restore this session when you return."
+    );
   } catch (error) {
     setStatus(error.message || "Wallet connection was not completed.");
   }
 });
 
 disconnectButton.addEventListener("click", async () => {
-  if (wallet && wallet.client) {
-    await wallet.client.clearActiveAccount();
+  if (wallet) {
+    await wallet.disconnect();
   }
   wallet = null;
   walletAddress = "";
   await refreshWallet();
-  setStatus("Wallet disconnected.");
+  setStatus("Wallet fully disconnected. Connect again when you are ready.");
 });
 
 async function loadPassports() {
@@ -597,7 +671,21 @@ mintButton.addEventListener("click", async () => {
 window.MCE.load();
 refreshContractRouting();
 await loadPassports();
-await refreshWallet();
+
+const restored = await restoreWalletSession();
+if (!restored) {
+  await refreshWallet();
+}
+
+document.addEventListener("visibilitychange", async () => {
+  if (document.visibilityState === "visible") {
+    await restoreWalletSession();
+  }
+});
+
+window.addEventListener("pageshow", async () => {
+  await restoreWalletSession();
+});
 </script>
 </body>
 </html>
