@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Certification Desk | Music City Estates</title>
+<title>Record Passport Desk | Music City Estates</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;min-height:100vh;background:radial-gradient(circle at top,#17213a,#05070d 65%);color:#fff;font-family:Arial,sans-serif}
@@ -44,13 +44,13 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <a href="artist_catalog.html">← ARTIST CATALOG</a>
 <a href="music_city_locker.html">🔐 MUSIC CITY LOCKER</a>
 </nav>
-<strong>MUSIC CITY CERTIFICATION DESK</strong>
+<strong>MUSIC CITY RECORD PASSPORT DESK</strong>
 </header>
 
 <div class="wrap">
 <section class="hero">
-<h1>✅ Certified Record Passport</h1>
-<p>Finalize the exact master, lock the credits and contributor splits, document AI assistance, and create a verifiable Music City Record Passport. Blockchain minting is a separate final step and is only marked complete after a live wallet provider confirms it.</p>
+<h1>🪪 Record Passport → Blockchain Certification</h1>
+<p>Finalize the exact master, lock credits and contributor splits, document AI assistance, and create a cryptographically verifiable Record Passport. The record becomes <strong>Music City Certified</strong> only after a connected blockchain wallet confirms the mint.</p>
 </section>
 
 <div class="grid">
@@ -83,17 +83,17 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <label class="check"><input type="checkbox" id="sampleRights"><span>Beat, samples, loops, and other third-party material are cleared or used with permission.</span></label>
 <label class="check"><input type="checkbox" id="aiTerms"><span>Any AI/provider output used in the master is allowed under the applicable provider terms for this use.</span></label>
 
-<button id="certifyButton" onclick="certifyRecord()">ISSUE MUSIC CITY CERTIFICATE</button>
+<button id="certifyButton" onclick="certifyRecord()">LOCK RECORD PASSPORT</button>
 <div id="message" class="notice">Choose a saved master to begin.</div>
 </section>
 
 <section class="panel">
 <h2>Record Passport</h2>
-<div id="passportEmpty" class="small">No certificate has been issued in this session.</div>
+<div id="passportEmpty" class="small">No Record Passport has been locked in this session.</div>
 <div id="passport" class="passport">
 <div>
-<span class="badge">MUSIC CITY CERTIFIED</span>
-<span class="badge" id="chainBadge">NOT MINTED</span>
+<span class="badge" id="passportBadge">PASSPORT READY</span>
+<span class="badge" id="chainBadge">NOT CERTIFIED ON-CHAIN</span>
 </div>
 <h2 id="passportTitle"></h2>
 <p id="passportArtist"></p>
@@ -107,7 +107,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <br>
 <strong>Passport Metadata SHA-256</strong>
 <div class="hash" id="metadataHash"></div>
-<p class="small">Certification proves the fingerprint and declared provenance of this exact master. It does not by itself transfer copyright, publishing rights, master ownership, or royalties.</p>
+<p class="small">The Record Passport proves the fingerprint and declared provenance of this exact master. It becomes Music City Certified only after blockchain mint confirmation. Neither the passport nor token automatically transfers copyright, publishing rights, master ownership, or royalties.</p>
 <button onclick="window.location.href='music_city_locker.html'">OPEN MUSIC CITY LOCKER</button>
 </div>
 </section>
@@ -264,12 +264,12 @@ async function certifyRecord() {
         Boolean(release.originalLyricsConfirmed || selectedTrack.originalLyricsConfirmed)
     });
 
-    if (window.MCE.markReleaseCertified) {
-      window.MCE.markReleaseCertified(selectedTrack.id, certificate);
+    if (window.MCE.markReleasePassportReady) {
+      window.MCE.markReleasePassportReady(selectedTrack.id, certificate);
     }
 
     document.getElementById("message").textContent =
-      "Certified. The Record Passport is stored in your Music City Locker. Blockchain status remains NOT MINTED until a live wallet adapter confirms a transaction.";
+      "Record Passport locked. The master fingerprint, credits, splits, and provenance are stored in your Music City Locker. This record is NOT Music City Certified yet; certification happens after a live blockchain mint is confirmed.";
     showPassport(certificate);
   } catch (error) {
     document.getElementById("message").textContent = error.message || "Certification failed.";
@@ -284,12 +284,15 @@ function showPassport(certificate) {
   document.getElementById("passportCraft").textContent =
     "Craft: " + certificate.craft.score + "/100 • " + certificate.craft.tier +
     " • Revisions: " + certificate.craft.revisionCount;
-  document.getElementById("passportId").textContent = "Certificate: " + certificate.id;
+  document.getElementById("passportId").textContent = "Record Passport: " + certificate.id;
   document.getElementById("masterHash").textContent = certificate.master.sha256;
   document.getElementById("splitHash").textContent = certificate.splitAgreement.sha256;
   document.getElementById("metadataHash").textContent = certificate.metadataHash.sha256;
+  const minted = certificate.chain.status === "minted";
+  document.getElementById("passportBadge").textContent =
+    minted ? "✓ MUSIC CITY CERTIFIED" : "PASSPORT READY";
   document.getElementById("chainBadge").textContent =
-    certificate.chain.status === "minted" ? "ON-CHAIN" : "NOT MINTED";
+    minted ? "ON-CHAIN" : "NOT CERTIFIED ON-CHAIN";
 }
 
 async function init() {
