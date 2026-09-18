@@ -1,5 +1,5 @@
 const ELEVENLABS_UPLOAD_URL = "https://api.elevenlabs.io/v1/music/upload";
-const MAX_REFERENCE_BYTES = 5 * 1024 * 1024;
+const MAX_REFERENCE_BYTES = 3 * 1024 * 1024;
 
 function allowedOrigins() {
   return [
@@ -91,7 +91,7 @@ module.exports = async function handler(req, res) {
 
   if (audioBuffer.length > MAX_REFERENCE_BYTES) {
     return res.status(413).json({
-      error: "Reference audio must be 5 MB or smaller for the Music City preview workflow."
+      error: "Reference audio must be 3 MB or smaller for the Music City preview workflow."
     });
   }
 
