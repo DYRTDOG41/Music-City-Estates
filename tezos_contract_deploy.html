@@ -126,7 +126,7 @@ globalThis.Buffer = Buffer;
 
 const [
   { TezosToolkit },
-  { BeaconWallet },
+  { BeaconWallet, BeaconEvent },
   { NetworkType }
 ] = await Promise.all([
   import("https://esm.sh/@taquito/taquito@25.0.0"),
@@ -200,36 +200,91 @@ async function loadManifest() {
   updateButtons();
 }
 
+async function makeWallet() {
+  const instance = new BeaconWallet({
+    name: "Music City Estates",
+    network: {
+      type: NetworkType.SHADOWNET
+    }
+  });
+
+  if (instance.client && instance.client.beaconIDB) {
+    await instance.client.beaconIDB.initDB().catch(() => {});
+  }
+
+  await instance.client.subscribeToEvent(
+    BeaconEvent.ACTIVE_ACCOUNT_SET,
+    async account => {
+      if (!account || !account.address) {
+        walletAddress = "";
+        await refreshWallet();
+        return;
+      }
+
+      wallet = instance;
+      walletAddress = account.address;
+      Tezos.setWalletProvider(wallet);
+      await refreshWallet(account.address);
+
+      setStatus(
+        "Wallet session restored on Shadownet. You can continue without reconnecting."
+      );
+    }
+  );
+
+  return instance;
+}
+
+async function restoreWalletSession() {
+  try {
+    if (!wallet) {
+      wallet = await makeWallet();
+      Tezos.setWalletProvider(wallet);
+    }
+
+    const restoredAddress = await wallet.getPKH();
+    walletAddress = restoredAddress;
+    await refreshWallet(restoredAddress);
+
+    setStatus(
+      "Existing Tezos wallet session restored. You can continue where you left off."
+    );
+
+    return true;
+  } catch (error) {
+    walletAddress = "";
+    await refreshWallet();
+    return false;
+  }
+}
+
 async function connectWallet() {
   try {
     setStatus("Opening Tezos wallet connection…");
 
-    const newWallet = new BeaconWallet({
-      name: "Music City Estates — Contract Deployment",
+    if (!wallet) {
+      wallet = await makeWallet();
+      Tezos.setWalletProvider(wallet);
+    }
+
+    await wallet.requestPermissions({
       network: {
         type: NetworkType.SHADOWNET
       }
     });
 
-    if (newWallet.client && newWallet.client.beaconIDB) {
-      await newWallet.client.beaconIDB.initDB().catch(() => {});
-    }
-
-    await newWallet.requestPermissions();
-
-    wallet = newWallet;
-    Tezos.setWalletProvider(wallet);
-    await refreshWallet();
+    walletAddress = await wallet.getPKH();
+    await refreshWallet(walletAddress);
 
     setStatus(
-      "Wallet connected. This wallet will be the Shadownet admin for any contract it originates here."
+      "Wallet connected. If Kukai opens in another app or tab, Music City will restore this session when you return."
     );
   } catch (error) {
     setStatus(error.message || "Wallet connection was not completed.");
   }
 }
 
-async function refreshWallet() {
+async function refreshWallet(knownAddress) {
   if (!wallet) {
     walletAddress = "";
     document.getElementById("walletStatus").textContent = "Not connected";
@@ -241,7 +296,22 @@ async function refreshWallet() {
     return;
   }
 
-  walletAddress = await wallet.getPKH();
+  if (knownAddress) {
+    walletAddress = knownAddress;
+  } else if (!walletAddress) {
+    try {
+      walletAddress = await wallet.getPKH();
+    } catch (error) {
+      document.getElementById("walletStatus").textContent = "Not connected";
+      document.getElementById("walletAddress").textContent = "";
+      document.getElementById("walletBalance").textContent =
+        "Connect a Tezos/Kukai-compatible wallet.";
+      disconnectButton.disabled = true;
+      updateButtons();
+      return;
+    }
+  }
+
   const balance = await Tezos.tz.getBalance(walletAddress);
 
   document.getElementById("walletStatus").textContent =
@@ -436,12 +506,13 @@ async function originate(kind, label) {
 connectButton.addEventListener("click", connectWallet);
 
 disconnectButton.addEventListener("click", async () => {
-  if (wallet && wallet.client) {
-    await wallet.client.clearActiveAccount();
+  if (wallet) {
+    await wallet.disconnect();
   }
   wallet = null;
+  walletAddress = "";
   await refreshWallet();
-  setStatus("Wallet disconnected.");
+  setStatus("Wallet fully disconnected. Connect again when you are ready.");
 });
 
 document.getElementById("refreshBuild")
@@ -493,7 +564,20 @@ try {
   setStatus(error.message);
 }
 
-await refreshWallet();
+const restored = await restoreWalletSession();
+if (!restored) {
+  await refreshWallet();
+}
+
+document.addEventListener("visibilitychange", async () => {
+  if (document.visibilityState === "visible") {
+    await restoreWalletSession();
+  }
+});
+
+window.addEventListener("pageshow", async () => {
+  await restoreWalletSession();
+});
 </script>
 </body>
 </html>
