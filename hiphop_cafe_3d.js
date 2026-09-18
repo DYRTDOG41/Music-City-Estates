@@ -165,9 +165,22 @@ let score = 0;
 let active = false;
 
 function releaseOptions() {
-  const releases = state.releases || [];
+  const releases = (state.releases || [])
+    .filter((release) => release.releaseStatus === 'released');
   if (!releases.length) return [{ id: 'open-mic-freestyle', title: 'First City Freestyle', source: 'café house beat' }];
   return releases;
+}
+
+function cafeUnlocked() {
+  return window.MCE
+    ? window.MCE.isUnlocked('cafe', state)
+    : state.xp >= 10;
+}
+
+function nightclubUnlocked() {
+  return window.MCE
+    ? window.MCE.isUnlocked('nightclub', state)
+    : state.fans >= 50 && state.xp >= 75;
 }
 function refreshPerformancePanel() {
   const releases = releaseOptions();
@@ -178,12 +191,32 @@ function refreshPerformancePanel() {
     return option;
   }));
   const remaining = Math.max(0, 50 - state.fans);
-  progress.innerHTML = remaining ? `<b>${state.fans}/50 fans</b> • Earn ${remaining} more to graduate from the café circuit.` : '<span class="unlock">✓ CAFÉ CIRCUIT COMPLETE — NEXT VENUE READY</span>';
-  roundText.textContent = 'The host is ready to introduce you.';
-  log.textContent = 'Choose a song, then step onto the starter stage.';
+  const xpNeeded = Math.max(0, 10 - state.xp);
+  const nightclubFans = Math.max(0, 50 - state.fans);
+  const nightclubXp = Math.max(0, 75 - state.xp);
+
+  if (!cafeUnlocked()) {
+    progress.innerHTML = `<b>CAFÉ PERFORMANCE LOCKED</b> • Earn ${xpNeeded} more XP to reach the 10 XP performance requirement.`;
+    roundText.textContent = 'Build your career before taking the stage.';
+    log.textContent = 'Release songs, promote them, and return when you have 10 XP.';
+    startButton.disabled = true;
+    startButton.textContent = `LOCKED — ${xpNeeded} XP NEEDED`;
+  } else if (nightclubUnlocked()) {
+    progress.innerHTML = '<span class="unlock">✓ NIGHTCLUB UNLOCKED — 50 FANS + 75 XP REACHED</span>';
+    roundText.textContent = 'The café host says you are ready for the next stage.';
+    log.innerHTML = 'You can keep performing here, or move up to the <b>Music City Nightclub</b>.';
+    startButton.disabled = false;
+    startButton.textContent = 'START THREE-PART SET';
+  } else {
+    progress.innerHTML = remaining
+      ? `<b>${state.fans}/50 fans</b> • Earn ${remaining} more to graduate from the café circuit.`
+      : `<b>CAFÉ FANS COMPLETE</b> • Nightclub still needs ${nightclubFans} fans and ${nightclubXp} XP.`;
+    roundText.textContent = 'The host is ready to introduce you.';
+    log.textContent = 'Choose a released song or freestyle, then step onto the starter stage.';
+    startButton.disabled = false;
+    startButton.textContent = 'START THREE-PART SET';
+  }
   energy.style.width = '0%';
-  startButton.disabled = false;
-  startButton.textContent = 'START THREE-PART SET';
   actionButtons.forEach((button) => { button.disabled = true; });
 }
 function openPerformancePanel() {
@@ -211,7 +244,14 @@ function completePerformance() {
 }
 function refreshProgressOnly() {
   const remaining = Math.max(0, 50 - state.fans);
-  progress.innerHTML = remaining ? `<b>${state.fans}/50 fans</b> • Earn ${remaining} more to graduate from the café circuit.` : '<span class="unlock">✓ CAFÉ CIRCUIT COMPLETE — NEXT VENUE READY</span>';
+  const nightclubXp = Math.max(0, 75 - state.xp);
+  if (nightclubUnlocked()) {
+    progress.innerHTML = '<span class="unlock">✓ NIGHTCLUB UNLOCKED — NEXT VENUE READY</span>';
+  } else if (remaining > 0) {
+    progress.innerHTML = `<b>${state.fans}/50 fans</b> • Earn ${remaining} more to graduate from the café circuit.`;
+  } else {
+    progress.innerHTML = `<b>50/50 fans</b> • Earn ${nightclubXp} more XP to unlock the Nightclub.`;
+  }
 }
 const reactions = {
   timing: ['You lock into the pocket and heads start nodding.', 'Your timing lands clean over the café system.'],
@@ -219,6 +259,7 @@ const reactions = {
   crowd: ['The café answers your call-and-response.', 'Phones rise as the crowd joins the hook.']
 };
 startButton.onclick = () => {
+  if (!cafeUnlocked()) return;
   round = 1;
   score = 0;
   active = true;
