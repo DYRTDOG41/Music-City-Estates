@@ -624,8 +624,11 @@
       radioCraftInfluence: toCount(item.radioCraftInfluence, 0),
       certificationStatus:
         item.certificationStatus == null ? "not-certified" : String(item.certificationStatus),
+      passportId:
+        item.passportId == null ? undefined : String(item.passportId),
       certificationId:
         item.certificationId == null ? undefined : String(item.certificationId),
+      passportReadyAt: item.passportReadyAt || undefined,
       certifiedAt: item.certifiedAt || undefined,
       certificationMasterHash:
         item.certificationMasterHash == null ? undefined : String(item.certificationMasterHash),
@@ -813,27 +816,53 @@
     return save(next);
   }
 
-  function markReleaseCertified(id, certificate) {
+  function markReleasePassportReady(id, passport) {
     if (!current) load();
     var next = snapshot();
     var index = findReleaseIndex(id, next);
     if (index < 0) throw new Error("Song not found in Music City releases.");
-    if (!certificate || !certificate.id || !certificate.master) {
-      throw new Error("A valid Music City certificate is required.");
+    if (!passport || !passport.id || !passport.master) {
+      throw new Error("A valid Music City Record Passport is required.");
     }
 
     var release = next.releases[index];
+    release.certificationStatus = "passport-ready";
+    release.passportId = String(passport.id);
+    release.passportReadyAt = passport.passportReadyAt || passport.certifiedAt || new Date().toISOString();
+    release.certificationMasterHash = String(passport.master.sha256 || "");
+    release.certificationMetadataHash = String(
+      passport.metadataHash && passport.metadataHash.sha256 || ""
+    );
+    release.blockchainStatus =
+      passport.chain && passport.chain.status
+        ? String(passport.chain.status)
+        : "not-minted";
+
+    next.releases[index] = normalizeRelease(release, index);
+    return save(next);
+  }
+
+  function markReleaseCertified(id, certificate) {
+    if (!certificate || !certificate.chain || certificate.chain.status !== "minted") {
+      throw new Error("Music City certification requires a confirmed blockchain mint.");
+    }
+
+    if (!current) load();
+    var next = snapshot();
+    var index = findReleaseIndex(id, next);
+    if (index < 0) throw new Error("Song not found in Music City releases.");
+
+    var release = next.releases[index];
     release.certificationStatus = "certified";
-    release.certificationId = String(certificate.id);
-    release.certifiedAt = certificate.certifiedAt || new Date().toISOString();
+    release.passportId = String(certificate.id);
+    release.certificationId = String(certificate.chain.tokenId || certificate.id);
+    release.passportReadyAt = release.passportReadyAt || certificate.passportReadyAt || certificate.certifiedAt;
+    release.certifiedAt = certificate.chain.mintedAt || new Date().toISOString();
     release.certificationMasterHash = String(certificate.master.sha256 || "");
     release.certificationMetadataHash = String(
       certificate.metadataHash && certificate.metadataHash.sha256 || ""
     );
-    release.blockchainStatus =
-      certificate.chain && certificate.chain.status
-        ? String(certificate.chain.status)
-        : "not-minted";
+    release.blockchainStatus = "minted";
 
     next.releases[index] = normalizeRelease(release, index);
     return save(next);
@@ -1283,6 +1312,7 @@
     add: add,
     addRelease: addRelease,
     updateRelease: updateRelease,
+    markReleasePassportReady: markReleasePassportReady,
     markReleaseCertified: markReleaseCertified,
     releaseSong: releaseSong,
     promoteRelease: promoteRelease,
