@@ -38,10 +38,10 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <div class="wrap">
 <section class="hero">
 <h1>Wallet & Asset Locker</h1>
-<p>Certified masters and future rare Music City assets live here. The current MVP stores passports locally and keeps blockchain status explicit; a token is only shown as minted after a connected chain adapter confirms it.</p>
+<p>Record Passports and future rare Music City assets live here. A Passport is provenance-ready; a record becomes <strong>Music City Certified</strong> only after a connected blockchain adapter confirms its mint.</p>
 <div class="stats">
-<div class="pill">Certified Records: <b id="certCount">0</b></div>
-<div class="pill">On-Chain: <b id="mintCount">0</b></div>
+<div class="pill">Record Passports: <b id="certCount">0</b></div>
+<div class="pill">Music City Certified: <b id="mintCount">0</b></div>
 <div class="pill">Wallet Layer: <b>Adapter Ready</b></div>
 </div>
 </section>
@@ -71,9 +71,11 @@ async function renderLocker() {
     const minted = cert.chain && cert.chain.status === "minted";
 
     card.innerHTML =
-      '<div><span class="badge">CERTIFIED RECORD</span>' +
+      '<div><span class="badge">' +
+      (minted ? '✓ MUSIC CITY CERTIFIED' : 'RECORD PASSPORT READY') +
+      '</span>' +
       '<span class="badge ' + (minted ? '' : 'off') + '">' +
-      (minted ? 'ON-CHAIN' : 'NOT MINTED') + '</span></div>' +
+      (minted ? 'ON-CHAIN' : 'NOT CERTIFIED ON-CHAIN') + '</span></div>' +
       '<h2>' + cert.title + '</h2>' +
       '<div class="meta">Artist: ' + cert.artist + '</div>' +
       '<div class="meta">Certificate: ' + cert.id + '</div>' +
@@ -87,7 +89,7 @@ async function renderLocker() {
       button.textContent = "✓ BLOCKCHAIN MINT CONFIRMED";
       button.disabled = true;
     } else {
-      button.textContent = "CONNECT WALLET TO MINT — COMING NEXT";
+      button.textContent = "CONNECT WALLET + MINT TO CERTIFY — COMING NEXT";
       button.disabled = true;
     }
     card.appendChild(button);
