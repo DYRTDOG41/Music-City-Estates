@@ -203,7 +203,9 @@ function refreshContractRouting() {
         (assetClass.value === "video-edition"
           ? "video/collectible editions will mint through Music City's transferable FA2 contract."
           : "Certified Record test credentials will mint through Music City's non-transferable FA2 contract.")
-      : "<strong>FALLBACK TEST CONTRACT:</strong> Music City's own contract for this asset class has not been originated on this device yet, so the public Tezos tutorial contract is still selected.";
+      : assetClass.value === "certified-record"
+        ? "<strong>DEPLOYMENT REQUIRED:</strong> Certified Record credentials are blocked from the public tutorial contract. Originate Music City's non-transferable Shadownet contract first."
+        : "<strong>FALLBACK TEST CONTRACT:</strong> Music City's collectible contract has not been originated on this device yet, so video/collectible experiments can still use the public Tezos tutorial contract.";
 
   document.getElementById("mintContractInfo").innerHTML =
     "Active Shadownet contract: <span class=\"hash\">" +
@@ -503,6 +505,12 @@ mintButton.addEventListener("click", async () => {
     const media = preparedMedia || mediaInput();
 
     if (assetClass.value === "certified-record") {
+      if (!window.MusicCityTezos.usingMusicCityContract("certified-record")) {
+        throw new Error(
+          "Certified Record test credentials can only mint through Music City's own non-transferable Shadownet contract. Deploy the Music City contracts first."
+        );
+      }
+
       window.MusicCityAssets.registerChainAdapter(
         "tezos-shadownet",
         {
@@ -517,15 +525,8 @@ mintButton.addEventListener("click", async () => {
           "tezos-shadownet"
         );
 
-      const ownContract =
-        window.MusicCityTezos.usingMusicCityContract(
-          "certified-record"
-        );
-
       setStatus(
-        ownContract
-          ? "Music City Shadownet Certified Record mint confirmed on our non-transferable test contract. Mainnet certification still requires the approved production contract."
-          : "Fallback tutorial-contract mint confirmed. Deploy Music City's own Shadownet contracts before treating this as our full test certification proof."
+        "Music City Shadownet Certified Record mint confirmed on our non-transferable test contract. Mainnet certification still requires the approved production contract."
       );
 
       result.innerHTML =
