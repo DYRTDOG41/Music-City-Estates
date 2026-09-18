@@ -39,6 +39,9 @@
     }
   };
 
+  const DEFAULT_BACKEND_ENDPOINT =
+    "https://music-city-estates-api-willwill3515-5514s-projects.vercel.app/api/music/generate";
+
   const storedEndpoint = (() => {
     try {
       return localStorage.getItem("musicCityAIBackend") || "";
@@ -48,7 +51,11 @@
   })();
 
   let backendEndpoint =
-    String(global.MUSIC_CITY_AI_BACKEND || storedEndpoint || "").trim();
+    String(
+      global.MUSIC_CITY_AI_BACKEND ||
+      storedEndpoint ||
+      DEFAULT_BACKEND_ENDPOINT
+    ).trim();
 
   const queryBackend =
     new URLSearchParams(global.location.search).get("aiBackend");
