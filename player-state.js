@@ -179,6 +179,14 @@
           delta: { reputation: -2 },
           effects: { showFanBonus: -3 },
           result: "The cheap fix works, but your next crowd may notice the rough edges."
+        },
+        {
+          id: "borrow",
+          label: "Borrow a house mic",
+          cost: 0,
+          delta: { reputation: -4 },
+          effects: { showFanBonus: -5 },
+          result: "You survive without spending cash, but the next performance looks less professional."
         }
       ]
     },
