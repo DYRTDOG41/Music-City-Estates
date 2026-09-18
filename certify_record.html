@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Record Passport Desk | Music City Estates</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(circle at top,#17213a,#05070d 65%);color:#fff;font-family:Arial,sans-serif}
+header{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:16px 20px;background:#05070df2;border-bottom:1px solid #8b5cf6;position:sticky;top:0;z-index:5}
+nav{display:flex;gap:8px;flex-wrap:wrap}
+nav a{color:#fff;text-decoration:none;padding:9px 12px;border:1px solid #8b5cf6;border-radius:8px;background:#0d0a18}
+.wrap{width:min(1050px,94%);margin:24px auto 60px}
+.hero,.panel{border:1px solid #334155;border-radius:18px;background:#0a111ddd}
+.hero{padding:22px}
+.hero h1{margin:0 0 8px;color:#c4b5fd}
+.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:16px;margin-top:18px}
+.panel{padding:18px}
+.panel h2{margin-top:0}
+label{display:block;margin-top:12px;font-size:13px;color:#b8c3d4}
+input,textarea,select{width:100%;padding:11px;margin-top:6px;border:1px solid #475569;border-radius:8px;background:#080d14;color:#fff}
+textarea{min-height:90px;resize:vertical}
+.credit-row,.split-row{display:grid;grid-template-columns:1fr 1.2fr 1.2fr auto;gap:8px;align-items:end;margin-top:8px}
+.credit-row button,.split-row button{width:auto;margin:0}
+button{padding:11px 12px;border:1px solid #8b5cf6;border-radius:8px;background:#8b5cf6;color:#fff;font-weight:900;cursor:pointer;margin-top:12px}
+button.secondary{background:#111827}
+button:disabled{opacity:.45;cursor:not-allowed}
+.check{display:flex;gap:10px;align-items:flex-start;margin-top:12px;padding:10px;border:1px solid #334155;border-radius:9px;background:#0b121d}
+.check input{width:auto;margin-top:3px}
+.split-total{margin-top:10px;font-weight:900}
+.good{color:#86efac}.bad{color:#fca5a5}
+.passport{display:none}
+.passport.show{display:block}
+.hash{word-break:break-all;font-family:monospace;font-size:11px;color:#a5b4fc;background:#05070d;padding:10px;border-radius:8px}
+.badge{display:inline-block;padding:6px 9px;border-radius:10px;background:#1e1b4b;color:#c4b5fd;font-size:11px;font-weight:900;margin:4px 4px 0 0}
+.notice{margin-top:12px;padding:11px;border:1px solid #164e63;border-radius:10px;background:#08212b;color:#b9efff}
+.small{font-size:12px;color:#94a3b8;line-height:1.5}
+@media(max-width:800px){.grid{grid-template-columns:1fr}.credit-row,.split-row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+<nav>
+<a href="artist_catalog.html">← ARTIST CATALOG</a>
+<a href="music_city_locker.html">🔐 MUSIC CITY LOCKER</a>
+</nav>
+<strong>MUSIC CITY RECORD PASSPORT DESK</strong>
+</header>
+
+<div class="wrap">
+<section class="hero">
+<h1>🪪 Record Passport → Blockchain Certification</h1>
+<p>Finalize the exact master, lock credits and contributor splits, document AI assistance, and create a cryptographically verifiable Record Passport. The record becomes <strong>Music City Certified</strong> only after a connected blockchain wallet confirms the mint.</p>
+</section>
+
+<div class="grid">
+<section class="panel">
+<h2>1. Record Identity</h2>
+<label>Song
+<select id="trackSelect"></select>
+</label>
+
+<label>Primary artist
+<input id="artistName" placeholder="Artist name">
+</label>
+
+<label>AI assistance disclosure
+<textarea id="aiDisclosure" placeholder="Example: AI assisted with arrangement and instrumental generation. Artist wrote lyrics and recorded vocal reference."></textarea>
+</label>
+
+<h2>2. Credits</h2>
+<div id="credits"></div>
+<button class="secondary" onclick="addCredit()">+ ADD CREDIT</button>
+
+<h2>3. Contributor Splits</h2>
+<div id="splits"></div>
+<button class="secondary" onclick="addSplit()">+ ADD SPLIT</button>
+<div id="splitTotal" class="split-total">Total: 0%</div>
+
+<h2>4. Rights Checklist</h2>
+<label class="check"><input type="checkbox" id="masterRights"><span>I control or have permission to certify this master recording.</span></label>
+<label class="check"><input type="checkbox" id="creditsApproved"><span>All listed contributors approved the credits and split percentages.</span></label>
+<label class="check"><input type="checkbox" id="sampleRights"><span>Beat, samples, loops, and other third-party material are cleared or used with permission.</span></label>
+<label class="check"><input type="checkbox" id="aiTerms"><span>Any AI/provider output used in the master is allowed under the applicable provider terms for this use.</span></label>
+
+<button id="certifyButton" onclick="certifyRecord()">LOCK RECORD PASSPORT</button>
+<div id="message" class="notice">Choose a saved master to begin.</div>
+</section>
+
+<section class="panel">
+<h2>Record Passport</h2>
+<div id="passportEmpty" class="small">No Record Passport has been locked in this session.</div>
+<div id="passport" class="passport">
+<div>
+<span class="badge" id="passportBadge">PASSPORT READY</span>
+<span class="badge" id="chainBadge">NOT CERTIFIED ON-CHAIN</span>
+</div>
+<h2 id="passportTitle"></h2>
+<p id="passportArtist"></p>
+<p id="passportCraft"></p>
+<p id="passportId"></p>
+<strong>Master SHA-256</strong>
+<div class="hash" id="masterHash"></div>
+<br>
+<strong>Split Agreement SHA-256</strong>
+<div class="hash" id="splitHash"></div>
+<br>
+<strong>Passport Metadata SHA-256</strong>
+<div class="hash" id="metadataHash"></div>
+<p class="small">The Record Passport proves the fingerprint and declared provenance of this exact master. It becomes Music City Certified only after blockchain mint confirmation. Neither the passport nor token automatically transfers copyright, publishing rights, master ownership, or royalties.</p>
+<button onclick="window.location.href='music_city_locker.html'">OPEN MUSIC CITY LOCKER</button>
+</div>
+</section>
+</div>
+</div>
+
+<script src="player-state.js"></script>
+<script src="music_city_catalog.js"></script>
+<script src="music_city_assets.js"></script>
+<script>
+let tracks = [];
+let selectedTrack = null;
+
+function option(value, label) {
+  const node = document.createElement("option");
+  node.value = value;
+  node.textContent = label;
+  return node;
+}
+
+function addCredit(role, name, wallet) {
+  const row = document.createElement("div");
+  row.className = "credit-row";
+  row.innerHTML =
+    '<select class="credit-role">' +
+    '<option>Artist</option><option>Songwriter</option><option>Producer</option>' +
+    '<option>Engineer</option><option>Manager</option><option>Other</option>' +
+    '</select>' +
+    '<input class="credit-name" placeholder="Name">' +
+    '<input class="credit-wallet" placeholder="Wallet / contributor ID (optional)">' +
+    '<button class="secondary" type="button">REMOVE</button>';
+  row.querySelector(".credit-role").value = role || "Artist";
+  row.querySelector(".credit-name").value = name || "";
+  row.querySelector(".credit-wallet").value = wallet || "";
+  row.querySelector("button").onclick = () => row.remove();
+  document.getElementById("credits").appendChild(row);
+}
+
+function addSplit(role, name, percentage, wallet) {
+  const row = document.createElement("div");
+  row.className = "split-row";
+  row.innerHTML =
+    '<select class="split-role">' +
+    '<option>Artist</option><option>Songwriter</option><option>Producer</option>' +
+    '<option>Engineer</option><option>Manager</option><option>Other</option>' +
+    '</select>' +
+    '<input class="split-name" placeholder="Contributor">' +
+    '<input class="split-percent" type="number" min="0" max="100" step="0.01" placeholder="%">' +
+    '<button class="secondary" type="button">REMOVE</button>' +
+    '<input class="split-wallet" style="grid-column:2/4" placeholder="Wallet / contributor ID (optional)">';
+  row.querySelector(".split-role").value = role || "Artist";
+  row.querySelector(".split-name").value = name || "";
+  row.querySelector(".split-percent").value = percentage == null ? "" : percentage;
+  row.querySelector(".split-wallet").value = wallet || "";
+  row.querySelector("button").onclick = () => {
+    row.remove();
+    refreshSplitTotal();
+  };
+  row.querySelector(".split-percent").addEventListener("input", refreshSplitTotal);
+  document.getElementById("splits").appendChild(row);
+  refreshSplitTotal();
+}
+
+function creditsFromForm() {
+  return [...document.querySelectorAll(".credit-row")].map(row => ({
+    role: row.querySelector(".credit-role").value,
+    name: row.querySelector(".credit-name").value,
+    walletAddress: row.querySelector(".credit-wallet").value
+  }));
+}
+
+function splitsFromForm() {
+  return [...document.querySelectorAll(".split-row")].map(row => ({
+    role: row.querySelector(".split-role").value,
+    name: row.querySelector(".split-name").value,
+    percentage: Number(row.querySelector(".split-percent").value || 0),
+    walletAddress: row.querySelector(".split-wallet").value
+  }));
+}
+
+function refreshSplitTotal() {
+  const total = window.MusicCityAssets.splitTotal(splitsFromForm());
+  const el = document.getElementById("splitTotal");
+  el.textContent = "Total: " + total.toFixed(2).replace(/\.00$/, "") + "%";
+  el.className = "split-total " + (Math.abs(total - 100) < 0.001 ? "good" : "bad");
+}
+
+async function chooseTrack() {
+  selectedTrack = tracks.find(track => String(track.id) === document.getElementById("trackSelect").value) || null;
+  const state = window.MCE.get();
+  const release = state.releases.find(item => selectedTrack && String(item.id) === String(selectedTrack.id)) || {};
+  const artist = document.getElementById("artistName");
+
+  if (!artist.value) artist.value = state.name || "Rookie";
+
+  document.getElementById("aiDisclosure").value =
+    selectedTrack && selectedTrack.provider
+      ? "AI-assisted production provider: " + selectedTrack.provider + ". Craft tier: " +
+        (selectedTrack.craftTier || "Quick Draft") + "."
+      : "";
+
+  document.getElementById("credits").innerHTML = "";
+  document.getElementById("splits").innerHTML = "";
+  addCredit("Artist", artist.value, "");
+  if (state.manager && state.manager.hired) addCredit("Manager", state.manager.role, "");
+  addSplit("Artist", artist.value, 100, "");
+
+  const existing = selectedTrack
+    ? await window.MusicCityAssets.getCertificateForTrack(selectedTrack.id)
+    : null;
+
+  document.getElementById("message").textContent = existing
+    ? "This master already has certificate " + existing.id + ". A changed master should be saved as a new version before certification."
+    : "Ready to collect credits, splits, and rights confirmations.";
+}
+
+async function certifyRecord() {
+  try {
+    if (!selectedTrack || !selectedTrack.audioBlob) {
+      throw new Error("Choose a saved track with a finalized audio master.");
+    }
+
+    const state = window.MCE.get();
+    const release = state.releases.find(item => String(item.id) === String(selectedTrack.id)) || {};
+    const existing = await window.MusicCityAssets.getCertificateForTrack(selectedTrack.id);
+    if (existing) {
+      showPassport(existing);
+      throw new Error("This exact catalog track is already certified. Save a new master/version before issuing another certificate.");
+    }
+
+    const certificate = await window.MusicCityAssets.issueCertificate({
+      trackId: selectedTrack.id,
+      title: selectedTrack.title,
+      artist: document.getElementById("artistName").value,
+      audioBlob: selectedTrack.audioBlob,
+      credits: creditsFromForm(),
+      splits: splitsFromForm(),
+      rights: {
+        masterRightsConfirmed: document.getElementById("masterRights").checked,
+        creditsApproved: document.getElementById("creditsApproved").checked,
+        sampleRightsConfirmed: document.getElementById("sampleRights").checked,
+        aiTermsConfirmed: document.getElementById("aiTerms").checked
+      },
+      aiAssistance: {
+        used: Boolean(selectedTrack.provider),
+        provider: selectedTrack.provider || "",
+        model: "",
+        disclosure: document.getElementById("aiDisclosure").value
+      },
+      craftScore: release.craftScore || selectedTrack.craftScore || 0,
+      craftTier: release.craftTier || selectedTrack.craftTier || "Quick Draft",
+      revisionCount: release.revisionCount || selectedTrack.revisionCount || 0,
+      originalLyricsConfirmed:
+        Boolean(release.originalLyricsConfirmed || selectedTrack.originalLyricsConfirmed)
+    });
+
+    if (window.MCE.markReleasePassportReady) {
+      window.MCE.markReleasePassportReady(selectedTrack.id, certificate);
+    }
+
+    document.getElementById("message").textContent =
+      "Record Passport locked. The master fingerprint, credits, splits, and provenance are stored in your Music City Locker. This record is NOT Music City Certified yet; certification happens after a live blockchain mint is confirmed.";
+    showPassport(certificate);
+  } catch (error) {
+    document.getElementById("message").textContent = error.message || "Certification failed.";
+  }
+}
+
+function showPassport(certificate) {
+  document.getElementById("passportEmpty").style.display = "none";
+  document.getElementById("passport").classList.add("show");
+  document.getElementById("passportTitle").textContent = certificate.title;
+  document.getElementById("passportArtist").textContent = "Artist: " + certificate.artist;
+  document.getElementById("passportCraft").textContent =
+    "Craft: " + certificate.craft.score + "/100 • " + certificate.craft.tier +
+    " • Revisions: " + certificate.craft.revisionCount;
+  document.getElementById("passportId").textContent = "Record Passport: " + certificate.id;
+  document.getElementById("masterHash").textContent = certificate.master.sha256;
+  document.getElementById("splitHash").textContent = certificate.splitAgreement.sha256;
+  document.getElementById("metadataHash").textContent = certificate.metadataHash.sha256;
+  const minted = certificate.chain.status === "minted";
+  document.getElementById("passportBadge").textContent =
+    minted ? "✓ MUSIC CITY CERTIFIED" : "PASSPORT READY";
+  document.getElementById("chainBadge").textContent =
+    minted ? "ON-CHAIN" : "NOT CERTIFIED ON-CHAIN";
+}
+
+async function init() {
+  tracks = await window.MusicCityCatalog.listTracks();
+  const select = document.getElementById("trackSelect");
+  select.innerHTML = "";
+
+  if (!tracks.length) {
+    select.appendChild(option("", "No saved masters available"));
+    document.getElementById("certifyButton").disabled = true;
+    return;
+  }
+
+  tracks.forEach(track => select.appendChild(option(track.id, track.title)));
+  select.addEventListener("change", chooseTrack);
+
+  const params = new URLSearchParams(window.location.search);
+  const requested = params.get("id");
+  if (requested && tracks.some(track => String(track.id) === requested)) {
+    select.value = requested;
+  }
+
+  await chooseTrack();
+}
+
+window.MCE.load();
+init().catch(error => {
+  document.getElementById("message").textContent = error.message || "Could not load Certification Desk.";
+});
+</script>
+</body>
+</html>

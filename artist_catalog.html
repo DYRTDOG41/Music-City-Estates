@@ -28,6 +28,7 @@ audio{width:100%;margin-top:13px}
 .badge.live{background:#16311f;color:#8ff0aa}
 .badge.radio{background:#2c2040;color:#d6b7ff}
 .badge.craft{background:#241b3d;color:#c4b5fd}
+.badge.certified{background:#3a2b08;color:#fde68a;border:1px solid #a16207}
 .craft-summary{margin-top:12px;padding:11px;border:1px solid #3b3158;border-radius:10px;background:#0c0a16;font-size:12px;color:#c8c1d6;line-height:1.5}
 .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
 button{padding:11px 10px;border:1px solid #22d3ee;border-radius:9px;background:#122033;color:#fff;font-weight:bold;cursor:pointer}
@@ -43,6 +44,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <a class="back" href="record_music.html">← RECORDING BOOTH</a>
 <a class="back" href="music_city_feed.html">📱 CITY FEED</a>
 <a class="back" href="manager.html">🧑‍💼 MANAGER</a>
+<a class="back" href="music_city_locker.html">🔐 LOCKER</a>
 </div>
 <h1>MUSIC CITY ESTATES</h1>
 </header>
@@ -66,6 +68,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 
 <script src="player-state.js"></script>
 <script src="music_city_catalog.js"></script>
+<script src="music_city_assets.js"></script>
 <script>
 let objectUrls = [];
 
@@ -144,6 +147,11 @@ async function renderCatalog() {
 
   const catalog = document.getElementById("catalog");
   const tracks = await window.MusicCityCatalog.listTracks();
+  const certificates = await window.MusicCityAssets.listCertificates();
+  const certificateMap = {};
+  certificates.forEach(certificate => {
+    certificateMap[String(certificate.trackId)] = certificate;
+  });
 
   if (!tracks.length) {
     catalog.innerHTML =
@@ -172,6 +180,14 @@ async function renderCatalog() {
     const craftImpact = window.MCE.getSongCraftImpact(release);
     const craftScore = Number(release.craftScore || track.craftScore || 0);
     const craftTier = release.craftTier || track.craftTier || "Quick Draft";
+    const certificate = certificateMap[String(track.id)] || null;
+    const hasPassport =
+      Boolean(certificate) ||
+      release.certificationStatus === "passport-ready" ||
+      release.certificationStatus === "certified";
+    const isCertified =
+      Boolean(certificate && certificate.chain.status === "minted") ||
+      release.certificationStatus === "certified";
 
     const card = document.createElement("article");
     card.className = "card";
@@ -206,6 +222,15 @@ async function renderCatalog() {
     craftBadge.textContent =
       "CRAFT " + craftScore + " • " + String(craftTier).toUpperCase();
     badges.appendChild(craftBadge);
+
+    if (hasPassport) {
+      const certified = document.createElement("span");
+      certified.className = "badge certified";
+      certified.textContent = isCertified
+        ? "✓ MUSIC CITY CERTIFIED • ON-CHAIN"
+        : "RECORD PASSPORT READY • NOT CERTIFIED";
+      badges.appendChild(certified);
+    }
 
     if (radioSubmitted) {
       const radio = document.createElement("span");
@@ -301,12 +326,26 @@ async function renderCatalog() {
     };
     actions.appendChild(feedButton);
 
+    const certifyButton = document.createElement("button");
+    certifyButton.textContent = isCertified
+      ? "🔐 VIEW CERTIFIED ASSET"
+      : hasPassport
+        ? "🪪 VIEW RECORD PASSPORT"
+        : "🪪 PREPARE RECORD PASSPORT";
+    certifyButton.disabled = !track.audioBlob;
+    certifyButton.onclick = () => {
+      window.location.href = hasPassport
+        ? "music_city_locker.html"
+        : "certify_record.html?id=" + encodeURIComponent(track.id);
+    };
+    actions.appendChild(certifyButton);
+
     card.appendChild(actions);
 
     const reward = document.createElement("div");
     reward.className = "reward";
     reward.textContent = !isReleased
-      ? "Release reward: +3 fans, +5 XP"
+      ? "Release reward: +3 fans, +5 XP • Record Passport preparation is separate from release quality. Music City Certification happens only after the finalized passport is minted on-chain."
       : !hasManager
         ? "Professional promotion and radio require a manager. Starter management begins at $" + economy.managerHiringFee + "."
         : !isPromoted

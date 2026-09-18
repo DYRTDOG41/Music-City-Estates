@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Music City Locker | Music City Estates</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(circle at top,#15122d,#05070d 65%);color:#fff;font-family:Arial,sans-serif}
+header{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:16px 20px;background:#05070df2;border-bottom:1px solid #8b5cf6;position:sticky;top:0;z-index:5}
+nav{display:flex;gap:8px;flex-wrap:wrap}
+nav a{color:#fff;text-decoration:none;padding:9px 12px;border:1px solid #8b5cf6;border-radius:8px;background:#0d0a18}
+.wrap{width:min(1100px,94%);margin:24px auto 60px}
+.hero{padding:22px;border:1px solid #3b3560;border-radius:18px;background:#0b0a17dd}
+.hero h1{margin:0 0 8px;color:#c4b5fd}
+.stats{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
+.pill{padding:8px 11px;border:1px solid #4c456d;border-radius:18px;background:#141126}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px;margin-top:18px}
+.card{padding:18px;border:1px solid #3b3560;border-radius:16px;background:#0b0a17;box-shadow:0 12px 30px #0005}
+.badge{display:inline-block;padding:5px 8px;border-radius:10px;background:#2e2458;color:#d8ccff;font-size:11px;font-weight:900;margin-right:6px}
+.badge.off{background:#292524;color:#d6d3d1}
+.hash{font-family:monospace;font-size:10px;word-break:break-all;color:#a5b4fc;margin-top:8px}
+.meta{font-size:12px;color:#aab6c7;line-height:1.5}
+.empty{padding:30px;text-align:center;border:1px dashed #4c456d;border-radius:14px;color:#aab6c7;margin-top:18px}
+button{width:100%;padding:11px;border:1px solid #8b5cf6;border-radius:8px;background:#8b5cf6;color:#fff;font-weight:900;margin-top:12px;cursor:pointer}
+button:disabled{opacity:.45;cursor:not-allowed}
+</style>
+</head>
+<body>
+<header>
+<nav>
+<a href="artist_catalog.html">← ARTIST CATALOG</a>
+<a href="certify_record.html">✅ CERTIFICATION DESK</a>
+</nav>
+<strong>🔐 MUSIC CITY LOCKER</strong>
+</header>
+
+<div class="wrap">
+<section class="hero">
+<h1>Wallet & Asset Locker</h1>
+<p>Record Passports and future rare Music City assets live here. A Passport is provenance-ready; a record becomes <strong>Music City Certified</strong> only after a connected blockchain adapter confirms its mint.</p>
+<div class="stats">
+<div class="pill">Record Passports: <b id="certCount">0</b></div>
+<div class="pill">Music City Certified: <b id="mintCount">0</b></div>
+<div class="pill">Wallet Layer: <b>Adapter Ready</b></div>
+</div>
+</section>
+
+<div id="locker" class="grid"></div>
+</div>
+
+<script src="music_city_assets.js"></script>
+<script>
+async function renderLocker() {
+  const certificates = await window.MusicCityAssets.listCertificates();
+  document.getElementById("certCount").textContent = certificates.length;
+  document.getElementById("mintCount").textContent =
+    certificates.filter(cert => cert.chain && cert.chain.status === "minted").length;
+
+  const locker = document.getElementById("locker");
+  if (!certificates.length) {
+    locker.innerHTML =
+      '<div class="empty">No Certified Records yet. Finalize a master in the Artist Catalog and issue its Record Passport at the Certification Desk.</div>';
+    return;
+  }
+
+  locker.innerHTML = "";
+  certificates.forEach(cert => {
+    const card = document.createElement("article");
+    card.className = "card";
+    const minted = cert.chain && cert.chain.status === "minted";
+
+    card.innerHTML =
+      '<div><span class="badge">' +
+      (minted ? '✓ MUSIC CITY CERTIFIED' : 'RECORD PASSPORT READY') +
+      '</span>' +
+      '<span class="badge ' + (minted ? '' : 'off') + '">' +
+      (minted ? 'ON-CHAIN' : 'NOT CERTIFIED ON-CHAIN') + '</span></div>' +
+      '<h2>' + cert.title + '</h2>' +
+      '<div class="meta">Artist: ' + cert.artist + '</div>' +
+      '<div class="meta">Certificate: ' + cert.id + '</div>' +
+      '<div class="meta">Craft: ' + cert.craft.score + '/100 • ' + cert.craft.tier + '</div>' +
+      '<div class="meta">Splits: ' + cert.splitAgreement.totalPercentage + '% approved</div>' +
+      '<div class="hash">Master: ' + cert.master.sha256 + '</div>' +
+      '<div class="hash">Metadata: ' + cert.metadataHash.sha256 + '</div>';
+
+    const button = document.createElement("button");
+    if (minted) {
+      button.textContent = "✓ BLOCKCHAIN MINT CONFIRMED";
+      button.disabled = true;
+    } else {
+      button.textContent = "CONNECT WALLET + MINT TO CERTIFY — COMING NEXT";
+      button.disabled = true;
+    }
+    card.appendChild(button);
+    locker.appendChild(card);
+  });
+}
+
+renderLocker().catch(error => {
+  document.getElementById("locker").innerHTML =
+    '<div class="empty">' + (error.message || "Could not load Music City Locker.") + '</div>';
+});
+</script>
+</body>
+</html>
