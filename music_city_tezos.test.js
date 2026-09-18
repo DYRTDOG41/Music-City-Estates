@@ -81,4 +81,74 @@ test("direct token fields include record provenance", function () {
   assert.strictEqual(fields.splitSha256, "splithash");
 });
 
-console.log("\n" + passed + " Tezos metadata tests passed");
+
+test("contract routing starts on the tutorial fallback", function () {
+  assert.strictEqual(
+    Tezos.contractForAssetClass("certified-record"),
+    Tezos.CONFIG.tutorialMintContract
+  );
+  assert.strictEqual(
+    Tezos.contractForAssetClass("video-edition"),
+    Tezos.CONFIG.tutorialMintContract
+  );
+  assert.strictEqual(
+    Tezos.usingMusicCityContract("certified-record"),
+    false
+  );
+});
+
+test("deployment registry routes each asset class independently", function () {
+  Tezos.saveDeployment("certifiedRecord", {
+    address: "KT1CertifiedMusicCity123456789012345",
+    network: "shadownet",
+    transactionId: "opCertified",
+    sourceCommit: "abc123"
+  });
+
+  assert.strictEqual(
+    Tezos.contractForAssetClass("certified-record"),
+    "KT1CertifiedMusicCity123456789012345"
+  );
+  assert.strictEqual(
+    Tezos.contractForAssetClass("video-edition"),
+    Tezos.CONFIG.tutorialMintContract
+  );
+
+  Tezos.saveDeployment("collectibles", {
+    address: "KT1CollectiblesMusicCity12345678901",
+    network: "shadownet",
+    transactionId: "opCollectibles",
+    sourceCommit: "abc123"
+  });
+
+  assert.strictEqual(
+    Tezos.contractForAssetClass("video-edition"),
+    "KT1CollectiblesMusicCity12345678901"
+  );
+  assert.strictEqual(
+    Tezos.usingMusicCityContract("video-edition"),
+    true
+  );
+});
+
+test("deployment registry rejects non-KT1 addresses", function () {
+  assert.throws(function () {
+    Tezos.saveDeployment("certifiedRecord", {
+      address: "tz1NotAContract",
+      network: "shadownet"
+    });
+  });
+});
+
+test("compiled build URLs point to the public tezos-builds branch", function () {
+  assert.strictEqual(
+    Tezos.buildUrl("certifiedRecord", "contract.tz"),
+    Tezos.CONFIG.buildBaseUrl + "/certified/contract.tz"
+  );
+  assert.strictEqual(
+    Tezos.buildUrl("collectibles", "storage.tz"),
+    Tezos.CONFIG.buildBaseUrl + "/collectibles/storage.tz"
+  );
+});
+
+console.log("\n" + passed + " Tezos metadata/routing tests passed");
