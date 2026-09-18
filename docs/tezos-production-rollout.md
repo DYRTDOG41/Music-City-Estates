@@ -76,3 +76,15 @@ Owning a Music City NFT does not automatically transfer:
 - songwriter rights
 
 Those rights remain governed by the approved contributor agreements and split documents referenced by the Record Passport.
+
+
+## Continuous contract validation
+
+Every pull request that changes `contracts/**` runs the `Tezos Contract Validation`
+GitHub Actions workflow. The workflow installs the pinned stable SmartPy toolchain,
+runs both SmartPy test scenarios, compiles both contracts to Michelson, verifies
+that contract and storage artifacts were generated, and uploads those compiled
+files for review.
+
+A contract change is not considered ready for Shadownet origination until this
+workflow passes.
