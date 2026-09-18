@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="B Genius Studios storefront in Hip-Hop Heights, Music City Estates.">
+<title>B Genius Studios | Hip-Hop Heights</title>
+<style>
+:root{
+  --blue:#2fb7ff;
+  --ice:#8ee7ff;
+  --deep:#020712;
+  --panel:#08111c;
+  --glass:#0b1723cc;
+  --warm:#ffd79a;
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#01040a;color:#fff;font-family:Arial,Helvetica,sans-serif}
+body{background:
+  radial-gradient(circle at 78% 18%,#17305e 0,transparent 30%),
+  linear-gradient(#06111f 0 55%,#020409 55% 100%)}
+.scene{position:relative;width:100%;height:100%;min-height:640px;overflow:hidden}
+.skyline{position:absolute;inset:0 0 24% 0;opacity:.42;background:
+  linear-gradient(90deg,transparent 0 66%,#10233d 66% 70%,transparent 70% 73%,#0d1d35 73% 77%,transparent 77% 80%,#17335a 80% 84%,transparent 84% 88%,#102541 88% 93%,transparent 93%);
+  clip-path:polygon(0 100%,0 75%,10% 75%,10% 64%,15% 64%,15% 78%,20% 78%,20% 69%,28% 69%,28% 82%,35% 82%,35% 72%,42% 72%,42% 80%,51% 80%,51% 68%,60% 68%,60% 82%,66% 82%,66% 45%,69% 45%,69% 64%,73% 64%,73% 35%,77% 35%,77% 63%,81% 63%,81% 22%,84% 22%,84% 58%,88% 58%,88% 40%,92% 40%,92% 65%,96% 65%,96% 50%,100% 50%,100% 100%)}
+.building{position:absolute;left:6%;right:10%;top:5%;bottom:18%;background:linear-gradient(180deg,#0b0f16,#06090e 48%,#080b10);border:1px solid #1b3248;box-shadow:0 0 80px #000,0 0 60px #087fd033}
+.building:before,.building:after{content:"";position:absolute;pointer-events:none;z-index:2}
+.building:before{left:0;right:0;top:0;height:5px;background:var(--blue);box-shadow:0 0 18px #1eb6ff,0 0 40px #087cff}
+.building:after{top:0;bottom:0;left:0;width:5px;background:var(--blue);box-shadow:0 0 16px #1eb6ff}
+.logo-bay{position:absolute;left:7%;right:9%;top:4%;height:43%;display:flex;align-items:center;justify-content:center;background:linear-gradient(#0b1018,#080c12);border:1px solid #172636;box-shadow:inset 0 0 35px #000}
+.spots{position:absolute;left:8%;right:8%;top:1%;display:flex;justify-content:space-around;z-index:3}
+.spots i{width:8px;height:8px;border-radius:50%;background:#fff9dc;box-shadow:0 15px 24px 8px #fff2c633}
+.brand-wrap{width:88%;text-align:center;position:relative;z-index:4}
+.brand{display:flex;align-items:center;justify-content:center;gap:.4vw;line-height:.84;font-family:Impact,"Arial Black",Arial,sans-serif;font-size:clamp(64px,9vw,150px);font-weight:900;letter-spacing:-.035em;transform:perspective(800px) rotateX(2deg);filter:drop-shadow(0 0 10px #118eff)}
+.brand .letters{color:#06090e;-webkit-text-stroke:3px #c8f4ff;text-shadow:0 0 5px #fff,0 0 12px #36c6ff,0 0 26px #1188ff}
+.mic{width:clamp(45px,5.6vw,92px);height:clamp(88px,10.8vw,170px);filter:drop-shadow(0 0 7px #8be8ff) drop-shadow(0 0 16px #168dff)}
+.studios{margin-top:12px;font-size:clamp(20px,2.1vw,38px);font-weight:800;letter-spacing:.45em;color:#dff8ff;text-shadow:0 0 7px #6be1ff,0 0 18px #128fff}
+.studios:before,.studios:after{content:"";display:inline-block;width:9%;height:3px;background:#77dcff;vertical-align:middle;margin:0 2%;box-shadow:0 0 10px #2cbcff}
+.side-copy{position:absolute;top:11%;z-index:5;color:#90dcff;font-size:clamp(12px,1.05vw,20px);font-weight:800;line-height:1.55;letter-spacing:.05em;text-shadow:0 0 8px #1ea4ff}
+.side-copy.left{left:1.4%;top:58%}
+.side-copy.right{right:1.5%;text-align:left}
+.side-copy em{display:block;width:30px;height:3px;background:#6fd8ff;margin-top:10px;box-shadow:0 0 10px #34b9ff}
+.storefront{position:absolute;left:7%;right:9%;bottom:3%;height:49%;display:grid;grid-template-columns:1.05fr 1.4fr 1.05fr;border-top:5px solid #0f1319;background:#05080c;box-shadow:0 -14px 24px #0007}
+.window{position:relative;overflow:hidden;border-right:5px solid #090b10;background:linear-gradient(180deg,#102030dd,#07111bdd);box-shadow:inset 0 0 0 1px #3fa6d644}
+.window:after{content:"";position:absolute;inset:0;background:linear-gradient(118deg,transparent 0 46%,#dff8ff14 48%,transparent 50%);pointer-events:none}
+.inner-strip{position:absolute;left:0;right:0;top:7%;height:4px;background:var(--blue);box-shadow:0 0 11px #31beff}
+.control{display:flex;align-items:center;justify-content:center}
+.console{width:70%;height:30%;border:1px solid #52606d;background:linear-gradient(#0c1118,#05070a);transform:perspective(500px) rotateX(55deg);box-shadow:0 6px 22px #000}
+.console:before{content:"";position:absolute;inset:18% 8%;background:repeating-linear-gradient(90deg,#1b94ca 0 3px,transparent 3px 18px),repeating-linear-gradient(#0e4061 0 2px,transparent 2px 12px);opacity:.7}
+.control .micmark{position:absolute;top:18%;width:48px;height:92px}
+.reception{display:flex;align-items:flex-end;justify-content:center}
+.reception-wall{position:absolute;left:11%;right:11%;top:13%;height:50%;border:1px solid #22374b;background:#0d1116;display:flex;align-items:center;justify-content:center;flex-direction:column;box-shadow:inset 0 0 30px #000}
+.reception-word{font-family:Impact,"Arial Black",Arial,sans-serif;font-size:clamp(25px,2.9vw,48px);letter-spacing:.02em;color:#d7d8da}
+.reception-sub{font-size:10px;letter-spacing:.36em;color:#aaa}
+.desk{position:absolute;left:20%;right:20%;bottom:7%;height:29%;background:linear-gradient(#292a2c,#141517);border:1px solid #555;box-shadow:0 0 20px #000,0 10px 24px #000}
+.desk:after{content:"";position:absolute;left:5%;right:5%;bottom:0;height:3px;background:#f2c886;box-shadow:0 0 12px #e9b96f}
+.lounge{display:flex;align-items:flex-end;justify-content:center}
+.sofa{position:absolute;left:12%;right:12%;bottom:10%;height:26%;background:linear-gradient(#1e2227,#0d1014);border:1px solid #49515a;border-radius:4px 4px 12px 12px;box-shadow:0 9px 20px #000}
+.neon-script{position:absolute;top:19%;right:12%;font-family:"Brush Script MT",cursive;font-size:clamp(24px,2.4vw,44px);line-height:.88;color:#d4f7ff;text-align:center;transform:rotate(-3deg);text-shadow:0 0 5px #fff,0 0 14px #1bb8ff,0 0 24px #147fff}
+.plaques{position:absolute;left:9%;top:18%;display:grid;grid-template-columns:repeat(2,42px);gap:9px}
+.plaque{height:55px;border:2px solid #aa9867;background:#151515;box-shadow:0 0 10px #000}
+.plaque:before{content:"";display:block;width:25px;height:25px;border-radius:50%;margin:6px auto;background:radial-gradient(circle,#d7bf72 0 18%,#725f2d 19% 31%,#c8aa55 32% 52%,#4f4326 53%);box-shadow:0 0 5px #d7bd72}
+.planter{position:absolute;bottom:1%;width:8%;height:18%;background:linear-gradient(90deg,#333,#171717,#3c3c3c);border:1px solid #555;z-index:7}
+.planter.left{left:6%}.planter.right{right:8%}
+.planter:before{content:"";position:absolute;left:-16%;right:-16%;bottom:72%;height:95%;background:
+  radial-gradient(ellipse at 50% 100%,#0d551e 0 20%,transparent 22%),
+  radial-gradient(ellipse at 25% 100%,#15752d 0 18%,transparent 20%),
+  radial-gradient(ellipse at 75% 100%,#0f6527 0 18%,transparent 20%)}
+.door-hit{position:absolute;left:37%;right:37%;bottom:4%;height:43%;z-index:20;border:1px solid transparent;background:transparent;cursor:pointer}
+.door-hit:hover{border-color:#6ee4ff;box-shadow:inset 0 0 38px #1faeff18,0 0 16px #1faeff66}
+.street{position:absolute;left:-2%;right:-2%;bottom:-5%;height:24%;background:linear-gradient(#1c1c1f 0 10%,#090b10 11% 100%);transform:perspective(600px) rotateX(12deg);transform-origin:bottom}
+.street:before{content:"";position:absolute;inset:8% 0 0;background:repeating-linear-gradient(90deg,transparent 0 8%,#1baaff33 8.2% 8.4%,transparent 8.6% 16%);filter:blur(1px)}
+.street:after{content:"";position:absolute;left:0;right:0;top:6%;height:5px;background:#aab1b633;box-shadow:0 8px 24px #27afff55}
+.banner{position:absolute;right:1.2%;top:16%;width:7.2%;min-width:82px;height:46%;background:#070b12;border:1px solid #2b3b4d;box-shadow:0 0 22px #000;z-index:8;padding:24px 8px;text-align:center;color:#d6f5ff}
+.banner strong{font-family:"Brush Script MT",cursive;font-size:clamp(20px,2.1vw,34px);line-height:.9;color:#c7e8ff;text-shadow:0 0 8px #3abaff}
+.banner span{display:block;margin-top:20px;font-size:9px;line-height:1.7;letter-spacing:.1em;color:#8cdcff}
+.ui{position:fixed;z-index:50;left:14px;right:14px;top:12px;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none}
+.chip{pointer-events:auto;padding:10px 13px;background:#020813df;border:1px solid #269bdb;border-radius:9px;box-shadow:0 0 18px #128dde33;font-size:12px}
+.chip b{color:#aeeaff}
+.actions{position:fixed;z-index:55;left:50%;bottom:18px;transform:translateX(-50%);display:flex;gap:10px}
+.actions a{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;color:#fff;font-weight:900;letter-spacing:.05em;border-radius:9px;padding:12px 17px;background:#06101cdd;border:1px solid #4cc8ff;box-shadow:0 0 18px #219fff44}
+.actions a.primary{background:linear-gradient(#178bd0,#0963a5);border-color:#9deaff}
+.actions a:hover{filter:brightness(1.15)}
+.hint{position:fixed;z-index:55;left:50%;bottom:76px;transform:translateX(-50%);padding:7px 12px;border-radius:20px;background:#000b;color:#c7ecff;font-size:11px;letter-spacing:.05em}
+@media(max-width:780px){
+  .scene{min-height:0}
+  .building{left:0;right:0;top:8%;bottom:17%}
+  .logo-bay{left:3%;right:3%;height:39%}
+  .brand{font-size:clamp(42px,13vw,88px)}
+  .mic{width:clamp(34px,8vw,56px);height:clamp(66px,14vw,100px)}
+  .studios{font-size:14px;letter-spacing:.28em}
+  .side-copy{display:none}
+  .storefront{left:3%;right:3%;height:54%;grid-template-columns:.8fr 1.6fr .8fr}
+  .control,.lounge{opacity:.72}
+  .banner{display:none}
+  .ui{top:8px;left:8px;right:8px}
+  .chip{font-size:10px;padding:8px 9px}
+  .actions{width:calc(100% - 16px);bottom:12px}
+  .actions a{flex:1;padding:12px 8px;font-size:12px}
+  .hint{bottom:70px}
+}
+</style>
+</head>
+<body>
+<div class="scene">
+  <div class="skyline"></div>
+  <div class="building">
+    <div class="spots"><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="logo-bay">
+      <div class="brand-wrap">
+        <div class="brand" aria-label="B Genius Studios">
+          <span class="letters">BEGEN</span>
+          <svg class="mic" viewBox="0 0 70 140" aria-hidden="true">
+            <g fill="none" stroke="#d8f8ff" stroke-width="3">
+              <polygon points="35,5 58,18 62,45 50,66 20,66 8,45 12,18"/>
+              <path d="M12 18L35 5l23 13-23 18zM8 45l27-9 27 9M20 66l15-30 15 30M28 66v48l7 18 7-18V66M32 132h6"/>
+              <path d="M28 69h14"/>
+            </g>
+          </svg>
+          <span class="letters">US</span>
+        </div>
+        <div class="studios">STUDIOS</div>
+      </div>
+    </div>
+
+    <div class="side-copy left">RECORD<br>MIX<br>MASTER<br>CREATE<br>BELONG<em></em></div>
+    <div class="side-copy right">MUSIC<br>CREATORS<br>CULTURE<br>A HIGHER SOUND<em></em></div>
+
+    <div class="storefront">
+      <div class="window control">
+        <div class="inner-strip"></div>
+        <svg class="micmark" viewBox="0 0 70 140" aria-hidden="true">
+          <g fill="none" stroke="#9ae9ff" stroke-width="3">
+            <polygon points="35,5 58,18 62,45 50,66 20,66 8,45 12,18"/>
+            <path d="M12 18L35 5l23 13-23 18zM8 45l27-9 27 9M20 66l15-30 15 30M28 66v48l7 18 7-18V66"/>
+          </g>
+        </svg>
+        <div class="console"></div>
+      </div>
+
+      <div class="window reception">
+        <div class="inner-strip"></div>
+        <div class="reception-wall">
+          <div class="reception-word">BEGENIUS</div>
+          <div class="reception-sub">STUDIOS</div>
+        </div>
+        <div class="desk"></div>
+      </div>
+
+      <div class="window lounge">
+        <div class="inner-strip"></div>
+        <div class="plaques">
+          <div class="plaque"></div><div class="plaque"></div>
+          <div class="plaque"></div><div class="plaque"></div>
+        </div>
+        <div class="neon-script">Good<br>Music<br>Better<br>People</div>
+        <div class="sofa"></div>
+      </div>
+    </div>
+
+    <div class="planter left"></div>
+    <div class="planter right"></div>
+    <a class="door-hit" href="begenius_studio.html" aria-label="Enter B Genius Studios"></a>
+  </div>
+
+  <div class="banner"><strong>HIP HOP<br>HEIGHTS</strong><span>MUSIC<br>PEOPLE<br>PROGRESS<br>TOGETHER</span></div>
+  <div class="street"></div>
+</div>
+
+<div class="ui">
+  <div class="chip"><b>B GENIUS STUDIOS</b><br>Hip-Hop Heights • Street Entrance</div>
+  <div class="chip">👥 <b id="fans">0</b> &nbsp; 💵 $<b id="cash">500</b> &nbsp; ⭐ <b id="xp">0</b></div>
+</div>
+
+<div class="hint">Walk up to the glass entrance or tap ENTER STUDIO</div>
+<div class="actions">
+  <a href="hip_hop_heights.html">← HIP-HOP HEIGHTS</a>
+  <a class="primary" href="begenius_studio.html">ENTER STUDIO →</a>
+</div>
+
+<script src="player-state.js"></script>
+<script>
+try{
+  const player=window.MCE.load();
+  document.getElementById("fans").textContent=(player.fans||0).toLocaleString();
+  document.getElementById("cash").textContent=(player.cash||0).toLocaleString();
+  document.getElementById("xp").textContent=(player.xp||0).toLocaleString();
+}catch(error){
+  console.warn("Player state unavailable on storefront",error);
+}
+</script>
+</body>
+</html>
