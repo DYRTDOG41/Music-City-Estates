@@ -132,6 +132,8 @@ async function renderCatalog() {
     const isReleased = release.releaseStatus === "released";
     const isPromoted = Number(release.promotionCount || 0) > 0;
     const radioSubmitted = release.radioStatus === "submitted";
+    const radioUnlocked = window.MCE.isUnlocked("radio", state);
+    const radioGap = window.MCE.needed(window.MCE.UNLOCKS.radio, state);
 
     const card = document.createElement("article");
     card.className = "card";
@@ -196,8 +198,12 @@ async function renderCatalog() {
     actions.appendChild(promoteButton);
 
     const radioButton = document.createElement("button");
-    radioButton.textContent = radioSubmitted ? "✓ RADIO SUBMITTED" : "📻 SUBMIT TO RADIO";
-    radioButton.disabled = !isReleased || radioSubmitted;
+    radioButton.textContent = radioSubmitted
+      ? "✓ RADIO SUBMITTED"
+      : radioUnlocked
+        ? "📻 SUBMIT TO RADIO"
+        : "🔒 RADIO LOCKED";
+    radioButton.disabled = !isReleased || radioSubmitted || !radioUnlocked;
     radioButton.onclick = () => submitRadioById(track.id);
     actions.appendChild(radioButton);
 
@@ -219,7 +225,9 @@ async function renderCatalog() {
         ? "Promotion available: +5 fans, +3 XP"
         : radioSubmitted
           ? "Radio submission is pending consideration."
-          : "Eligible for Music City Radio submission.";
+          : radioUnlocked
+            ? "Eligible for Music City Radio submission."
+            : "Radio unlock: " + radioGap.fans + " more fans and " + radioGap.xp + " more XP.";
     card.appendChild(reward);
 
     catalog.appendChild(card);

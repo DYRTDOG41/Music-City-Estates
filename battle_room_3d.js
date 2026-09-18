@@ -1,9 +1,15 @@
 import {createRoom,buildAvatar} from './mce_3d_room.js';
 
-let fans=Number(localStorage.getItem('mceFans'))||0;
-let cash=Number(localStorage.getItem('mceCash'))||500;
-let xp=Number(localStorage.getItem('mceXP'))||0;
-const unlocked=fans>=25;
+let state=window.MCE?window.MCE.load():{
+  fans:Number(localStorage.getItem('mceFans'))||0,
+  cash:Number(localStorage.getItem('mceCash'))||500,
+  xp:Number(localStorage.getItem('mceXP'))||0,
+  battles:0
+};
+let fans=state.fans;
+let cash=state.cash;
+let xp=state.xp;
+const unlocked=window.MCE?window.MCE.isUnlocked('battle',state):fans>=25;
 const stat=()=>{
   document.getElementById('fans').textContent=fans;
   document.getElementById('cash').textContent=cash;
@@ -203,12 +209,26 @@ buttons.forEach(button=>button.onclick=()=>{
     active=false;enable(false);
     const opponentScore=48+Math.floor(Math.random()*28);
     if(score>=opponentScore){
-      cash+=100;xp+=25;fans+=20;
+      if(window.MCE){
+        state=window.MCE.add({fans:20,cash:100,xp:25,battles:1});
+        fans=state.fans;cash=state.cash;xp=state.xp;
+      }else{
+        cash+=100;xp+=25;fans+=20;
+        localStorage.setItem('mceFans',fans);
+        localStorage.setItem('mceCash',cash);
+        localStorage.setItem('mceXP',xp);
+      }
       battleLog.innerHTML='<b style="color:#77ffac">🏆 YOU WON WORD SLAUGHTER!</b><br>+20 Fans • +$100 • +25 XP';
-      localStorage.setItem('mceFans',fans);
-    }else{xp+=8;battleLog.textContent='Knockout Kai takes this battle. You earn +8 XP and can challenge again.'}
-    localStorage.setItem('mceCash',cash);localStorage.setItem('mceXP',xp);
-    if(window.MCE)window.MCE.set({fans,cash,xp,battles:(window.MCE.get().battles||0)+1});
+    }else{
+      if(window.MCE){
+        state=window.MCE.add({xp:8,battles:1});
+        fans=state.fans;cash=state.cash;xp=state.xp;
+      }else{
+        xp+=8;
+        localStorage.setItem('mceXP',xp);
+      }
+      battleLog.textContent='Knockout Kai takes this battle. You earn +8 XP and can challenge again.';
+    }
     stat();startBattle.disabled=false;startBattle.textContent='BATTLE AGAIN';
   }else{round++;roundText.textContent='Round '+round+' of 3'}
 });

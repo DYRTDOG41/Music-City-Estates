@@ -26,6 +26,7 @@
     cafe: { xp: 10, label: "Requires 10 XP" },
     battle: { fans: 25, label: "Requires 25 fans" },
     nightclub: { fans: 50, xp: 75, label: "50 fans · 75 XP" },
+    radio: { fans: 100, xp: 150, label: "100 fans · 150 XP" },
     hiphop: { fans: 100, xp: 150, label: "100 fans · 150 XP" },
     rnb: { fans: 175, xp: 250, label: "175 fans · 250 XP" },
     downtown: { fans: 300, xp: 400, label: "300 fans · 400 XP" }
@@ -340,6 +341,14 @@
     var release = next.releases[index];
     if (release.releaseStatus !== "released") {
       throw new Error("Release the song before submitting it to radio.");
+    }
+
+    if (!meets(UNLOCKS.radio, next)) {
+      var gap = needed(UNLOCKS.radio, next);
+      throw new Error(
+        "Radio consideration unlocks at 100 fans and 150 XP. " +
+        "You still need " + gap.fans + " fans and " + gap.xp + " XP."
+      );
     }
 
     if (release.radioStatus === "submitted") return snapshot();

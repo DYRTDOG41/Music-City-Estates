@@ -191,16 +191,52 @@ test("promotion requires release and rewards once", function () {
   assert.strictEqual(again.xp, 8);
 });
 
-test("radio submission requires a released song", function () {
+test("radio submission requires a released song and career eligibility", function () {
   start();
   MCE.addRelease({ id: "release-loop-3", title: "Radio Song" });
   assert.throws(function () {
     MCE.submitReleaseToRadio("release-loop-3");
   });
   MCE.releaseSong("release-loop-3");
+  assert.throws(function () {
+    MCE.submitReleaseToRadio("release-loop-3");
+  });
+  MCE.save({ fans: 100, xp: 150 });
   var submitted = MCE.submitReleaseToRadio("release-loop-3");
   assert.strictEqual(submitted.releases[0].radioStatus, "submitted");
   assert.ok(submitted.releases[0].radioSubmittedAt);
+});
+
+test("shared progression gates match the venue plan", function () {
+  var state = start();
+  assert.strictEqual(MCE.isUnlocked("cafe", state), false);
+  assert.strictEqual(MCE.isUnlocked("battle", state), false);
+  assert.strictEqual(MCE.isUnlocked("nightclub", state), false);
+  assert.strictEqual(MCE.isUnlocked("radio", state), false);
+
+  state = MCE.save({ fans: 25, xp: 10 });
+  assert.strictEqual(MCE.isUnlocked("cafe", state), true);
+  assert.strictEqual(MCE.isUnlocked("battle", state), true);
+
+  state = MCE.save({ fans: 50, xp: 75 });
+  assert.strictEqual(MCE.isUnlocked("nightclub", state), true);
+
+  state = MCE.save({ fans: 100, xp: 150 });
+  assert.strictEqual(MCE.isUnlocked("radio", state), true);
+});
+
+test("radio submission requires career eligibility", function () {
+  start();
+  MCE.addRelease({ id: "radio-gate", title: "Gate Test" });
+  MCE.releaseSong("radio-gate");
+
+  assert.throws(function () {
+    MCE.submitReleaseToRadio("radio-gate");
+  });
+
+  MCE.save({ fans: 100, xp: 150 });
+  var submitted = MCE.submitReleaseToRadio("radio-gate");
+  assert.strictEqual(submitted.releases[0].radioStatus, "submitted");
 });
 
 test("NaN world values are ignored", function () {

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Music City Nightclub | Music City Estates</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#05030b;color:#fff;font-family:Arial,sans-serif}
+body{background:
+radial-gradient(circle at 20% 20%,rgba(115,48,255,.28),transparent 28%),
+radial-gradient(circle at 80% 30%,rgba(0,210,255,.18),transparent 24%),
+linear-gradient(#090513,#030207 70%)}
+header{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid #7b4cff;background:#05030bec;position:sticky;top:0;z-index:5}
+header h1{font-size:18px;margin:0;letter-spacing:.08em}
+nav{display:flex;gap:8px;flex-wrap:wrap}
+nav a{color:#fff;text-decoration:none;padding:8px 11px;border:1px solid #7b4cff;border-radius:8px;background:#110b20}
+.wrap{width:min(980px,94%);margin:25px auto 50px}
+.hero,.panel{border:1px solid #593e8b;border-radius:18px;background:rgba(12,7,24,.92);box-shadow:0 0 28px rgba(124,76,255,.14)}
+.hero{padding:22px}
+.hero h2{margin:0 0 8px;color:#c8b4ff}
+.stats{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
+.pill{padding:8px 11px;border-radius:18px;background:#100b1b;border:1px solid #3e3158}
+.stage{margin-top:18px;padding:22px;min-height:350px;position:relative;overflow:hidden}
+.stage:before{content:"";position:absolute;inset:0;background:
+linear-gradient(110deg,transparent 0 20%,rgba(101,62,255,.08) 20% 22%,transparent 22% 45%,rgba(0,210,255,.06) 45% 47%,transparent 47%);
+pointer-events:none}
+.locked{padding:28px;text-align:center;border:1px dashed #6f5d91;border-radius:14px;color:#c0b4d4}
+select{width:100%;padding:12px;margin-top:10px;background:#0a0712;color:#fff;border:1px solid #7356a8;border-radius:9px}
+audio{width:100%;margin-top:12px}
+.progress{height:18px;background:#1c122a;border-radius:20px;overflow:hidden;margin:18px 0}
+.fill{height:100%;width:0;background:linear-gradient(90deg,#7b4cff,#d84cff,#48d7ff);transition:.3s}
+.actions{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:14px}
+button{padding:13px;border:1px solid #7b4cff;border-radius:9px;background:#201339;color:#fff;font-weight:900;cursor:pointer}
+button.primary{width:100%;margin-top:12px;background:#8a5cff;color:#fff}
+button:disabled{opacity:.4;cursor:not-allowed}
+.log{min-height:65px;color:#d4c9e7;line-height:1.45}
+.unlock{padding:12px;margin-top:14px;border:1px solid #315d4a;border-radius:10px;background:#0d2118;color:#91f0b9}
+.small{font-size:12px;color:#a89abf}
+@media(max-width:700px){header{align-items:flex-start;flex-direction:column}.actions{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+<nav>
+<a href="hiphop_cafe.html">← HIP-HOP CAFÉ</a>
+<a href="artist_catalog.html">💿 CATALOG</a>
+<a href="music_city_radio.html">📻 RADIO</a>
+</nav>
+<h1>MUSIC CITY NIGHTCLUB</h1>
+</header>
+
+<div class="wrap">
+<section class="hero">
+<h2>🌃 Nightclub Stage</h2>
+<p>The second live-performance tier. Unlocks at 50 fans + 75 XP and carries artists toward the 100 fans + 150 XP radio threshold.</p>
+<div class="stats">
+<div class="pill">Fans: <b id="fans">0</b></div>
+<div class="pill">XP: <b id="xp">0</b></div>
+<div class="pill">Cash: $<b id="cash">0</b></div>
+<div class="pill">Career: <b id="career">Bedroom Artist</b></div>
+</div>
+</section>
+
+<section class="panel stage">
+<div id="lockedPanel" class="locked" style="display:none"></div>
+
+<div id="stagePanel">
+<label for="songSelect">Choose a released song</label>
+<select id="songSelect"></select>
+<audio id="songPreview" controls style="display:none"></audio>
+
+<div class="progress"><div class="fill" id="energy"></div></div>
+<p id="roundText"><b>Nightclub Set:</b> the room is waiting.</p>
+<p class="log" id="log">Choose a released track and start your three-part set.</p>
+
+<div class="actions">
+<button data-action="timing" disabled>RIDE THE BEAT</button>
+<button data-action="presence" disabled>COMMAND THE ROOM</button>
+<button data-action="crowd" disabled>WORK THE CROWD</button>
+</div>
+
+<button class="primary" id="startSet">START NIGHTCLUB SET</button>
+<div id="nextUnlock" class="unlock"></div>
+<p class="small">Strong sets reward more fans, XP, and cash. Fan rewards stop at 100 fans; XP and cash can continue so the player can reach the radio threshold.</p>
+</div>
+</section>
+</div>
+
+<script src="player-state.js"></script>
+<script src="music_city_catalog.js"></script>
+<script>
+let state = window.MCE.load();
+let trackMap = {};
+let objectUrl = null;
+let round = 0;
+let score = 0;
+let active = false;
+
+const fansEl = document.getElementById("fans");
+const xpEl = document.getElementById("xp");
+const cashEl = document.getElementById("cash");
+const careerEl = document.getElementById("career");
+const songSelect = document.getElementById("songSelect");
+const songPreview = document.getElementById("songPreview");
+const energy = document.getElementById("energy");
+const roundText = document.getElementById("roundText");
+const log = document.getElementById("log");
+const startSet = document.getElementById("startSet");
+const actionButtons = [...document.querySelectorAll("[data-action]")];
+const nextUnlock = document.getElementById("nextUnlock");
+const lockedPanel = document.getElementById("lockedPanel");
+const stagePanel = document.getElementById("stagePanel");
+
+function syncStats() {
+  state = window.MCE.get();
+  fansEl.textContent = state.fans;
+  xpEl.textContent = state.xp;
+  cashEl.textContent = state.cash;
+  careerEl.textContent = window.MCE.getCareerTitle(state);
+
+  const radioGap = window.MCE.needed(window.MCE.UNLOCKS.radio, state);
+  nextUnlock.textContent = window.MCE.isUnlocked("radio", state)
+    ? "✅ RADIO CONSIDERATION UNLOCKED — 100 fans + 150 XP reached."
+    : "Next milestone: Music City Radio — need " + radioGap.fans + " more fans and " + radioGap.xp + " more XP.";
+}
+
+function nightclubUnlocked() {
+  return window.MCE.isUnlocked("nightclub", state);
+}
+
+function setActions(enabled) {
+  actionButtons.forEach(button => button.disabled = !enabled);
+}
+
+async function loadSongs() {
+  const tracks = await window.MusicCityCatalog.listTracks();
+  tracks.forEach(track => {
+    trackMap[String(track.id)] = track;
+  });
+
+  const releases = state.releases.filter(release => release.releaseStatus === "released");
+  songSelect.innerHTML = "";
+
+  if (!releases.length) {
+    const option = document.createElement("option");
+    option.textContent = "No released songs yet";
+    option.value = "";
+    songSelect.appendChild(option);
+    startSet.disabled = true;
+    log.textContent = "Release a song from the Artist Catalog before performing at the Nightclub.";
+    return;
+  }
+
+  releases.forEach(release => {
+    const option = document.createElement("option");
+    option.value = String(release.id);
+    option.textContent = release.title;
+    songSelect.appendChild(option);
+  });
+
+  songSelect.dispatchEvent(new Event("change"));
+}
+
+songSelect.addEventListener("change", () => {
+  if (objectUrl) {
+    URL.revokeObjectURL(objectUrl);
+    objectUrl = null;
+  }
+
+  const track = trackMap[String(songSelect.value)];
+  if (track && track.audioBlob) {
+    objectUrl = URL.createObjectURL(track.audioBlob);
+    songPreview.src = objectUrl;
+    songPreview.style.display = "block";
+  } else {
+    songPreview.removeAttribute("src");
+    songPreview.style.display = "none";
+  }
+});
+
+function completeSet() {
+  active = false;
+  setActions(false);
+
+  const strong = score >= 62;
+  const possibleFans = strong ? 12 : 8;
+  const fanReward = Math.min(possibleFans, Math.max(0, 100 - state.fans));
+  const xpReward = strong ? 15 : 10;
+  const cashReward = strong ? 75 : 50;
+
+  state = window.MCE.add({
+    fans: fanReward,
+    xp: xpReward,
+    cash: cashReward
+  });
+
+  const count = Number(localStorage.getItem("mceNightclubPerformances")) || 0;
+  localStorage.setItem("mceNightclubPerformances", String(count + 1));
+  localStorage.setItem("mceLastNightclubSong", songSelect.options[songSelect.selectedIndex]?.text || "");
+
+  energy.style.width = Math.min(score, 100) + "%";
+  log.innerHTML =
+    "<b>SET COMPLETE!</b><br>+" + fanReward + " Fans • +$" + cashReward + " • +" + xpReward + " XP";
+  if (fanReward === 0) {
+    log.innerHTML += "<br>You have reached the 100-fan Nightclub ceiling. Keep building XP toward radio eligibility.";
+  }
+
+  roundText.textContent = "The crowd reacts to your final song.";
+  startSet.disabled = false;
+  startSet.textContent = "PERFORM ANOTHER SET";
+  syncStats();
+}
+
+startSet.onclick = () => {
+  if (!nightclubUnlocked() || !songSelect.value) return;
+  round = 1;
+  score = 0;
+  active = true;
+  energy.style.width = "8%";
+  roundText.textContent = "Part 1 of 3 • Establish the room";
+  log.textContent = "The DJ brings your track in. The dance floor turns toward the stage.";
+  startSet.disabled = true;
+  songSelect.disabled = true;
+  setActions(true);
+};
+
+const reactions = {
+  timing: ["You lock into the beat and the front row starts moving.", "Your timing lands clean over the club system."],
+  presence: ["The balcony locks onto the stage.", "You command the room like a headliner."],
+  crowd: ["The hook comes back louder from the dance floor.", "Phones rise as the crowd joins the record."]
+};
+
+actionButtons.forEach(button => {
+  button.onclick = () => {
+    if (!active) return;
+    const gain = 19 + Math.floor(Math.random() * 15);
+    const type = button.dataset.action;
+    score += gain;
+    energy.style.width = Math.min(score, 100) + "%";
+    const lines = reactions[type];
+    log.textContent = lines[Math.floor(Math.random() * lines.length)] + " +" + gain + " crowd energy.";
+
+    if (round >= 3) {
+      songSelect.disabled = false;
+      completeSet();
+    } else {
+      round += 1;
+      roundText.textContent = "Part " + round + " of 3 • " + (round === 2 ? "Build momentum" : "Close the room");
+    }
+  };
+});
+
+async function init() {
+  syncStats();
+
+  if (!nightclubUnlocked()) {
+    const gap = window.MCE.needed(window.MCE.UNLOCKS.nightclub, state);
+    stagePanel.style.display = "none";
+    lockedPanel.style.display = "block";
+    lockedPanel.innerHTML =
+      "<h2>🔒 NIGHTCLUB LOCKED</h2>" +
+      "<p>Requires 50 fans + 75 XP.</p>" +
+      "<p>You still need <b>" + gap.fans + " fans</b> and <b>" + gap.xp + " XP</b>.</p>" +
+      '<p><a href="hiphop_cafe.html" style="color:#c8b4ff">Return to the Hip-Hop Café</a> to keep building.</p>';
+    return;
+  }
+
+  await loadSongs();
+}
+
+init().catch(error => {
+  log.textContent = error.message || "Music City could not load the Nightclub.";
+});
+</script>
+</body>
+</html>
