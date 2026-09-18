@@ -194,6 +194,35 @@ background: #08151c;
 color: #ffd86b;
 }
 
+.engine-box {
+margin-top: 18px;
+padding: 16px;
+border: 1px solid rgba(34,211,238,.45);
+border-radius: 12px;
+background: rgba(4,12,22,.7);
+}
+
+.engine-status {
+margin: 10px 0 0;
+color: #aab3cc;
+font-size: 14px;
+line-height: 1.4;
+}
+
+.engine-status.ready {
+color: #7ef0a7;
+}
+
+.engine-status.error {
+color: #ff8c8c;
+}
+
+#generatedAudio {
+display: none;
+width: 100%;
+margin-top: 14px;
+}
+
 @media(max-width:700px) {
 .row,
 .actions {
@@ -472,6 +501,20 @@ onchange="loadUploadedAudio(event)"
 
 </div>
 
+<div class="engine-box">
+<label>Music City AI Engine</label>
+<select id="aiProvider" onchange="updateEngineStatus()">
+<option value="demo">Music City Demo Engine — Works Now</option>
+<option value="elevenlabs">ElevenLabs Music — Secure Backend Required</option>
+<option value="stable-audio">Stable Audio — Secure Backend Required</option>
+<option value="google-lyria">Google Lyria — Secure Backend Required</option>
+<option value="partner">Partner API — Suno / MyTunes if approved</option>
+</select>
+<p id="aiEngineStatus" class="engine-status ready">
+Demo mode is ready. It tests the complete Music City generation workflow without using paid AI credits.
+</p>
+</div>
+
 <br>
 
 <label>Creativity</label>
@@ -532,15 +575,19 @@ class="ai-result"
 
 <p id="resultText"></p>
 
-<p>
-The Music City AI generation engine will connect here.
+<p id="engineMessage">
+The Music City AI generation engine is ready.
 </p>
+
+<audio id="generatedAudio" controls></audio>
 </div>
 
 </div>
 
 </div>
 
+
+<script src="music_city_ai.js"></script>
 
 <script>
 
@@ -578,6 +625,41 @@ document.getElementById("backButton").href =
 
 }
 
+
+let selectedBeat = null;
+
+function selectBeat(beatName, button) {
+selectedBeat = beatName;
+
+document.querySelectorAll('button[onclick^="selectBeat"]').forEach(btn => {
+btn.style.boxShadow = "";
+btn.style.borderColor = "#18d8ff";
+});
+
+button.style.boxShadow = "0 0 22px rgba(24,216,255,.75)";
+button.style.borderColor = "#7ef0ff";
+
+document.getElementById("recordStatus").textContent =
+"Beat selected: " + beatName;
+}
+
+function updateEngineStatus() {
+const provider = document.getElementById("aiProvider").value;
+const status = document.getElementById("aiEngineStatus");
+
+const messages = {
+demo: "Demo mode is ready. It tests the complete Music City generation workflow without using paid AI credits.",
+elevenlabs: "ElevenLabs Music is supported by the Music City architecture. A secure backend and API key are required for live audio.",
+"stable-audio": "Stable Audio is supported by the Music City architecture. A secure backend and API key are required for live audio.",
+"google-lyria": "Google Lyria is supported by the Music City architecture. A secure Vertex AI backend is required for live audio.",
+partner: "Partner mode is reserved for Suno, MyTunes, or another approved commercial API partnership."
+};
+
+status.textContent = messages[provider] || "Select an AI provider.";
+status.className = provider === "demo"
+? "engine-status ready"
+: "engine-status";
+}
 
 function addStyle(style) {
 
@@ -740,7 +822,7 @@ alert("Song draft saved.");
 }
 
 
-function createSong() {
+async function createSong() {
 
 const title =
 document.getElementById("songTitle").value
@@ -753,27 +835,99 @@ document.getElementById("style").value
 const mode =
 document.getElementById("creationMode").value;
 
-localStorage.setItem(
-"musicCitySongDraft",
-JSON.stringify({
+const provider =
+document.getElementById("aiProvider").value;
+
+const request = {
+provider: provider,
 title: title,
 lyrics: document.getElementById("lyrics").value,
 style: style,
 studio: studio,
-mode: mode
-})
+mode: mode,
+vocalStyle: document.getElementById("vocalStyle").value,
+creativity: document.getElementById("creativity").value,
+influence: document.getElementById("influence").value,
+beat: selectedBeat,
+audioAttached:
+Boolean(document.getElementById("audioPreview").src)
+};
+
+localStorage.setItem(
+"musicCitySongDraft",
+JSON.stringify(request)
 );
 
-document.getElementById("aiResult")
-.style.display =
-"block";
+const resultBox =
+document.getElementById("aiResult");
 
+const resultText =
+document.getElementById("resultText");
 
-document.getElementById("resultText")
-.innerHTML =
+const engineMessage =
+document.getElementById("engineMessage");
+
+const generatedAudio =
+document.getElementById("generatedAudio");
+
+resultBox.style.display = "block";
+resultText.innerHTML =
 "<strong>" + title + "</strong><br>" +
+"Submitting to Music City AI...";
+
+engineMessage.textContent =
+"Creating production job...";
+
+generatedAudio.style.display = "none";
+generatedAudio.removeAttribute("src");
+
+try {
+
+const result =
+await window.MusicCityAI.generate(request);
+
+resultText.innerHTML =
+"<strong>" + result.title + "</strong><br>" +
 "Style: " + style + "<br>" +
-"Mode: " + mode;
+"Mode: " + mode + "<br>" +
+"Beat: " + (result.beat || "No beat selected") + "<br>" +
+"Engine: " + result.providerName + "<br>" +
+"Status: " + result.status;
+
+engineMessage.textContent =
+result.message || "Generation submitted.";
+
+if (result.audioUrl) {
+generatedAudio.src = result.audioUrl;
+generatedAudio.style.display = "block";
+}
+
+const sessions =
+JSON.parse(
+localStorage.getItem("musicCityAISessions") || "[]"
+);
+
+sessions.unshift(result);
+
+localStorage.setItem(
+"musicCityAISessions",
+JSON.stringify(sessions.slice(0, 25))
+);
+
+}
+catch(error) {
+
+resultText.innerHTML =
+"<strong>" + title + "</strong><br>" +
+"Music City could not submit this provider yet.";
+
+engineMessage.textContent =
+error.message || "AI generation failed.";
+
+document.getElementById("aiEngineStatus").className =
+"engine-status error";
+
+}
 
 }
 
