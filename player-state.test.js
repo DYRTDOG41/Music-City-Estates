@@ -494,6 +494,15 @@ test("DJ pool card discounts and strengthens the next radio submission", functio
   assert.strictEqual(submitted.business.effects.radioInfluenceBonus, 0);
 });
 
+test("every Business Deck card has a no-cash escape choice", function () {
+  MCE.BUSINESS_EVENTS.forEach(function (event) {
+    var freeChoice = event.choices.some(function (choice) {
+      return Number(choice.cost || 0) === 0;
+    });
+    assert.strictEqual(freeChoice, true, event.id + " must have a free choice");
+  });
+});
+
 test("NaN world values are ignored", function () {
   var state = start({
     mceFans: "nope",
