@@ -263,7 +263,7 @@
         sha256: splitAgreementHash,
         totalPercentage: validation.splitTotal
       },
-      certifiedAt: new Date().toISOString()
+      passportReadyAt: new Date().toISOString()
     };
 
     var metadataHash = await sha256Text(canonicalJson(passportCore));
@@ -295,7 +295,7 @@
       name: clean(input.title),
       certificateId: id,
       trackId: clean(input.trackId),
-      createdAt: certificate.certifiedAt,
+      createdAt: certificate.passportReadyAt,
       chainStatus: "not-minted"
     });
 
@@ -317,7 +317,7 @@
   async function listCertificates() {
     var values = await listValues(CERT_STORE);
     return values.sort(function (a, b) {
-      return String(b.certifiedAt || "").localeCompare(String(a.certifiedAt || ""));
+      return String(b.passportReadyAt || "").localeCompare(String(a.passportReadyAt || ""));
     });
   }
 
@@ -353,10 +353,29 @@
       status: "minted",
       tokenId: clean(result.tokenId),
       transactionId: clean(result.transactionId),
-      explorerUrl: clean(result.explorerUrl)
+      explorerUrl: clean(result.explorerUrl),
+      mintedAt: new Date().toISOString()
     };
 
     await storeValue(CERT_STORE, certificate);
+
+    await storeValue(ITEM_STORE, {
+      id: "item-" + certificate.id,
+      type: "certified-record",
+      rarity: "certified",
+      name: certificate.title,
+      certificateId: certificate.id,
+      trackId: certificate.trackId,
+      createdAt: certificate.chain.mintedAt,
+      chainStatus: "minted",
+      provider: certificate.chain.provider,
+      tokenId: certificate.chain.tokenId
+    });
+
+    if (root.MCE && typeof root.MCE.markReleaseCertified === "function") {
+      root.MCE.markReleaseCertified(certificate.trackId, certificate);
+    }
+
     return certificate;
   }
 
