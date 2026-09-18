@@ -608,6 +608,8 @@
           : {},
       revisionCount: toCount(item.revisionCount, 0),
       originalLyricsConfirmed: Boolean(item.originalLyricsConfirmed),
+      releaseCraftBonusFans: toCount(item.releaseCraftBonusFans, 0),
+      releaseCraftBonusXp: toCount(item.releaseCraftBonusXp, 0),
       releaseStatus: item.releaseStatus == null ? "draft" : String(item.releaseStatus),
       releasedAt: item.releasedAt || undefined,
       promotedAt: item.promotedAt || undefined,
@@ -618,7 +620,8 @@
       radioSubmittedAt: item.radioSubmittedAt || undefined,
       radioFeePaid: toCount(item.radioFeePaid, 0),
       radioManager: item.radioManager == null ? undefined : String(item.radioManager),
-      radioInfluence: toCount(item.radioInfluence, 0)
+      radioInfluence: toCount(item.radioInfluence, 0),
+      radioCraftInfluence: toCount(item.radioCraftInfluence, 0)
     };
   }
 
