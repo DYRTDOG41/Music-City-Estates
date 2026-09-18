@@ -116,8 +116,10 @@ room.interact('OPEN COLLAB BOARD',[9,1.7,-9.8],showCollab,2.8,0x4ccfff);
 room.interact('LISTEN TO MUSIC SHOWCASE',[13.5,1.7,-5.9],showShowcase,2.7,0x4ccfff);
 room.interact('CHECK IN WITH A&R',[0,1.7,-8.5],showAR,2.8,0xff8b42);
 room.interact('ENTER BATTLE STAGE',[12.5,1.7,11.7],()=>location.href='battle_room.html',2.7,0xff315b);
+room.interact('ENTER MERCH & BACKSTAGE',[0,1.7,11.7],()=>location.href='merch_backstage.html',2.7,0x52baff);
 room.interact('RETURN TO WAREHOUSE',[-12.5,1.7,11.7],()=>location.href='warehouse.html',2.7,0xffc34d);
 room.label('BATTLE STAGE',[12.5,3,13.65],'#ff315b',[3.5,.62]);
+room.label('MERCH & BACKSTAGE',[0,3,13.65],'#52baff',[4.2,.62]);
 room.label('WAREHOUSE LOBBY',[-12.5,3,13.65],'#ffc34d',[4,.62]);
 
 const panel=document.getElementById('communityPanel');
