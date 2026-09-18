@@ -439,6 +439,22 @@ border-radius:
 
 }
 
+.avatar-button {
+position: absolute;
+right: 2.2%;
+bottom: 1.8%;
+z-index: 60;
+padding: 8px 14px;
+color: #08040b;
+text-decoration: none;
+font-size: 12px;
+font-weight: bold;
+background: #ffd23f;
+border: 1px solid #fff0a8;
+border-radius: 6px;
+box-shadow: 0 0 18px rgba(255,210,63,.4);
+}
+
 </style>
 
 </head>
@@ -579,35 +595,66 @@ href="hip_hop_heights.html"
 ← HIP-HOP HEIGHTS
 </a>
 
+<a
+class="avatar-button"
+href="avatar_studio.html"
+>
+CUSTOMIZE ARTIST →
+</a>
+
 
 </div>
 
 
 
-<script src="player-state.js"></script>
 <script>
 
 /* =========================================
 LOAD PLAYER DATA
 ========================================= */
 
-const player =
-window.MCE.load();
+function getNumber(
+key,
+fallback
+) {
+
+const value =
+localStorage.getItem(key);
+
+if (value === null) {
+
+return fallback;
+
+}
+
+return Number(value);
+
+}
+
 
 const fans =
-player.fans;
+getNumber(
+"mceFans",
+0
+);
 
 const cash =
-player.cash;
+getNumber(
+"mceCash",
+500
+);
 
 const xp =
-player.xp;
+getNumber(
+"mceXP",
+0
+);
 
 const level =
-player.level;
-
-const battleFansNeeded =
-window.MCE.UNLOCKS.battle.fans;
+getNumber(
+"mceLevel",
+1
+);
 
 
 
@@ -646,10 +693,10 @@ document.getElementById(
 );
 
 
-if (fans < battleFansNeeded) {
+if (fans < 25) {
 
 const needed =
-battleFansNeeded - fans;
+25 - fans;
 
 battleLock
 .classList
@@ -676,7 +723,7 @@ BATTLE STAGE
 
 function openBattle() {
 
-if (fans < battleFansNeeded) {
+if (fans < 25) {
 
 showBattleLocked();
 
@@ -685,10 +732,7 @@ return;
 }
 
 
-showMessage(
-"🎤 Battle Stage",
-"You unlocked the battle stage. The live battle experience is the next Warehouse feature being built."
-);
+window.location.href = "battle_room.html";
 
 }
 
@@ -697,9 +741,7 @@ function showBattleLocked() {
 
 showMessage(
 "🎤 Battle Stage Locked",
-"Word Slaughter requires " +
-battleFansNeeded +
-" fans before you can enter a rap battle. You currently have " +
+"Word Slaughter requires 25 fans before you can enter a rap battle. You currently have " +
 fans +
 " fans."
 );

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>3D Battle Stage | Word Slaughter</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#030205;color:#fff;font-family:Arial,sans-serif}canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none}.hud{position:fixed;z-index:20;left:12px;right:12px;top:12px;display:flex;justify-content:space-between;pointer-events:none}.plate{background:#080307e8;border:1px solid #ff315b;border-radius:9px;padding:9px 13px;box-shadow:0 0 20px #ff174d55}.stats{display:flex;gap:13px}.interact{display:none;position:fixed;z-index:30;left:50%;bottom:76px;transform:translateX(-50%);padding:13px 20px;border:1px solid #ff315b;border-radius:10px;background:#050306ef;font-weight:900;color:#fff;cursor:pointer}.interact.show{display:block}.back{position:fixed;z-index:25;left:15px;bottom:15px;padding:9px 13px;background:#09070ce8;border:1px solid #777;border-radius:7px;color:#fff;text-decoration:none}.hint{position:fixed;z-index:20;left:50%;bottom:20px;transform:translateX(-50%);font-size:11px;background:#0009;padding:7px 12px;border-radius:18px}.touch{display:none;position:fixed;z-index:26;right:15px;bottom:15px;grid-template:repeat(2,44px)/repeat(3,44px);gap:4px}.touch button{border:1px solid #ffffff66;background:#000a;color:#fff;border-radius:9px;font-size:18px}.touch .up{grid-column:2}.touch .left{grid-row:2;grid-column:1}.touch .down{grid-row:2;grid-column:2}.touch .right{grid-row:2;grid-column:3}.modal{display:none;position:fixed;z-index:100;inset:0;background:#000c;align-items:center;justify-content:center;padding:16px}.modal.show{display:flex}.panel{width:min(620px,96%);background:#0c060b;border:1px solid #ff315b;border-radius:16px;padding:22px;box-shadow:0 0 50px #ff174d55}.meter{height:18px;background:#26131a;border-radius:20px;overflow:hidden}.fill{height:100%;width:0;background:linear-gradient(90deg,#ff174d,#ffc83d);transition:.35s}.actions{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:14px}.actions button,.start{padding:13px;border:0;border-radius:8px;font-weight:900;cursor:pointer}.actions button{background:#6d1531;color:#fff}.actions button:disabled{opacity:.4}.start{width:100%;background:#ffc83d;color:#170d00;margin-top:12px}.log{min-height:54px;color:#ddd}@media(max-width:720px){.hint{display:none}.touch{display:grid}.stats{font-size:10px;gap:6px}.actions{grid-template-columns:1fr}.hud{font-size:12px}}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}</script>
+</head>
+<body>
+<div class="hud"><div class="plate"><strong>WORD SLAUGHTER</strong><br><small>3D Battle Stage</small></div><div class="plate stats"><span>👥 <b id="fans">0</b></span><span>💵 $<b id="cash">500</b></span><span>⭐ <b id="xp">0</b></span></div></div>
+<button class="interact" id="interactPrompt">E / TAP — INTERACT</button>
+<a class="back" href="warehouse.html">← Warehouse</a>
+<div class="hint">WASD to walk • Drag to look • E to interact</div>
+<div class="touch"><button class="up" data-move="w">▲</button><button class="left" data-move="a">◀</button><button class="down" data-move="s">▼</button><button class="right" data-move="d">▶</button></div>
+<div class="modal" id="battlePanel"><div class="panel"><h2>🎤 Word Slaughter Battle</h2><p id="roundText">Enter the circle when you are ready.</p><div class="meter"><div class="fill" id="energy"></div></div><p class="log" id="battleLog">The DJ is waiting. The crowd surrounds the stage.</p><div class="actions"><button data-action="bars" disabled>DELIVER BARS</button><button data-action="flow" disabled>SWITCH FLOW</button><button data-action="crowd" disabled>WORK CROWD</button></div><button class="start" id="startBattle">START THREE-ROUND BATTLE</button><button class="start" id="closeBattle" style="background:#2b2028;color:#fff">RETURN TO 3D ROOM</button></div></div>
+<script type="module" src="battle_room_3d.js"></script>
+</body>
+</html>
