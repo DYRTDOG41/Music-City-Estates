@@ -6,7 +6,7 @@ The code is ready for a live ElevenLabs Music preview. The remaining step is dep
 
 - `record_music.html` sends a normalized Music City generation job.
 - `music_city_ai.js` can receive a real MP3 response and play it in the booth.
-- `api/music/generate.js` securely calls ElevenLabs Music v2.
+- `api/music/generate.js` securely calls ElevenLabs Music v2.5.
 - `api/health.js` checks whether the backend is online without spending music credits.
 - `vercel.json` configures the serverless function.
 - `.env.example` documents the required secrets without containing any real key.
