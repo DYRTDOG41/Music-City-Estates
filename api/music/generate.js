@@ -116,15 +116,13 @@ module.exports = async function handler(req, res) {
   }
 
   const mode = clean(body.mode);
-  if (
-    Boolean(body.audioAttached) &&
-    (mode === "Build Music Around My Voice" || mode === "Remix My Recording")
-  ) {
-    return res.status(422).json({
-      error:
-        "The first live ElevenLabs adapter is prompt-to-music only. Recorded-voice/audio-reference generation is the next adapter and is not enabled yet."
-    });
-  }
+  const referenceSongId = clean(body.referenceSongId).slice(0, 100);
+  const referenceDurationMs = clamp(
+    body.referenceDurationMs,
+    50,
+    30000,
+    10000
+  );
 
   const maxGenerationMs = clamp(
     process.env.MUSIC_CITY_MAX_GENERATION_MS,
@@ -144,12 +142,74 @@ module.exports = async function handler(req, res) {
     mode === "Generate Instrumental" ||
     clean(body.vocalStyle) === "Instrumental Only";
 
-  const providerRequest = {
-    prompt: buildPrompt(body),
-    music_length_ms: musicLengthMs,
-    model_id: process.env.ELEVENLABS_MUSIC_MODEL || "music_v2_5",
-    force_instrumental: forceInstrumental
-  };
+  const modelId =
+    process.env.ELEVENLABS_MUSIC_MODEL || "music_v2_5";
+
+  let providerRequest;
+
+  if (referenceSongId) {
+    const style = clean(body.style, "original contemporary music");
+    const beat = clean(body.beat, "Music City studio selection");
+    const lyrics = clean(body.lyrics);
+    const creativity = clamp(body.creativity, 0, 100, 50);
+    const influence = clamp(body.influence, 0, 100, 50);
+
+    const positiveStyles = [
+      ...style.split(",").map(value => value.trim()).filter(Boolean),
+      beat,
+      "polished production",
+      "original composition"
+    ].slice(0, 50);
+
+    const negativeStyles = forceInstrumental
+      ? ["vocals", "lyrics"]
+      : ["poor mix", "clipping", "unintelligible vocals"];
+
+    const chunkText = forceInstrumental
+      ? "[Reference-Guided Instrumental]"
+      : lyrics
+        ? "[Reference-Guided Song]\n" + lyrics.slice(0, 2500)
+        : "[Reference-Guided Song]";
+
+    const conditionStrength =
+      influence >= 80 ? "xhigh" :
+      influence >= 55 ? "high" :
+      influence >= 25 ? "medium" : "low";
+
+    const contextAdherence =
+      creativity >= 70 ? "low" :
+      creativity >= 40 ? "medium" : "high";
+
+    providerRequest = {
+      composition_plan: {
+        chunks: [
+          {
+            text: chunkText,
+            duration_ms: musicLengthMs,
+            positive_styles: positiveStyles,
+            negative_styles: negativeStyles,
+            context_adherence: contextAdherence,
+            conditioning_ref: {
+              song_id: referenceSongId,
+              range: {
+                start_ms: 0,
+                end_ms: referenceDurationMs
+              }
+            },
+            condition_strength: conditionStrength
+          }
+        ]
+      },
+      model_id: modelId
+    };
+  } else {
+    providerRequest = {
+      prompt: buildPrompt(body),
+      music_length_ms: musicLengthMs,
+      model_id: modelId,
+      force_instrumental: forceInstrumental
+    };
+  }
 
   let providerResponse;
   try {
