@@ -2,161 +2,47 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>BeGenius Studio | Music City Estates</title>
-
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Walkable 3D BeGenius Studio lobby inside Music City Estates.">
+<title>3D BeGenius Studio | Music City Estates</title>
 <style>
-* {
-box-sizing: border-box;
-}
-
-html, body {
-margin: 0;
-width: 100%;
-height: 100%;
-font-family: Arial, sans-serif;
-background: #080b14;
-color: white;
-}
-
-body {
-display: flex;
-flex-direction: column;
-}
-
-.top-bar {
-height: 65px;
-background: rgba(5, 8, 18, 0.95);
-display: flex;
-align-items: center;
-justify-content: space-between;
-padding: 0 20px;
-border-bottom: 2px solid #27d9ff;
-}
-
-.back-button {
-background: white;
-color: #111;
-text-decoration: none;
-padding: 10px 18px;
-border-radius: 7px;
-font-weight: bold;
-}
-
-.title {
-font-size: 22px;
-font-weight: bold;
-}
-
-.stats {
-font-weight: bold;
-}
-
-.studio {
-flex: 1;
-display: flex;
-align-items: center;
-justify-content: center;
-text-align: center;
-padding: 20px;
-background:
-radial-gradient(circle at center, rgba(53,75,150,.35), transparent 50%),
-linear-gradient(#11192b, #05070d);
-}
-
-.studio-box {
-max-width: 700px;
-padding: 45px;
-background: rgba(0,0,0,.65);
-border: 2px solid #27d9ff;
-border-radius: 18px;
-box-shadow: 0 0 35px rgba(39,217,255,.3);
-}
-
-.logo {
-font-size: 50px;
-margin-bottom: 10px;
-}
-
-h1 {
-margin: 10px 0;
-font-size: 38px;
-}
-
-.subtitle {
-color: #27d9ff;
-font-size: 20px;
-}
-
-.enter-button {
-margin-top: 25px;
-padding: 15px 30px;
-font-size: 18px;
-font-weight: bold;
-border: none;
-border-radius: 8px;
-cursor: pointer;
-background: #27d9ff;
-color: #071019;
-}
-
-#message {
-margin-top: 18px;
-min-height: 24px;
-}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050505;color:#fff;font-family:Arial,sans-serif}button,a{font:inherit}canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none}.hud{position:fixed;z-index:20;left:12px;right:12px;top:12px;display:flex;justify-content:space-between;pointer-events:none}.plate{background:#080808e8;border:1px solid #d8b765;border-radius:9px;padding:9px 13px;box-shadow:0 0 22px #d8b7653d}.stats{display:flex;gap:13px}.zone{display:inline-block;margin-top:5px;padding:3px 7px;border-radius:10px;background:#8a6a26;color:#fff;font-size:9px;font-weight:900;letter-spacing:.08em}.interact{display:none;position:fixed;z-index:30;left:50%;bottom:76px;transform:translateX(-50%);padding:13px 20px;border:1px solid #e1c06b;border-radius:10px;background:#080705ef;font-weight:900;color:#fff;cursor:pointer}.interact.show{display:block}.back{position:fixed;z-index:25;left:15px;bottom:15px;padding:9px 13px;background:#080808e8;border:1px solid #777;border-radius:7px;color:#fff;text-decoration:none}.hint{position:fixed;z-index:20;left:50%;bottom:20px;transform:translateX(-50%);font-size:11px;background:#000b;padding:7px 12px;border-radius:18px}.touch{display:none;position:fixed;z-index:26;right:15px;bottom:15px;grid-template:repeat(2,44px)/repeat(3,44px);gap:4px}.touch button{border:1px solid #ffffff66;background:#000c;color:#fff;border-radius:9px;font-size:18px}.touch .up{grid-column:2}.touch .left{grid-row:2;grid-column:1}.touch .down{grid-row:2;grid-column:2}.touch .right{grid-row:2;grid-column:3}.modal{display:none;position:fixed;z-index:100;inset:0;background:#000d;align-items:center;justify-content:center;padding:16px;overflow:auto}.modal.show{display:flex}.panel{width:min(860px,97%);max-height:94vh;overflow:auto;background:#0b0b0b;border:1px solid #d8b765;border-radius:16px;padding:22px;box-shadow:0 0 55px #d8b76538}.eyebrow{color:#e7c66e;font-size:11px;font-weight:900;letter-spacing:.14em}.panel h2{margin:7px 0 4px;font-size:clamp(25px,4vw,40px)}.artist{color:#d8cda9;margin:0 0 15px}.media{position:relative;aspect-ratio:16/9;border:1px solid #755e29;border-radius:12px;overflow:hidden;background:#050505}.media img,.media iframe{width:100%;height:100%;border:0;object-fit:cover}.media iframe{display:none}.media.playing img{display:none}.media.playing iframe{display:block}.credit{padding:10px 12px;border-left:3px solid #d8b765;background:#d8b76512;color:#f1e5bf}.actions{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.primary,.secondary,.close{padding:13px;border:0;border-radius:8px;font-weight:900;cursor:pointer}.primary{background:#d8b765;color:#161006}.secondary{background:#242424;color:#fff;border:1px solid #555}.close{width:100%;margin-top:10px;background:#151515;color:#fff}.wall-controls{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:12px}.wall-controls button{width:48px;height:42px;border:1px solid #77622e;border-radius:8px;background:#191713;color:#fff;font-size:21px;cursor:pointer}.counter{font-size:12px;color:#baa96f}.plaque-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:16px 0}.plaque-card{padding:14px;border:1px solid #8f7335;border-radius:10px;background:linear-gradient(135deg,#211b0e,#0e0e0d)}.plaque-card strong{color:#f1d27a}.notice{font-size:12px;line-height:1.5;color:#cfc7ad}.brand-link{color:#f2d67e}.privacy{font-size:11px;color:#aaa}@media(max-width:720px){.hint{display:none}.touch{display:grid}.stats{font-size:10px;gap:6px}.hud{font-size:12px}.panel{padding:15px}.actions{grid-template-columns:1fr}.plaque-grid{grid-template-columns:1fr}.back{bottom:112px}.interact{bottom:125px}}
 </style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}</script>
 </head>
-
 <body>
+<div class="hud"><div class="plate"><strong>BEGENIUS STUDIO</strong><br><small>3D Executive Lobby</small><br><span class="zone">PLAQUES • RELEASES • RECORDING</span></div><div class="plate stats"><span>👥 <b id="fans">0</b></span><span>💵 $<b id="cash">0</b></span><span>⭐ <b id="xp">0</b></span></div></div>
+<button class="interact" id="interactPrompt">E / TAP — INTERACT</button>
+<a class="back" href="hip_hop_heights.html">← Hip-Hop Heights</a>
+<div class="hint">WASD to walk • Drag to look • E to interact</div>
+<div class="touch"><button class="up" data-move="w" aria-label="Move forward">▲</button><button class="left" data-move="a" aria-label="Move left">◀</button><button class="down" data-move="s" aria-label="Move backward">▼</button><button class="right" data-move="d" aria-label="Move right">▶</button></div>
 
-<div class="top-bar">
-
-<a class="back-button" href="hip_hop_heights.html">
-← HIP-HOP HEIGHTS
-</a>
-
-<div class="title">
-BEGENIUS STUDIO
+<div class="modal" id="streamPanel" role="dialog" aria-modal="true" aria-labelledby="releaseTitle">
+  <div class="panel">
+    <div class="eyebrow">BEGENIUS YOUTUBE STREAMING WALL</div>
+    <h2 id="releaseTitle">Release title</h2>
+    <p class="artist" id="releaseArtist">Artist</p>
+    <div class="media" id="releaseMedia"><img id="releasePoster" alt="Selected release artwork"><iframe id="youtubePlayer" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+    <p class="credit" id="releaseCredit"></p>
+    <div class="actions"><button class="primary" id="playRelease">PLAY OFFICIAL VIDEO</button><button class="secondary" id="openYouTube">WATCH ON YOUTUBE ↗</button></div>
+    <div class="wall-controls"><button id="previousRelease" aria-label="Previous release">‹</button><span class="counter" id="releaseCounter"></span><button id="nextRelease" aria-label="Next release">›</button></div>
+    <button class="close" id="closeStream">RETURN TO 3D LOBBY</button>
+    <p class="privacy">Videos use YouTube’s official privacy-enhanced embedded player. If a rights holder disables embedding, use “Watch on YouTube.”</p>
+  </div>
 </div>
 
-<div class="stats">
-Fans: 0 &nbsp; Cash: $500 &nbsp; XP: 0
+<div class="modal" id="plaquePanel" role="dialog" aria-modal="true" aria-labelledby="plaqueTitle">
+  <div class="panel">
+    <div class="eyebrow">RUSHDEE ACHIEVEMENT GALLERY</div>
+    <h2 id="plaqueTitle">The BeGenius Story</h2>
+    <p class="notice">This wall is reserved for RushDee’s approved physical plaques and achievement photography. The current 3D frames establish the final layout and can be upgraded with the original plaque images without rebuilding the room.</p>
+    <div class="plaque-grid" id="plaqueList"></div>
+    <p class="notice">Learn more at the <a class="brand-link" href="https://begeniusrecords.com/artists/rushdee/" target="_blank" rel="noopener noreferrer">official RushDee profile ↗</a>.</p>
+    <button class="close" id="closePlaques">RETURN TO 3D LOBBY</button>
+  </div>
 </div>
 
-</div>
-
-<div class="studio">
-
-<div class="studio-box">
-
-<div class="logo">🎙️</div>
-
-<h1>BeGenius Studio</h1>
-
-<div class="subtitle">
-Where Music City careers begin.
-</div>
-
-<p>
-Record songs, build your sound, earn fans and grow your music career.
-</p>
-
-<button class="enter-button" onclick="enterStudio()">
-ENTER RECORDING BOOTH
-</button>
-
-<div id="message"></div>
-
-</div>
-
-</div>
-
-<script>
-function enterStudio() {
-window.location.href = "record_music.html?studio=begenius";
-}
-</script>
-
+<script src="player-state.js"></script>
+<script type="module" src="begenius_studio_3d.js"></script>
 </body>
 </html>

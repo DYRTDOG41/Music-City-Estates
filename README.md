@@ -12,6 +12,11 @@ python3 -m http.server 8000
 
 Then open [http://localhost:8000](http://localhost:8000).
 
+The BeGenius Studio entrance opens a walkable 3D executive lobby with a RushDee
+plaque gallery, a five-second rotating official YouTube release wall, and a
+connection to the universal recording workflow. Release destinations are
+configured in `begenius_catalog.js`.
+
 ## Gameplay
 
 - **Create Song** to gain XP, fans, and a release.
@@ -32,6 +37,7 @@ Progress is saved automatically in the browser with `localStorage`.
 - `city_map.html` — the main starting screen for the current game world.
 - `player-state.js` — shared player progress used by the current map and location pages.
 - `sponsor_catalog.js` — optional merchandise, affiliate, and sponsored-placement links used by the 3D Merch Room.
+- `begenius_catalog.js` — official YouTube destinations and plaque labels used by the 3D BeGenius lobby.
 
 ## Suggested next milestones
 
