@@ -22,6 +22,7 @@ Then open [http://localhost:8000](http://localhost:8000).
 - Use **View Phone** to see contacts, messages, social activity, and releases.
 - Tour the walkable **Word Slaughter Warehouse** battle venue at any fan level; the three-round battle itself unlocks at 25 fans.
 - Explore the Warehouse **Community Space** to meet resident artists, build connections, join a collaboration challenge, showcase releases, and check in with an A&R.
+- Visit **Merch & Backstage** for click-ready product displays, optional verified store or sponsor links, and artist battle check-in.
 
 Progress is saved automatically in the browser with `localStorage`.
 
@@ -30,6 +31,7 @@ Progress is saved automatically in the browser with `localStorage`.
 - `index.html` — lightweight launcher that opens the city map.
 - `city_map.html` — the main starting screen for the current game world.
 - `player-state.js` — shared player progress used by the current map and location pages.
+- `sponsor_catalog.js` — optional merchandise, affiliate, and sponsored-placement links used by the 3D Merch Room.
 
 ## Suggested next milestones
 
