@@ -21,6 +21,7 @@ Then open [http://localhost:8000](http://localhost:8000).
 - Use **View City** to track location unlocks.
 - Use **View Phone** to see contacts, messages, social activity, and releases.
 - Tour the walkable **Word Slaughter Warehouse** battle venue at any fan level; the three-round battle itself unlocks at 25 fans.
+- Explore the Warehouse **Community Space** to meet resident artists, build connections, join a collaboration challenge, showcase releases, and check in with an A&R.
 
 Progress is saved automatically in the browser with `localStorage`.
 

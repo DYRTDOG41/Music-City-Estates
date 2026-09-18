@@ -164,6 +164,7 @@ room.box('backstage door',[4.6,3.8,.3],[-15.4,1.9,-15.9],0x120f13,{collider:true
 room.box('community door',[4.6,3.8,.3],[15.4,1.9,-15.9],0x120f13,{collider:true,metalness:.45});
 room.label('← BACKSTAGE',[-15.4,3.25,-15.7],'#ffad67',[3.8,.62]);
 room.label('COMMUNITY ROOM →',[15.4,3.25,-15.7],'#ffd15a',[4.5,.62]);
+room.interact('ENTER COMMUNITY ROOM',[15.4,1.7,-13.8],()=>location.href='warehouse_hangout_viewer.html',2.8,0xffd15a);
 
 const battlePanel=document.getElementById('battlePanel');
 const battleLog=document.getElementById('battleLog');
