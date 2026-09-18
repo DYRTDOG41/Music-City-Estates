@@ -40,6 +40,7 @@ a.out{color:#6ee7b7}
 <nav>
 <a href="music_city_locker.html">← MUSIC CITY LOCKER</a>
 <a href="certify_record.html">🪪 RECORD PASSPORT</a>
+<a href="tezos_contract_deploy.html">🏗️ DEPLOY CONTRACTS</a>
 </nav>
 <strong>TEZOS / KUKAI MINT LAB</strong>
 </header>
@@ -48,8 +49,8 @@ a.out{color:#6ee7b7}
 <section class="hero">
 <h1>🟢 Tezos Testnet Mint Prototype</h1>
 <p>Connect a Tezos wallet through the current octez.connect/Taquito wallet flow, prepare a Record Passport-backed NFT, and test-mint it on Shadownet.</p>
-<div class="warning">
-<strong>TESTNET ONLY:</strong> this prototype uses Tezos' public tutorial FA2 mint contract on Shadownet. It proves wallet connection, metadata and on-chain minting, but it is not our final Music City production contract.
+<div class="warning" id="contractNotice">
+<strong>TESTNET ONLY:</strong> checking for Music City's Shadownet contracts…
 </div>
 </section>
 
@@ -117,11 +118,7 @@ a.out{color:#6ee7b7}
 <textarea id="metadataPreview" readonly placeholder="Prepare metadata to preview the Tezos token document."></textarea>
 
 <h2>5. Test Mint</h2>
-<p class="small">
-The Shadownet tutorial contract is:
-<span class="hash">KT1NbqYinUijW68V3fxboo4EzQPFgRcdfaYQ</span>.
-The wallet must approve the transaction. Music City never asks for or stores your seed phrase/private key.
-</p>
+<p class="small" id="mintContractInfo"></p>
 <button id="mintButton" disabled>MINT TEST NFT ON TEZOS</button>
 <div id="status" class="status">Connect a wallet and prepare valid metadata.</div>
 <div id="result"></div>
@@ -185,6 +182,37 @@ const audioPreview = document.getElementById("audioPreview");
 
 function setStatus(message) {
   status.textContent = message;
+}
+
+function activeContractAddress() {
+  return window.MusicCityTezos.contractForAssetClass(
+    assetClass.value
+  );
+}
+
+function refreshContractRouting() {
+  const address = activeContractAddress();
+  const own =
+    window.MusicCityTezos.usingMusicCityContract(
+      assetClass.value
+    );
+
+  document.getElementById("contractNotice").innerHTML =
+    own
+      ? "<strong>MUSIC CITY SHADOWNET CONTRACT ACTIVE:</strong> " +
+        (assetClass.value === "video-edition"
+          ? "video/collectible editions will mint through Music City's transferable FA2 contract."
+          : "Certified Record test credentials will mint through Music City's non-transferable FA2 contract.")
+      : "<strong>FALLBACK TEST CONTRACT:</strong> Music City's own contract for this asset class has not been originated on this device yet, so the public Tezos tutorial contract is still selected.";
+
+  document.getElementById("mintContractInfo").innerHTML =
+    "Active Shadownet contract: <span class=\"hash\">" +
+    address +
+    "</span>.<br>" +
+    (own
+      ? "This is a Music City-controlled test contract."
+      : "Open <a class=\"out\" href=\"tezos_contract_deploy.html\">Deploy Contracts</a> to replace the public tutorial fallback.") +
+    "<br>The wallet must approve the transaction. Music City never asks for or stores your seed phrase/private key.";
 }
 
 function short(value) {
@@ -287,6 +315,7 @@ function choosePassport() {
 }
 
 assetClass.addEventListener("change", () => {
+  refreshContractRouting();
   if (selectedPassport) {
     editionTitle.value = assetClass.value === "video-edition"
       ? selectedPassport.title + " — Official Visual Edition"
@@ -429,8 +458,8 @@ async function predictedTokenId(contract) {
   return "";
 }
 
-async function mintOnTutorialContract(passport, media) {
-  const contractAddress = config.tutorialMintContract;
+async function mintOnSelectedContract(passport, media) {
+  const contractAddress = activeContractAddress();
   const contract = await Tezos.wallet.at(contractAddress);
   const tokenId = await predictedTokenId(contract);
 
@@ -478,7 +507,7 @@ mintButton.addEventListener("click", async () => {
         "tezos-shadownet",
         {
           mint: async passport =>
-            mintOnTutorialContract(passport, media)
+            mintOnSelectedContract(passport, media)
         }
       );
 
@@ -488,8 +517,15 @@ mintButton.addEventListener("click", async () => {
           "tezos-shadownet"
         );
 
+      const ownContract =
+        window.MusicCityTezos.usingMusicCityContract(
+          "certified-record"
+        );
+
       setStatus(
-        "Testnet mint confirmed. This record is now Music City Testnet Certified. Mainnet certification will require our production FA2 contract."
+        ownContract
+          ? "Music City Shadownet Certified Record mint confirmed on our non-transferable test contract. Mainnet certification still requires the approved production contract."
+          : "Fallback tutorial-contract mint confirmed. Deploy Music City's own Shadownet contracts before treating this as our full test certification proof."
       );
 
       result.innerHTML =
@@ -501,7 +537,7 @@ mintButton.addEventListener("click", async () => {
         certificate.chain.explorerUrl +
         '">View confirmed transaction on TzKT ↗</a>';
     } else {
-      const minted = await mintOnTutorialContract(
+      const minted = await mintOnSelectedContract(
         selectedPassport,
         media
       );
@@ -530,8 +566,15 @@ mintButton.addEventListener("click", async () => {
         explorerUrl: minted.explorerUrl
       });
 
+      const ownVideoContract =
+        window.MusicCityTezos.usingMusicCityContract(
+          "video-edition"
+        );
+
       setStatus(
-        "Video Edition mint confirmed on Shadownet and added to your Music City Locker."
+        ownVideoContract
+          ? "Official Video Edition mint confirmed through Music City's Shadownet collectible contract and added to your Locker."
+          : "Video Edition minted through the public tutorial fallback and added to your Locker. Deploy Music City's collectible contract for the full test path."
       );
 
       result.innerHTML =
@@ -551,6 +594,7 @@ mintButton.addEventListener("click", async () => {
 });
 
 window.MCE.load();
+refreshContractRouting();
 await loadPassports();
 await refreshWallet();
 </script>
