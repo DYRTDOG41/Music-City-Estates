@@ -3,6 +3,9 @@
   "functions": {
     "api/music/generate.js": {
       "maxDuration": 60
+    },
+    "api/music/reference.js": {
+      "maxDuration": 60
     }
   }
 }
