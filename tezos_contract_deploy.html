@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tezos Contract Deployment | Music City Estates</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:
+radial-gradient(circle at 15% 10%,rgba(52,211,153,.13),transparent 28%),
+radial-gradient(circle at 85% 15%,rgba(34,211,238,.10),transparent 30%),
+#05070d;color:#fff;font-family:Arial,sans-serif}
+header{position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;gap:12px;align-items:center;padding:15px 18px;background:#05070df2;border-bottom:1px solid #34d399}
+nav{display:flex;gap:8px;flex-wrap:wrap}
+nav a{color:#fff;text-decoration:none;padding:9px 11px;border:1px solid #34d399;border-radius:9px;background:#071510}
+.wrap{width:min(1080px,94%);margin:24px auto 60px}
+.hero,.panel{border:1px solid #294943;border-radius:18px;background:#081411df;box-shadow:0 14px 35px #0005}
+.hero{padding:22px}
+.hero h1{margin:0 0 8px;color:#6ee7b7}
+.warning{margin-top:14px;padding:12px;border:1px solid #a16207;border-radius:10px;background:#291c05;color:#fde68a;line-height:1.5}
+.stats{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
+.pill{padding:8px 11px;border-radius:18px;border:1px solid #315a51;background:#0c211c}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px}
+.panel{padding:19px}
+.panel h2{margin:0 0 8px}
+.contract{padding:15px;margin-top:12px;border:1px solid #31554e;border-radius:13px;background:#07110f}
+.badge{display:inline-block;padding:5px 8px;border-radius:9px;background:#15382f;color:#a7f3d0;font-size:11px;font-weight:900;margin-right:5px}
+.badge.pending{background:#292524;color:#d6d3d1}
+.address,.hash{font-family:monospace;font-size:11px;word-break:break-all;color:#a7f3d0}
+.small{font-size:12px;color:#9ab0ac;line-height:1.55}
+button{width:100%;padding:12px;margin-top:12px;border:1px solid #34d399;border-radius:9px;background:#34d399;color:#03110d;font-weight:900;cursor:pointer}
+button.secondary{background:#0c1b18;color:#fff}
+button:disabled{opacity:.45;cursor:not-allowed}
+.status{margin-top:14px;padding:12px;border:1px solid #225b4b;border-radius:10px;background:#06251b;color:#b7f7dc;line-height:1.5}
+a.out{color:#6ee7b7}
+.ready{border-color:#34d399;box-shadow:0 0 22px rgba(52,211,153,.12)}
+@media(max-width:800px){header{align-items:flex-start;flex-direction:column}.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+<nav>
+<a href="music_city_locker.html">← LOCKER</a>
+<a href="tezos_mint_lab.html">🟢 MINT LAB</a>
+</nav>
+<strong>MUSIC CITY TEZOS DEPLOYMENT</strong>
+</header>
+
+<div class="wrap">
+<section class="hero">
+<h1>🏗️ Originate Music City's Own FA2 Contracts</h1>
+<p>This deploys the compiler-verified Music City contracts to Tezos Shadownet using your connected wallet. Your wallet signs each origination; Music City never sees or stores your seed phrase or private key.</p>
+
+<div class="stats">
+<div class="pill">Network: <b>Shadownet</b></div>
+<div class="pill">Build: <b id="buildStatus">Loading…</b></div>
+<div class="pill">Wallet: <b id="walletStatus">Not connected</b></div>
+</div>
+
+<div class="warning">
+<strong>TESTNET ADMIN:</strong> for this prototype, the wallet that originates the contracts becomes their administrator. For Mainnet, we should replace this with a Music City-controlled multisig/admin structure before production certification.
+</div>
+</section>
+
+<div class="grid">
+<section class="panel">
+<h2>1. Wallet</h2>
+<div id="walletAddress" class="address"></div>
+<div id="walletBalance" class="small">Connect a Tezos/Kukai-compatible wallet.</div>
+<button id="connectButton">CONNECT TEZOS / KUKAI WALLET</button>
+<button id="disconnectButton" class="secondary" disabled>DISCONNECT</button>
+<p class="small">
+Shadownet tez has no real-world value. If your testnet balance is too low, use the official
+<a class="out" href="https://faucet.shadownet.teztnets.com/" target="_blank" rel="noopener">Shadownet faucet ↗</a>.
+</p>
+</section>
+
+<section class="panel">
+<h2>2. Verified SmartPy Build</h2>
+<div class="small">Source commit</div>
+<div id="sourceCommit" class="hash">—</div>
+<div class="small" style="margin-top:9px">SmartPy</div>
+<div id="smartPyVersion" class="hash">—</div>
+<div class="small" style="margin-top:9px">Build source</div>
+<div class="hash">tezos-builds branch</div>
+<button id="refreshBuild" class="secondary">REFRESH COMPILED BUILD</button>
+</section>
+
+<section class="panel" id="certifiedPanel">
+<h2>3. Certified Record Contract</h2>
+<p class="small">Non-transferable provenance credential. Only the admin wallet can mint. Holders cannot sell or transfer the certification credential.</p>
+<div id="certifiedBadges">
+<span class="badge pending">NOT DEPLOYED</span>
+</div>
+<div id="certifiedAddress" class="address"></div>
+<button id="deployCertified" disabled>ORIGINATE CERTIFIED RECORD CONTRACT</button>
+<div id="certifiedLinks"></div>
+</section>
+
+<section class="panel" id="collectiblesPanel">
+<h2>4. Collectibles / Video Contract</h2>
+<p class="small">Transferable FA2 NFTs for official videos, digital vinyl, plaques, cosmetics, memorabilia, and other fan assets tied to Record Passports.</p>
+<div id="collectibleBadges">
+<span class="badge pending">NOT DEPLOYED</span>
+</div>
+<div id="collectiblesAddress" class="address"></div>
+<button id="deployCollectibles" disabled>ORIGINATE COLLECTIBLES CONTRACT</button>
+<div id="collectibleLinks"></div>
+</section>
+</div>
+
+<div id="status" class="status">Loading the latest compiler-verified contract build…</div>
+
+<section class="panel" style="margin-top:18px">
+<h2>After Both Contracts Are Deployed</h2>
+<p class="small">The Tezos Mint Lab will automatically use these Music City KT1 addresses on this device instead of the public tutorial contract. Certified Record test mints will go to the non-transferable contract; video/collectible editions will go to the transferable contract.</p>
+<button id="openMintLab" disabled>OPEN MINT LAB WITH MUSIC CITY CONTRACTS</button>
+</section>
+</div>
+
+<script src="music_city_tezos.js"></script>
+<script type="module">
+globalThis.global = globalThis;
+const { Buffer } = await import("https://esm.sh/buffer@6.0.3");
+globalThis.Buffer = Buffer;
+
+const [
+  { TezosToolkit },
+  { BeaconWallet },
+  { NetworkType },
+  { Parser }
+] = await Promise.all([
+  import("https://esm.sh/@taquito/taquito@25.0.0"),
+  import("https://esm.sh/@taquito/beacon-wallet@25.0.0"),
+  import("https://esm.sh/@tezos-x/octez.connect-types@5.0.4"),
+  import("https://esm.sh/@taquito/michel-codec@25.0.0")
+]);
+
+const config = window.MusicCityTezos.CONFIG;
+const Tezos = new TezosToolkit(config.rpcUrl);
+const parser = new Parser();
+
+let wallet = null;
+let walletAddress = "";
+let manifest = null;
+
+const connectButton = document.getElementById("connectButton");
+const disconnectButton = document.getElementById("disconnectButton");
+const deployCertified = document.getElementById("deployCertified");
+const deployCollectibles = document.getElementById("deployCollectibles");
+const openMintLab = document.getElementById("openMintLab");
+const status = document.getElementById("status");
+
+function setStatus(message) {
+  status.textContent = message;
+}
+
+function short(value) {
+  const text = String(value || "");
+  return text.length > 18
+    ? text.slice(0, 9) + "…" + text.slice(-7)
+    : text;
+}
+
+async function fetchText(url) {
+  const response = await fetch(url, { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error(
+      "Could not load compiled contract build (" +
+      response.status + ")."
+    );
+  }
+  return response.text();
+}
+
+async function loadManifest() {
+  setStatus("Loading the compiler-verified Tezos build…");
+
+  const url = config.buildBaseUrl + "/manifest.json";
+  const response = await fetch(url, { cache: "no-store" });
+
+  if (!response.ok) {
+    manifest = null;
+    document.getElementById("buildStatus").textContent = "Not published yet";
+    document.getElementById("sourceCommit").textContent = "—";
+    document.getElementById("smartPyVersion").textContent = "—";
+    updateButtons();
+    throw new Error(
+      "The public Michelson build has not been published yet. Once the publish workflow runs on main, refresh this page."
+    );
+  }
+
+  manifest = await response.json();
+  document.getElementById("buildStatus").textContent = "Compiler verified";
+  document.getElementById("sourceCommit").textContent =
+    manifest.sourceCommit || "unknown";
+  document.getElementById("smartPyVersion").textContent =
+    manifest.smartPyVersion || "unknown";
+
+  setStatus(
+    "Verified build loaded. Connect your wallet to originate Music City's Shadownet contracts."
+  );
+  updateButtons();
+}
+
+async function connectWallet() {
+  try {
+    setStatus("Opening Tezos wallet connection…");
+
+    const newWallet = new BeaconWallet({
+      name: "Music City Estates — Contract Deployment",
+      network: {
+        type: NetworkType.SHADOWNET
+      }
+    });
+
+    if (newWallet.client && newWallet.client.beaconIDB) {
+      await newWallet.client.beaconIDB.initDB().catch(() => {});
+    }
+
+    await newWallet.requestPermissions();
+
+    wallet = newWallet;
+    Tezos.setWalletProvider(wallet);
+    await refreshWallet();
+
+    setStatus(
+      "Wallet connected. This wallet will be the Shadownet admin for any contract it originates here."
+    );
+  } catch (error) {
+    setStatus(error.message || "Wallet connection was not completed.");
+  }
+}
+
+async function refreshWallet() {
+  if (!wallet) {
+    walletAddress = "";
+    document.getElementById("walletStatus").textContent = "Not connected";
+    document.getElementById("walletAddress").textContent = "";
+    document.getElementById("walletBalance").textContent =
+      "Connect a Tezos/Kukai-compatible wallet.";
+    disconnectButton.disabled = true;
+    updateButtons();
+    return;
+  }
+
+  walletAddress = await wallet.getPKH();
+  const balance = await Tezos.tz.getBalance(walletAddress);
+
+  document.getElementById("walletStatus").textContent =
+    short(walletAddress);
+  document.getElementById("walletAddress").textContent =
+    walletAddress;
+  document.getElementById("walletBalance").textContent =
+    "Shadownet balance: " +
+    balance.div(1000000).toFormat(3) +
+    " tez";
+
+  disconnectButton.disabled = false;
+  updateButtons();
+}
+
+function deploymentFor(kind) {
+  return window.MusicCityTezos.getDeployment(kind);
+}
+
+function renderDeployment(
+  kind,
+  badgesId,
+  addressId,
+  linksId,
+  panelId
+) {
+  const deployment = deploymentFor(kind);
+  const badges = document.getElementById(badgesId);
+  const address = document.getElementById(addressId);
+  const links = document.getElementById(linksId);
+  const panel = document.getElementById(panelId);
+
+  if (!deployment) {
+    badges.innerHTML =
+      '<span class="badge pending">NOT DEPLOYED</span>';
+    address.textContent = "";
+    links.innerHTML = "";
+    panel.classList.remove("ready");
+    return;
+  }
+
+  badges.innerHTML =
+    '<span class="badge">✓ SHADOWNET DEPLOYED</span>' +
+    '<span class="badge">MUSIC CITY CONTRACT</span>';
+  address.textContent = deployment.address;
+  links.innerHTML =
+    '<p><a class="out" target="_blank" rel="noopener" href="' +
+    window.MusicCityTezos.explorerContractUrl(deployment.address) +
+    '">View contract on TzKT ↗</a></p>';
+  panel.classList.add("ready");
+}
+
+function renderDeployments() {
+  renderDeployment(
+    "certifiedRecord",
+    "certifiedBadges",
+    "certifiedAddress",
+    "certifiedLinks",
+    "certifiedPanel"
+  );
+
+  renderDeployment(
+    "collectibles",
+    "collectibleBadges",
+    "collectiblesAddress",
+    "collectibleLinks",
+    "collectiblesPanel"
+  );
+
+  updateButtons();
+}
+
+function updateButtons() {
+  const canDeploy =
+    Boolean(wallet && walletAddress && manifest);
+
+  const certified = deploymentFor("certifiedRecord");
+  const collectibles = deploymentFor("collectibles");
+
+  deployCertified.disabled =
+    !canDeploy || Boolean(certified);
+  deployCertified.textContent =
+    certified
+      ? "✓ CERTIFIED RECORD CONTRACT DEPLOYED"
+      : "ORIGINATE CERTIFIED RECORD CONTRACT";
+
+  deployCollectibles.disabled =
+    !canDeploy || Boolean(collectibles);
+  deployCollectibles.textContent =
+    collectibles
+      ? "✓ COLLECTIBLES CONTRACT DEPLOYED"
+      : "ORIGINATE COLLECTIBLES CONTRACT";
+
+  openMintLab.disabled =
+    !(certified && collectibles);
+}
+
+function injectAdmin(storageValue) {
+  const copy =
+    typeof structuredClone === "function"
+      ? structuredClone(storageValue)
+      : JSON.parse(JSON.stringify(storageValue));
+
+  if (
+    !copy ||
+    copy.prim !== "Pair" ||
+    !Array.isArray(copy.args) ||
+    !copy.args[0] ||
+    typeof copy.args[0].string !== "string"
+  ) {
+    throw new Error(
+      "Compiled storage shape was not recognized. Deployment stopped before signing."
+    );
+  }
+
+  copy.args[0].string = walletAddress;
+  return copy;
+}
+
+async function loadCompiled(kind) {
+  const contractUrl =
+    window.MusicCityTezos.buildUrl(kind, "contract.tz");
+  const storageUrl =
+    window.MusicCityTezos.buildUrl(kind, "storage.tz");
+
+  const [codeText, storageText] = await Promise.all([
+    fetchText(contractUrl),
+    fetchText(storageUrl)
+  ]);
+
+  const code = parser.parseScript(codeText);
+  const rawStorage =
+    parser.parseMichelineExpression(storageText);
+
+  if (!code || !rawStorage) {
+    throw new Error("Taquito could not parse the compiled SmartPy build.");
+  }
+
+  return {
+    code: code,
+    init: injectAdmin(rawStorage)
+  };
+}
+
+async function originate(kind, label) {
+  if (!wallet || !walletAddress) {
+    throw new Error("Connect your Tezos wallet first.");
+  }
+  if (!manifest) {
+    throw new Error("Load the compiled build first.");
+  }
+
+  setStatus(
+    "Loading " + label +
+    " Michelson and preparing the wallet origination…"
+  );
+
+  const compiled = await loadCompiled(kind);
+
+  setStatus(
+    "Wallet approval required: originate " +
+    label + " on Shadownet."
+  );
+
+  const op = await Tezos.wallet
+    .originate({
+      code: compiled.code,
+      init: compiled.init,
+      balance: 0
+    })
+    .send();
+
+  setStatus(
+    "Origination submitted. Waiting for two confirmations: " +
+    short(op.opHash)
+  );
+
+  await op.confirmation(2);
+  const contract = await op.contract();
+
+  window.MusicCityTezos.saveDeployment(kind, {
+    address: contract.address,
+    network: "shadownet",
+    transactionId: op.opHash,
+    explorerUrl:
+      window.MusicCityTezos.explorerOperationUrl(op.opHash),
+    sourceCommit: manifest.sourceCommit,
+    deployedAt: new Date().toISOString()
+  });
+
+  renderDeployments();
+
+  setStatus(
+    label + " originated successfully at " +
+    contract.address + "."
+  );
+
+  return contract.address;
+}
+
+connectButton.addEventListener("click", connectWallet);
+
+disconnectButton.addEventListener("click", async () => {
+  if (wallet && wallet.client) {
+    await wallet.client.clearActiveAccount();
+  }
+  wallet = null;
+  await refreshWallet();
+  setStatus("Wallet disconnected.");
+});
+
+document.getElementById("refreshBuild")
+  .addEventListener("click", async () => {
+    try {
+      await loadManifest();
+    } catch (error) {
+      setStatus(error.message);
+    }
+  });
+
+deployCertified.addEventListener("click", async () => {
+  deployCertified.disabled = true;
+  try {
+    await originate(
+      "certifiedRecord",
+      "Music City Certified Record contract"
+    );
+  } catch (error) {
+    setStatus(error.message || "Certified Record origination failed.");
+  } finally {
+    updateButtons();
+  }
+});
+
+deployCollectibles.addEventListener("click", async () => {
+  deployCollectibles.disabled = true;
+  try {
+    await originate(
+      "collectibles",
+      "Music City Collectibles / Video contract"
+    );
+  } catch (error) {
+    setStatus(error.message || "Collectibles origination failed.");
+  } finally {
+    updateButtons();
+  }
+});
+
+openMintLab.addEventListener("click", () => {
+  window.location.href = "tezos_mint_lab.html";
+});
+
+renderDeployments();
+
+try {
+  await loadManifest();
+} catch (error) {
+  setStatus(error.message);
+}
+
+await refreshWallet();
+</script>
+</body>
+</html>

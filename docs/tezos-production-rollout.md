@@ -88,3 +88,34 @@ files for review.
 
 A contract change is not considered ready for Shadownet origination until this
 workflow passes.
+
+
+## Current Shadownet deployment path
+
+The two Music City SmartPy contracts have passed the automated compiler/test
+workflow with SmartPy 0.24.1. The tests prove that:
+
+- only the administrator can mint Certified Record credentials;
+- Certified Record credentials reject transfers with the FA2 no-transfer policy;
+- only the administrator can mint official collectibles/video editions;
+- collectible/video NFTs can be transferred by their owner.
+
+After a contract change reaches `main`, the `Publish Tezos Contract Build`
+workflow recompiles both contracts and publishes their Michelson code, initial
+storage, compiler logs, and a build manifest to the `tezos-builds` branch.
+
+The browser page `tezos_contract_deploy.html` can then:
+
+1. connect a Tezos/Kukai-compatible wallet on Shadownet;
+2. load the exact compiler-published Michelson build;
+3. replace the test-scenario administrator in initial storage with the connected
+   wallet for the Shadownet prototype;
+4. ask the wallet to sign the Certified Record contract origination;
+5. ask the wallet to sign the Collectibles / Video contract origination;
+6. save the resulting KT1 addresses locally;
+7. route future Mint Lab transactions to the Music City contracts rather than
+   the public tutorial fallback.
+
+The Shadownet administrator-wallet model is for testing only. Mainnet deployment
+must use the approved Music City administrative/multisig structure and receive a
+separate security review before final Music City Certified status is enabled.

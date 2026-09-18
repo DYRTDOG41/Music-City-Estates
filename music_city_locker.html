@@ -32,6 +32,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <a href="artist_catalog.html">← ARTIST CATALOG</a>
 <a href="certify_record.html">🪪 RECORD PASSPORT</a>
 <a href="tezos_mint_lab.html">🟢 TEZOS / KUKAI MINT LAB</a>
+<a href="tezos_contract_deploy.html">🏗️ TEZOS CONTRACTS</a>
 </nav>
 <strong>🔐 MUSIC CITY LOCKER</strong>
 </header>
@@ -44,8 +45,15 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <div class="pill">Record Passports: <b id="certCount">0</b></div>
 <div class="pill">Music City Certified: <b id="mintCount">0</b></div>
 <div class="pill">Wallet Layer: <b>Tezos Testnet Ready</b></div>
+<div class="pill">MCE Contracts: <b id="contractStatus">Fallback</b></div>
 <div class="pill">Collectibles: <b id="itemCount">0</b></div>
 </div>
+</section>
+
+<section class="card" id="contractCard" style="margin-top:18px">
+<h2>🏗️ Music City Tezos Contracts</h2>
+<div id="contractDetails" class="meta"></div>
+<button id="contractButton">DEPLOY MUSIC CITY CONTRACTS</button>
 </section>
 
 <h2 style="margin-top:24px">Record Passports</h2>
@@ -56,8 +64,43 @@ button:disabled{opacity:.45;cursor:not-allowed}
 </div>
 
 <script src="music_city_assets.js"></script>
+<script src="music_city_tezos.js"></script>
 <script>
+function renderContractStatus() {
+  const deployments = window.MusicCityTezos.loadDeployments();
+  const certified = deployments.certifiedRecord;
+  const collectibles = deployments.collectibles;
+  const both = Boolean(certified && collectibles);
+
+  document.getElementById("contractStatus").textContent =
+    both ? "Music City KT1s Active" : "Tutorial Fallback";
+
+  const details = document.getElementById("contractDetails");
+  const button = document.getElementById("contractButton");
+
+  if (both) {
+    details.innerHTML =
+      '<b>Certified Record:</b> <span class="hash">' +
+      certified.address +
+      '</span><br><b>Collectibles / Video:</b> <span class="hash">' +
+      collectibles.address +
+      '</span><br>New test mints route through Music City\'s own Shadownet contracts on this device.';
+    button.textContent = "✓ MUSIC CITY SHADOWNET CONTRACTS ACTIVE";
+    button.onclick = () => {
+      window.location.href = "tezos_contract_deploy.html";
+    };
+  } else {
+    details.innerHTML =
+      'The Mint Lab is still using the public tutorial FA2 fallback for any contract that has not been originated. Deploy Music City\'s compiler-verified contracts to complete the full Shadownet path.';
+    button.textContent = "🏗️ DEPLOY MUSIC CITY CONTRACTS";
+    button.onclick = () => {
+      window.location.href = "tezos_contract_deploy.html";
+    };
+  }
+}
+
 async function renderLocker() {
+  renderContractStatus();
   const certificates = await window.MusicCityAssets.listCertificates();
   const items = await window.MusicCityAssets.listItems();
   const collectibles = items.filter(item =>
@@ -82,13 +125,26 @@ async function renderLocker() {
     const card = document.createElement("article");
     card.className = "card";
     const minted = cert.chain && cert.chain.status === "minted";
+    const mainnet =
+      minted &&
+      String(cert.chain.network || "").toLowerCase() === "mainnet";
+    const testnet = minted && !mainnet;
 
     card.innerHTML =
       '<div><span class="badge">' +
-      (minted ? '✓ MUSIC CITY CERTIFIED' : 'RECORD PASSPORT READY') +
+      (mainnet
+        ? '✓ MUSIC CITY CERTIFIED'
+        : testnet
+          ? '✓ MUSIC CITY TESTNET CERTIFIED'
+          : 'RECORD PASSPORT READY') +
       '</span>' +
       '<span class="badge ' + (minted ? '' : 'off') + '">' +
-      (minted ? 'ON-CHAIN' : 'NOT CERTIFIED ON-CHAIN') + '</span></div>' +
+      (mainnet
+        ? 'MAINNET'
+        : testnet
+          ? String(cert.chain.network || 'TESTNET').toUpperCase()
+          : 'NOT CERTIFIED ON-CHAIN') +
+      '</span></div>' +
       '<h2>' + cert.title + '</h2>' +
       '<div class="meta">Artist: ' + cert.artist + '</div>' +
       '<div class="meta">Certificate: ' + cert.id + '</div>' +
@@ -99,7 +155,6 @@ async function renderLocker() {
 
     const button = document.createElement("button");
     if (minted) {
-      const testnet = String(cert.chain.network || "").toLowerCase() !== "mainnet";
       button.textContent = testnet
         ? "✓ TEZOS TESTNET CERTIFIED"
         : "✓ MUSIC CITY CERTIFIED";

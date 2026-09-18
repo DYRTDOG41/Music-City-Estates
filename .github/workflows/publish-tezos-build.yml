@@ -1,0 +1,83 @@
+name: Publish Tezos Contract Build
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "contracts/**"
+      - ".github/workflows/publish-tezos-build.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: Compile and publish Shadownet-ready Michelson
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install stable SmartPy
+        run: python -m pip install --upgrade pip smartpy-tezos==0.24.1
+
+      - name: Compile both contracts
+        env:
+          SMARTPY_OUTPUT_DIR: build
+        run: |
+          python contracts/music_city_certified_records.py
+          python contracts/music_city_collectibles.py
+
+      - name: Stage public build
+        run: |
+          rm -rf /tmp/music-city-tezos-build
+          mkdir -p /tmp/music-city-tezos-build/certified
+          mkdir -p /tmp/music-city-tezos-build/collectibles
+
+          cp build/MusicCityCertifiedRecords/step_001_cont_0_contract.tz             /tmp/music-city-tezos-build/certified/contract.tz
+          cp build/MusicCityCertifiedRecords/step_001_cont_0_storage.tz             /tmp/music-city-tezos-build/certified/storage.tz
+          cp build/MusicCityCertifiedRecords/log.txt             /tmp/music-city-tezos-build/certified/log.txt
+
+          cp build/MusicCityCollectibles/step_001_cont_0_contract.tz             /tmp/music-city-tezos-build/collectibles/contract.tz
+          cp build/MusicCityCollectibles/step_001_cont_0_storage.tz             /tmp/music-city-tezos-build/collectibles/storage.tz
+          cp build/MusicCityCollectibles/log.txt             /tmp/music-city-tezos-build/collectibles/log.txt
+
+          cat > /tmp/music-city-tezos-build/manifest.json <<EOF
+          {
+            "network": "shadownet",
+            "smartPyVersion": "0.24.1",
+            "sourceCommit": "${GITHUB_SHA}",
+            "certifiedRecord": {
+              "contract": "certified/contract.tz",
+              "storage": "certified/storage.tz",
+              "transferPolicy": "no-transfer"
+            },
+            "collectibles": {
+              "contract": "collectibles/contract.tz",
+              "storage": "collectibles/storage.tz",
+              "transferPolicy": "owner-or-operator-transfer"
+            }
+          }
+          EOF
+
+      - name: Publish compiled build branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git switch --orphan tezos-builds-publish
+          git rm -rf . || true
+          git clean -fdx
+          cp -R /tmp/music-city-tezos-build/. .
+
+          git add .
+          git commit -m "Publish Tezos contract build from ${GITHUB_SHA}"
+          git push --force origin HEAD:tezos-builds

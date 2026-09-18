@@ -6,12 +6,118 @@
     rpcUrl: "https://rpc.shadownet.teztnets.com",
     explorerBase: "https://shadownet.tzkt.io",
     tutorialMintContract: "KT1NbqYinUijW68V3fxboo4EzQPFgRcdfaYQ",
+    deploymentKey: "mce-tezos-shadownet-contracts",
+    buildBaseUrl:
+      "https://raw.githubusercontent.com/DYRTDOG41/Music-City-Estates/tezos-builds",
     symbol: "MCE"
   };
 
   function clean(value, fallback) {
     var text = String(value == null ? "" : value).trim();
     return text || (fallback || "");
+  }
+
+  var memoryDeployments = {};
+
+  function deploymentStorage() {
+    try {
+      if (root.localStorage) return root.localStorage;
+    } catch (error) {}
+
+    return {
+      getItem: function (key) {
+        return Object.prototype.hasOwnProperty.call(memoryDeployments, key)
+          ? memoryDeployments[key]
+          : null;
+      },
+      setItem: function (key, value) {
+        memoryDeployments[key] = String(value);
+      }
+    };
+  }
+
+  function loadDeployments() {
+    var raw = deploymentStorage().getItem(CONFIG.deploymentKey);
+    if (!raw) {
+      return {
+        network: CONFIG.network,
+        certifiedRecord: null,
+        collectibles: null
+      };
+    }
+
+    try {
+      var parsed = JSON.parse(raw);
+      return {
+        network: clean(parsed.network, CONFIG.network),
+        certifiedRecord: parsed.certifiedRecord || null,
+        collectibles: parsed.collectibles || null
+      };
+    } catch (error) {
+      return {
+        network: CONFIG.network,
+        certifiedRecord: null,
+        collectibles: null
+      };
+    }
+  }
+
+  function saveDeployment(kind, deployment) {
+    if (kind !== "certifiedRecord" && kind !== "collectibles") {
+      throw new Error("Unknown Music City Tezos contract type.");
+    }
+
+    if (!deployment || !/^KT1/i.test(clean(deployment.address))) {
+      throw new Error("A valid originated Tezos KT1 contract address is required.");
+    }
+
+    var current = loadDeployments();
+    current.network = clean(deployment.network, CONFIG.network);
+    current[kind] = {
+      address: clean(deployment.address),
+      network: clean(deployment.network, CONFIG.network),
+      transactionId: clean(deployment.transactionId),
+      explorerUrl: clean(deployment.explorerUrl),
+      sourceCommit: clean(deployment.sourceCommit),
+      deployedAt: deployment.deployedAt || new Date().toISOString()
+    };
+
+    deploymentStorage().setItem(
+      CONFIG.deploymentKey,
+      JSON.stringify(current)
+    );
+
+    return loadDeployments();
+  }
+
+  function getDeployment(kind) {
+    var deployments = loadDeployments();
+    return deployments[kind] || null;
+  }
+
+  function contractForAssetClass(assetClass) {
+    var deployments = loadDeployments();
+    var target =
+      clean(assetClass) === "video-edition"
+        ? deployments.collectibles
+        : deployments.certifiedRecord;
+
+    return target && target.address
+      ? target.address
+      : CONFIG.tutorialMintContract;
+  }
+
+  function usingMusicCityContract(assetClass) {
+    var address = contractForAssetClass(assetClass);
+    return address !== CONFIG.tutorialMintContract;
+  }
+
+  function buildUrl(kind, fileName) {
+    var folder =
+      kind === "collectibles"
+        ? "collectibles"
+        : "certified";
+    return CONFIG.buildBaseUrl + "/" + folder + "/" + fileName;
   }
 
   function isMediaUri(value) {
@@ -185,13 +291,24 @@
     return CONFIG.explorerBase + "/" + encodeURIComponent(clean(opHash));
   }
 
+  function explorerContractUrl(address) {
+    return CONFIG.explorerBase + "/" + encodeURIComponent(clean(address));
+  }
+
   root.MusicCityTezos = {
     CONFIG: CONFIG,
+    loadDeployments: loadDeployments,
+    saveDeployment: saveDeployment,
+    getDeployment: getDeployment,
+    contractForAssetClass: contractForAssetClass,
+    usingMusicCityContract: usingMusicCityContract,
+    buildUrl: buildUrl,
     isMediaUri: isMediaUri,
     buildTzip21Metadata: buildTzip21Metadata,
     buildDirectTokenFields: buildDirectTokenFields,
     validateMintPreparation: validateMintPreparation,
-    explorerOperationUrl: explorerOperationUrl
+    explorerOperationUrl: explorerOperationUrl,
+    explorerContractUrl: explorerContractUrl
   };
 
   if (typeof module !== "undefined" && module.exports) {
