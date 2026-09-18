@@ -1,0 +1,33 @@
+Creating contract KT1TezoooozzSmartPyzzSTATiCzzzwwBFA1
+ -> (Pair "tz1L9egFQzmTmniQTxv2bLcWxfYh8rZnDmo8" (Pair {} (Pair {} (Pair 0 (Pair {} {})))))
+file build/MusicCityCertifiedRecords/step_001_cont_0_storage.tz
+file build/MusicCityCertifiedRecords/step_001_cont_0_storage.json
+file build/MusicCityCertifiedRecords/step_001_cont_0_storage.py
+file build/MusicCityCertifiedRecords/step_001_cont_0_types.py
+file build/MusicCityCertifiedRecords/step_001_cont_0_contract.tz contract MusicCityCertifiedRecords
+file build/MusicCityCertifiedRecords/step_001_cont_0_contract.json contract MusicCityCertifiedRecords
+Comment...
+ h2: Only the Music City administrator can mint
+file build/MusicCityCertifiedRecords/step_003_cont_0_params.py
+file build/MusicCityCertifiedRecords/step_003_cont_0_params.tz
+file build/MusicCityCertifiedRecords/step_003_cont_0_params.json
+Executing mint([sp.record(to_ = sp.address('tz1gr5pFhstHkCGNKgTP58P8ZR8svMowhRco'), metadata = {'decimals' : sp.bytes('0x30'), 'name' : sp.bytes('0x4d75736963204369747920436572746966696564205265636f7264'), 'symbol' : sp.bytes('0x4d4345')})])...
+Expected error: 'FA2_NOT_ADMIN'
+Comment...
+ h2: Administrator mints the credential to the artist
+file build/MusicCityCertifiedRecords/step_005_cont_0_params.py
+file build/MusicCityCertifiedRecords/step_005_cont_0_params.tz
+file build/MusicCityCertifiedRecords/step_005_cont_0_params.json
+Executing mint([sp.record(to_ = sp.address('tz1gr5pFhstHkCGNKgTP58P8ZR8svMowhRco'), metadata = {'decimals' : sp.bytes('0x30'), 'name' : sp.bytes('0x4d75736963204369747920436572746966696564205265636f7264'), 'symbol' : sp.bytes('0x4d4345')})])...
+ -> (Pair "tz1L9egFQzmTmniQTxv2bLcWxfYh8rZnDmo8" (Pair {Elt 0 "tz1gr5pFhstHkCGNKgTP58P8ZR8svMowhRco"} (Pair {} (Pair 1 (Pair {} {Elt 0 (Pair 0 {Elt "decimals" 0x30; Elt "name" 0x4d75736963204369747920436572746966696564205265636f7264; Elt "symbol" 0x4d4345})})))))
+Verifying sp.contract_data(0).ledger[0] == sp.test_account("Artist").address...
+ OK
+Comment...
+ h2: Certified Record credentials cannot be transferred
+file build/MusicCityCertifiedRecords/step_008_cont_0_params.py
+file build/MusicCityCertifiedRecords/step_008_cont_0_params.tz
+file build/MusicCityCertifiedRecords/step_008_cont_0_params.json
+Executing transfer([sp.record(from_ = sp.address('tz1gr5pFhstHkCGNKgTP58P8ZR8svMowhRco'), txs = [sp.record(to_ = sp.address('tz1XvFxZEwh9q8wuPkoiVKp2E1ZJNkSbxHZJ'), token_id = 0, amount = 1)])])...
+Expected error: 'FA2_TX_DENIED'
+Verifying sp.contract_data(0).ledger[0] == sp.test_account("Artist").address...
+ OK

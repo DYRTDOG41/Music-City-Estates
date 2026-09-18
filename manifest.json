@@ -1,0 +1,15 @@
+{
+  "network": "shadownet",
+  "smartPyVersion": "0.24.1",
+  "sourceCommit": "137e4ca5e4dbf45c39cc8a5fa8aa87cbdb524788",
+  "certifiedRecord": {
+    "contract": "certified/contract.tz",
+    "storage": "certified/storage.tz",
+    "transferPolicy": "no-transfer"
+  },
+  "collectibles": {
+    "contract": "collectibles/contract.tz",
+    "storage": "collectibles/storage.tz",
+    "transferPolicy": "owner-or-operator-transfer"
+  }
+}

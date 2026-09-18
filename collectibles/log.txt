@@ -1,0 +1,33 @@
+Creating contract KT1TezoooozzSmartPyzzSTATiCzzzwwBFA1
+ -> (Pair "tz1L9egFQzmTmniQTxv2bLcWxfYh8rZnDmo8" (Pair {} (Pair {} (Pair 0 (Pair {} {})))))
+file build/MusicCityCollectibles/step_001_cont_0_storage.tz
+file build/MusicCityCollectibles/step_001_cont_0_storage.json
+file build/MusicCityCollectibles/step_001_cont_0_storage.py
+file build/MusicCityCollectibles/step_001_cont_0_types.py
+file build/MusicCityCollectibles/step_001_cont_0_contract.tz contract MusicCityCollectibles
+file build/MusicCityCollectibles/step_001_cont_0_contract.json contract MusicCityCollectibles
+Comment...
+ h2: Only the administrator can mint official editions
+file build/MusicCityCollectibles/step_003_cont_0_params.py
+file build/MusicCityCollectibles/step_003_cont_0_params.tz
+file build/MusicCityCollectibles/step_003_cont_0_params.json
+Executing mint([sp.record(to_ = sp.address('tz1gr5pFhstHkCGNKgTP58P8ZR8svMowhRco'), metadata = {'decimals' : sp.bytes('0x30'), 'name' : sp.bytes('0x4f6666696369616c204d75736963204369747920566964656f2045646974696f6e'), 'symbol' : sp.bytes('0x4d434556')})])...
+Expected error: 'FA2_NOT_ADMIN'
+Comment...
+ h2: Administrator mints the video edition
+file build/MusicCityCollectibles/step_005_cont_0_params.py
+file build/MusicCityCollectibles/step_005_cont_0_params.tz
+file build/MusicCityCollectibles/step_005_cont_0_params.json
+Executing mint([sp.record(to_ = sp.address('tz1gr5pFhstHkCGNKgTP58P8ZR8svMowhRco'), metadata = {'decimals' : sp.bytes('0x30'), 'name' : sp.bytes('0x4f6666696369616c204d75736963204369747920566964656f2045646974696f6e'), 'symbol' : sp.bytes('0x4d434556')})])...
+ -> (Pair "tz1L9egFQzmTmniQTxv2bLcWxfYh8rZnDmo8" (Pair {Elt 0 "tz1gr5pFhstHkCGNKgTP58P8ZR8svMowhRco"} (Pair {} (Pair 1 (Pair {} {Elt 0 (Pair 0 {Elt "decimals" 0x30; Elt "name" 0x4f6666696369616c204d75736963204369747920566964656f2045646974696f6e; Elt "symbol" 0x4d434556})})))))
+Verifying sp.contract_data(0).ledger[0] == sp.test_account("Artist").address...
+ OK
+Comment...
+ h2: Artist can transfer a collectible edition to a fan
+file build/MusicCityCollectibles/step_008_cont_0_params.py
+file build/MusicCityCollectibles/step_008_cont_0_params.tz
+file build/MusicCityCollectibles/step_008_cont_0_params.json
+Executing transfer([sp.record(from_ = sp.address('tz1gr5pFhstHkCGNKgTP58P8ZR8svMowhRco'), txs = [sp.record(to_ = sp.address('tz1TBp4eqhNomyiP25h3E1kwkz36X2HmJqxG'), token_id = 0, amount = 1)])])...
+ -> (Pair "tz1L9egFQzmTmniQTxv2bLcWxfYh8rZnDmo8" (Pair {Elt 0 "tz1TBp4eqhNomyiP25h3E1kwkz36X2HmJqxG"} (Pair {} (Pair 1 (Pair {} {Elt 0 (Pair 0 {Elt "decimals" 0x30; Elt "name" 0x4f6666696369616c204d75736963204369747920566964656f2045646974696f6e; Elt "symbol" 0x4d434556})})))))
+Verifying sp.contract_data(0).ledger[0] == sp.test_account("Fan").address...
+ OK
