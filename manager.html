@@ -52,6 +52,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <a href="artist_catalog.html">← ARTIST CATALOG</a>
 <a href="music_city_feed.html">📱 CITY FEED</a>
 <a href="music_city_radio.html">📻 RADIO</a>
+<a href="business_events.html" id="deckNav">🎴 BUSINESS DECK</a>
 </nav>
 <strong>MANAGER OFFICE</strong>
 </header>
@@ -64,6 +65,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <div class="pill">Cash: $<b id="cash">0</b></div>
 <div class="pill">Fans: <b id="fans">0</b></div>
 <div class="pill">XP: <b id="xp">0</b></div>
+<div class="pill">Reputation: <b id="reputation">50</b></div>
 <div class="pill">Career: <b id="career">Bedroom Artist</b></div>
 </div>
 <div class="current" id="currentContract"></div>
@@ -98,6 +100,8 @@ const cashEl = document.getElementById("cash");
 const fansEl = document.getElementById("fans");
 const xpEl = document.getElementById("xp");
 const careerEl = document.getElementById("career");
+const reputationEl = document.getElementById("reputation");
+const deckNav = document.getElementById("deckNav");
 const currentContract = document.getElementById("currentContract");
 const managerGrid = document.getElementById("managerGrid");
 const totalCommission = document.getElementById("totalCommission");
@@ -159,6 +163,18 @@ function render() {
   fansEl.textContent = state.fans;
   xpEl.textContent = state.xp;
   careerEl.textContent = window.MCE.getCareerTitle(state);
+  reputationEl.textContent = state.reputation;
+
+  const deckProgress = window.MCE.businessEventProgress(state);
+  if (deckProgress.ready) {
+    deckNav.textContent = "🎴 BUSINESS EVENT READY";
+    deckNav.style.borderColor = "#ffcc4d";
+    deckNav.style.boxShadow = "0 0 15px rgba(255,204,77,.5)";
+  } else {
+    deckNav.textContent = "🎴 BUSINESS DECK (" + deckProgress.actionsUntilNext + " TO NEXT)";
+    deckNav.style.borderColor = "#22d3ee";
+    deckNav.style.boxShadow = "none";
+  }
 
   totalCommission.textContent = "$" + state.manager.totalCommission;
   promotionSpend.textContent = "$" + state.manager.promotionSpend;
