@@ -391,7 +391,18 @@ test("Business Deck choices apply reputation and cannot overspend", function () 
 
 test("opening slot card boosts the next show once", function () {
   start();
-  MCE.save({ cash: 400, xp: 10 });
+  MCE.save({
+    cash: 400,
+    xp: 10,
+    business: {
+      actionCount: 0,
+      meter: 0,
+      drawCursor: 1,
+      pendingEventId: null,
+      history: [],
+      effects: {}
+    }
+  });
   MCE.addRelease({ id: "opening-song", title: "Opening Song" });
   MCE.releaseSong("opening-song");
   MCE.hireManager("hustler");
