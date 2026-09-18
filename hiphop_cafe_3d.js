@@ -290,13 +290,21 @@ const reactions = {
 };
 startButton.onclick = () => {
   if (!cafeUnlocked()) return;
+  const selected = releaseOptions()[Number(songSelect.value) || 0];
+  const craftScore = Number(selected && selected.craftScore || 0);
+  const craftEnergy = Math.floor(craftScore / 10);
   round = 1;
-  score = 0;
+  score = craftEnergy;
   active = true;
   songSelect.disabled = true;
   roundText.textContent = 'Part 1 of 3 • Make the first impression';
-  log.textContent = 'The host says your name. The beat drops through the café speakers.';
-  energy.style.width = '8%';
+  log.textContent =
+    'The host says your name. The beat drops through the café speakers.' +
+    (craftEnergy
+      ? ' Your ' + (selected.craftTier || 'developed') +
+        ' record starts with +' + craftEnergy + ' crowd energy.'
+      : '');
+  energy.style.width = Math.max(8, craftEnergy) + '%';
   startButton.disabled = true;
   actionButtons.forEach((button) => { button.disabled = false; });
 };

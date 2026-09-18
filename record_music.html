@@ -223,6 +223,86 @@ width: 100%;
 margin-top: 14px;
 }
 
+.authorship-check {
+display:flex;
+align-items:flex-start;
+gap:10px;
+margin-top:12px;
+padding:12px;
+border:1px solid #334155;
+border-radius:10px;
+background:#090f19;
+font-size:14px;
+line-height:1.4;
+}
+
+.authorship-check input {
+width:auto !important;
+margin:3px 0 0 !important;
+}
+
+.craft-report {
+display:none;
+margin-top:16px;
+padding:16px;
+border:1px solid #8b5cf6;
+border-radius:12px;
+background:#100b20;
+}
+
+.craft-head {
+display:flex;
+justify-content:space-between;
+gap:12px;
+align-items:center;
+flex-wrap:wrap;
+}
+
+.craft-score {
+font-size:34px;
+font-weight:900;
+color:#c4b5fd;
+}
+
+.craft-tier {
+font-size:13px;
+font-weight:900;
+letter-spacing:.08em;
+color:#7dd3fc;
+}
+
+.craft-row {
+display:grid;
+grid-template-columns:145px 1fr 52px;
+gap:10px;
+align-items:center;
+margin-top:9px;
+font-size:12px;
+}
+
+.craft-bar {
+height:9px;
+background:#1f2937;
+border-radius:99px;
+overflow:hidden;
+}
+
+.craft-bar span {
+display:block;
+height:100%;
+background:linear-gradient(90deg,#22d3ee,#8b5cf6);
+}
+
+.craft-coaching {
+margin-top:14px;
+padding:12px;
+border-radius:10px;
+background:#08151c;
+color:#cbd5e1;
+font-size:13px;
+line-height:1.5;
+}
+
 @media(max-width:700px) {
 .row,
 .actions {
@@ -412,8 +492,16 @@ placeholder="Song title"
 
 <textarea
 id="lyrics"
-placeholder="Write lyrics, describe your song, or enter a prompt..."
+placeholder="Write your lyrics, verses, hook, or creative prompt..."
 ></textarea>
+
+<label class="authorship-check">
+<input type="checkbox" id="originalLyricsConfirmed">
+<span>
+<strong>Artist-written lyrics</strong><br>
+Check this only if you wrote or substantially rewrote the lyrics yourself. AI-assisted editing is fine—the point is that you shaped the writing.
+</span>
+</label>
 
 <input
 id="style"
@@ -571,6 +659,7 @@ SAVE DRAFT
 
 <button
 class="action primary"
+id="createSongButton"
 onclick="createSong()"
 >
 ✨ CREATE WITH AI
@@ -591,6 +680,21 @@ The Music City AI generation engine is ready.
 </p>
 
 <audio id="generatedAudio" controls></audio>
+
+<div id="craftReport" class="craft-report">
+<div class="craft-head">
+<div>
+<div class="craft-tier" id="craftTier">QUICK DRAFT</div>
+<strong>🎯 Music City A&R Craft Report</strong>
+</div>
+<div class="craft-score"><span id="craftScore">0</span>/100</div>
+</div>
+<div id="craftBreakdown"></div>
+<div id="craftCoaching" class="craft-coaching"></div>
+<p class="engine-status">
+This score measures creative input and process—not whether AI was used, not whether a song is objectively “good,” and not whether a detector thinks it is AI.
+</p>
+</div>
 
 <div class="actions" id="catalogActions" style="display:none; margin-top:14px;">
 <button
@@ -617,6 +721,7 @@ VIEW ARTIST CATALOG
 
 <script src="player-state.js"></script>
 <script src="music_city_catalog.js"></script>
+<script src="music_city_song_craft.js"></script>
 <script src="music_city_ai.js"></script>
 
 <script>
@@ -719,6 +824,11 @@ let autoStopTimer = null;
 let referenceAudioBlob = null;
 let referenceAudioDurationMs = 0;
 let lastGeneratedResult = null;
+let generationPasses = 0;
+let meaningfulRevisionCount = 0;
+let craftSongKey = "";
+let lastCraftSnapshot = null;
+let referenceVersion = 0;
 
 
 async function toggleRecording() {
@@ -763,6 +873,7 @@ audioChunks,
 );
 
 referenceAudioBlob = blob;
+referenceVersion += 1;
 referenceAudioDurationMs =
 Math.max(
 50,
@@ -884,6 +995,7 @@ return;
 }
 
 referenceAudioBlob = file;
+referenceVersion += 1;
 referenceAudioDurationMs = durationMs;
 
 status.textContent =
@@ -915,6 +1027,12 @@ document.getElementById("lyrics").value,
 style:
 document.getElementById("style").value,
 
+originalLyricsConfirmed:
+document.getElementById("originalLyricsConfirmed").checked,
+
+revisionCount:
+meaningfulRevisionCount,
+
 studio:
 studio
 
@@ -926,6 +1044,101 @@ JSON.stringify(draft)
 );
 
 alert("Song draft saved.");
+}
+
+
+function buildCraftSnapshot(title, style, mode) {
+return {
+title: String(title || "").trim().toLowerCase(),
+lyrics: document.getElementById("lyrics").value.trim(),
+style: String(style || "").trim().toLowerCase(),
+beat: selectedBeat || "",
+originalLyricsConfirmed:
+document.getElementById("originalLyricsConfirmed").checked,
+referenceVersion: referenceVersion,
+mode: mode,
+vocalStyle: document.getElementById("vocalStyle").value,
+creativity: Number(document.getElementById("creativity").value || 50),
+influence: Number(document.getElementById("influence").value || 50)
+};
+}
+
+function hasMeaningfulRevision(before, after) {
+if (!before) return false;
+
+const textChanged =
+before.lyrics !== after.lyrics ||
+before.style !== after.style;
+
+const creativeChoiceChanged =
+before.beat !== after.beat ||
+before.originalLyricsConfirmed !== after.originalLyricsConfirmed ||
+before.referenceVersion !== after.referenceVersion ||
+before.mode !== after.mode ||
+before.vocalStyle !== after.vocalStyle;
+
+const controlChanged =
+Math.abs(before.creativity - after.creativity) >= 8 ||
+Math.abs(before.influence - after.influence) >= 8;
+
+return textChanged || creativeChoiceChanged || controlChanged;
+}
+
+
+function buildCraftInput(title, style, mode) {
+return {
+title: title,
+lyrics: document.getElementById("lyrics").value,
+style: style,
+originalLyricsConfirmed:
+document.getElementById("originalLyricsConfirmed").checked,
+audioAttached: Boolean(referenceAudioBlob),
+referenceDurationMs: referenceAudioDurationMs,
+beat: selectedBeat,
+revisionCount: meaningfulRevisionCount,
+creativity: Number(document.getElementById("creativity").value || 50),
+influence: Number(document.getElementById("influence").value || 50),
+mode: mode,
+vocalStyle: document.getElementById("vocalStyle").value
+};
+}
+
+function renderCraftReport(report) {
+const box = document.getElementById("craftReport");
+const score = document.getElementById("craftScore");
+const tier = document.getElementById("craftTier");
+const breakdown = document.getElementById("craftBreakdown");
+const coaching = document.getElementById("craftCoaching");
+
+box.style.display = "block";
+score.textContent = report.score;
+tier.textContent = report.tier.toUpperCase();
+
+const labels = {
+authorship: "Original Writing",
+performance: "Human Performance",
+direction: "Creative Direction",
+revision: "Revision Work",
+intentionality: "Intentional AI Use"
+};
+
+breakdown.innerHTML = Object.keys(report.breakdown)
+.map(key => {
+const value = report.breakdown[key];
+const max = report.maxima[key];
+const width = Math.round((value / max) * 100);
+return (
+'<div class="craft-row">' +
+'<span>' + labels[key] + '</span>' +
+'<div class="craft-bar"><span style="width:' + width + '%"></span></div>' +
+'<strong>' + value + '/' + max + '</strong>' +
+'</div>'
+);
+}).join("");
+
+coaching.innerHTML =
+"<strong>A&R Coaching:</strong><br>" +
+report.nextSteps.map(step => "• " + step).join("<br>");
 }
 
 
@@ -962,6 +1175,11 @@ studio: lastGeneratedResult.studio || studio,
 beat: lastGeneratedResult.beat || "",
 provider: lastGeneratedResult.providerName || lastGeneratedResult.provider,
 createdAt: lastGeneratedResult.createdAt,
+craftScore: lastGeneratedResult.craftScore || 0,
+craftTier: lastGeneratedResult.craftTier || "Quick Draft",
+craftBreakdown: lastGeneratedResult.craftBreakdown || {},
+revisionCount: lastGeneratedResult.revisionCount || 0,
+originalLyricsConfirmed: Boolean(lastGeneratedResult.originalLyricsConfirmed),
 audioBlob: lastGeneratedResult.audioBlob
 });
 
@@ -989,6 +1207,11 @@ lastGeneratedResult.providerName ||
 lastGeneratedResult.provider ||
 "Music City AI",
 audioKey: trackId,
+craftScore: lastGeneratedResult.craftScore || 0,
+craftTier: lastGeneratedResult.craftTier || "Quick Draft",
+craftBreakdown: lastGeneratedResult.craftBreakdown || {},
+revisionCount: lastGeneratedResult.revisionCount || 0,
+originalLyricsConfirmed: Boolean(lastGeneratedResult.originalLyricsConfirmed),
 radioStatus: "not-submitted"
 });
 }
@@ -1031,6 +1254,16 @@ document.getElementById("creationMode").value;
 const provider =
 document.getElementById("aiProvider").value;
 
+const nextCraftKey =
+title.trim().toLowerCase();
+
+if (craftSongKey !== nextCraftKey) {
+craftSongKey = nextCraftKey;
+generationPasses = 0;
+meaningfulRevisionCount = 0;
+lastCraftSnapshot = null;
+}
+
 const request = {
 provider: provider,
 title: title,
@@ -1047,7 +1280,11 @@ Boolean(referenceAudioBlob),
 musicLengthMs:
 Number(document.getElementById("musicLength").value || 12000),
 referenceSongId: "",
-referenceDurationMs: 0
+referenceDurationMs: 0,
+originalLyricsConfirmed:
+document.getElementById("originalLyricsConfirmed").checked,
+revisionCount:
+Math.max(0, generationPasses - 1)
 };
 
 localStorage.setItem(
@@ -1122,6 +1359,35 @@ engineMessage.textContent =
 const result =
 await window.MusicCityAI.generate(request);
 
+const currentCraftSnapshot =
+buildCraftSnapshot(title, style, mode);
+
+if (generationPasses > 0 &&
+hasMeaningfulRevision(lastCraftSnapshot, currentCraftSnapshot)) {
+meaningfulRevisionCount += 1;
+}
+
+generationPasses += 1;
+lastCraftSnapshot = currentCraftSnapshot;
+
+const craftReport =
+window.MusicCitySongCraft.scoreSong(
+buildCraftInput(title, style, mode)
+);
+
+result.craftReport = craftReport;
+result.craftScore = craftReport.score;
+result.craftTier = craftReport.tier;
+result.craftBreakdown = craftReport.breakdown;
+result.revisionCount = meaningfulRevisionCount;
+result.originalLyricsConfirmed =
+craftReport.signals.originalLyricsConfirmed;
+
+renderCraftReport(craftReport);
+
+document.getElementById("createSongButton").textContent =
+"✨ REFINE WITH AI — PASS " + (generationPasses + 1);
+
 result.style = style;
 result.studio = studio;
 result.beat = result.beat || selectedBeat || "";
@@ -1150,7 +1416,8 @@ resultText.innerHTML =
 "Mode: " + mode + "<br>" +
 "Beat: " + (result.beat || "No beat selected") + "<br>" +
 "Engine: " + result.providerName + "<br>" +
-"Status: " + result.status;
+"Status: " + result.status + "<br>" +
+"Craft: " + result.craftScore + "/100 — " + result.craftTier;
 
 engineMessage.textContent =
 result.message || "Generation submitted.";
