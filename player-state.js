@@ -201,6 +201,7 @@
       promotedAt: item.promotedAt || undefined,
       promotionCount: toCount(item.promotionCount, 0),
       promotionSpend: toCount(item.promotionSpend, 0),
+      promotionManager: item.promotionManager == null ? undefined : String(item.promotionManager),
       radioStatus: item.radioStatus == null ? "not-submitted" : String(item.radioStatus),
       radioSubmittedAt: item.radioSubmittedAt || undefined,
       radioFeePaid: toCount(item.radioFeePaid, 0),
@@ -439,6 +440,7 @@
     release.promotedAt = new Date().toISOString();
     release.promotionSpend =
       toCount(release.promotionSpend, 0) + promotionFee;
+    release.promotionManager = managerProfile.name;
     next.releases[index] = normalizeRelease(release, index);
 
     next.fans += managerProfile.promotionFans;
