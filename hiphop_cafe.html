@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Walkable 3D Hip-Hop Café starter venue in Music City Estates.">
+<title>3D Hip-Hop Café | Music City Estates</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050203;color:#fff;font-family:Arial,sans-serif}button,select{font:inherit}canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none}.hud{position:fixed;z-index:20;left:12px;right:12px;top:12px;display:flex;justify-content:space-between;pointer-events:none}.plate{background:#090405e8;border:1px solid #ff9b45;border-radius:9px;padding:9px 13px;box-shadow:0 0 22px #ff7a3644}.stats{display:flex;gap:13px}.tier{display:inline-block;margin-top:5px;padding:3px 7px;border-radius:10px;background:#9d3d2c;color:#fff;font-size:9px;font-weight:900;letter-spacing:.08em}.interact{display:none;position:fixed;z-index:30;left:50%;bottom:76px;transform:translateX(-50%);padding:13px 20px;border:1px solid #ff9b45;border-radius:10px;background:#0c0504ef;font-weight:900;color:#fff;cursor:pointer}.interact.show{display:block}.back{position:fixed;z-index:25;left:15px;bottom:15px;padding:9px 13px;background:#090405e8;border:1px solid #8e6b5d;border-radius:7px;color:#fff;text-decoration:none}.hint{position:fixed;z-index:20;left:50%;bottom:20px;transform:translateX(-50%);font-size:11px;background:#000b;padding:7px 12px;border-radius:18px}.touch{display:none;position:fixed;z-index:26;right:15px;bottom:15px;grid-template:repeat(2,44px)/repeat(3,44px);gap:4px}.touch button{border:1px solid #ffffff66;background:#000c;color:#fff;border-radius:9px;font-size:18px}.touch .up{grid-column:2}.touch .left{grid-row:2;grid-column:1}.touch .down{grid-row:2;grid-column:2}.touch .right{grid-row:2;grid-column:3}.modal{display:none;position:fixed;z-index:100;inset:0;background:#000d;align-items:center;justify-content:center;padding:16px}.modal.show{display:flex}.panel{width:min(650px,96%);max-height:94vh;overflow:auto;background:#120807;border:1px solid #ff9b45;border-radius:16px;padding:22px;box-shadow:0 0 55px #ff6d2d45}.eyebrow{color:#ffae68;font-size:11px;font-weight:900;letter-spacing:.14em}.panel h2{margin:7px 0 10px}.song-select{width:100%;padding:12px;border-radius:8px;border:1px solid #754435;background:#26120f;color:#fff}.meter{height:18px;background:#30100c;border-radius:20px;overflow:hidden;margin:14px 0}.fill{height:100%;width:0;background:linear-gradient(90deg,#ff6936,#ffd15a,#d24bff);transition:.35s}.round{font-weight:900;color:#ffd08a}.log{min-height:70px;color:#ddd;line-height:1.45}.actions{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:12px}.actions button,.start,.close{padding:13px;border:0;border-radius:8px;font-weight:900;cursor:pointer}.actions button{background:#7e2d26;color:#fff}.actions button:disabled{opacity:.4;cursor:not-allowed}.start{width:100%;margin-top:11px;background:#ffb04f;color:#251006}.start:disabled{opacity:.45;cursor:not-allowed}.close{width:100%;margin-top:9px;background:#2c201e;color:#fff}.progress{padding:10px 12px;background:#ffffff0b;border:1px solid #ffffff18;border-radius:9px;color:#e9d2c5}.unlock{color:#7dffac;font-weight:900}.small{font-size:11px;color:#bba9a0}@media(max-width:720px){.hint{display:none}.touch{display:grid}.stats{font-size:10px;gap:6px}.hud{font-size:12px}.actions{grid-template-columns:1fr}.panel{padding:16px}.back{bottom:112px}.interact{bottom:125px}}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}</script>
+</head>
+<body>
+<div class="hud"><div class="plate"><strong>HIP-HOP CAFÉ</strong><br><small>3D Starter Performance Venue</small><br><span class="tier">OPEN MIC • 0–50 FANS</span></div><div class="plate stats"><span>👥 <b id="fans">0</b></span><span>💵 $<b id="cash">0</b></span><span>⭐ <b id="xp">0</b></span></div></div>
+<button class="interact" id="interactPrompt">E / TAP — INTERACT</button>
+<a class="back" href="hip_hop_heights.html">← Hip-Hop Heights</a>
+<div class="hint">WASD to walk • Drag to look • E to interact</div>
+<div class="touch"><button class="up" data-move="w" aria-label="Move forward">▲</button><button class="left" data-move="a" aria-label="Move left">◀</button><button class="down" data-move="s" aria-label="Move backward">▼</button><button class="right" data-move="d" aria-label="Move right">▶</button></div>
+
+<div class="modal" id="performancePanel" role="dialog" aria-modal="true" aria-labelledby="performanceTitle">
+  <div class="panel">
+    <div class="eyebrow">HIP-HOP CAFÉ OPEN MIC</div>
+    <h2 id="performanceTitle">Choose Your Song</h2>
+    <select class="song-select" id="songSelect" aria-label="Select a song"></select>
+    <p class="progress" id="venueProgress"></p>
+    <p class="round" id="roundText">The host is ready to introduce you.</p>
+    <div class="meter"><div class="fill" id="crowdEnergy"></div></div>
+    <p class="log" id="performanceLog">Choose a release, then step onto the starter stage.</p>
+    <div class="actions"><button data-performance="timing" disabled>RIDE THE BEAT</button><button data-performance="presence" disabled>OWN THE STAGE</button><button data-performance="crowd" disabled>WORK THE CROWD</button></div>
+    <button class="start" id="startPerformance">START THREE-PART SET</button>
+    <button class="close" id="closePerformance">RETURN TO 3D CAFÉ</button>
+    <p class="small">The café helps artists grow to 50 fans. Larger venues will continue the career path.</p>
+  </div>
+</div>
+
+<div class="modal" id="counterPanel" role="dialog" aria-modal="true" aria-labelledby="counterTitle"><div class="panel"><div class="eyebrow">CAFÉ COUNTER</div><h2 id="counterTitle">Support the Venue</h2><p class="progress">The counter is prepared for future food, beverage, merchandise, and sponsor placements. No real purchase link is active yet.</p><button class="close" id="closeCounter">RETURN TO 3D CAFÉ</button></div></div>
+
+<script src="player-state.js"></script>
+<script type="module" src="hiphop_cafe_3d.js"></script>
+</body>
+</html>
