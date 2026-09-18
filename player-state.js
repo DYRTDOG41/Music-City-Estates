@@ -203,7 +203,9 @@
       promotionSpend: toCount(item.promotionSpend, 0),
       radioStatus: item.radioStatus == null ? "not-submitted" : String(item.radioStatus),
       radioSubmittedAt: item.radioSubmittedAt || undefined,
-      radioFeePaid: toCount(item.radioFeePaid, 0)
+      radioFeePaid: toCount(item.radioFeePaid, 0),
+      radioManager: item.radioManager == null ? undefined : String(item.radioManager),
+      radioInfluence: toCount(item.radioInfluence, 0)
     };
   }
 
