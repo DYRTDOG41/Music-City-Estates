@@ -505,7 +505,7 @@ onchange="loadUploadedAudio(event)"
 <label>Music City AI Engine</label>
 <select id="aiProvider" onchange="updateEngineStatus()">
 <option value="demo">Music City Demo Engine — Works Now</option>
-<option value="elevenlabs">ElevenLabs Music — Secure Backend Required</option>
+<option value="elevenlabs">ElevenLabs Music — Backend Connected</option>
 <option value="stable-audio">Stable Audio — Secure Backend Required</option>
 <option value="google-lyria">Google Lyria — Secure Backend Required</option>
 <option value="partner">Partner API — Suno / MyTunes if approved</option>
@@ -660,7 +660,7 @@ const engine = window.MusicCityAI
 const messages = {
 demo: "Demo mode is ready. It tests the complete Music City generation workflow without using paid AI credits.",
 elevenlabs: engine.backendConnected
-? "ElevenLabs Music is connected to the Music City secure backend. Live AI previews are ready."
+? "Music City is connected to the secure ElevenLabs backend. Add the protected ElevenLabs API key in Vercel to activate live generation."
 : "ElevenLabs Music is wired in. Connect the secure backend URL and API key to enable live audio.",
 "stable-audio": "Stable Audio is reserved as a future provider adapter.",
 "google-lyria": "Google Lyria is reserved as a future provider adapter.",
@@ -669,8 +669,7 @@ partner: "Partner mode is reserved for Suno, MyTunes, or another approved commer
 
 status.textContent = messages[provider] || "Select an AI provider.";
 status.className =
-provider === "demo" ||
-(provider === "elevenlabs" && engine.backendConnected)
+provider === "demo"
 ? "engine-status ready"
 : "engine-status";
 }
