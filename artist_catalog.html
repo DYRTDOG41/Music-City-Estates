@@ -185,9 +185,21 @@ async function renderCatalog() {
       Boolean(certificate) ||
       release.certificationStatus === "passport-ready" ||
       release.certificationStatus === "certified";
-    const isCertified =
-      Boolean(certificate && certificate.chain.status === "minted") ||
+    const isMainnetCertified =
+      Boolean(
+        certificate &&
+        certificate.chain.status === "minted" &&
+        String(certificate.chain.network || "").toLowerCase() === "mainnet"
+      ) ||
       release.certificationStatus === "certified";
+    const isTestnetCertified =
+      Boolean(
+        certificate &&
+        certificate.chain.status === "minted" &&
+        String(certificate.chain.network || "").toLowerCase() !== "mainnet"
+      ) ||
+      release.certificationStatus === "certified-testnet";
+    const isCertified = isMainnetCertified || isTestnetCertified;
 
     const card = document.createElement("article");
     card.className = "card";
@@ -226,9 +238,11 @@ async function renderCatalog() {
     if (hasPassport) {
       const certified = document.createElement("span");
       certified.className = "badge certified";
-      certified.textContent = isCertified
-        ? "✓ MUSIC CITY CERTIFIED • ON-CHAIN"
-        : "RECORD PASSPORT READY • NOT CERTIFIED";
+      certified.textContent = isMainnetCertified
+        ? "✓ MUSIC CITY CERTIFIED • MAINNET"
+        : isTestnetCertified
+          ? "✓ MUSIC CITY TESTNET CERTIFIED"
+          : "RECORD PASSPORT READY • NOT CERTIFIED";
       badges.appendChild(certified);
     }
 
