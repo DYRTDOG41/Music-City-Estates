@@ -185,9 +185,9 @@ room.interact('ENTER MERCH & BACKSTAGE',[-15.4,1.7,-13.8],()=>location.href='mer
 room.interact('ENTER COMMUNITY ROOM',[15.4,1.7,-13.8],()=>location.href='warehouse_hangout_viewer.html',2.8,0xffd15a);
 
 const battlePanel=document.getElementById('battlePanel');
-const battleLog=document.getElementById('battleLog');
+const battleLog=document.getElementById('soloBattleLog');
 const roundText=document.getElementById('roundText');
-const startBattle=document.getElementById('startBattle');
+const startBattle=document.getElementById('soloStartBattle');
 const energy=document.getElementById('energy');
 const buttons=[...document.querySelectorAll('[data-action]')];
 function openBattlePanel(){

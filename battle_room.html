@@ -7,6 +7,76 @@
 <style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#030205;color:#fff;font-family:Arial,sans-serif}canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none}.hud{position:fixed;z-index:20;left:12px;right:12px;top:12px;display:flex;justify-content:space-between;pointer-events:none}.plate{background:#080307e8;border:1px solid #ff315b;border-radius:9px;padding:9px 13px;box-shadow:0 0 20px #ff174d55}.stats{display:flex;gap:13px}.interact{display:none;position:fixed;z-index:30;left:50%;bottom:76px;transform:translateX(-50%);padding:13px 20px;border:1px solid #ff315b;border-radius:10px;background:#050306ef;font-weight:900;color:#fff;cursor:pointer}.interact.show{display:block}.back{position:fixed;z-index:25;left:15px;bottom:15px;padding:9px 13px;background:#09070ce8;border:1px solid #777;border-radius:7px;color:#fff;text-decoration:none}.hint{position:fixed;z-index:20;left:50%;bottom:20px;transform:translateX(-50%);font-size:11px;background:#0009;padding:7px 12px;border-radius:18px}.touch{display:none;position:fixed;z-index:26;right:15px;bottom:15px;grid-template:repeat(2,44px)/repeat(3,44px);gap:4px}.touch button{border:1px solid #ffffff66;background:#000a;color:#fff;border-radius:9px;font-size:18px}.touch .up{grid-column:2}.touch .left{grid-row:2;grid-column:1}.touch .down{grid-row:2;grid-column:2}.touch .right{grid-row:2;grid-column:3}.modal{display:none;position:fixed;z-index:100;inset:0;background:#000c;align-items:center;justify-content:center;padding:16px}.modal.show{display:flex}.panel{width:min(620px,96%);background:#0c060b;border:1px solid #ff315b;border-radius:16px;padding:22px;box-shadow:0 0 50px #ff174d55}.meter{height:18px;background:#26131a;border-radius:20px;overflow:hidden}.fill{height:100%;width:0;background:linear-gradient(90deg,#ff174d,#ffc83d);transition:.35s}.actions{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:14px}.actions button,.start{padding:13px;border:0;border-radius:8px;font-weight:900;cursor:pointer}.actions button{background:#6d1531;color:#fff}.actions button:disabled{opacity:.4}.start{width:100%;background:#ffc83d;color:#170d00;margin-top:12px}.log{min-height:54px;color:#ddd}@media(max-width:720px){.hint{display:none}.touch{display:grid}.stats{font-size:10px;gap:6px}.actions{grid-template-columns:1fr}.hud{font-size:12px}}
 .access{display:inline-block;margin-top:5px;padding:3px 7px;border-radius:10px;background:#ff315b;color:#fff;font-size:9px;font-weight:900;letter-spacing:.08em}.start:disabled{opacity:.48;cursor:not-allowed}
+
+.hidden{display:none!important}
+.live-launch{position:fixed;z-index:25;right:15px;bottom:15px;padding:10px 14px;background:#8f1534;border:1px solid #ff6688;border-radius:8px;color:#fff;font-size:12px;font-weight:900;box-shadow:0 0 18px #ff174d55;cursor:pointer}
+.live-choice{background:#8f1534!important;color:#fff!important;border:1px solid #ff6688!important}
+.live-arena-overlay{display:none;position:fixed;z-index:140;inset:0;background:rgba(0,0,0,.58);backdrop-filter:blur(4px);overflow:auto;padding:16px}
+.live-arena-overlay.show{display:block}
+.live-arena-shell{width:min(980px,96%);margin:0 auto 50px}
+.live-topbar{position:sticky;top:0;z-index:3;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;background:#080309ed;border:1px solid #ff315b66;border-radius:14px;box-shadow:0 12px 35px #0008}
+.live-brand{font-weight:900;letter-spacing:.07em}.live-brand small{display:block;color:#ff8aa0;letter-spacing:.13em;font-size:9px;margin-top:3px}
+.live-close{padding:9px 12px;border:1px solid #777;border-radius:8px;background:#130d14;color:#fff;font-weight:900;cursor:pointer}
+.live-arena-overlay .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+.live-arena-overlay .panel{width:auto;max-width:none;background:#0d0710ee;border:1px solid #5f3342;border-radius:16px;padding:18px;box-shadow:0 18px 50px #0007}
+.live-arena-overlay .panel h2,.live-arena-overlay .panel h3{margin:0 0 12px}
+.live-arena-overlay .wide{grid-column:1/-1}
+.live-arena-overlay label{display:block;color:#d8cdd9;font-size:12px;font-weight:800;margin:10px 0 6px}
+.live-arena-overlay input,.live-arena-overlay select{width:100%;padding:13px;border:1px solid #5d3a48;border-radius:9px;background:#09050b;color:#fff;font-size:16px}
+.live-arena-overlay button{appearance:none;border-radius:9px;padding:13px 15px;font-weight:900;cursor:pointer}
+.live-arena-overlay .primary{border:0;background:#ffc83d;color:#190d00}
+.live-arena-overlay .secondary{background:#3c1625;color:#fff;border:1px solid #a73859}
+.live-arena-overlay .ghost{background:#161019;color:#fff;border:1px solid #625664}
+.live-arena-overlay .danger{border:0;background:#a11935;color:#fff}
+.live-arena-overlay .cyan{background:#103747;color:#eafaff;border:1px solid #39bfe8}
+.live-arena-overlay button:disabled{opacity:.42;cursor:not-allowed}
+.live-arena-overlay .actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
+.live-arena-overlay .status{min-height:44px;margin-top:12px;padding:11px;border-radius:9px;background:#08050a;color:#cabecb;border:1px solid #332633;font-size:13px;line-height:1.45}
+.live-arena-overlay .status.good{border-color:#2d9b65;color:#a8f2c9}.live-arena-overlay .status.warn{border-color:#a47a27;color:#ffe39b}.live-arena-overlay .status.bad{border-color:#9e3046;color:#ffb2c2}
+.live-arena-overlay .room{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;border:1px solid #6e2940;border-radius:11px;background:#160910}
+.live-arena-overlay .code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:18px;font-weight:900;color:#ffd9e1;word-break:break-all}
+.live-arena-overlay .participants{display:grid;gap:8px}.live-arena-overlay .person{display:flex;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:10px;background:#120a13;border:1px solid #322334}
+.live-arena-overlay .person strong{display:block}.live-arena-overlay .person small{color:#bdaebf}.live-arena-overlay .role{font-size:10px;font-weight:900;padding:4px 7px;border-radius:999px;background:#32131e;color:#ffb6c4;align-self:center}
+.live-arena-overlay .live-pill{display:inline-flex;align-items:center;gap:7px;margin-bottom:10px;padding:6px 11px;border:1px solid #ff315b;border-radius:999px;background:#2b0812;color:#ffd5de;font-size:11px;font-weight:900;letter-spacing:.08em}
+.live-arena-overlay .dot{width:8px;height:8px;border-radius:50%;background:#ff315b;box-shadow:0 0 14px #ff315b}
+.live-arena-overlay .stage{position:relative;overflow:hidden;min-height:250px;background:radial-gradient(circle at 50% 32%,#4a1428 0,#180a12 38%,#080509 75%);border:1px solid #7f2946;border-radius:18px;padding:20px;text-align:center}
+.live-arena-overlay .stage:before{content:"";position:absolute;inset:auto 5% 12px;height:52%;border-radius:50%;border:2px solid #ff315b55;box-shadow:0 0 40px #ff315b22,inset 0 0 50px #ff315b18}
+.live-arena-overlay .stage>*{position:relative;z-index:2}
+.live-arena-overlay .countdown{font-size:clamp(54px,14vw,100px);font-weight:1000;line-height:1;margin:22px 0 4px;color:#fff;text-shadow:0 0 30px #ff315b}
+.live-arena-overlay .turn{font-size:clamp(24px,6vw,40px);font-weight:1000;color:#ffc83d}.live-arena-overlay .clock{font-size:22px;font-weight:900;margin-top:7px}
+.live-arena-overlay .battle-meta{color:#bcaebd;font-size:12px;margin-top:8px}
+.live-arena-overlay .meter{height:13px;background:#21131a;border-radius:30px;overflow:hidden;margin:16px auto 0;max-width:640px}.live-arena-overlay .fill{height:100%;width:0;background:linear-gradient(90deg,#ff315b,#ffc83d);transition:width .15s linear}
+.live-arena-overlay .vote-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.live-arena-overlay .vote-btn{padding:18px;font-size:16px}.live-arena-overlay .vote-a{background:#4c1830;color:#fff;border:1px solid #ff4d7b}.live-arena-overlay .vote-b{background:#40300d;color:#fff;border:1px solid #ffc83d}.live-arena-overlay .votes{display:flex;justify-content:center;gap:28px;margin-top:14px;font-size:20px;font-weight:900}
+.live-arena-overlay .note{font-size:12px;line-height:1.45;color:#b9aebc}
+#tapAudio{position:fixed;z-index:180;left:50%;bottom:18px;transform:translateX(-50%);display:none;padding:12px 16px;border:0;border-radius:10px;background:#ffc83d;color:#190d00;font-weight:900;box-shadow:0 0 30px #000}
+
+/* During a battle, the menu disappears and only the performance HUD floats over the real 3D arena. */
+.live-arena-overlay.battle-running{display:block;background:transparent;backdrop-filter:none;overflow:hidden;padding:0;pointer-events:none}
+.live-arena-overlay.battle-running .live-topbar,
+.live-arena-overlay.battle-running #setupView,
+.live-arena-overlay.battle-running #liveRoomMetaPanel,
+.live-arena-overlay.battle-running #liveParticipantsPanel,
+.live-arena-overlay.battle-running #hostControls,
+.live-arena-overlay.battle-running #liveBattleLogPanel{display:none!important}
+.live-arena-overlay.battle-running .live-arena-shell{width:100%;margin:0}
+.live-arena-overlay.battle-running #roomView{display:block!important;margin:0}
+.live-arena-overlay.battle-running #liveStagePanel{display:block!important;position:fixed;z-index:155;top:70px;left:50%;transform:translateX(-50%);width:min(620px,92vw);padding:0;border:0;background:transparent;box-shadow:none;pointer-events:none}
+.live-arena-overlay.battle-running #liveStagePanel .stage{min-height:0;padding:14px 18px;background:#080309d6;backdrop-filter:blur(8px);border-color:#ff315b88}
+.live-arena-overlay.battle-running #liveStagePanel .stage:before{display:none}
+.live-arena-overlay.battle-running .countdown{font-size:clamp(38px,10vw,64px);margin:4px 0 0}
+.live-arena-overlay.battle-running .turn{font-size:clamp(17px,4vw,25px)}
+.live-arena-overlay.battle-running #liveAudioPanel{display:block!important;position:fixed;z-index:156;right:14px;bottom:72px;width:auto;min-width:150px;padding:8px;background:#080309db;pointer-events:auto}
+.live-arena-overlay.battle-running #liveAudioPanel h3,
+.live-arena-overlay.battle-running #audioButton,
+.live-arena-overlay.battle-running #audioStatus{display:none!important}
+.live-arena-overlay.battle-running #micButton{width:100%;padding:10px 12px}
+.live-arena-overlay.battle-running #votePanel{display:none!important}
+.live-arena-overlay.battle-running.voting #votePanel{display:block!important;position:fixed;z-index:160;left:50%;bottom:24px;transform:translateX(-50%);width:min(560px,92vw);pointer-events:auto;background:#0d0710f2}
+@media(max-width:720px){
+  .live-arena-overlay{padding:10px}.live-arena-overlay .grid{grid-template-columns:1fr}.live-arena-overlay .wide{grid-column:auto}.live-arena-overlay .actions{grid-template-columns:1fr}.live-arena-overlay .room{align-items:flex-start;flex-direction:column}
+  .live-topbar{align-items:flex-start}.live-arena-overlay.battle-running #liveStagePanel{top:68px;width:94vw}.live-arena-overlay.battle-running #liveAudioPanel{right:10px;bottom:70px}
+}
+
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}</script>
 </head>
@@ -14,11 +84,130 @@
 <div class="hud"><div class="plate"><strong>WORD SLAUGHTER</strong><br><small>3D Battle Stage</small><br><span class="access" id="accessMode">VENUE TOUR</span></div><div class="plate stats"><span>👥 <b id="fans">0</b></span><span>💵 $<b id="cash">500</b></span><span>⭐ <b id="xp">0</b></span></div></div>
 <button class="interact" id="interactPrompt">E / TAP — INTERACT</button>
 <a class="back" href="warehouse.html">← Warehouse</a>
-<a href="live_freestyle.html" style="position:fixed;z-index:25;right:15px;bottom:15px;padding:10px 14px;background:#8f1534;border:1px solid #ff6688;border-radius:8px;color:#fff;text-decoration:none;font-size:12px;font-weight:900;box-shadow:0 0 18px #ff174d55">🔴 LIVE FREESTYLE</a>
+<button id="openLiveBattle" class="live-launch">🔴 LIVE FREESTYLE</button>
 <div class="hint">WASD to walk • Drag to look • E to interact</div>
 <div class="touch"><button class="up" data-move="w">▲</button><button class="left" data-move="a">◀</button><button class="down" data-move="s">▼</button><button class="right" data-move="d">▶</button></div>
-<div class="modal" id="battlePanel"><div class="panel"><h2>🎤 Word Slaughter Battle</h2><p id="roundText">Enter the circle when you are ready.</p><div class="meter"><div class="fill" id="energy"></div></div><p class="log" id="battleLog">The DJ is waiting. The crowd surrounds the stage.</p><div class="actions"><button data-action="bars" disabled>DELIVER BARS</button><button data-action="flow" disabled>SWITCH FLOW</button><button data-action="crowd" disabled>WORK CROWD</button></div><button class="start" id="startBattle">START THREE-ROUND BATTLE</button><button class="start" id="closeBattle" style="background:#2b2028;color:#fff">RETURN TO 3D ROOM</button></div></div>
+<div class="modal" id="battlePanel"><div class="panel"><h2>🎤 Word Slaughter Battle</h2><p id="roundText">Enter the circle when you are ready.</p><div class="meter"><div class="fill" id="energy"></div></div><p class="log" id="soloBattleLog">The DJ is waiting. The crowd surrounds the stage.</p><div class="actions"><button data-action="bars" disabled>DELIVER BARS</button><button data-action="flow" disabled>SWITCH FLOW</button><button data-action="crowd" disabled>WORK CROWD</button></div><button class="start" id="soloStartBattle">START THREE-ROUND BATTLE</button><button class="start live-choice" id="openLiveBattleFromCircle">🔴 LIVE 2-PLAYER FREESTYLE</button><button class="start" id="closeBattle" style="background:#2b2028;color:#fff">RETURN TO 3D ROOM</button></div></div>
+
+<div id="liveBattleOverlay" class="live-arena-overlay" aria-hidden="true">
+  <div class="live-arena-shell">
+    <div class="live-topbar">
+      <div class="live-brand">MUSIC CITY ESTATES<small>WORD SLAUGHTER — LIVE ARENA</small></div>
+      <button id="closeLiveBattle" class="live-close">✕ CLOSE</button>
+    </div>
+
+    <section id="setupView" class="grid">
+      <div class="panel">
+        <h2>Create a Battle Room</h2>
+        <label for="hostName">Artist name</label>
+        <input id="hostName" maxlength="28" placeholder="Your artist name">
+        <div class="actions">
+          <button id="createRoom" class="primary">CREATE ROOM</button>
+          <button id="quickSolo" class="secondary">SOLO AUDIO TEST</button>
+        </div>
+        <div id="hostStatus" class="status">This phone becomes Rapper A. Your opponent stays inside the same 3D arena on their device.</div>
+      </div>
+
+      <div class="panel">
+        <h2>Join This Arena</h2>
+        <label for="joinName">Display name</label>
+        <input id="joinName" maxlength="28" placeholder="Artist or listener name">
+        <label for="joinRole">Join as</label>
+        <select id="joinRole">
+          <option value="rapper">Rapper B</option>
+          <option value="audience">Audience / Fan</option>
+        </select>
+        <label for="roomInput">Room code</label>
+        <input id="roomInput" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="MCE-ABC123">
+        <button id="joinRoom" class="primary" style="width:100%;margin-top:12px">JOIN LIVE ARENA</button>
+        <div id="joinStatus" class="status">Tap Join so your browser can activate live audio and microphone permissions.</div>
+      </div>
+    </section>
+
+    <section id="roomView" class="grid hidden">
+      <div id="liveRoomMetaPanel" class="panel wide">
+        <div class="room">
+          <div><small style="color:#c3b3c4">ROOM CODE</small><div id="roomCode" class="code">—</div></div>
+          <div class="actions" style="margin:0;min-width:min(420px,100%)">
+            <button id="copyRapper" class="secondary">COPY RAPPER INVITE</button>
+            <button id="copyAudience" class="ghost">COPY FAN INVITE</button>
+          </div>
+        </div>
+        <div id="connectionStatus" class="status good">Connecting…</div>
+      </div>
+
+      <div id="liveParticipantsPanel" class="panel">
+        <h3>Inside the Arena</h3>
+        <div id="participants" class="participants"></div>
+      </div>
+
+      <div id="liveAudioPanel" class="panel">
+        <h3>Mic / Audio</h3>
+        <div class="actions">
+          <button id="micButton" class="cyan">MIC: ON</button>
+          <button id="audioButton" class="ghost">ENABLE AUDIO</button>
+        </div>
+        <div id="audioStatus" class="status">Use headphones. Your microphone is only requested for a rapper role.</div>
+      </div>
+
+      <div id="liveStagePanel" class="panel wide">
+        <div class="stage">
+          <div id="stageLabel" class="live-pill"><span class="dot"></span> WAITING IN ARENA</div>
+          <div id="countdown" class="countdown">READY</div>
+          <div id="turnLabel" class="turn">Rapper A vs Rapper B</div>
+          <div id="clock" class="clock">00:00</div>
+          <div id="battleMeta" class="battle-meta">Host chooses BPM and round length.</div>
+          <div class="meter"><div id="battleProgress" class="fill"></div></div>
+        </div>
+      </div>
+
+      <div id="hostControls" class="panel hidden">
+        <h3>DJ / Host Controls</h3>
+        <label for="bpm">Beat tempo</label>
+        <select id="bpm">
+          <option value="82">82 BPM — laid back</option>
+          <option value="90" selected>90 BPM — classic</option>
+          <option value="98">98 BPM — energetic</option>
+          <option value="108">108 BPM — fast</option>
+        </select>
+        <label for="roundSeconds">Each freestyle turn</label>
+        <select id="roundSeconds">
+          <option value="20">20 seconds — quick test</option>
+          <option value="30" selected>30 seconds</option>
+          <option value="45">45 seconds</option>
+          <option value="60">60 seconds</option>
+        </select>
+        <div class="actions">
+          <button id="startBattle" class="primary">START LIVE BATTLE</button>
+          <button id="stopBattle" class="danger" disabled>END BATTLE</button>
+        </div>
+        <div class="status warn">When you start, this menu disappears and both players rap while looking at the 3D Word Slaughter stage.</div>
+      </div>
+
+      <div id="votePanel" class="panel hidden">
+        <h3>Fan Vote</h3>
+        <p id="votePrompt" class="note">Vote for the freestyle you liked most.</p>
+        <div class="vote-grid">
+          <button id="voteA" class="vote-btn vote-a">VOTE RAPPER A</button>
+          <button id="voteB" class="vote-btn vote-b">VOTE RAPPER B</button>
+        </div>
+        <div class="votes"><span>A: <b id="votesA">0</b></span><span>B: <b id="votesB">0</b></span></div>
+      </div>
+
+      <div id="liveBattleLogPanel" class="panel wide">
+        <h3>Battle Log</h3>
+        <div id="battleLog" class="status">Waiting for room activity.</div>
+      </div>
+    </section>
+  </div>
+</div>
+<button id="tapAudio" class="primary">TAP TO ENABLE LIVE AUDIO</button>
+<div id="remoteAudioMount" hidden></div>
+
 <script src="player-state.js"></script>
+<script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
 <script type="module" src="battle_room_3d.js"></script>
+<script src="live_freestyle.js"></script>
+<script src="battle_room_live_ui.js"></script>
 </body>
 </html>

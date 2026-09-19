@@ -94,6 +94,8 @@ function roleLabel(role) {
   return "AUDIENCE";
 }
 
+function notifyArenaUi(phase) { try { window.dispatchEvent(new CustomEvent("mce-live-arena-ui", { detail: { phase: phase } })); } catch (err) {} }
+
 function showRoom() {
   setupView.classList.add("hidden");
   roomView.classList.remove("hidden");
@@ -101,6 +103,7 @@ function showRoom() {
   hostControls.classList.toggle("hidden", !isHost);
   updateMicUi();
   renderParticipants();
+  notifyArenaUi("room");
 }
 
 function renderParticipants() {
@@ -688,6 +691,7 @@ function beginBattle(data) {
   byId("stageLabel").innerHTML = '<span class="dot"></span> LIVE BATTLE';
   byId("battleMeta").textContent = battle.bpm + " BPM • " + battle.roundSeconds + " sec per turn • 2 rounds each";
   log("Battle count-in started. Beat drops in 4 seconds.");
+  notifyArenaUi("battle");
   scheduleBeat(battle);
 
   tickBattle();
@@ -772,6 +776,7 @@ function openVoting(data) {
   byId("voteA").textContent = "VOTE " + (data.rapperA || battle.rapperA).toUpperCase();
   byId("voteB").textContent = "VOTE " + (data.rapperB || battle.rapperB).toUpperCase();
   votePanel.classList.remove("hidden");
+  notifyArenaUi("voting");
 
   var canVote = assignedRole === "audience" && votedBattleId !== battle.id;
   byId("voteA").disabled = !canVote;
@@ -870,6 +875,7 @@ function showBattleResult(data) {
   byId("voteB").disabled = true;
   byId("votePrompt").textContent = result;
   log(result + " Career rewards are saved locally only when the battle venue is unlocked.");
+  notifyArenaUi("done");
   applyCareerReward(data);
 }
 
@@ -918,6 +924,7 @@ function stopBattleLocal(reason) {
   byId("stopBattle").disabled = true;
   closeVotePanel();
   log(reason || "Battle stopped.");
+  notifyArenaUi("done");
 }
 
 function scheduleBeat(b) {
