@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - codex/live-freestyle-battle
+  pull_request:
+    branches:
+      - codex/trailer-ready-slice
   workflow_dispatch:
 
 permissions:
