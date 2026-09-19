@@ -5,7 +5,7 @@ const room = createRoom({
   spawn: [0, 1.7, 38],
   background: 0x8ecdf4,
   fog: 0xb8d8e8,
-  fogDensity: .0028,
+  fogDensity: .0018,
   sky: 0xd9efff
 });
 const { THREE, scene, renderer, camera } = room;
@@ -13,12 +13,12 @@ const clickables = [];
 
 // Hip-Hop Heights now reads as a bright late-afternoon district instead of a dark room.
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.35;
+renderer.toneMappingExposure = 1.16;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 scene.children.forEach((child) => {
-  if (child.isHemisphereLight) child.intensity = 1.7;
+  if (child.isHemisphereLight) child.intensity = 1.08;
 });
-const sun = new THREE.DirectionalLight(0xfff3d2, 2.8);
+const sun = new THREE.DirectionalLight(0xffefd2, 3.15);
 sun.position.set(18, 32, 24);
 sun.castShadow = true;
 sun.shadow.mapSize.set(1024, 1024);
@@ -27,7 +27,7 @@ sun.shadow.camera.right = 48;
 sun.shadow.camera.top = 52;
 sun.shadow.camera.bottom = -52;
 scene.add(sun);
-scene.add(new THREE.AmbientLight(0xbcdfff, .62));
+scene.add(new THREE.AmbientLight(0xbcd7ea, .34));
 
 document.getElementById('fans').textContent = state.fans;
 document.getElementById('cash').textContent = state.cash;
@@ -74,6 +74,26 @@ function masonryTexture(base, mortar, accent) {
   }, 2.2, 2.2);
 }
 
+function bumpFrom(texture, repeatX = texture.repeat.x, repeatY = texture.repeat.y) {
+  const bump = texture.clone();
+  bump.colorSpace = THREE.NoColorSpace;
+  bump.wrapS = bump.wrapT = THREE.RepeatWrapping;
+  bump.repeat.set(repeatX, repeatY);
+  bump.needsUpdate = true;
+  return bump;
+}
+
+function realisticSurface(map, options = {}) {
+  return new THREE.MeshStandardMaterial({
+    map,
+    bumpMap: bumpFrom(map),
+    bumpScale: options.bumpScale ?? .065,
+    color: options.color ?? 0xffffff,
+    roughness: options.roughness ?? .78,
+    metalness: options.metalness ?? .04
+  });
+}
+
 const asphaltTexture = canvasTexture((context, width, height) => {
   context.fillStyle = '#343840';
   context.fillRect(0, 0, width, height);
@@ -97,9 +117,12 @@ const concreteTexture = canvasTexture((context, width, height) => {
 const ground = room.box('district ground', [72, .22, 92], [0, -.13, -4], 0x5e6670, { roughness: .96 });
 ground.receiveShadow = true;
 ground.material.map = concreteTexture;
+ground.material.bumpMap = bumpFrom(concreteTexture);
+ground.material.bumpScale = .045;
 ground.material.needsUpdate = true;
-room.box('main street', [17, .05, 90], [0, .02, -4], 0x343840, { material: new THREE.MeshStandardMaterial({ map: asphaltTexture, color: 0xffffff, roughness: .93 }) });
-for (const x of [-9.6, 9.6]) room.box('sidewalk', [3.8, .18, 90], [x, .06, -4], 0xb5b4af, { material: new THREE.MeshStandardMaterial({ map: concreteTexture, color: 0xffffff, roughness: .88 }) });
+room.box('main street', [17, .05, 90], [0, .02, -4], 0x343840, { material: realisticSurface(asphaltTexture, { roughness: .92, bumpScale: .035 }) });
+for (const x of [-9.6, 9.6]) room.box('sidewalk', [3.8, .18, 90], [x, .06, -4], 0xb5b4af, { material: realisticSurface(concreteTexture, { roughness: .82, bumpScale: .05 }) });
+for (const x of [-8.62, 8.62]) room.box('raised street curb', [.28, .3, 90], [x, .18, -4], 0x8d8d89, { material: realisticSurface(concreteTexture, { roughness: .86, bumpScale: .04 }) });
 for (let z = -46; z < 40; z += 9) {
   room.box('lane light', [.15, .03, 4.4], [0, .07, z], 0xe0bd62, { metalness: .1 });
 }
@@ -111,10 +134,11 @@ for (let z = -43; z <= 35; z += 13) {
 }
 
 const materials = {
-  glassGold: new THREE.MeshStandardMaterial({ color: 0x76dfff, emissive: 0x0d6fa8, emissiveIntensity: 1.15, transparent: true, opacity: .42, roughness: .12, metalness: .32 }),
-  glassOrange: new THREE.MeshStandardMaterial({ color: 0xff824f, emissive: 0x8d2f12, emissiveIntensity: .85, transparent: true, opacity: .58, roughness: .2 }),
-  glassPurple: new THREE.MeshStandardMaterial({ color: 0xd76aff, emissive: 0x571a76, emissiveIntensity: .9, transparent: true, opacity: .56, roughness: .18 }),
-  glassCyan: new THREE.MeshStandardMaterial({ color: 0x65dfff, emissive: 0x164f6c, emissiveIntensity: .9, transparent: true, opacity: .55, roughness: .17 })
+  glassGold: new THREE.MeshPhysicalMaterial({ color: 0x79b5c9, emissive: 0x06344a, emissiveIntensity: .24, transparent: true, opacity: .48, roughness: .08, metalness: .08, clearcoat: .8, clearcoatRoughness: .08 }),
+  glassOrange: new THREE.MeshPhysicalMaterial({ color: 0xa66c52, emissive: 0x3d1309, emissiveIntensity: .2, transparent: true, opacity: .52, roughness: .12, clearcoat: .72 }),
+  glassPurple: new THREE.MeshPhysicalMaterial({ color: 0x775b80, emissive: 0x240d2c, emissiveIntensity: .2, transparent: true, opacity: .5, roughness: .12, clearcoat: .72 }),
+  glassCyan: new THREE.MeshPhysicalMaterial({ color: 0x5c8791, emissive: 0x092a34, emissiveIntensity: .18, transparent: true, opacity: .5, roughness: .1, clearcoat: .75 }),
+  upperGlass: new THREE.MeshPhysicalMaterial({ color: 0x30444c, roughness: .13, metalness: .16, transparent: true, opacity: .78, clearcoat: .82, clearcoatRoughness: .1 })
 };
 
 function destinationAction(destination, name) {
@@ -172,8 +196,8 @@ function addStorefront(config) {
   const innerX = side * 15;
   const outerX = side * 31;
   const z = config.z;
-  const wallMaterial = new THREE.MeshStandardMaterial({ map: config.texture, color: 0xffffff, roughness: .8, metalness: .06 });
-  const trimMaterial = room.material(config.trim, .36, .63);
+  const wallMaterial = realisticSurface(config.texture, { roughness: .84, metalness: .025, bumpScale: .085 });
+  const trimMaterial = room.material(config.trim, .48, .48);
   const action = destinationAction(config.destination, config.name);
 
   room.box(config.name + ' floor', [16, .25, 18], [xCenter, .05, z], config.floor, { roughness: .7 });
@@ -188,6 +212,9 @@ function addStorefront(config) {
     room.box(config.name + ' south wing roof', [16.5, .38, 5.7], [xCenter, 8.65, z + 6.15], config.roof, { metalness: .25, roughness: .55 });
   } else {
     room.box(config.name + ' roof', [16.5, .38, 18.5], [xCenter, 9, z], config.roof, { metalness: .25, roughness: .55 });
+    room.box(config.name + ' roof parapet', [.65, .72, 18.6], [innerX, 9.22, z], config.wall, { material: wallMaterial });
+    room.box(config.name + ' stone base course', [.72, .62, 18.15], [innerX - side * .12, .44, z], 0x777879, { roughness: .86, metalness: .02 });
+    room.box(config.name + ' facade shadow line', [.65, .16, 18.25], [innerX - side * .1, 5.93, z], 0x24272b, { roughness: .62, metalness: .24 });
 
     room.box(config.name + ' facade top', [.4, 3.2, 18], [innerX, 7.4, z], config.wall, { material: wallMaterial, collider: true });
     room.box(config.name + ' facade base', [.4, 1, 18], [innerX, .5, z], config.wall, { material: wallMaterial, collider: true });
@@ -207,6 +234,18 @@ function addStorefront(config) {
       room.box(config.name + ' window sill', [.72, .22, 5.1], [innerX - side * .34, 1.02, z + windowOffset], config.trim, { material: trimMaterial });
     }
     room.box(config.name + ' storefront awning', [2.25, .3, 15.5], [innerX - side * 1.02, 6.18, z], config.trim, { material: trimMaterial });
+
+    for (const upperOffset of [-5.9, 5.9]) {
+      room.box(config.name + ' upper window', [.12, 1.35, 2.65], [innerX - side * .24, 7.75, z + upperOffset], 0x30444c, { material: materials.upperGlass });
+      room.box(config.name + ' upper window lintel', [.52, .18, 2.92], [innerX - side * .17, 8.52, z + upperOffset], 0x494d50, { metalness: .3, roughness: .58 });
+      room.box(config.name + ' upper window sill', [.58, .2, 2.92], [innerX - side * .2, 6.98, z + upperOffset], 0x6d7071, { roughness: .72 });
+    }
+
+    // Rooftop utilities, rainwater pipe and service boxes break the perfect block silhouette.
+    room.box(config.name + ' rooftop HVAC', [3.4, 1.15, 2.7], [xCenter, 9.68, z - 3.8], 0x72777b, { metalness: .58, roughness: .52 });
+    for (const vent of [-.85, 0, .85]) room.box(config.name + ' HVAC vent', [3.45, .1, .12], [xCenter - side * 1.73, 9.68, z - 3.8 + vent], 0x34393d, { metalness: .72, roughness: .4 });
+    room.cylinder(config.name + ' rain downspout', .09, 8.1, [innerX - side * .3, 4.05, z + 8.45], 0x565b5f, { metalness: .72, roughness: .38 });
+    room.box(config.name + ' utility box', [.45, 1.2, 1.45], [innerX - side * .28, 1.55, z + 7.3], 0x596067, { metalness: .55, roughness: .56 });
 
     room.box(config.name + ' doorway frame top', [.5, .28, 4.2], [innerX - side * .06, 5.75, z], config.trim, { material: trimMaterial });
     for (const offset of [-2.05, 2.05]) room.box(config.name + ' doorway frame', [.5, 5, .22], [innerX - side * .06, 3.3, z + offset], config.trim, { material: trimMaterial });
@@ -332,7 +371,7 @@ function beGeniusExterior({ innerX, z, side, action }) {
     roughness: .18
   });
   const studioStoneTexture = masonryTexture('#25384a', '#111c27', '#55bff0');
-  const stone = new THREE.MeshStandardMaterial({ map: studioStoneTexture, color: 0xffffff, roughness: .72, metalness: .08 });
+  const stone = realisticSurface(studioStoneTexture, { roughness: .74, metalness: .04, bumpScale: .09 });
   const darkMetal = new THREE.MeshStandardMaterial({ color: 0x111722, roughness: .32, metalness: .74 });
   const glass = new THREE.MeshStandardMaterial({
     color: 0x7fe3ff,
@@ -517,6 +556,69 @@ for (const z of [-37, -27, -8, 3, 28, 36]) {
 
 for (const z of [-40, -30, -6, 5, 31]) {
   room.box('crosswalk stripe', [15.2, .025, .52], [0, .062, z], 0xf2ede0, { roughness: .88, cast: false });
+}
+
+// Street wear and municipal details keep the road from reading as a clean game board.
+for (const [x, z] of [[-5.7, -34], [5.9, -10], [-5.8, 13], [5.8, 32]]) {
+  room.box('storm drain frame', [1.15, .035, .62], [x, .075, z], 0x25282b, { metalness: .76, roughness: .48, cast: false });
+  for (let slot = -.42; slot <= .42; slot += .21) room.box('storm drain slot', [.055, .02, .5], [x + slot, .097, z], 0x08090a, { metalness: .4, roughness: .7, cast: false });
+}
+for (const [x, z] of [[-2.8, -24], [3.4, 20]]) {
+  const cover = room.cylinder('manhole cover', .72, .035, [x, .09, z], 0x34383b, { metalness: .72, roughness: .55 });
+  for (let radius = .2; radius <= .55; radius += .18) {
+    const groove = new THREE.Mesh(new THREE.TorusGeometry(radius, .018, 6, 30), new THREE.MeshBasicMaterial({ color: 0x111315 }));
+    groove.rotation.x = Math.PI / 2;
+    groove.position.set(x, .115, z);
+    scene.add(groove);
+  }
+}
+
+function addTrashCan(x, z) {
+  const can = room.cylinder('street trash can', .42, 1.05, [x, .58, z], 0x343a3d, { metalness: .68, roughness: .5 });
+  for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 4) {
+    room.box('trash can slat', [.06, .88, .06], [x + Math.cos(angle) * .39, .58, z + Math.sin(angle) * .39], 0x171a1c, { metalness: .62, roughness: .5 });
+  }
+  room.cylinder('trash can rim', .48, .09, [x, 1.12, z], 0x1f2325, { metalness: .78, roughness: .42 });
+  return can;
+}
+addTrashCan(-11.35, -25);
+addTrashCan(11.35, 9);
+
+function addHydrant(x, z) {
+  room.cylinder('fire hydrant body', .22, .92, [x, .52, z], 0xb63d32, { metalness: .36, roughness: .5 });
+  room.cylinder('fire hydrant bonnet', .31, .16, [x, 1.02, z], 0xc44a3d, { metalness: .36, roughness: .48 });
+  const sideCap = room.cylinder('fire hydrant side cap', .15, .48, [x, .62, z], 0x9f332c, { metalness: .42, roughness: .44 });
+  sideCap.rotation.z = Math.PI / 2;
+}
+addHydrant(11.2, -33);
+
+function addParkedCar(x, z, color) {
+  const paint = new THREE.MeshPhysicalMaterial({ color, roughness: .24, metalness: .32, clearcoat: .8, clearcoatRoughness: .15 });
+  room.box('parked car body', [2.15, .72, 4.15], [x, .66, z], color, { material: paint });
+  const cabin = room.box('parked car cabin', [1.75, .72, 2.05], [x, 1.31, z - .2], color, { material: paint });
+  cabin.scale.x = .88;
+  const windshield = new THREE.MeshStandardMaterial({ color: 0x29404b, roughness: .12, metalness: .18, transparent: true, opacity: .72 });
+  room.box('parked car windshield', [1.58, .56, .08], [x, 1.35, z + .86], 0x29404b, { material: windshield });
+  for (const dx of [-1.05, 1.05]) for (const dz of [-1.35, 1.35]) {
+    const wheel = room.cylinder('parked car wheel', .34, .24, [x + dx, .42, z + dz], 0x111214, { metalness: .12, roughness: .88 });
+    wheel.rotation.z = Math.PI / 2;
+  }
+  for (const dz of [-2.1, 2.1]) room.box('car bumper', [1.92, .18, .16], [x, .52, z + dz], 0x2d3033, { metalness: .72, roughness: .35 });
+}
+addParkedCar(-5.75, -41, 0x343a43);
+addParkedCar(5.7, 8, 0x6e2427);
+
+// Utility lines and a distant skyline add depth without loading heavy external models.
+for (const x of [-11.1, 11.1]) {
+  const points = [];
+  for (let z = -43; z <= 35; z += 13) points.push(new THREE.Vector3(x, 4.92 - ((z + 43) % 26 === 13 ? .34 : 0), z));
+  const cable = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 64, .025, 5, false), new THREE.MeshStandardMaterial({ color: 0x151719, roughness: .72, metalness: .4 }));
+  cable.castShadow = true;
+  scene.add(cable);
+}
+for (const [x, height, width] of [[-24, 17, 11], [-9, 22, 10], [8, 15, 9], [23, 24, 12]]) {
+  room.box('distant skyline building', [width, height, 5], [x, height / 2 - .1, -55], 0x5e6973, { roughness: .82, metalness: .08, cast: false });
+  for (let y = 3; y < height - 1; y += 2.4) for (let wx = -width / 2 + 1.1; wx < width / 2; wx += 2.2) room.box('distant window', [.72, .72, .06], [x + wx, y, -52.46], (Math.round(wx + y) % 3) ? 0x9cb2bd : 0xe1bd79, { roughness: .4, cast: false });
 }
 
 room.label('HIP-HOP HEIGHTS', [0, 9.2, -47], '#ffd268', [12, 1.6]);
