@@ -18,8 +18,14 @@ const stat=()=>{
 stat();
 document.getElementById('accessMode').textContent=unlocked?'BATTLE READY':'VENUE TOUR';
 
-const room=createRoom({spawn:[0,1.7,14.5],background:0x020104,fog:0x090207,fogDensity:.012,sky:0x5c2135});
-const {THREE,scene}=room;
+const room=createRoom({spawn:[0,1.7,14.5],background:0x17131a,fog:0x2b2026,fogDensity:.0048,sky:0xd1b1bb});
+const {THREE,scene,renderer}=room;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.5;
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+scene.children.forEach(child=>{if(child.isHemisphereLight)child.intensity=1.48});
+scene.add(new THREE.AmbientLight(0xc5aeba,.48));
+const battleFill=new THREE.DirectionalLight(0xffd7b1,1.6);battleFill.position.set(11,16,13);battleFill.castShadow=false;scene.add(battleFill);
 
 function canvasTexture(draw,size=512){
   const canvas=document.createElement('canvas');
@@ -33,12 +39,12 @@ function canvasTexture(draw,size=512){
 }
 
 const brickTexture=canvasTexture((ctx,s)=>{
-  ctx.fillStyle='#21171a';ctx.fillRect(0,0,s,s);
+  ctx.fillStyle='#3a282d';ctx.fillRect(0,0,s,s);
   const row=64;
   for(let y=0;y<s;y+=row){
     const offset=(y/row)%2?48:0;
     for(let x=-96;x<s;x+=96){
-      const shade=26+Math.floor(Math.random()*18);
+      const shade=40+Math.floor(Math.random()*22);
       ctx.fillStyle=`rgb(${shade+18},${shade},${shade+3})`;
       ctx.fillRect(x+offset+3,y+3,90,row-6);
       ctx.strokeStyle='#0d0a0b';ctx.lineWidth=4;ctx.strokeRect(x+offset+3,y+3,90,row-6);
@@ -50,10 +56,10 @@ const brickTexture=canvasTexture((ctx,s)=>{
   }
 });
 brickTexture.repeat.set(5,2);
-const brickMaterial=new THREE.MeshStandardMaterial({map:brickTexture,color:0x8b6870,roughness:.96});
+const brickMaterial=new THREE.MeshStandardMaterial({map:brickTexture,color:0xb58b94,roughness:.92});
 
 const concreteTexture=canvasTexture((ctx,s)=>{
-  ctx.fillStyle='#171318';ctx.fillRect(0,0,s,s);
+  ctx.fillStyle='#444047';ctx.fillRect(0,0,s,s);
   for(let i=0;i<1600;i++){
     const c=22+Math.floor(Math.random()*25);
     ctx.fillStyle=`rgba(${c+12},${c},${c+6},${Math.random()*.22})`;
@@ -63,7 +69,7 @@ const concreteTexture=canvasTexture((ctx,s)=>{
   for(let p=0;p<s;p+=128){ctx.beginPath();ctx.moveTo(p,0);ctx.lineTo(p,s);ctx.stroke();ctx.beginPath();ctx.moveTo(0,p);ctx.lineTo(s,p);ctx.stroke()}
 });
 concreteTexture.repeat.set(4,4);
-const concreteMaterial=new THREE.MeshStandardMaterial({map:concreteTexture,color:0x777077,roughness:.83,metalness:.12});
+const concreteMaterial=new THREE.MeshPhysicalMaterial({map:concreteTexture,color:0xc0b9c0,roughness:.42,metalness:.1,clearcoat:.38,clearcoatRoughness:.3});
 
 room.wallBounds(42,34,10);
 scene.getObjectByName('floor').material=concreteMaterial;
@@ -71,6 +77,11 @@ for(const wallName of ['back wall','left wall','right wall','front-left','front-
 
 for(const x of [-20,-14,14,20])room.box('steel column',[.55,9.5,.55],[x,4.75,-3],0x201d22,{metalness:.82,roughness:.35});
 for(let z=-15;z<=15;z+=5)room.box('roof beam',[41,.22,.22],[0,8.55,z],0x302b31,{metalness:.9,roughness:.3});
+const warmStrip=new THREE.MeshStandardMaterial({color:0xffd0a2,emissive:0xff7028,emissiveIntensity:2.35,metalness:.25,roughness:.2});
+for(const z of [-14,-7,0,7,14]){
+  room.box('battle wall wash left',[.1,.12,4.5],[-20.55,5.9,z],0xff914a,{material:warmStrip,cast:false});
+  room.box('battle wall wash right',[.1,.12,4.5],[20.55,5.9,z],0xff914a,{material:warmStrip,cast:false});
+}
 for(const x of [-19,19]){
   room.box('catwalk',[3.2,.25,25],[x,4.6,0],0x221f23,{metalness:.75,roughness:.45});
   for(let z=-11;z<=11;z+=2)room.box('rail post',[.09,1.25,.09],[x>0?17.55:-17.55,5.25,z],0x6a6269,{metalness:.9});
@@ -163,7 +174,7 @@ const fillLight=room.light(0x872cff,30,[10,4.6,-10],22);fillLight.castShadow=fal
 const blueLight=room.light(0x226dff,20,[0,6,-5],18);blueLight.castShadow=false;
 keyLight.shadow.mapSize.set(512,512);
 for(const x of [-17,17])for(const z of [-10,-3,4,11]){
-  const practical=new THREE.PointLight(0xff9c4a,3.5,7,2);practical.position.set(x,3.1,z);scene.add(practical);
+  const practical=new THREE.PointLight(0xffb46c,6.5,9,2);practical.position.set(x,3.1,z);scene.add(practical);
 }
 
 room.box('backstage door',[4.6,3.8,.3],[-15.4,1.9,-15.9],0x120f13,{collider:true,metalness:.45});
