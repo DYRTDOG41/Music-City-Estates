@@ -13,8 +13,15 @@ const updateStats = () => {
 };
 updateStats();
 
-const room = createRoom({ spawn: [0, 1.7, 13.2], background: 0x030303, fog: 0x090806, fogDensity: .009, sky: 0x725f35 });
-const { THREE, scene } = room;
+const room = createRoom({ spawn: [0, 1.7, 13.2], background: 0x10131a, fog: 0x161926, fogDensity: .0035, sky: 0xb9d8ff });
+const { THREE, scene, renderer } = room;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.42;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+scene.children.forEach((child) => {
+  if (child.isHemisphereLight) child.intensity = 1.55;
+});
+scene.add(new THREE.AmbientLight(0xb8ccff, .52));
 
 function canvasTexture(draw, width = 512, height = 512) {
   const canvas = document.createElement('canvas');
@@ -29,11 +36,11 @@ function canvasTexture(draw, width = 512, height = 512) {
 }
 
 const marble = canvasTexture((context, width, height) => {
-  context.fillStyle = '#141312';
+  context.fillStyle = '#595b64';
   context.fillRect(0, 0, width, height);
-  for (let index = 0; index < 85; index += 1) {
-    context.strokeStyle = `rgba(210,190,130,${Math.random() * .12})`;
-    context.lineWidth = Math.random() * 3 + .5;
+  for (let index = 0; index < 110; index += 1) {
+    context.strokeStyle = `rgba(225,232,255,${Math.random() * .18})`;
+    context.lineWidth = Math.random() * 3.5 + .5;
     context.beginPath();
     const start = Math.random() * height;
     context.moveTo(0, start);
@@ -42,44 +49,76 @@ const marble = canvasTexture((context, width, height) => {
   }
 });
 marble.repeat.set(4, 4);
-const wood = canvasTexture((context, width, height) => {
-  context.fillStyle = '#24150e';
+const wallPanels = canvasTexture((context, width, height) => {
+  context.fillStyle = '#101117';
   context.fillRect(0, 0, width, height);
-  for (let x = 0; x < width; x += 38) {
-    context.fillStyle = x % 76 ? '#321f15' : '#1a100b';
-    context.fillRect(x, 0, 32, height);
-    context.strokeStyle = '#6b472b44';
-    for (let y = 20; y < height; y += 80) {
-      context.beginPath();
-      context.moveTo(x, y);
-      context.quadraticCurveTo(x + 18, y + 8, x + 32, y);
-      context.stroke();
-    }
+  context.strokeStyle = '#2e303b';
+  context.lineWidth = 5;
+  for (let x = 0; x <= width; x += 128) {
+    context.beginPath(); context.moveTo(x, 0); context.lineTo(x, height); context.stroke();
+  }
+  for (let y = 0; y <= height; y += 128) {
+    context.beginPath(); context.moveTo(0, y); context.lineTo(width, y); context.stroke();
   }
 });
-wood.repeat.set(5, 2);
+wallPanels.repeat.set(5, 2);
 
 room.wallBounds(40, 32, 9);
-scene.getObjectByName('floor').material = new THREE.MeshStandardMaterial({ map: marble, color: 0x67625c, roughness: .34, metalness: .15 });
+scene.getObjectByName('floor').material = new THREE.MeshPhysicalMaterial({ map: marble, color: 0xd4d6df, roughness: .2, metalness: .12, clearcoat: .75, clearcoatRoughness: .18 });
 for (const wallName of ['back wall', 'left wall', 'right wall', 'front-left', 'front-right']) {
-  scene.getObjectByName(wallName).material = new THREE.MeshStandardMaterial({ map: wood, color: 0x76513b, roughness: .72, metalness: .06 });
+  scene.getObjectByName(wallName).material = new THREE.MeshStandardMaterial({ map: wallPanels, color: 0xffffff, roughness: .67, metalness: .08 });
 }
 
-for (const x of [-18.8, -10, 10, 18.8]) room.box('brass column', [.38, 8.7, .38], [x, 4.35, -4], 0xb99a4d, { metalness: .85, roughness: .24 });
-for (let z = -14; z <= 14; z += 4) room.box('ceiling beam', [39, .16, .16], [0, 8.25, z], 0x2c2720, { metalness: .72, roughness: .34 });
+const blueLED = new THREE.MeshStandardMaterial({ color: 0xd8f6ff, emissive: 0x147dff, emissiveIntensity: 3.2, metalness: .22, roughness: .18 });
+const purpleLED = new THREE.MeshStandardMaterial({ color: 0xf2c9ff, emissive: 0x9b25ff, emissiveIntensity: 2.8, metalness: .18, roughness: .2 });
+for (const x of [-18.8, -10, 10, 18.8]) room.box('black wall column', [.38, 8.7, .38], [x, 4.35, -4], 0x171922, { metalness: .62, roughness: .3 });
+for (let z = -14; z <= 14; z += 4) room.box('ceiling beam', [39, .16, .16], [0, 8.25, z], 0x1b1c24, { metalness: .58, roughness: .38 });
 for (const x of [-15, -7.5, 0, 7.5, 15]) {
-  const downlight = new THREE.SpotLight(0xffe8b0, 42, 18, .48, .6, 1.6);
-  downlight.position.set(x, 8, 1);
-  downlight.target.position.set(x, 0, -2);
+  const downlight = new THREE.SpotLight(0xffedcf, 62, 20, .52, .55, 1.45);
+  downlight.position.set(x, 8, 2);
+  downlight.target.position.set(x, 0, -1);
   scene.add(downlight, downlight.target);
-  room.cylinder('ceiling light', .22, .24, [x, 8.05, 1], 0x181613, { metalness: .85 });
+  room.cylinder('ceiling light', .22, .24, [x, 8.05, 2], 0x181a21, { metalness: .85 });
 }
-const goldLight = room.light(0xffcf69, 15, [-12, 4, -6], 20);
-goldLight.shadow.mapSize.set(512, 512);
-const coolLight = room.light(0x6ba8ff, 11, [12, 4, -6], 20);
+for (const x of [-16, -8, 0, 8, 16]) {
+  room.box('blue ceiling light channel', [6.8, .08, .12], [x, 8.12, -13.7], 0x56b8ff, { material: blueLED, cast: false });
+  room.box('purple ceiling light channel', [6.8, .08, .12], [x, 8.12, 8.8], 0xca66ff, { material: purpleLED, cast: false });
+}
+const warmLight = room.light(0xffd7a1, 18, [-12, 5.5, -4], 22);
+warmLight.shadow.mapSize.set(512, 512);
+const coolLight = room.light(0x5b9dff, 24, [10, 5, -6], 24);
 coolLight.castShadow = false;
-room.label('BEGENIUS', [0, 7.15, -15.75], '#f1e4bd', [12, 1.8]);
-room.label('MUSIC • MEDIA • PUBLISHING • DEVELOPMENT', [0, 6.08, -15.72], '#d8b765', [12, .66]);
+room.light(0xa942ff, 15, [13, 5, 6], 18).castShadow = false;
+
+function addLobbyBrand() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1500;
+  canvas.height = 430;
+  const context = canvas.getContext('2d');
+  context.fillStyle = '#080a10';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.shadowColor = '#1888ff';
+  context.shadowBlur = 30;
+  context.strokeStyle = '#bfeeff';
+  context.lineWidth = 8;
+  context.beginPath();
+  context.moveTo(655, 105); context.lineTo(690, 38); context.lineTo(750, 94); context.lineTo(810, 38); context.lineTo(845, 105);
+  context.lineTo(828, 145); context.lineTo(672, 145); context.closePath(); context.stroke();
+  context.font = '900 112px Arial Black, Arial, sans-serif';
+  context.fillStyle = '#eaf8ff';
+  context.fillText('BeGenius Studio', 750, 245);
+  context.font = '700 30px Arial, sans-serif';
+  context.letterSpacing = '9px';
+  context.fillText('RECORD  •  CREATE  •  MIX  •  BELONG', 750, 345);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(12.8, 3.1), new THREE.MeshBasicMaterial({ map: texture, toneMapped: false }));
+  sign.position.set(0, 7.12, -15.72);
+  scene.add(sign);
+}
+addLobbyBrand();
 
 // Release art rotates every five seconds. Playback only begins after a player click.
 const screenCanvas = document.createElement('canvas');
@@ -88,12 +127,12 @@ screenCanvas.height = 720;
 const screenContext = screenCanvas.getContext('2d');
 const screenTexture = new THREE.CanvasTexture(screenCanvas);
 screenTexture.colorSpace = THREE.SRGBColorSpace;
-room.box('streaming wall frame', [15.1, 8.9, .28], [0, 3.55, -15.93], 0x17130d, { metalness: .68, roughness: .26, collider: true });
-const screen = new THREE.Mesh(new THREE.PlaneGeometry(14.2, 8), new THREE.MeshBasicMaterial({ map: screenTexture, toneMapped: false }));
-screen.position.set(0, 3.55, -15.74);
+room.box('streaming wall frame', [9.2, 4.9, .28], [-5.2, 2.75, -15.93], 0x171922, { metalness: .68, roughness: .26, collider: true });
+const screen = new THREE.Mesh(new THREE.PlaneGeometry(8.55, 4.25), new THREE.MeshBasicMaterial({ map: screenTexture, toneMapped: false }));
+screen.position.set(-5.2, 2.75, -15.74);
 screen.renderOrder = 2;
 scene.add(screen);
-room.label('OFFICIAL YOUTUBE RELEASE WALL', [0, 8.15, -15.55], '#f6d77d', [9, .72]);
+room.label('OFFICIAL RELEASE WALL', [-5.2, 5.42, -15.55], '#79c8ff', [6.4, .62]);
 
 let selectedReleaseIndex = 0;
 let wallRotationPaused = false;
@@ -191,18 +230,67 @@ beGeniusPlaques.forEach((plaque, index) => {
   room.label(`${plaque.title.toUpperCase()}\n${plaque.subtitle.toUpperCase()}`, [-19.15, y - .65, z], '#f4e6ba', [3.65, .82]);
 });
 
-// Reception, lounge, and connections to the universal studio workflow.
-room.box('reception desk', [8, 1.25, 1.8], [10.7, .63, 5], 0x17130e, { collider: true, metalness: .34, roughness: .46 });
-room.box('desk trim', [8.1, .12, .12], [10.7, 1.2, 4.06], 0xc6a653, { metalness: .86, roughness: .2 });
-room.label('BEGENIUS RECEPTION', [10.7, 1.55, 4], '#f0d178', [5.2, .62]);
-const receptionist = buildAvatar(room, { skin: '#815139', hairStyle: 'braids', hairColor: '#141015', shirtColor: '#171717', pantsColor: '#111111' }, [10.7, 0, 6.3], .88);
-receptionist.rotation.y = Math.PI;
-for (const x of [-6.5, 0, 6.5]) {
-  room.box('lounge sofa', [4.6, .75, 1.55], [x, .58, 7.5], 0x243026, { collider: true, roughness: .82 });
-  room.box('sofa back', [4.6, 1.15, .52], [x, 1.15, 8.1], 0x1c281f, { collider: true, roughness: .82 });
+// Feature awards behind reception echo the framed platinum and academy pieces.
+for (const [index, x] of [1.6, 4.45, 7.25].entries()) {
+  room.box('reception feature award frame', [2.35, 3.45, .22], [x, 3.15, -15.82], 0xc5a76a, { metalness: .76, roughness: .24 });
+  room.box('reception feature award mat', [2.02, 3.1, .16], [x, 3.15, -15.67], index === 1 ? 0xe4dfd1 : 0x171922, { roughness: .45 });
+  if (index !== 1) {
+    const disc = room.cylinder('reception platinum record', .62, .08, [x, 3.5, -15.51], index === 0 ? 0xd0b26a : 0xc9ced8, { metalness: .94, roughness: .16 });
+    disc.rotation.x = Math.PI / 2;
+  }
+  room.label(index === 1 ? 'GRAMMY\nRECOGNITION' : 'PLATINUM\nRECORD', [x, 2.25, -15.45], '#f6e5bf', [1.72, .7]);
 }
-room.box('lobby table', [5.2, .18, 2.4], [0, .76, 3.2], 0x4a311e, { collider: true, roughness: .44, metalness: .12 });
-for (const x of [-2.1, 2.1]) room.box('table leg', [.22, .75, .22], [x, .38, 3.2], 0xb3934e, { metalness: .82, roughness: .22 });
+
+// Illuminated marble reception desk anchors the lobby like the reference studio.
+const deskMarble = new THREE.MeshPhysicalMaterial({ map: marble, color: 0x343845, roughness: .22, metalness: .18, clearcoat: .82, clearcoatRoughness: .15 });
+room.box('reception desk', [9.4, 1.65, 2.25], [0, .83, -9.3], 0x20232d, { material: deskMarble, collider: true });
+room.box('desk blue top trim', [9.55, .12, 2.32], [0, 1.68, -9.3], 0x58c7ff, { material: blueLED });
+room.box('desk blue base trim', [9.5, .12, .16], [0, .18, -8.14], 0x58c7ff, { material: blueLED });
+room.label('BEGENIUS STUDIO', [0, 1.05, -8.08], '#aeeaff', [5.8, .72]);
+room.label('TAMPA • ATL • THE WORLD', [0, .54, -8.05], '#ffffff', [4.4, .34]);
+const receptionist = buildAvatar(room, { skin: '#815139', hairStyle: 'braids', hairColor: '#141015', shirtColor: '#171717', pantsColor: '#111111' }, [0, 0, -10.8], .88);
+receptionist.rotation.y = Math.PI;
+for (const x of [-14.4, -8.9]) {
+  room.box('lounge sofa', [4.4, .75, 1.55], [x, .58, 7.4], 0x171922, { collider: true, roughness: .62 });
+  room.box('sofa back', [4.4, 1.15, .52], [x, 1.15, 8], 0x11131a, { collider: true, roughness: .62 });
+  room.box('sofa blue piping', [4.45, .08, .08], [x, .95, 7.18], 0x64cfff, { material: blueLED, cast: false });
+}
+room.box('lobby table', [4.8, .18, 2.2], [-11.65, .76, 3.7], 0x171922, { material: deskMarble, collider: true });
+for (const x of [-13.6, -9.7]) room.box('table leg', [.22, .75, .22], [x, .38, 3.7], 0x4d5261, { metalness: .82, roughness: .22 });
+
+// Right-side recording hallway with labeled rooms and continuous LED guidance.
+room.box('hallway divider', [.32, 7.5, 19.5], [8.75, 3.75, -5.65], 0x11131a, { material: new THREE.MeshStandardMaterial({ map: wallPanels, color: 0xffffff, roughness: .68 }), collider: true });
+room.box('hallway blue ceiling rail', [.12, .12, 23], [18.9, 7.72, -3.8], 0x62cfff, { material: blueLED, cast: false });
+room.box('hallway purple ceiling rail', [.12, .12, 23], [9.05, 7.72, -3.8], 0xd76bff, { material: purpleLED, cast: false });
+room.label('ARTISTS LIVE HERE', [13.8, 6.85, -14.9], '#f2d8ff', [6.4, .72]);
+const hallwayDoors = [
+  { z: 4, label: 'CONTROL ROOM' },
+  { z: -1.5, label: 'PRODUCER SUITE' },
+  { z: -7, label: 'RECORDING ROOM' }
+];
+hallwayDoors.forEach((door, index) => {
+  room.box('studio hallway door', [.28, 4.8, 3.6], [19.68, 2.4, door.z], 0x090b11, { metalness: .58, roughness: .33 });
+  room.box('studio door blue edge', [.32, 4.9, .11], [19.5, 2.45, door.z - 1.82], 0x5bc9ff, { material: index % 2 ? purpleLED : blueLED });
+  room.label(door.label, [19.3, 5.25, door.z], index % 2 ? '#e0a5ff' : '#9cdeff', [4.1, .48]);
+});
+room.label('CREATE\nCOLLABORATE\nELEVATE', [8.52, 3.4, -9.6], '#ffffff', [3.25, 2.25]);
+
+// Plants and warm sconces keep the dark luxury palette from feeling gloomy.
+for (const [x, z] of [[-17.2, 9.2], [-7.2, -11.4], [7.25, -11.4], [17.6, 8.6]]) {
+  room.cylinder('black lobby planter', .48, .92, [x, .48, z], 0x171922, { metalness: .42, roughness: .38 });
+  for (let leafIndex = 0; leafIndex < 7; leafIndex += 1) {
+    const leaf = new THREE.Mesh(new THREE.SphereGeometry(.2, 8, 6), room.material(0x2f764d, .78, .02));
+    leaf.scale.set(.48, 2.4, .55);
+    leaf.position.set(x + (leafIndex - 3) * .08, 1.38 + (leafIndex % 2) * .18, z + (leafIndex % 3 - 1) * .1);
+    leaf.rotation.z = (leafIndex - 3) * .18;
+    leaf.castShadow = true;
+    scene.add(leaf);
+  }
+}
+for (const [x, z] of [[-19.2, -12], [-19.2, 10], [19.2, -11], [19.2, 10]]) {
+  room.box('warm wall sconce', [.16, 1.05, .22], [x, 4.6, z], 0xffdca8, { material: new THREE.MeshStandardMaterial({ color: 0xffedcf, emissive: 0xffb45b, emissiveIntensity: 2.5 }) });
+  room.light(0xffc678, 4.5, [x * .96, 4.6, z], 7).castShadow = false;
+}
 
 room.box('recording entrance', [6.2, 4.7, .32], [14.6, 2.35, -14.1], 0x0e0d0b, { collider: true, metalness: .48, roughness: .34 });
 room.label('RECORDING SUITE', [14.6, 4.05, -13.9], '#e7c66e', [4.7, .72]);
@@ -237,7 +325,7 @@ function openStreamPanel() {
   updateStreamPanel();
   streamPanel.classList.add('show');
 }
-room.interact('OPEN YOUTUBE RELEASE WALL', [0, 1.7, -10.3], openStreamPanel, 4.2, 0xd8b765);
+room.interact('OPEN YOUTUBE RELEASE WALL', [-5.2, 1.7, -11.6], openStreamPanel, 4.2, 0x55bfff);
 
 function trackReleaseAction(action) {
   let history = [];
