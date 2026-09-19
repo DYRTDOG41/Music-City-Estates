@@ -21,8 +21,14 @@ const addProgress=delta=>{
 };
 updateStats();
 
-const room=createRoom({spawn:[0,1.7,11.3],background:0x070403,fog:0x120b08,fogDensity:.013,sky:0x9a5d39});
-const {THREE,scene}=room;
+const room=createRoom({spawn:[0,1.7,11.3],background:0x211b17,fog:0x342a24,fogDensity:.0045,sky:0xffd5ab});
+const {THREE,scene,renderer}=room;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.48;
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+scene.children.forEach(child=>{if(child.isHemisphereLight)child.intensity=1.5});
+scene.add(new THREE.AmbientLight(0xffddbd,.5));
+const communityFill=new THREE.DirectionalLight(0xffd1a1,1.55);communityFill.position.set(-10,15,12);communityFill.castShadow=false;scene.add(communityFill);
 
 function texture(draw,size=512){
   const canvas=document.createElement('canvas');canvas.width=canvas.height=size;
@@ -30,17 +36,19 @@ function texture(draw,size=512){
   const map=new THREE.CanvasTexture(canvas);map.colorSpace=THREE.SRGBColorSpace;map.wrapS=map.wrapT=THREE.RepeatWrapping;return map;
 }
 const brick=texture((c,s)=>{
-  c.fillStyle='#2a1c18';c.fillRect(0,0,s,s);
+  c.fillStyle='#4b342d';c.fillRect(0,0,s,s);
   for(let y=0;y<s;y+=62){const offset=(y/62)%2?47:0;for(let x=-94;x<s;x+=94){const shade=42+Math.floor(Math.random()*20);c.fillStyle=`rgb(${shade+28},${shade+5},${shade})`;c.fillRect(x+offset+3,y+3,88,56);c.strokeStyle='#17100e';c.lineWidth=4;c.strokeRect(x+offset+3,y+3,88,56)}}
 });
 brick.repeat.set(4,2);
-const brickMaterial=new THREE.MeshStandardMaterial({map:brick,color:0xaa8070,roughness:.95});
+const brickMaterial=new THREE.MeshStandardMaterial({map:brick,color:0xc79b88,roughness:.91});
 const wood=texture((c,s)=>{
-  c.fillStyle='#211711';c.fillRect(0,0,s,s);
-  for(let y=0;y<s;y+=64){c.fillStyle=y%128?'#312017':'#3b281c';c.fillRect(0,y,s,59);c.strokeStyle='#0f0a08';c.lineWidth=3;c.strokeRect(0,y,s,59);for(let x=0;x<s;x+=110){c.fillStyle='#ffffff08';c.fillRect(x+(y%128?30:0),y+8,70,2)}}
+  c.fillStyle='#55545a';c.fillRect(0,0,s,s);
+  for(let i=0;i<950;i++){const shade=55+(i%9)*5;c.fillStyle=`rgba(${shade},${shade},${shade+4},.28)`;c.fillRect((i*73)%s,(i*137)%s,2+(i%3),2+(i%4))}
+  c.strokeStyle='#35353a';c.lineWidth=4;
+  for(let p=0;p<=s;p+=128){c.beginPath();c.moveTo(p,0);c.lineTo(p,s);c.stroke();c.beginPath();c.moveTo(0,p);c.lineTo(s,p);c.stroke()}
 });
 wood.repeat.set(4,5);
-const woodMaterial=new THREE.MeshStandardMaterial({map:wood,color:0x9d7457,roughness:.78,metalness:.04});
+const woodMaterial=new THREE.MeshPhysicalMaterial({map:wood,color:0xc3c1c5,roughness:.38,metalness:.08,clearcoat:.46,clearcoatRoughness:.28});
 
 room.wallBounds(34,28,8);
 scene.getObjectByName('floor').material=woodMaterial;
@@ -50,11 +58,14 @@ for(const name of ['back wall','left wall','right wall','front-left','front-righ
 for(const x of [-16,-10,10,16])room.box('steel column',[.45,7.5,.45],[x,3.75,-1],0x201c1b,{metalness:.82,roughness:.34});
 for(let z=-12;z<=12;z+=4)room.box('ceiling beam',[33,.18,.18],[0,7.25,z],0x3c3432,{metalness:.9,roughness:.3});
 for(const x of [-11,0,11])for(const z of [-8,1,9]){
-  const bulb=new THREE.PointLight(0xffa34c,4.8,10,2);bulb.position.set(x,5.7,z);scene.add(bulb);
+  const bulb=new THREE.PointLight(0xffb66e,8.2,12,2);bulb.position.set(x,5.7,z);scene.add(bulb);
   room.cylinder('hanging lamp',.33,.25,[x,6,z],0x171313,{metalness:.82,roughness:.28});
 }
 const key=room.light(0xff8b42,18,[-10,4,-6],20);key.shadow.mapSize.set(512,512);
 const fill=room.light(0x9b4cff,12,[11,4,-5],18);fill.castShadow=false;
+for(const z of [-11,-4,3,10]){
+  room.box('community amber wall strip',[32,.08,.1],[0,.18,z],0xffa348,{material:new THREE.MeshStandardMaterial({color:0xffd09a,emissive:0xff7b22,emissiveIntensity:2.2}),cast:false});
+}
 
 room.label('D-A WAREHOUSE COMMUNITY',[0,6.25,-13.72],'#ffe0a3',[12,1.45]);
 room.label('ARTISTS • BATTLE • CONNECT • GROW',[0,5.15,-13.7],'#ff884d',[9,.65]);
