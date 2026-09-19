@@ -13,8 +13,14 @@ const updateStats=()=>{
 };
 updateStats();
 
-const room=createRoom({spawn:[0,1.7,11.4],background:0x020405,fog:0x06101a,fogDensity:.012,sky:0x426a84});
-const {THREE,scene}=room;
+const room=createRoom({spawn:[0,1.7,11.4],background:0x121a21,fog:0x23313b,fogDensity:.0045,sky:0xb9dcf2});
+const {THREE,scene,renderer}=room;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.5;
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+scene.children.forEach(child=>{if(child.isHemisphereLight)child.intensity=1.52});
+scene.add(new THREE.AmbientLight(0xb7d9ed,.5));
+const retailFill=new THREE.DirectionalLight(0xffdfbb,1.65);retailFill.position.set(12,15,10);retailFill.castShadow=false;scene.add(retailFill);
 
 function texture(draw,size=512){
   const canvas=document.createElement('canvas');canvas.width=canvas.height=size;
@@ -22,19 +28,19 @@ function texture(draw,size=512){
   const map=new THREE.CanvasTexture(canvas);map.colorSpace=THREE.SRGBColorSpace;map.wrapS=map.wrapT=THREE.RepeatWrapping;return map;
 }
 const concrete=texture((c,s)=>{
-  c.fillStyle='#15191c';c.fillRect(0,0,s,s);
+  c.fillStyle='#444b50';c.fillRect(0,0,s,s);
   for(let i=0;i<1500;i++){const n=28+Math.floor(Math.random()*32);c.fillStyle=`rgba(${n},${n+2},${n+5},${Math.random()*.2})`;c.fillRect(Math.random()*s,Math.random()*s,Math.random()*4+1,Math.random()*4+1)}
   c.strokeStyle='#090b0d';c.lineWidth=4;for(let p=0;p<s;p+=128){c.beginPath();c.moveTo(p,0);c.lineTo(p,s);c.stroke();c.beginPath();c.moveTo(0,p);c.lineTo(s,p);c.stroke()}
 });
 concrete.repeat.set(4,4);
 const corrugated=texture((c,s)=>{
-  c.fillStyle='#20262a';c.fillRect(0,0,s,s);
+  c.fillStyle='#343d42';c.fillRect(0,0,s,s);
   for(let x=0;x<s;x+=24){c.fillStyle=x%48?'#2d3439':'#171c20';c.fillRect(x,0,12,s)}
   for(let i=0;i<90;i++){c.fillStyle='#ad583116';c.fillRect(Math.random()*s,Math.random()*s,Math.random()*35+5,Math.random()*10+2)}
 });
 corrugated.repeat.set(5,2);
-const concreteMaterial=new THREE.MeshStandardMaterial({map:concrete,color:0x73787b,roughness:.88,metalness:.08});
-const metalWallMaterial=new THREE.MeshStandardMaterial({map:corrugated,color:0x65727a,roughness:.72,metalness:.35});
+const concreteMaterial=new THREE.MeshPhysicalMaterial({map:concrete,color:0xc2c7ca,roughness:.4,metalness:.08,clearcoat:.4,clearcoatRoughness:.3});
+const metalWallMaterial=new THREE.MeshStandardMaterial({map:corrugated,color:0x8999a1,roughness:.68,metalness:.32});
 
 room.wallBounds(36,29,8);
 scene.getObjectByName('floor').material=concreteMaterial;
@@ -46,9 +52,11 @@ for(let z=-12;z<=12;z+=4)room.box('roof beam',[35,.2,.2],[0,7.25,z],0x343b40,{me
 const key=room.light(0x36aaff,20,[-10,4,-5],20);key.shadow.mapSize.set(512,512);
 const magenta=room.light(0xff315b,15,[10,4,-6],19);magenta.castShadow=false;
 for(const x of [-14,-7,0,7,14]){
-  const spot=new THREE.SpotLight(0xffffff,35,16,.36,.55,1.7);spot.position.set(x,6.7,-4);spot.target.position.set(x,0,-8);scene.add(spot,spot.target);
+  const spot=new THREE.SpotLight(0xfff3df,52,18,.4,.55,1.55);spot.position.set(x,6.7,-4);spot.target.position.set(x,0,-8);scene.add(spot,spot.target);
   room.cylinder('retail lamp',.28,.32,[x,6.75,-4],0x111418,{metalness:.9});
 }
+const blueStrip=new THREE.MeshStandardMaterial({color:0xb7eaff,emissive:0x168cff,emissiveIntensity:2.7,metalness:.28,roughness:.2});
+for(const x of [-16,-8,0,8,16])room.box('retail ceiling led',[6.2,.08,.12],[x,7.12,-11.7],0x52baff,{material:blueStrip,cast:false});
 room.label('MERCH & BACKSTAGE',[0,6.15,-14.22],'#eaf8ff',[12,1.6]);
 room.label('SUPPORT REAL ARTISTS • SHOP THE CULTURE',[0,5.05,-14.2],'#52baff',[10,.68]);
 room.label('CLICK-READY PRODUCT WALL',[0,3.95,-14.15],'#ff668c',[7,.62]);
