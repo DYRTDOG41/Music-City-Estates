@@ -9,14 +9,15 @@ let state=window.MCE?window.MCE.load():{
 let fans=state.fans;
 let cash=state.cash;
 let xp=state.xp;
-const unlocked=window.MCE?window.MCE.isUnlocked('battle',state):fans>=25;
+const trailerMode=new URLSearchParams(location.search).get('trailer')==='1';
+const unlocked=trailerMode||(window.MCE?window.MCE.isUnlocked('battle',state):fans>=25);
 const stat=()=>{
   document.getElementById('fans').textContent=fans;
   document.getElementById('cash').textContent=cash;
   document.getElementById('xp').textContent=xp;
 };
 stat();
-document.getElementById('accessMode').textContent=unlocked?'BATTLE READY':'VENUE TOUR';
+document.getElementById('accessMode').textContent=trailerMode?'TRAILER SHOWCASE':(unlocked?'BATTLE READY':'VENUE TOUR');
 
 const room=createRoom({spawn:[0,1.7,14.5],background:0x020104,fog:0x090207,fogDensity:.012,sky:0x5c2135});
 const {THREE,scene}=room;
