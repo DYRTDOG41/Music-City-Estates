@@ -48,7 +48,7 @@
 .live-arena-overlay .meter{height:13px;background:#21131a;border-radius:30px;overflow:hidden;margin:16px auto 0;max-width:640px}.live-arena-overlay .fill{height:100%;width:0;background:linear-gradient(90deg,#ff315b,#ffc83d);transition:width .15s linear}
 .live-arena-overlay .vote-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.live-arena-overlay .vote-btn{padding:18px;font-size:16px}.live-arena-overlay .vote-a{background:#4c1830;color:#fff;border:1px solid #ff4d7b}.live-arena-overlay .vote-b{background:#40300d;color:#fff;border:1px solid #ffc83d}.live-arena-overlay .votes{display:flex;justify-content:center;gap:28px;margin-top:14px;font-size:20px;font-weight:900}
 .live-arena-overlay .note{font-size:12px;line-height:1.45;color:#b9aebc}
-#tapAudio{position:fixed;z-index:180;left:50%;bottom:18px;transform:translateX(-50%);display:none;box-shadow:0 0 30px #000}
+#tapAudio{position:fixed;z-index:180;left:50%;bottom:18px;transform:translateX(-50%);display:none;padding:12px 16px;border:0;border-radius:10px;background:#ffc83d;color:#190d00;font-weight:900;box-shadow:0 0 30px #000}
 
 /* During a battle, the menu disappears and only the performance HUD floats over the real 3D arena. */
 .live-arena-overlay.battle-running{display:block;background:transparent;backdrop-filter:none;overflow:hidden;padding:0;pointer-events:none}
@@ -56,7 +56,7 @@
 .live-arena-overlay.battle-running #setupView,
 .live-arena-overlay.battle-running #liveRoomMetaPanel,
 .live-arena-overlay.battle-running #liveParticipantsPanel,
-.live-arena-overlay.battle-running #liveHostPanel,
+.live-arena-overlay.battle-running #hostControls,
 .live-arena-overlay.battle-running #liveBattleLogPanel{display:none!important}
 .live-arena-overlay.battle-running .live-arena-shell{width:100%;margin:0}
 .live-arena-overlay.battle-running #roomView{display:block!important;margin:0}
@@ -161,7 +161,7 @@
         </div>
       </div>
 
-      <div id="liveHostPanel" class="panel hidden">
+      <div id="hostControls" class="panel hidden">
         <h3>DJ / Host Controls</h3>
         <label for="bpm">Beat tempo</label>
         <select id="bpm">
