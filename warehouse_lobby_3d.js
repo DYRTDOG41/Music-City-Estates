@@ -10,17 +10,21 @@ document.getElementById('level').textContent = Number(state.level || localStorag
 
 const room = createRoom({
   spawn: [0, 1.7, 12.6],
-  background: 0x080b12,
-  fog: 0x10131c,
-  fogDensity: .006,
-  sky: 0x7c8aa2
+  background: 0x18202b,
+  fog: 0x252d38,
+  fogDensity: .0038,
+  sky: 0xc3d8ef
 });
 const { THREE, scene, renderer } = room;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.28;
+renderer.toneMappingExposure = 1.52;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-scene.children.forEach((child) => { if (child.isHemisphereLight) child.intensity = 1.25; });
-scene.add(new THREE.AmbientLight(0x9fb3d1, .38));
+scene.children.forEach((child) => { if (child.isHemisphereLight) child.intensity = 1.6; });
+scene.add(new THREE.AmbientLight(0xb9cee8, .58));
+const lobbyFill = new THREE.DirectionalLight(0xffe2ba, 1.7);
+lobbyFill.position.set(10, 15, 12);
+lobbyFill.castShadow = false;
+scene.add(lobbyFill);
 
 function texture(draw, repeatX = 1, repeatY = 1) {
   const canvas = document.createElement('canvas');
@@ -36,7 +40,7 @@ function texture(draw, repeatX = 1, repeatY = 1) {
 }
 
 const concrete = texture((context, width, height) => {
-  context.fillStyle = '#3d4148';
+  context.fillStyle = '#656a72';
   context.fillRect(0, 0, width, height);
   for (let i = 0; i < 650; i += 1) {
     const shade = 45 + (i % 8) * 5;
@@ -58,7 +62,7 @@ const corrugated = texture((context, width, height) => {
 }, 3, 2);
 
 room.wallBounds(38, 30, 9);
-scene.getObjectByName('floor').material = new THREE.MeshPhysicalMaterial({ map: concrete, color: 0xb8bdc5, roughness: .32, metalness: .18, clearcoat: .48, clearcoatRoughness: .24 });
+scene.getObjectByName('floor').material = new THREE.MeshPhysicalMaterial({ map: concrete, color: 0xd6d9df, roughness: .29, metalness: .16, clearcoat: .62, clearcoatRoughness: .2 });
 for (const name of ['back wall', 'left wall', 'right wall', 'front-left', 'front-right']) {
   scene.getObjectByName(name).material = new THREE.MeshStandardMaterial({ map: corrugated, color: 0xffffff, roughness: .72, metalness: .34 });
 }
