@@ -3,29 +3,110 @@ import { createRoom } from './mce_3d_room.js';
 const state = window.MCE ? window.MCE.load() : { fans: 0, cash: 100, xp: 0 };
 const room = createRoom({
   spawn: [0, 1.7, 38],
-  background: 0x090815,
-  fog: 0x17112a,
-  fogDensity: .006,
-  sky: 0x77699d
+  background: 0x8ecdf4,
+  fog: 0xb8d8e8,
+  fogDensity: .0028,
+  sky: 0xd9efff
 });
 const { THREE, scene, renderer, camera } = room;
 const clickables = [];
+
+// Hip-Hop Heights now reads as a bright late-afternoon district instead of a dark room.
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.35;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+scene.children.forEach((child) => {
+  if (child.isHemisphereLight) child.intensity = 1.7;
+});
+const sun = new THREE.DirectionalLight(0xfff3d2, 2.8);
+sun.position.set(18, 32, 24);
+sun.castShadow = true;
+sun.shadow.mapSize.set(1024, 1024);
+sun.shadow.camera.left = -48;
+sun.shadow.camera.right = 48;
+sun.shadow.camera.top = 52;
+sun.shadow.camera.bottom = -52;
+scene.add(sun);
+scene.add(new THREE.AmbientLight(0xbcdfff, .62));
 
 document.getElementById('fans').textContent = state.fans;
 document.getElementById('cash').textContent = state.cash;
 document.getElementById('xp').textContent = state.xp;
 
-const ground = room.box('district ground', [72, .22, 92], [0, -.13, -4], 0x17151c, { roughness: .96 });
+function canvasTexture(draw, repeatX = 1, repeatY = 1) {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 512;
+  const context = canvas.getContext('2d');
+  draw(context, canvas.width, canvas.height);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(repeatX, repeatY);
+  texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  return texture;
+}
+
+function masonryTexture(base, mortar, accent) {
+  return canvasTexture((context, width, height) => {
+    context.fillStyle = base;
+    context.fillRect(0, 0, width, height);
+    for (let y = 0; y < height; y += 48) {
+      const offset = (y / 48) % 2 ? 44 : 0;
+      context.strokeStyle = mortar;
+      context.lineWidth = 5;
+      context.beginPath();
+      context.moveTo(0, y);
+      context.lineTo(width, y);
+      context.stroke();
+      for (let x = -offset; x < width; x += 88) {
+        context.beginPath();
+        context.moveTo(x, y);
+        context.lineTo(x, y + 48);
+        context.stroke();
+      }
+    }
+    context.globalAlpha = .18;
+    for (let i = 0; i < 180; i++) {
+      context.fillStyle = i % 3 ? '#ffffff' : accent;
+      context.fillRect((i * 97) % width, (i * 53) % height, 2 + (i % 4), 2 + (i % 3));
+    }
+    context.globalAlpha = 1;
+  }, 2.2, 2.2);
+}
+
+const asphaltTexture = canvasTexture((context, width, height) => {
+  context.fillStyle = '#343840';
+  context.fillRect(0, 0, width, height);
+  for (let i = 0; i < 900; i++) {
+    const shade = 42 + (i % 6) * 5;
+    context.fillStyle = `rgb(${shade},${shade + 1},${shade + 4})`;
+    context.fillRect((i * 73) % width, (i * 151) % height, 2, 2);
+  }
+}, 5, 8);
+const concreteTexture = canvasTexture((context, width, height) => {
+  context.fillStyle = '#aaa9a6';
+  context.fillRect(0, 0, width, height);
+  context.strokeStyle = '#77797b';
+  context.lineWidth = 4;
+  for (let x = 0; x <= width; x += 128) { context.beginPath(); context.moveTo(x, 0); context.lineTo(x, height); context.stroke(); }
+  context.globalAlpha = .2;
+  for (let i = 0; i < 240; i++) { context.fillStyle = i % 2 ? '#fff' : '#353535'; context.fillRect((i * 61) % width, (i * 109) % height, 2, 2); }
+  context.globalAlpha = 1;
+}, 2, 10);
+
+const ground = room.box('district ground', [72, .22, 92], [0, -.13, -4], 0x5e6670, { roughness: .96 });
 ground.receiveShadow = true;
-room.box('main street', [17, .05, 90], [0, .02, -4], 0x15151a, { roughness: .96 });
-for (const x of [-9.6, 9.6]) room.box('sidewalk', [3.8, .18, 90], [x, .06, -4], 0x5b5360, { roughness: .9 });
+ground.material.map = concreteTexture;
+ground.material.needsUpdate = true;
+room.box('main street', [17, .05, 90], [0, .02, -4], 0x343840, { material: new THREE.MeshStandardMaterial({ map: asphaltTexture, color: 0xffffff, roughness: .93 }) });
+for (const x of [-9.6, 9.6]) room.box('sidewalk', [3.8, .18, 90], [x, .06, -4], 0xb5b4af, { material: new THREE.MeshStandardMaterial({ map: concreteTexture, color: 0xffffff, roughness: .88 }) });
 for (let z = -46; z < 40; z += 9) {
   room.box('lane light', [.15, .03, 4.4], [0, .07, z], 0xe0bd62, { metalness: .1 });
 }
 for (let z = -43; z <= 35; z += 13) {
   for (const x of [-11.1, 11.1]) {
     room.cylinder('street lamp pole', .08, 4.6, [x, 2.3, z], 0x24212b, { metalness: .85, roughness: .28 });
-    room.light(0xffbf72, 5, [x, 4.7, z], 10).castShadow = false;
+    room.light(0xffd9a0, 2.6, [x, 4.7, z], 10).castShadow = false;
   }
 }
 
@@ -57,13 +138,41 @@ function addClickable(mesh, action, name) {
   return mesh;
 }
 
+function createStorefrontSign(text, position, side, color, action, name) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1400;
+  canvas.height = 300;
+  const context = canvas.getContext('2d');
+  context.fillStyle = '#10151ddd';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.strokeStyle = color;
+  context.lineWidth = 13;
+  context.strokeRect(12, 12, canvas.width - 24, canvas.height - 24);
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.font = '900 112px Arial Black, Arial, sans-serif';
+  context.shadowColor = color;
+  context.shadowBlur = 24;
+  context.fillStyle = '#ffffff';
+  context.fillText(text.toUpperCase(), canvas.width / 2, canvas.height / 2 + 4);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(7.4, 1.58), new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide, transparent: true, toneMapped: false }));
+  sign.position.fromArray(position);
+  sign.rotation.y = Math.PI / 2;
+  scene.add(sign);
+  addClickable(sign, action, name);
+  return sign;
+}
+
 function addStorefront(config) {
   const side = config.side;
   const xCenter = side * 23;
   const innerX = side * 15;
   const outerX = side * 31;
   const z = config.z;
-  const wallMaterial = room.material(config.wall, .78, .13);
+  const wallMaterial = new THREE.MeshStandardMaterial({ map: config.texture, color: 0xffffff, roughness: .8, metalness: .06 });
   const trimMaterial = room.material(config.trim, .36, .63);
   const action = destinationAction(config.destination, config.name);
 
@@ -92,12 +201,19 @@ function addStorefront(config) {
     const door = room.box(config.name + ' entrance door', [.16, 4.9, 3.8], [glassX - side * .03, 3.25, z], config.trim, { material: new THREE.MeshStandardMaterial({ color: config.trim, emissive: config.glow, emissiveIntensity: .42, transparent: true, opacity: .78, metalness: .48, roughness: .25 }) });
     for (const mesh of [leftWindow, rightWindow, door]) addClickable(mesh, action, config.name);
 
+    // Window mullions, sill blocks and an awning give every shop real storefront depth.
+    for (const windowOffset of [-5.15, 5.15]) {
+      room.box(config.name + ' window mullion', [.28, 4.7, .12], [innerX - side * .22, 3.35, z + windowOffset], config.trim, { material: trimMaterial });
+      room.box(config.name + ' window sill', [.72, .22, 5.1], [innerX - side * .34, 1.02, z + windowOffset], config.trim, { material: trimMaterial });
+    }
+    room.box(config.name + ' storefront awning', [2.25, .3, 15.5], [innerX - side * 1.02, 6.18, z], config.trim, { material: trimMaterial });
+
     room.box(config.name + ' doorway frame top', [.5, .28, 4.2], [innerX - side * .06, 5.75, z], config.trim, { material: trimMaterial });
     for (const offset of [-2.05, 2.05]) room.box(config.name + ' doorway frame', [.5, 5, .22], [innerX - side * .06, 3.3, z + offset], config.trim, { material: trimMaterial });
 
     if (!config.customSign) {
-      room.label(config.name.toUpperCase(), [innerX - side * .3, 7.55, z], config.label, [6.8, 1]);
-      room.label('CLICK DOOR TO ENTER', [innerX - side * .36, 6.55, z], '#ffffff', [4.5, .46]);
+      createStorefrontSign(config.name, [innerX - side * .25, 7.6, z], side, config.label, action, config.name);
+      room.label('CLICK DOOR TO ENTER', [innerX - side * .5, 6.55, z], '#ffffff', [4.5, .46]);
     }
   }
 
@@ -215,7 +331,8 @@ function beGeniusExterior({ innerX, z, side, action }) {
     metalness: .4,
     roughness: .18
   });
-  const stone = new THREE.MeshStandardMaterial({ color: 0x10151d, roughness: .68, metalness: .22 });
+  const studioStoneTexture = masonryTexture('#25384a', '#111c27', '#55bff0');
+  const stone = new THREE.MeshStandardMaterial({ map: studioStoneTexture, color: 0xffffff, roughness: .72, metalness: .08 });
   const darkMetal = new THREE.MeshStandardMaterial({ color: 0x111722, roughness: .32, metalness: .74 });
   const glass = new THREE.MeshStandardMaterial({
     color: 0x7fe3ff,
@@ -294,7 +411,8 @@ function beGeniusExterior({ innerX, z, side, action }) {
   }
 
   // The approved microphone wordmark now sits on the raised center tower.
-  createBeGeniusLogoSign([frontX - side * .16, 7.9, z], action);
+  // Keep the sign just in front of the tower so it cannot disappear inside the wall.
+  createBeGeniusLogoSign([frontX - side * .58, 7.9, z], action);
   const logoLight = room.light(0x36baff, 11, [frontX - side * 2.8, 7.55, z], 15);
   logoLight.castShadow = false;
 
@@ -360,23 +478,46 @@ function recordStoreInterior({ outerX, z, side }) {
 addStorefront({
   name: 'BeGenius Studio', side: -1, z: 17, destination: 'begenius_studio.html',
   wall: 0x090d14, trim: 0x2fb7ff, floor: 0x161c24, roof: 0x05070b, glow: 0x43c7ff,
+  texture: masonryTexture('#263b4d', '#101b25', '#59caff'),
   glass: materials.glassGold, label: '#d8f8ff', customSign: true, signatureProfile: true, decorate: plaquesInterior, decorateExterior: beGeniusExterior
 });
 addStorefront({
   name: 'Hip-Hop Café', side: 1, z: 17, destination: 'hiphop_cafe.html',
   wall: 0x6b3326, trim: 0xff8a4f, floor: 0x3b241c, roof: 0x211418, glow: 0xff7444,
+  texture: masonryTexture('#9a513b', '#57281f', '#ffc08a'),
   glass: materials.glassOrange, label: '#ffc08a', decorate: cafeInterior
 });
 addStorefront({
   name: 'DA Warehouse', side: -1, z: -18, destination: 'warehouse.html',
   wall: 0x29212e, trim: 0x9d46b7, floor: 0x1e1922, roof: 0x111016, glow: 0xd75cff,
+  texture: masonryTexture('#55435c', '#261d2b', '#e9a4ff'),
   glass: materials.glassPurple, label: '#e9a4ff', decorate: warehouseInterior
 });
 addStorefront({
   name: 'Record Store', side: 1, z: -18, destination: null,
   wall: 0x17303a, trim: 0x41a9c2, floor: 0x17252b, roof: 0x0d171b, glow: 0x55dcff,
+  texture: masonryTexture('#376674', '#17333b', '#92ecff'),
   glass: materials.glassCyan, label: '#92ecff', decorate: recordStoreInterior
 });
+
+// Street furniture, trees and art make the district feel inhabited in daylight.
+for (const z of [-37, -27, -8, 3, 28, 36]) {
+  const side = (Math.abs(z) % 2 ? -1 : 1);
+  const x = side * 12.1;
+  room.cylinder('tree trunk', .2, 2.25, [x, 1.15, z], 0x6f4326, { roughness: .92 });
+  for (const y of [2.35, 2.9, 3.42]) {
+    const crown = new THREE.Mesh(new THREE.SphereGeometry(.9 - (y - 2.35) * .12, 12, 9), room.material(0x3c8b52, .88, .01));
+    crown.position.set(x, y, z);
+    crown.scale.set(1.15, .75, 1.05);
+    crown.castShadow = true;
+    scene.add(crown);
+  }
+  room.box('street bench', [1.45, .18, 3.2], [-side * 11.55, .55, z + 2.4], 0x704b31, { roughness: .68, metalness: .06 });
+}
+
+for (const z of [-40, -30, -6, 5, 31]) {
+  room.box('crosswalk stripe', [15.2, .025, .52], [0, .062, z], 0xf2ede0, { roughness: .88, cast: false });
+}
 
 room.label('HIP-HOP HEIGHTS', [0, 9.2, -47], '#ffd268', [12, 1.6]);
 room.label('MUSIC • CULTURE • LEGACY', [0, 7.9, -46.9], '#ffffff', [8, .65]);
