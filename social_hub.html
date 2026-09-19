@@ -20,7 +20,7 @@
     <aside class="card online"><h2>PLAYERS IN THIS ROOM</h2><div class="online-count" id="onlineCount">0 ONLINE</div><div class="online-list" id="onlineList"><div class="empty">No active players yet.</div></div></aside>
   </section>
 </main>
-<script src="music_city_social.js"></script>
+<script src="music_city_social.js?v=0b5f530"></script>
 <script>
 const roomNames={'city-lobby':'CITY LOBBY','hiphop-heights':'HIP-HOP HEIGHTS','studio-lounge':'STUDIO LOUNGE','warehouse':'DA WAREHOUSE'};let activeRoom='city-lobby';let connection=null;let latestMessages=[];const profile=window.MCESocial.loadProfile();document.getElementById('playerName').value=profile.name||'';document.getElementById('playerRole').value=profile.role||'Artist';document.getElementById('playerColor').value=profile.color||'#59dfff';
 function initials(name){return String(name||'?').split(/\s+/).map((part)=>part[0]).join('').slice(0,2).toUpperCase()}
