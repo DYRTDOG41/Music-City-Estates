@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Live Freestyle Battle | Music City Estates</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#050208;--panel:#100812;--line:#ff315b;--gold:#ffc83d;--cyan:#55d7ff;--muted:#a9a1ad}
+html,body{margin:0;min-height:100%;background:radial-gradient(circle at 50% -10%,#38111f 0,#120711 35%,#050208 72%);color:#fff;font-family:Arial,sans-serif}
+body{padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+header{position:sticky;top:0;z-index:50;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;background:#080309e8;border-bottom:1px solid #ff315b88;backdrop-filter:blur(10px)}
+.brand{font-weight:900;letter-spacing:.07em}.brand small{display:block;color:#ff8aa0;letter-spacing:.13em;font-size:9px;margin-top:3px}
+.back{color:#fff;text-decoration:none;border:1px solid #777;border-radius:8px;padding:8px 11px;font-size:12px}
+main{width:min(980px,94%);margin:20px auto 60px}
+.hero{text-align:center;padding:18px 10px 8px}.hero h1{margin:0;font-size:clamp(28px,7vw,54px);letter-spacing:.03em}.hero p{color:#d9cfdc;max-width:720px;margin:10px auto 0;line-height:1.45}
+.live-pill{display:inline-flex;align-items:center;gap:7px;margin-bottom:10px;padding:6px 11px;border:1px solid #ff315b;border-radius:999px;background:#2b0812;color:#ffd5de;font-size:11px;font-weight:900;letter-spacing:.08em}.dot{width:8px;height:8px;border-radius:50%;background:#ff315b;box-shadow:0 0 14px #ff315b}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.panel{background:#0d0710e8;border:1px solid #5f3342;border-radius:16px;padding:18px;box-shadow:0 18px 50px #0007}.panel h2,.panel h3{margin:0 0 12px}.wide{grid-column:1/-1}
+label{display:block;color:#d8cdd9;font-size:12px;font-weight:800;margin:10px 0 6px}input,select{width:100%;padding:13px;border:1px solid #5d3a48;border-radius:9px;background:#09050b;color:#fff;font-size:16px}
+button{appearance:none;border:0;border-radius:9px;padding:13px 15px;font-weight:900;cursor:pointer}.primary{background:var(--gold);color:#190d00}.secondary{background:#3c1625;color:#fff;border:1px solid #a73859}.ghost{background:#161019;color:#fff;border:1px solid #625664}.danger{background:#a11935;color:#fff}.cyan{background:#103747;color:#eafaff;border:1px solid #39bfe8}
+button:disabled{opacity:.42;cursor:not-allowed}.actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}.actions.three{grid-template-columns:repeat(3,1fr)}
+.status{min-height:44px;margin-top:12px;padding:11px;border-radius:9px;background:#08050a;color:#cabecb;border:1px solid #332633;font-size:13px;line-height:1.45}.status.good{border-color:#2d9b65;color:#a8f2c9}.status.warn{border-color:#a47a27;color:#ffe39b}.status.bad{border-color:#9e3046;color:#ffb2c2}
+.room{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;border:1px solid #6e2940;border-radius:11px;background:#160910}.code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:18px;font-weight:900;color:#ffd9e1;word-break:break-all}
+.hidden{display:none!important}.participants{display:grid;gap:8px}.person{display:flex;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:10px;background:#120a13;border:1px solid #322334}.person strong{display:block}.person small{color:#bdaebf}.role{font-size:10px;font-weight:900;padding:4px 7px;border-radius:999px;background:#32131e;color:#ffb6c4;align-self:center}
+.stage{position:relative;overflow:hidden;min-height:290px;background:radial-gradient(circle at 50% 32%,#4a1428 0,#180a12 38%,#080509 75%);border:1px solid #7f2946;border-radius:18px;padding:20px;text-align:center}
+.stage:before{content:"";position:absolute;inset:auto 5% 12px;height:52%;border-radius:50%;border:2px solid #ff315b55;box-shadow:0 0 40px #ff315b22,inset 0 0 50px #ff315b18}
+.stage>*{position:relative;z-index:2}.countdown{font-size:clamp(54px,14vw,110px);font-weight:1000;line-height:1;margin:22px 0 4px;color:#fff;text-shadow:0 0 30px #ff315b}.turn{font-size:clamp(24px,6vw,42px);font-weight:1000;color:#ffc83d}.clock{font-size:22px;font-weight:900;margin-top:7px}.battle-meta{color:#bcaebd;font-size:12px;margin-top:8px}
+.meter{height:13px;background:#21131a;border-radius:30px;overflow:hidden;margin:16px auto 0;max-width:640px}.fill{height:100%;width:0;background:linear-gradient(90deg,#ff315b,#ffc83d);transition:width .15s linear}
+.vote-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.vote-btn{padding:18px;font-size:16px}.vote-a{background:#4c1830;color:#fff;border:1px solid #ff4d7b}.vote-b{background:#40300d;color:#fff;border:1px solid #ffc83d}.votes{display:flex;justify-content:center;gap:28px;margin-top:14px;font-size:20px;font-weight:900}
+.note{font-size:12px;line-height:1.45;color:#b9aebc}.tech{margin-top:14px;padding:12px;border-radius:10px;background:#071015;border:1px solid #234d5d;color:#b9eaff;font-size:12px;line-height:1.5}
+audio{width:100%;margin-top:8px}
+#tapAudio{position:fixed;z-index:100;left:50%;bottom:18px;transform:translateX(-50%);display:none;box-shadow:0 0 30px #000}
+@media(max-width:760px){.grid{grid-template-columns:1fr}.wide{grid-column:auto}.actions,.actions.three{grid-template-columns:1fr}.hero{padding-top:8px}.panel{padding:15px}.room{align-items:flex-start;flex-direction:column}.votes{font-size:16px}}
+</style>
+</head>
+<body>
+<header>
+<div class="brand">MUSIC CITY ESTATES<small>WORD SLAUGHTER LIVE</small></div>
+<a class="back" href="battle_room.html">← 3D Battle Stage</a>
+</header>
+
+<main>
+<section class="hero">
+<div class="live-pill"><span class="dot"></span> PHONE-TO-PHONE P2P MVP</div>
+<h1>Live Freestyle Battle</h1>
+<p>Two rappers can freestyle over the same synchronized beat while listeners join from their own phones and vote live.</p>
+</section>
+
+<section id="setupView" class="grid">
+<div class="panel">
+<h2>Create a Battle Room</h2>
+<label for="hostName">Artist name</label>
+<input id="hostName" maxlength="28" placeholder="Your artist name">
+<div class="actions">
+<button id="createRoom" class="primary">CREATE ROOM</button>
+<button id="quickSolo" class="secondary">SOLO TEST</button>
+</div>
+<div id="hostStatus" class="status">Creating a room makes this device Rapper A and the room coordinator.</div>
+</div>
+
+<div class="panel">
+<h2>Join a Room</h2>
+<label for="joinName">Display name</label>
+<input id="joinName" maxlength="28" placeholder="Artist or listener name">
+<label for="joinRole">Join as</label>
+<select id="joinRole">
+<option value="rapper">Rapper B</option>
+<option value="audience">Audience / Fan</option>
+</select>
+<label for="roomInput">Room code</label>
+<input id="roomInput" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="MCE-ABC123">
+<button id="joinRoom" class="primary" style="width:100%;margin-top:12px">JOIN LIVE ROOM</button>
+<div id="joinStatus" class="status">On iPhone, tap Join so Safari can activate audio and microphone permissions.</div>
+</div>
+
+<div class="panel wide">
+<h3>What this test does</h3>
+<p class="note">The host creates a room code. Rapper B joins from a second phone. Fans can join the same code as audience members. Rapper audio is sent peer-to-peer, while the battle beat is generated on each device and started from a shared timestamp. Headphones are strongly recommended for both rappers to prevent echo.</p>
+<div class="tech">MVP networking uses WebRTC through PeerJS public signaling so it can run from GitHub Pages without your own game server. That is good for testing. Before a public launch, Music City Estates should move signaling, moderation, identity, room persistence, and abuse controls to production infrastructure.</div>
+</div>
+</section>
+
+<section id="roomView" class="grid hidden">
+<div class="panel wide">
+<div class="room">
+<div><small style="color:#c3b3c4">ROOM CODE</small><div id="roomCode" class="code">—</div></div>
+<div class="actions" style="margin:0;min-width:min(420px,100%)">
+<button id="copyRapper" class="secondary">COPY RAPPER INVITE</button>
+<button id="copyAudience" class="ghost">COPY FAN INVITE</button>
+</div>
+</div>
+<div id="connectionStatus" class="status good">Connecting…</div>
+</div>
+
+<div class="panel">
+<h3>Room</h3>
+<div id="participants" class="participants"></div>
+</div>
+
+<div class="panel">
+<h3>Audio</h3>
+<div class="actions">
+<button id="micButton" class="cyan">MIC: ON</button>
+<button id="audioButton" class="ghost">ENABLE AUDIO</button>
+</div>
+<div id="audioStatus" class="status">Use headphones. Your microphone is only requested for a rapper role.</div>
+</div>
+
+<div class="panel wide">
+<div class="stage">
+<div id="stageLabel" class="live-pill"><span class="dot"></span> WAITING FOR BATTLE</div>
+<div id="countdown" class="countdown">READY</div>
+<div id="turnLabel" class="turn">Rapper A vs Rapper B</div>
+<div id="clock" class="clock">00:00</div>
+<div id="battleMeta" class="battle-meta">Host chooses BPM and round length.</div>
+<div class="meter"><div id="battleProgress" class="fill"></div></div>
+</div>
+</div>
+
+<div id="hostControls" class="panel hidden">
+<h3>DJ / Host Controls</h3>
+<label for="bpm">Beat tempo</label>
+<select id="bpm">
+<option value="82">82 BPM — laid back</option>
+<option value="90" selected>90 BPM — classic</option>
+<option value="98">98 BPM — energetic</option>
+<option value="108">108 BPM — fast</option>
+</select>
+<label for="roundSeconds">Each freestyle turn</label>
+<select id="roundSeconds">
+<option value="20">20 seconds — quick test</option>
+<option value="30" selected>30 seconds</option>
+<option value="45">45 seconds</option>
+<option value="60">60 seconds</option>
+</select>
+<div class="actions">
+<button id="startBattle" class="primary">START LIVE BATTLE</button>
+<button id="stopBattle" class="danger" disabled>END BATTLE</button>
+</div>
+<div class="status warn">Format: Rapper A → Rapper B → Rapper A → Rapper B. A 4-second count-in starts every phone on the same beat.</div>
+</div>
+
+<div id="votePanel" class="panel hidden">
+<h3>Fan Vote</h3>
+<p id="votePrompt" class="note">Vote for the freestyle you liked most.</p>
+<div class="vote-grid">
+<button id="voteA" class="vote-btn vote-a">VOTE RAPPER A</button>
+<button id="voteB" class="vote-btn vote-b">VOTE RAPPER B</button>
+</div>
+<div class="votes"><span>A: <b id="votesA">0</b></span><span>B: <b id="votesB">0</b></span></div>
+</div>
+
+<div class="panel wide">
+<h3>Battle Log</h3>
+<div id="battleLog" class="status">Waiting for room activity.</div>
+</div>
+</section>
+</main>
+
+<button id="tapAudio" class="primary">TAP TO ENABLE LIVE AUDIO</button>
+<div id="remoteAudioMount" hidden></div>
+
+<script src="player-state.js"></script>
+<script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
+<script src="live_freestyle.js"></script>
+</body>
+</html>
