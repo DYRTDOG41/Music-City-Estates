@@ -4,7 +4,11 @@
   const sessionId = (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
 
   function safeParse(value, fallback) {
-    try { return JSON.parse(value); } catch (error) { return fallback; }
+    if (!value) return fallback;
+    try {
+      const parsed = JSON.parse(value);
+      return parsed === null ? fallback : parsed;
+    } catch (error) { return fallback; }
   }
 
   function loadProfile() {
