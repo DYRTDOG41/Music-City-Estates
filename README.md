@@ -26,11 +26,14 @@ configured in `begenius_catalog.js`.
 - Use **View City** to track location unlocks.
 - Use **View Phone** to see contacts, messages, social activity, and releases.
 - Tour the walkable **Word Slaughter Warehouse** battle venue at any fan level; the three-round battle itself unlocks at 25 fans.
+- Use **Live Freestyle** from the 3D battle stage for a phone-to-phone WebRTC battle test: Rapper A hosts, Rapper B joins by invite link, fans can listen and vote, and each device runs a synchronized generated beat.
 - Explore the Warehouse **Community Space** to meet resident artists, build connections, join a collaboration challenge, showcase releases, and check in with an A&R.
 - Visit **Merch & Backstage** for click-ready product displays, optional verified store or sponsor links, and artist battle check-in.
 - Perform at the walkable **Hip-Hop Café** to select a release, play a three-part open-mic set, and grow toward the 50-fan venue milestone.
 
 Progress is saved automatically in the browser with `localStorage`.
+
+The Live Freestyle feature is an MVP test path. It uses PeerJS public signaling so no private game server is required for early phone testing. Production multiplayer should move signaling, identity, moderation, room persistence, and anti-abuse controls to owned infrastructure.
 
 ## Project structure
 
