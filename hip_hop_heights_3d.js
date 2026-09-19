@@ -10,6 +10,27 @@ const room = createRoom({
 });
 const { THREE, scene, renderer, camera } = room;
 const clickables = [];
+const streetLamps = [];
+
+// Centralized block dimensions keep the district mesh-ready. New GLB buildings can
+// replace any procedural shell without moving its door, collider, or interaction.
+const LAYOUT = Object.freeze({
+  groundWidth: 84,
+  blockLength: 108,
+  roadWidth: 22,
+  sidewalkWidth: 4.8,
+  sidewalkCenterX: 13.6,
+  curbX: 11.15,
+  lampX: 15.2,
+  facadeX: 18.5,
+  lotCenterX: 27,
+  lotOuterX: 35.5,
+  lotWidth: 17,
+  northVenueZ: 21,
+  southVenueZ: -21
+});
+
+scene.userData.buildingSlots = [];
 
 // Hip-Hop Heights now reads as a bright late-afternoon district instead of a dark room.
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -27,7 +48,8 @@ sun.shadow.camera.right = 48;
 sun.shadow.camera.top = 52;
 sun.shadow.camera.bottom = -52;
 scene.add(sun);
-scene.add(new THREE.AmbientLight(0xbcd7ea, .34));
+const ambient = new THREE.AmbientLight(0xbcd7ea, .34);
+scene.add(ambient);
 
 document.getElementById('fans').textContent = state.fans;
 document.getElementById('cash').textContent = state.cash;
@@ -114,22 +136,25 @@ const concreteTexture = canvasTexture((context, width, height) => {
   context.globalAlpha = 1;
 }, 2, 10);
 
-const ground = room.box('district ground', [72, .22, 92], [0, -.13, -4], 0x5e6670, { roughness: .96 });
+const ground = room.box('district ground', [LAYOUT.groundWidth, .22, LAYOUT.blockLength], [0, -.13, -4], 0x5e6670, { roughness: .96 });
 ground.receiveShadow = true;
 ground.material.map = concreteTexture;
 ground.material.bumpMap = bumpFrom(concreteTexture);
 ground.material.bumpScale = .045;
 ground.material.needsUpdate = true;
-room.box('main street', [17, .05, 90], [0, .02, -4], 0x343840, { material: realisticSurface(asphaltTexture, { roughness: .92, bumpScale: .035 }) });
-for (const x of [-9.6, 9.6]) room.box('sidewalk', [3.8, .18, 90], [x, .06, -4], 0xb5b4af, { material: realisticSurface(concreteTexture, { roughness: .82, bumpScale: .05 }) });
-for (const x of [-8.62, 8.62]) room.box('raised street curb', [.28, .3, 90], [x, .18, -4], 0x8d8d89, { material: realisticSurface(concreteTexture, { roughness: .86, bumpScale: .04 }) });
-for (let z = -46; z < 40; z += 9) {
+room.box('main street', [LAYOUT.roadWidth, .05, LAYOUT.blockLength - 2], [0, .02, -4], 0x343840, { material: realisticSurface(asphaltTexture, { roughness: .92, bumpScale: .035 }) });
+for (const x of [-LAYOUT.sidewalkCenterX, LAYOUT.sidewalkCenterX]) room.box('wide pedestrian sidewalk', [LAYOUT.sidewalkWidth, .18, LAYOUT.blockLength - 2], [x, .06, -4], 0xb5b4af, { material: realisticSurface(concreteTexture, { roughness: .82, bumpScale: .05 }) });
+for (const x of [-LAYOUT.curbX, LAYOUT.curbX]) room.box('raised street curb', [.28, .3, LAYOUT.blockLength - 2], [x, .18, -4], 0x8d8d89, { material: realisticSurface(concreteTexture, { roughness: .86, bumpScale: .04 }) });
+for (let z = -53; z < 48; z += 9) {
   room.box('lane light', [.15, .03, 4.4], [0, .07, z], 0xe0bd62, { metalness: .1 });
 }
-for (let z = -43; z <= 35; z += 13) {
-  for (const x of [-11.1, 11.1]) {
+for (const x of [-9.3, 9.3]) room.box('road edge line', [.13, .026, LAYOUT.blockLength - 4], [x, .066, -4], 0xe8e4d8, { roughness: .9, cast: false });
+for (let z = -49; z <= 43; z += 14) {
+  for (const x of [-LAYOUT.lampX, LAYOUT.lampX]) {
     room.cylinder('street lamp pole', .08, 4.6, [x, 2.3, z], 0x24212b, { metalness: .85, roughness: .28 });
-    room.light(0xffd9a0, 2.6, [x, 4.7, z], 10).castShadow = false;
+    const lamp = room.light(0xffd9a0, 2.6, [x, 4.7, z], 11);
+    lamp.castShadow = false;
+    streetLamps.push(lamp);
   }
 }
 
@@ -192,15 +217,23 @@ function createStorefrontSign(text, position, side, color, action, name) {
 
 function addStorefront(config) {
   const side = config.side;
-  const xCenter = side * 23;
-  const innerX = side * 15;
-  const outerX = side * 31;
+  const xCenter = side * LAYOUT.lotCenterX;
+  const innerX = side * LAYOUT.facadeX;
+  const outerX = side * LAYOUT.lotOuterX;
   const z = config.z;
   const wallMaterial = realisticSurface(config.texture, { roughness: .84, metalness: .025, bumpScale: .085 });
   const trimMaterial = room.material(config.trim, .48, .48);
   const action = destinationAction(config.destination, config.name);
 
-  room.box(config.name + ' floor', [16, .25, 18], [xCenter, .05, z], config.floor, { roughness: .7 });
+  const slot = { name: config.name, side, position: [xCenter, 0, z], facadeX: innerX, entrance: [innerX - side * 1.35, 1.7, z], destination: config.destination, assetUrl: config.assetUrl || null };
+  scene.userData.buildingSlots.push(slot);
+  const anchor = new THREE.Group();
+  anchor.name = config.name + ' mesh anchor';
+  anchor.position.set(xCenter, 0, z);
+  anchor.userData.buildingSlot = slot;
+  scene.add(anchor);
+
+  room.box(config.name + ' floor', [LAYOUT.lotWidth, .25, 18], [xCenter, .05, z], config.floor, { roughness: .7 });
   room.box(config.name + ' outer wall', [.4, 9, 18], [outerX, 4.5, z], config.wall, { material: wallMaterial, collider: true });
   room.box(config.name + ' north wall', [16, 9, .4], [xCenter, 4.5, z - 9], config.wall, { material: wallMaterial, collider: true });
   room.box(config.name + ' south wall', [16, 9, .4], [xCenter, 4.5, z + 9], config.wall, { material: wallMaterial, collider: true });
@@ -480,69 +513,128 @@ function beGeniusExterior({ innerX, z, side, action }) {
   }
 }
 
+function cafeExterior({ innerX, z, side }) {
+  const frontX = innerX - side * .62;
+  const warmMetal = new THREE.MeshStandardMaterial({ color: 0x3c1711, roughness: .42, metalness: .5 });
+  const amberGlass = new THREE.MeshPhysicalMaterial({ color: 0xff9d62, emissive: 0x5d1f0a, emissiveIntensity: .4, transparent: true, opacity: .5, roughness: .1, clearcoat: .75 });
+
+  // A deep café canopy, corner columns and rooftop lantern make this venue read
+  // as a performance lounge instead of another rectangular retail shell.
+  const canopy = room.box('café deep street canopy', [2.8, .34, 13.8], [frontX - side * 1.45, 5.95, z], 0x3c1711, { material: warmMetal });
+  canopy.rotation.z = side * -.035;
+  room.box('café canopy glow', [2.82, .09, 13.9], [frontX - side * 1.47, 5.75, z], 0xffa168, { material: new THREE.MeshStandardMaterial({ color: 0xffd1a6, emissive: 0xff6d2d, emissiveIntensity: 2.2 }) });
+  for (const dz of [-7.25, 7.25]) {
+    room.cylinder('café rounded brick column', .48, 6.15, [frontX, 3.08, z + dz], 0x703424, { roughness: .76, metalness: .02 });
+  }
+  room.box('café rooftop lantern', [2.8, 2.1, 5.2], [innerX + side * .1, 9.85, z], 0x2b1412, { material: warmMetal });
+  room.box('café rooftop lantern glass', [.18, 1.35, 4.15], [frontX - side * .1, 9.9, z], 0xff9d62, { material: amberGlass });
+  room.label('LIVE MUSIC • OPEN MIC', [frontX - side * .35, 4.95, z], '#ffd0a2', [5.7, .55]);
+}
+
+function warehouseExterior({ innerX, z, side }) {
+  const frontX = innerX - side * .64;
+  const steel = new THREE.MeshStandardMaterial({ color: 0x25212b, roughness: .5, metalness: .62 });
+  const door = room.box('warehouse rolling battle door', [.2, 5.9, 8.4], [frontX - side * .08, 3.05, z], 0x17141b, { material: steel });
+  for (let y = .55; y < 5.7; y += .42) {
+    room.box('warehouse rolling door slat', [.24, .055, 8.45], [frontX - side * .12, y, z], 0x5d5264, { metalness: .68, roughness: .44 });
+  }
+  room.box('warehouse loading lintel', [1.5, .55, 10.1], [frontX - side * .58, 6.25, z], 0x17141b, { material: steel });
+  for (const dz of [-7.7, 7.7]) {
+    room.box('warehouse structural pier', [1.05, 8.5, 1.05], [frontX, 4.25, z + dz], 0x332b38, { material: steel, collider: true });
+    room.light(0xda79ff, 5.5, [frontX - side * 1.15, 6.65, z + dz], 8).castShadow = false;
+  }
+  for (const dz of [-5.2, 0, 5.2]) {
+    const roofMonitor = room.box('warehouse sawtooth roof monitor', [4.3, 1.35, 3.6], [innerX + side * 4.1, 9.65 + (dz === 0 ? .5 : 0), z + dz], 0x2b2630, { material: steel });
+    roofMonitor.rotation.z = side * .09;
+  }
+  room.label('WORD SLAUGHTER • BATTLE ENTRANCE', [frontX - side * .38, 7.35, z], '#e7a2ff', [7.1, .62]);
+  door.userData.industrialEntrance = true;
+}
+
+function recordStoreExterior({ innerX, z, side }) {
+  const frontX = innerX - side * .62;
+  const cyanMetal = new THREE.MeshStandardMaterial({ color: 0x18333e, roughness: .35, metalness: .68 });
+  const neon = new THREE.MeshStandardMaterial({ color: 0xc7f8ff, emissive: 0x21bce8, emissiveIntensity: 2.45, roughness: .18, metalness: .3 });
+
+  room.box('record store corner marquee', [2.5, .3, 14.2], [frontX - side * 1.3, 5.95, z], 0x18333e, { material: cyanMetal });
+  for (const dz of [-6.7, 6.7]) room.cylinder('record store rounded corner', .44, 6.1, [frontX, 3.05, z + dz], 0x214b58, { roughness: .55, metalness: .35 });
+  const vinyl = room.cylinder('record store giant vinyl sign', 1.6, .22, [frontX - side * .3, 8.15, z], 0x101216, { roughness: .32, metalness: .55 });
+  vinyl.rotation.z = Math.PI / 2;
+  const label = room.cylinder('record store vinyl label', .58, .25, [frontX - side * .46, 8.15, z], 0x59dbf4, { roughness: .32, metalness: .42 });
+  label.rotation.z = Math.PI / 2;
+  room.cylinder('record store vinyl spindle', .11, .28, [frontX - side * .62, 8.15, z], 0xeafcff, { roughness: .2, metalness: .8 }).rotation.z = Math.PI / 2;
+  for (const dz of [-5.4, 5.4]) room.box('record store neon window fin', [.28, 5.1, .14], [frontX - side * .22, 3.35, z + dz], 0x8beaff, { material: neon });
+  room.label('VINYL • DROPS • LISTENING BAR', [frontX - side * .38, 4.95, z], '#a7efff', [6.2, .54]);
+}
+
 function plaquesInterior({ outerX, z, side }) {
   for (let i = -2; i <= 2; i++) {
     const plaque = room.box('gold record plaque', [.13, 1.25, 1.15], [outerX - side * .28, 4.2, z + i * 2.1], 0x1b1712, { metalness: .55, roughness: .35 });
     room.cylinder('gold record', .34, .06, [outerX - side * .38, 4.2, z + i * 2.1], 0xe0bd52, { metalness: .92, roughness: .2 }).rotation.z = Math.PI / 2;
   }
-  room.box('BeGenius reception desk', [3, 1.25, 5.4], [-25.4, .72, z], 0x11141c, { metalness: .32, roughness: .42 });
-  room.box('BeGenius reception glow', [.14, .16, 4.9], [-23.86, .7, z], 0x6f8cff, { material: new THREE.MeshStandardMaterial({ color: 0x8ab7ff, emissive: 0x3926c9, emissiveIntensity: 2 }) });
+  const deskX = outerX - side * 10.1;
+  room.box('BeGenius reception desk', [3, 1.25, 5.4], [deskX, .72, z], 0x11141c, { metalness: .32, roughness: .42 });
+  room.box('BeGenius reception glow', [.14, .16, 4.9], [deskX - side * 1.54, .7, z], 0x6f8cff, { material: new THREE.MeshStandardMaterial({ color: 0x8ab7ff, emissive: 0x3926c9, emissiveIntensity: 2 }) });
   room.label('BEGENIUS', [outerX - side * .38, 3.1, z], '#7fdcff', [3.2, .68]);
-  room.light(0x6e77ff, 14, [-25, 4.8, z], 13).castShadow = false;
-  room.light(0xeac454, 6, [-28, 3.8, z], 10).castShadow = false;
+  room.light(0x6e77ff, 14, [deskX, 4.8, z], 13).castShadow = false;
+  room.light(0xeac454, 6, [xCenterForSide(side), 3.8, z], 10).castShadow = false;
 }
 
-function cafeInterior({ outerX, z, side }) {
+function xCenterForSide(side) {
+  return side * LAYOUT.lotCenterX;
+}
+
+function cafeInterior({ outerX, z, side, xCenter }) {
   room.box('café interior stage', [3.5, .42, 7], [outerX - side * 2.15, .28, z], 0x211316, { metalness: .14, roughness: .6 });
   room.cylinder('café microphone stand', .055, 2.7, [outerX - side * 3, 1.45, z], 0x202026, { metalness: .9, roughness: .2 });
   for (const dz of [-2.5, 2.5]) room.box('café interior speaker', [1.1, 2.3, 1], [outerX - side * 1.5, 1.25, z + dz], 0x0d0b10, { metalness: .3, roughness: .48 });
-  room.light(0xff7638, 12, [25, 5, z], 13).castShadow = false;
+  room.light(0xff7638, 12, [xCenter, 5, z], 13).castShadow = false;
 }
 
-function warehouseInterior({ outerX, z, side }) {
+function warehouseInterior({ outerX, z, side, xCenter }) {
   room.box('warehouse battle floor', [5.8, .08, 8], [outerX - side * 3.5, .2, z], 0x23172a, { metalness: .15, roughness: .6 });
   for (const dz of [-3.4, 3.4]) room.box('battle rail', [4.8, .12, .12], [outerX - side * 3.5, 1.15, z + dz], 0xd865ff, { metalness: .72, roughness: .25 });
   room.label('WORD SLAUGHTER', [outerX - side * .32, 4.5, z], '#dc69ff', [5.5, .8]);
-  room.light(0xce55ff, 13, [-25, 4.4, z], 14).castShadow = false;
+  room.light(0xce55ff, 13, [xCenter, 4.4, z], 14).castShadow = false;
 }
 
-function recordStoreInterior({ outerX, z, side }) {
+function recordStoreInterior({ outerX, z, side, xCenter }) {
   for (const dz of [-5, -2.5, 0, 2.5, 5]) {
     room.box('record bin', [4.7, 1.25, 1.1], [outerX - side * 3.3, .75, z + dz], 0x17272d, { roughness: .55 });
     for (let i = -2; i <= 2; i++) room.box('album', [.8, .08, .75], [outerX - side * 4.3, 1.45, z + dz + i * .16], 0x5bdcf2, { metalness: .18, roughness: .4 });
   }
-  room.light(0x5edcff, 12, [25, 4.5, z], 14).castShadow = false;
+  room.light(0x5edcff, 12, [xCenter, 4.5, z], 14).castShadow = false;
 }
 
 addStorefront({
-  name: 'BeGenius Studio', side: -1, z: 17, destination: 'begenius_studio.html',
+  name: 'BeGenius Studio', side: -1, z: LAYOUT.northVenueZ, destination: 'begenius_studio.html',
   wall: 0x090d14, trim: 0x2fb7ff, floor: 0x161c24, roof: 0x05070b, glow: 0x43c7ff,
   texture: masonryTexture('#263b4d', '#101b25', '#59caff'),
   glass: materials.glassGold, label: '#d8f8ff', customSign: true, signatureProfile: true, decorate: plaquesInterior, decorateExterior: beGeniusExterior
 });
 addStorefront({
-  name: 'Hip-Hop Café', side: 1, z: 17, destination: 'hiphop_cafe.html',
+  name: 'Hip-Hop Café', side: 1, z: LAYOUT.northVenueZ, destination: 'hiphop_cafe.html',
   wall: 0x6b3326, trim: 0xff8a4f, floor: 0x3b241c, roof: 0x211418, glow: 0xff7444,
   texture: masonryTexture('#9a513b', '#57281f', '#ffc08a'),
-  glass: materials.glassOrange, label: '#ffc08a', decorate: cafeInterior
+  glass: materials.glassOrange, label: '#ffc08a', decorate: cafeInterior, decorateExterior: cafeExterior
 });
 addStorefront({
-  name: 'DA Warehouse', side: -1, z: -18, destination: 'warehouse.html',
+  name: 'DA Warehouse', side: -1, z: LAYOUT.southVenueZ, destination: 'warehouse.html',
   wall: 0x29212e, trim: 0x9d46b7, floor: 0x1e1922, roof: 0x111016, glow: 0xd75cff,
   texture: masonryTexture('#55435c', '#261d2b', '#e9a4ff'),
-  glass: materials.glassPurple, label: '#e9a4ff', decorate: warehouseInterior
+  glass: materials.glassPurple, label: '#e9a4ff', decorate: warehouseInterior, decorateExterior: warehouseExterior
 });
 addStorefront({
-  name: 'Record Store', side: 1, z: -18, destination: null,
+  name: 'Record Store', side: 1, z: LAYOUT.southVenueZ, destination: null,
   wall: 0x17303a, trim: 0x41a9c2, floor: 0x17252b, roof: 0x0d171b, glow: 0x55dcff,
   texture: masonryTexture('#376674', '#17333b', '#92ecff'),
-  glass: materials.glassCyan, label: '#92ecff', decorate: recordStoreInterior
+  glass: materials.glassCyan, label: '#92ecff', decorate: recordStoreInterior, decorateExterior: recordStoreExterior
 });
 
 // Street furniture, trees and art make the district feel inhabited in daylight.
-for (const z of [-37, -27, -8, 3, 28, 36]) {
+for (const z of [-45, -32, -8, 5, 33, 44]) {
   const side = (Math.abs(z) % 2 ? -1 : 1);
-  const x = side * 12.1;
+  const x = side * 15.35;
   room.cylinder('tree trunk', .2, 2.25, [x, 1.15, z], 0x6f4326, { roughness: .92 });
   for (const y of [2.35, 2.9, 3.42]) {
     const crown = new THREE.Mesh(new THREE.SphereGeometry(.9 - (y - 2.35) * .12, 12, 9), room.material(0x3c8b52, .88, .01));
@@ -551,15 +643,15 @@ for (const z of [-37, -27, -8, 3, 28, 36]) {
     crown.castShadow = true;
     scene.add(crown);
   }
-  room.box('street bench', [1.45, .18, 3.2], [-side * 11.55, .55, z + 2.4], 0x704b31, { roughness: .68, metalness: .06 });
+  room.box('street bench', [1.45, .18, 3.2], [-side * 14.6, .55, z + 2.4], 0x704b31, { roughness: .68, metalness: .06 });
 }
 
-for (const z of [-40, -30, -6, 5, 31]) {
-  room.box('crosswalk stripe', [15.2, .025, .52], [0, .062, z], 0xf2ede0, { roughness: .88, cast: false });
+for (const z of [-47, -33, -8, 8, 35]) {
+  room.box('crosswalk stripe', [20.6, .025, .52], [0, .062, z], 0xf2ede0, { roughness: .88, cast: false });
 }
 
 // Street wear and municipal details keep the road from reading as a clean game board.
-for (const [x, z] of [[-5.7, -34], [5.9, -10], [-5.8, 13], [5.8, 32]]) {
+for (const [x, z] of [[-8.7, -40], [8.8, -12], [-8.6, 15], [8.7, 39]]) {
   room.box('storm drain frame', [1.15, .035, .62], [x, .075, z], 0x25282b, { metalness: .76, roughness: .48, cast: false });
   for (let slot = -.42; slot <= .42; slot += .21) room.box('storm drain slot', [.055, .02, .5], [x + slot, .097, z], 0x08090a, { metalness: .4, roughness: .7, cast: false });
 }
@@ -581,8 +673,8 @@ function addTrashCan(x, z) {
   room.cylinder('trash can rim', .48, .09, [x, 1.12, z], 0x1f2325, { metalness: .78, roughness: .42 });
   return can;
 }
-addTrashCan(-11.35, -25);
-addTrashCan(11.35, 9);
+addTrashCan(-14.5, -29);
+addTrashCan(14.5, 10);
 
 function addHydrant(x, z) {
   room.cylinder('fire hydrant body', .22, .92, [x, .52, z], 0xb63d32, { metalness: .36, roughness: .5 });
@@ -590,7 +682,7 @@ function addHydrant(x, z) {
   const sideCap = room.cylinder('fire hydrant side cap', .15, .48, [x, .62, z], 0x9f332c, { metalness: .42, roughness: .44 });
   sideCap.rotation.z = Math.PI / 2;
 }
-addHydrant(11.2, -33);
+addHydrant(14.4, -39);
 
 function addParkedCar(x, z, color) {
   const paint = new THREE.MeshPhysicalMaterial({ color, roughness: .24, metalness: .32, clearcoat: .8, clearcoatRoughness: .15 });
@@ -605,13 +697,13 @@ function addParkedCar(x, z, color) {
   }
   for (const dz of [-2.1, 2.1]) room.box('car bumper', [1.92, .18, .16], [x, .52, z + dz], 0x2d3033, { metalness: .72, roughness: .35 });
 }
-addParkedCar(-5.75, -41, 0x343a43);
-addParkedCar(5.7, 8, 0x6e2427);
+addParkedCar(-7.8, -46, 0x343a43);
+addParkedCar(7.8, 10, 0x6e2427);
 
 // Utility lines and a distant skyline add depth without loading heavy external models.
-for (const x of [-11.1, 11.1]) {
+for (const x of [-LAYOUT.lampX, LAYOUT.lampX]) {
   const points = [];
-  for (let z = -43; z <= 35; z += 13) points.push(new THREE.Vector3(x, 4.92 - ((z + 43) % 26 === 13 ? .34 : 0), z));
+  for (let z = -49; z <= 43; z += 14) points.push(new THREE.Vector3(x, 4.92 - ((z + 49) % 28 === 14 ? .34 : 0), z));
   const cable = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 64, .025, 5, false), new THREE.MeshStandardMaterial({ color: 0x151719, roughness: .72, metalness: .4 }));
   cable.castShadow = true;
   scene.add(cable);
@@ -621,10 +713,34 @@ for (const [x, height, width] of [[-24, 17, 11], [-9, 22, 10], [8, 15, 9], [23, 
   for (let y = 3; y < height - 1; y += 2.4) for (let wx = -width / 2 + 1.1; wx < width / 2; wx += 2.2) room.box('distant window', [.72, .72, .06], [x + wx, y, -52.46], (Math.round(wx + y) % 3) ? 0x9cb2bd : 0xe1bd79, { roughness: .4, cast: false });
 }
 
-room.label('HIP-HOP HEIGHTS', [0, 9.2, -47], '#ffd268', [12, 1.6]);
-room.label('MUSIC • CULTURE • LEGACY', [0, 7.9, -46.9], '#ffffff', [8, .65]);
+room.label('HIP-HOP HEIGHTS', [0, 9.2, -55], '#ffd268', [12, 1.6]);
+room.label('MUSIC • CULTURE • LEGACY', [0, 7.9, -54.9], '#ffffff', [8, .65]);
 room.light(0x8d55ff, 16, [0, 9, -30], 32).castShadow = false;
 room.light(0xffa14f, 14, [0, 8, 20], 32).castShadow = false;
+
+const atmospherePresets = [
+  { name: 'DAYLIGHT', icon: '☀', background: 0x8ecdf4, fog: 0xb8d8e8, exposure: 1.16, sun: 0xffefd2, sunIntensity: 3.15, ambient: 0xbcd7ea, ambientIntensity: .34, lampIntensity: .4 },
+  { name: 'GOLDEN HOUR', icon: '◐', background: 0xf19c70, fog: 0xdca584, exposure: 1.1, sun: 0xffb56b, sunIntensity: 3.7, ambient: 0xb993aa, ambientIntensity: .28, lampIntensity: 2.1 },
+  { name: 'NIGHT', icon: '☾', background: 0x101a35, fog: 0x182441, exposure: .84, sun: 0x739dff, sunIntensity: .55, ambient: 0x4d67a3, ambientIntensity: .2, lampIntensity: 7.5 }
+];
+let atmosphereIndex = 0;
+function applyAtmosphere(index) {
+  const preset = atmospherePresets[index];
+  scene.background.setHex(preset.background);
+  scene.fog.color.setHex(preset.fog);
+  renderer.toneMappingExposure = preset.exposure;
+  sun.color.setHex(preset.sun);
+  sun.intensity = preset.sunIntensity;
+  ambient.color.setHex(preset.ambient);
+  ambient.intensity = preset.ambientIntensity;
+  streetLamps.forEach((lamp) => { lamp.intensity = preset.lampIntensity; });
+  document.getElementById('atmosphereToggle').textContent = `${preset.icon} ${preset.name}`;
+}
+document.getElementById('atmosphereToggle').addEventListener('click', () => {
+  atmosphereIndex = (atmosphereIndex + 1) % atmospherePresets.length;
+  applyAtmosphere(atmosphereIndex);
+});
+applyAtmosphere(0);
 
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
