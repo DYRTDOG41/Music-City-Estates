@@ -129,6 +129,13 @@ test("saving a spend does not get merged back up", function () {
   assert.strictEqual(MCE._storage.dump().mceCash, "85");
 });
 
+test("saving an avatar stage name updates the shared career identity", function () {
+  start();
+  var state = MCE.save({ name: "Mic Legend" });
+  assert.strictEqual(state.name, "Mic Legend");
+  assert.strictEqual(JSON.parse(MCE._storage.dump()["mce-save"]).name, "Mic Legend");
+});
+
 test("battle unlock lives in one config object", function () {
   assert.strictEqual(MCE.UNLOCKS.battle.fans, 25);
   var locked = start();

@@ -2,6 +2,9 @@
   "name": "music-city-estates",
   "private": true,
   "version": "0.1.0",
+  "scripts": {
+    "test": "node player-state.test.js"
+  },
   "engines": {
     "node": "22.x"
   }
