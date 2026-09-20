@@ -24,7 +24,8 @@
       hiredAt: null,
       totalCommission: 0,
       promotionSpend: 0,
-      radioSpend: 0
+      radioSpend: 0,
+      syncSpend: 0
     },
     business: {
       actionCount: 0,
@@ -119,6 +120,42 @@
     managedPromotionFee: MANAGER_PROFILES.hustler.promotionFee,
     radioSubmissionFee: MANAGER_PROFILES.hustler.radioFee
   };
+
+  var SYNC_BRIEFS = [
+    {
+      id: "midnight-run",
+      title: "Midnight Run",
+      production: "Action Film Trailer",
+      scene: "A getaway car cuts through neon streets as the trailer builds to its final hit.",
+      wants: ["hip-hop", "trap", "cinematic", "dark", "energetic"],
+      avoids: "Uncleared samples, artist tags, or long intros",
+      fee: 35,
+      threshold: 58,
+      reward: { cash: 180, fans: 10, xp: 16 }
+    },
+    {
+      id: "last-light",
+      title: "Last Light",
+      production: "Drama End Credits",
+      scene: "The lead walks away from home while the final credits begin to roll.",
+      wants: ["r&b", "soul", "emotional", "acoustic", "melodic"],
+      avoids: "Explicit lyrics or an abrupt ending",
+      fee: 30,
+      threshold: 54,
+      reward: { cash: 155, fans: 8, xp: 14 }
+    },
+    {
+      id: "city-after-dark",
+      title: "City After Dark",
+      production: "Streaming Series Montage",
+      scene: "Friends move through clubs, rooftops, and late-night city blocks.",
+      wants: ["upbeat", "pop", "hip-hop", "dance", "night"],
+      avoids: "Slow openings or references to competing brands",
+      fee: 25,
+      threshold: 50,
+      reward: { cash: 130, fans: 7, xp: 12 }
+    }
+  ];
 
   var BUSINESS_EVENTS = [
     {
@@ -505,7 +542,8 @@
       hiredAt: source.hiredAt || null,
       totalCommission: toCount(source.totalCommission, 0),
       promotionSpend: toCount(source.promotionSpend, 0),
-      radioSpend: toCount(source.radioSpend, 0)
+      radioSpend: toCount(source.radioSpend, 0),
+      syncSpend: toCount(source.syncSpend, 0)
     };
   }
 
@@ -602,6 +640,7 @@
     return {
       id: String(item.id || "release-" + (index + 1)),
       title: String(item.title || "Untitled"),
+      artistName: item.artistName == null ? undefined : String(item.artistName),
       source: String(item.source || "unknown"),
       day: item.day == null ? undefined : toCount(item.day, undefined),
       createdAt: item.createdAt || undefined,
@@ -632,6 +671,19 @@
       radioManager: item.radioManager == null ? undefined : String(item.radioManager),
       radioInfluence: toCount(item.radioInfluence, 0),
       radioCraftInfluence: toCount(item.radioCraftInfluence, 0),
+      syncSubmissions: Array.isArray(item.syncSubmissions)
+        ? item.syncSubmissions.slice(-12).map(function (submission) {
+            return {
+              briefId: String(submission.briefId || "unknown"),
+              briefTitle: String(submission.briefTitle || "Sync Brief"),
+              submittedAt: submission.submittedAt || undefined,
+              manager: String(submission.manager || "Artist Management"),
+              feePaid: toCount(submission.feePaid, 0),
+              score: clamp(toCount(submission.score, 0), 0, 100),
+              outcome: submission.outcome === "placed" ? "placed" : "passed"
+            };
+          })
+        : [],
       certificationStatus:
         item.certificationStatus == null ? "not-certified" : String(item.certificationStatus),
       passportId:
@@ -1070,6 +1122,71 @@
     return save(next);
   }
 
+  function syncBriefById(id) {
+    for (var i = 0; i < SYNC_BRIEFS.length; i++) {
+      if (SYNC_BRIEFS[i].id === String(id)) return SYNC_BRIEFS[i];
+    }
+    return null;
+  }
+
+  function submitReleaseToSync(id, briefId) {
+    if (!current) load();
+    var next = snapshot();
+    var index = findReleaseIndex(id, next);
+    if (index < 0) throw new Error("Song not found in Music City releases.");
+    if (!next.manager.hired) throw new Error("A manager must unlock and handle sync submissions.");
+
+    var release = next.releases[index];
+    if (release.releaseStatus !== "released") {
+      throw new Error("Release the song before submitting it for sync.");
+    }
+
+    var brief = syncBriefById(briefId);
+    if (!brief) throw new Error("That sync brief is no longer available.");
+    var alreadySubmitted = release.syncSubmissions.some(function (entry) {
+      return entry.briefId === brief.id;
+    });
+    if (alreadySubmitted) throw new Error("Your manager already submitted this song to that brief.");
+    if (next.cash < brief.fee) {
+      throw new Error("This professional sync submission costs $" + brief.fee + ". You currently have $" + next.cash + ".");
+    }
+
+    var managerProfile = getManagerProfile(next);
+    var searchable = [release.style, release.beat, release.title].filter(Boolean).join(" ").toLowerCase();
+    var matchCount = brief.wants.reduce(function (total, keyword) {
+      return total + (searchable.indexOf(keyword.toLowerCase()) >= 0 ? 1 : 0);
+    }, 0);
+    var score = clamp(
+      toCount(release.craftScore, 0) + managerProfile.rank * 7 + matchCount * 6,
+      0,
+      100
+    );
+    var placed = score >= brief.threshold;
+
+    next.cash -= brief.fee;
+    next.manager.syncSpend += brief.fee;
+    if (placed) {
+      next.cash += brief.reward.cash;
+      next.fans += brief.reward.fans;
+      next.xp += brief.reward.xp;
+    } else {
+      next.xp += 3;
+    }
+
+    release.syncSubmissions.push({
+      briefId: brief.id,
+      briefTitle: brief.title,
+      submittedAt: new Date().toISOString(),
+      manager: managerProfile.name,
+      feePaid: brief.fee,
+      score: score,
+      outcome: placed ? "placed" : "passed"
+    });
+    next.releases[index] = normalizeRelease(release, index);
+    advanceBusinessAction(next, "sync");
+    return save(next);
+  }
+
   function hireManager(profileId) {
     if (!current) load();
     var next = snapshot();
@@ -1351,6 +1468,7 @@
     ECONOMY: ECONOMY,
     BUSINESS_EVENTS: BUSINESS_EVENTS,
     MANAGER_PROFILES: MANAGER_PROFILES,
+    SYNC_BRIEFS: SYNC_BRIEFS,
     KEYS: {
       career: CAREER_KEY,
       fans: WORLD_KEYS.fans,
@@ -1374,6 +1492,7 @@
     releaseSong: releaseSong,
     promoteRelease: promoteRelease,
     submitReleaseToRadio: submitReleaseToRadio,
+    submitReleaseToSync: submitReleaseToSync,
     hireManager: hireManager,
     hasManager: hasManager,
     getManagerProfile: getManagerProfile,

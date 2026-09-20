@@ -161,9 +161,10 @@ test("The Viral Gallery requires XP and a permanent cash purchase", function () 
 
 test("named releases increase song count", function () {
   start();
-  var state = MCE.addRelease({ title: "Night Drive", source: "bedroom" });
+  var state = MCE.addRelease({ title: "Night Drive", artistName: "Nova", source: "bedroom" });
   assert.strictEqual(state.songs, 1);
   assert.strictEqual(state.releases[0].title, "Night Drive");
+  assert.strictEqual(state.releases[0].artistName, "Nova");
 });
 
 test("AI release metadata survives normalization", function () {
@@ -652,6 +653,36 @@ test("DJ pool card discounts and strengthens the next radio submission", functio
   assert.strictEqual(submitted.releases[0].radioInfluence, 5);
   assert.strictEqual(submitted.business.effects.radioDiscount, 0);
   assert.strictEqual(submitted.business.effects.radioInfluenceBonus, 0);
+});
+
+test("Sync Cinema is manager-gated and records a successful placement", function () {
+  start();
+  MCE.save({ cash: 1000, fans: 60, xp: 80 });
+  MCE.addRelease({
+    id: "sync-song",
+    title: "Neon Getaway",
+    style: "dark cinematic hip-hop",
+    craftScore: 70
+  });
+  MCE.releaseSong("sync-song");
+  assert.throws(function () {
+    MCE.submitReleaseToSync("sync-song", "midnight-run");
+  }, /manager must unlock/i);
+
+  MCE.hireManager("connector");
+  var before = MCE.get();
+  var placed = MCE.submitReleaseToSync("sync-song", "midnight-run");
+  var submission = placed.releases[0].syncSubmissions[0];
+  assert.strictEqual(submission.outcome, "placed");
+  assert.strictEqual(submission.briefTitle, "Midnight Run");
+  assert.ok(submission.score >= 58);
+  assert.strictEqual(placed.manager.syncSpend, 35);
+  assert.strictEqual(placed.cash, before.cash - 35 + 180);
+  assert.strictEqual(placed.fans, before.fans + 10);
+  assert.strictEqual(placed.xp, before.xp + 16);
+  assert.throws(function () {
+    MCE.submitReleaseToSync("sync-song", "midnight-run");
+  }, /already submitted/i);
 });
 
 test("every Business Deck card has a no-cash escape choice", function () {
