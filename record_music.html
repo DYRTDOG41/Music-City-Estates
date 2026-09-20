@@ -692,9 +692,9 @@ Reference clips are limited to 30 seconds and 3 MB. The reference guides product
 
 <div class="panel">
 
-<h3>5. Optional AI Production</h3>
+<h3>5. Music City AI Producer</h3>
 
-<p class="engine-status">This section generates alternate AI productions. It is separate from Mix &amp; Play above, which always uses the artist's recorded performance.</p>
+<p class="engine-status">Generate an instrumental without leaving the studio. <strong>Music City Native</strong> works now as our self-contained prototype. <strong>Suno Premium</strong> is already reserved in the same provider layer for approved API access later.</p>
 
 <div class="row">
 
@@ -702,39 +702,58 @@ Reference clips are limited to 30 seconds and 3 MB. The reference guides product
 <label>Creation Mode</label>
 
 <select id="creationMode">
-<option>Use Recording as Reference</option>
 <option selected>Generate Instrumental</option>
-<option>Create Full Song</option>
-<option disabled>Preserve My Exact Voice — Coming Later</option>
+<option disabled>Reference-Guided Instrumental — Native Model Phase 2</option>
+<option disabled>Create Full Song — Future Vocal Engine</option>
 </select>
 </div>
 
 <div>
-<label>Vocal Style</label>
+<label>Output</label>
 
 <select id="vocalStyle">
-<option>AI Generated Vocal</option>
-<option>Instrumental Only</option>
-<option>Reference-Guided Production</option>
+<option selected>Instrumental Only</option>
 </select>
 </div>
 
 </div>
 
 <div class="engine-box">
-<label>Music City AI Engine</label>
+<label>AI Producer Engine</label>
 <select id="aiProvider" onchange="updateEngineStatus()">
-<option value="demo">Music City Demo Engine — Works Now</option>
-<option value="elevenlabs">ElevenLabs Music — Optional Connection</option>
-<option value="stable-audio">Stable Audio — Secure Backend Required</option>
-<option value="google-lyria">Google Lyria — Secure Backend Required</option>
-<option value="partner" disabled>Suno API Partnership — Awaiting Approval</option>
+<option value="music-city-native" selected>Music City Native — Works Now</option>
+<option value="suno" disabled>Suno Premium — API Access Pending</option>
 </select>
 <p id="aiEngineStatus" class="engine-status ready">
-Demo mode is ready. It tests the complete Music City generation workflow without using paid AI credits.
+Music City Native generates an instrumental inside the app and loads it directly into Track 01.
 </p>
 
-<label style="display:block; margin-top:14px;">Preview Length</label>
+<div class="row" style="margin-top:14px;">
+<div>
+<label>BPM</label>
+<input id="aiBpm" type="number" min="60" max="180" step="1" placeholder="Auto">
+</div>
+<div>
+<label>Key</label>
+<select id="aiKey">
+<option selected>Auto</option>
+<option>C minor</option>
+<option>C# minor</option>
+<option>D minor</option>
+<option>D# minor</option>
+<option>E minor</option>
+<option>F minor</option>
+<option>F# minor</option>
+<option>G minor</option>
+<option>G# minor</option>
+<option>A minor</option>
+<option>A# minor</option>
+<option>B minor</option>
+</select>
+</div>
+</div>
+
+<label style="display:block; margin-top:14px;">Generation Length</label>
 <select id="musicLength">
 <option value="8000">8 seconds — quick test</option>
 <option value="12000" selected>12 seconds — standard preview</option>
@@ -790,7 +809,7 @@ class="action primary"
 id="createSongButton"
 onclick="createSong()"
 >
-✨ CREATE WITH AI
+🎹 GENERATE & LOAD TRACK 01
 </button>
 
 </div>
@@ -979,6 +998,7 @@ localBeatUrls.push(url);
 beatLibrary[uniqueTitle] = {
 type:"audio",
 src:url,
+blob:file,
 genre:"Private Test",
 mood:"Local file",
 bpm:0,
@@ -1004,6 +1024,46 @@ if (beatAudioElement) beatAudioElement.volume = safe;
 if (beatMaster && beatAudioContext) {
 try { beatMaster.gain.setValueAtTime(safe, beatAudioContext.currentTime); } catch (error) { beatMaster.gain.value = safe; }
 }
+}
+
+function installGeneratedInstrumental(result, style) {
+if (!result || !result.audioUrl) return "";
+
+let baseTitle = String(result.title || "Music City Beat").trim() + " — AI Instrumental";
+let beatTitle = baseTitle;
+let suffix = 2;
+while (beatLibrary[beatTitle]) beatTitle = baseTitle + " " + suffix++;
+
+beatLibrary[beatTitle] = {
+type:"audio",
+src:result.audioUrl,
+blob:result.audioBlob || null,
+genre:String(style || "Original"),
+mood:"AI Producer",
+bpm:Number(result.bpm || document.getElementById("aiBpm").value || 0),
+producer:result.providerName || "Music City Native",
+source:result.provider || "music-city-native",
+generated:true
+};
+
+if (!localBeatUrls.includes(result.audioUrl)) localBeatUrls.push(result.audioUrl);
+renderBeatCatalog();
+
+const button = Array.from(document.querySelectorAll(".beat-choice"))
+.find(item => item.dataset.beat === beatTitle);
+
+if (button) selectBeat(beatTitle, button);
+
+const beatLane = document.querySelector('.track-lane[data-track="beat"] .track-name small');
+if (beatLane) {
+beatLane.textContent = (result.providerName || "Music City Native") +
+(result.bpm ? " • " + result.bpm + " BPM" : "");
+}
+
+result.beat = beatTitle;
+result.loadedIntoTrack = true;
+queueBoothSessionSave();
+return beatTitle;
 }
 
 function setGuideStep(step) {
@@ -1168,25 +1228,26 @@ if (beatPlaybackMode === "writing") await startBeatPlayback({ mode:"writing" });
 function updateEngineStatus() {
 const provider = document.getElementById("aiProvider").value;
 const status = document.getElementById("aiEngineStatus");
-const engine = window.MusicCityAI
-? window.MusicCityAI.getStatus()
-: { backendConnected:false };
+const createButton = document.getElementById("createSongButton");
 
-const messages = {
-demo: "Demo mode is ready. It tests the complete Music City generation workflow without using paid AI credits.",
-elevenlabs: engine.backendConnected
-? "The secure backend route is available. Live ElevenLabs generation still requires its protected server-side API key. Mix & Play does not need it."
-: "ElevenLabs Music is wired in. Connect the secure backend URL and API key to enable live audio.",
-"stable-audio": "Stable Audio is reserved as a future provider adapter.",
-"google-lyria": "Google Lyria is reserved as a future provider adapter.",
-partner: "Use Finish with Suno in the Mixdown section. It saves your session, exports the rough mix, and opens Suno without pretending a private API is connected."
-};
+if (provider === "music-city-native") {
+status.textContent = "Music City Native is ready. It renders a real instrumental inside this browser, then automatically loads it into Track 01. This is our self-contained prototype while we prepare a fine-tuned model.";
+status.className = "engine-status ready";
+createButton.disabled = false;
+createButton.textContent = "🎹 GENERATE & LOAD TRACK 01";
+return;
+}
 
-status.textContent = messages[provider] || "Select an AI provider.";
-status.className =
-provider === "demo"
-? "engine-status ready"
-: "engine-status";
+if (provider === "suno") {
+status.textContent = "Suno Premium is wired into the provider architecture but API credentials are not activated yet. No Suno key will ever be exposed in the browser.";
+status.className = "engine-status";
+createButton.disabled = true;
+createButton.textContent = "SUNO PREMIUM — ACCESS PENDING";
+return;
+}
+
+status.textContent = "Select an available Music City AI Producer engine.";
+status.className = "engine-status";
 }
 
 function addStyle(style) {
@@ -1654,6 +1715,7 @@ const tracks = {};
 Object.keys(sessionTracks).forEach(trackName => {
 tracks[trackName] = { blob:sessionTracks[trackName].blob, durationMs:sessionTracks[trackName].durationMs };
 });
+const selectedBeatConfig = selectedBeat ? beatLibrary[selectedBeat] : null;
 const record = {
 id:"current-" + studio,
 savedAt:new Date().toISOString(),
@@ -1661,6 +1723,17 @@ title:document.getElementById("songTitle").value,
 lyrics:document.getElementById("lyrics").value,
 style:document.getElementById("style").value,
 selectedBeat,
+selectedBeatAudio:selectedBeatConfig && selectedBeatConfig.type === "audio" && selectedBeatConfig.blob ? {
+title:selectedBeat,
+blob:selectedBeatConfig.blob,
+genre:selectedBeatConfig.genre || "",
+mood:selectedBeatConfig.mood || "",
+bpm:selectedBeatConfig.bpm || 0,
+producer:selectedBeatConfig.producer || "",
+source:selectedBeatConfig.source || "Music City audio",
+generated:Boolean(selectedBeatConfig.generated),
+localOnly:Boolean(selectedBeatConfig.localOnly)
+} : null,
 armedTrack,
 tracks,
 mixSettings:collectMixSettings(),
@@ -1698,9 +1771,30 @@ if (!record) return;
 document.getElementById("songTitle").value = record.title || "";
 document.getElementById("lyrics").value = record.lyrics || "";
 document.getElementById("style").value = record.style || "";
+
+if (record.selectedBeatAudio && record.selectedBeatAudio.blob && record.selectedBeatAudio.title) {
+const savedBeat = record.selectedBeatAudio;
+const restoredUrl = URL.createObjectURL(savedBeat.blob);
+localBeatUrls.push(restoredUrl);
+beatLibrary[savedBeat.title] = {
+type:"audio",
+src:restoredUrl,
+blob:savedBeat.blob,
+genre:savedBeat.genre || "Original",
+mood:savedBeat.mood || "Saved session",
+bpm:Number(savedBeat.bpm || 0),
+producer:savedBeat.producer || "Music City",
+source:savedBeat.source || "Saved session",
+generated:Boolean(savedBeat.generated),
+localOnly:Boolean(savedBeat.localOnly)
+};
+renderBeatCatalog();
+}
+
 if (record.selectedBeat && beatLibrary[record.selectedBeat]) {
 selectedBeat = record.selectedBeat;
-const button = document.querySelector('.beat-choice[data-beat="' + record.selectedBeat + '"]');
+const button = Array.from(document.querySelectorAll(".beat-choice"))
+.find(item => item.dataset.beat === record.selectedBeat);
 if (button) button.classList.add("selected");
 setGuideStep("guideWrite");
 updateBeatTransport();
@@ -2263,6 +2357,10 @@ audioAttached:
 Boolean(referenceAudioBlob),
 musicLengthMs:
 Number(document.getElementById("musicLength").value || 12000),
+bpm:
+Number(document.getElementById("aiBpm").value || 0),
+key:
+document.getElementById("aiKey").value,
 referenceSongId: "",
 referenceDurationMs: 0,
 originalLyricsConfirmed:
@@ -2302,30 +2400,9 @@ generatedAudio.removeAttribute("src");
 try {
 
 if (mode === "Use Recording as Reference") {
-if (provider !== "elevenlabs" && provider !== "demo") {
 throw new Error(
-"That provider does not accept audio references in this build. Use the Demo Engine, connect ElevenLabs, or use Finish with Suno in the Mixdown section."
+"Reference-guided native generation is reserved for the fine-tuned Music City model phase. Generate an instrumental from style, BPM and key for this prototype."
 );
-}
-
-if (!referenceAudioBlob) {
-throw new Error(
-"Record or upload a reference clip before using Audio Reference mode."
-);
-}
-
-request.referenceDurationMs = Math.max(50, Math.min(referenceAudioDurationMs || 10000, 30000));
-
-if (provider === "elevenlabs") {
-engineMessage.textContent = "Uploading and checking your audio reference...";
-const reference = await window.MusicCityAI.uploadReference(referenceAudioBlob, {
-filename: referenceAudioBlob.name || "music-city-reference.webm"
-});
-request.referenceSongId = reference.songId;
-engineMessage.textContent = "Reference ready. Generating a new track from its musical characteristics...";
-} else {
-engineMessage.textContent = "Demo reference attached. Testing the workflow without paid AI credits...";
-}
 }
 
 const result =
@@ -2358,11 +2435,16 @@ craftReport.signals.originalLyricsConfirmed;
 renderCraftReport(craftReport);
 
 document.getElementById("createSongButton").textContent =
-"✨ REFINE WITH AI — PASS " + (generationPasses + 1);
+"🎹 GENERATE ANOTHER — PASS " + (generationPasses + 1);
 
 result.style = style;
 result.studio = studio;
+
+if (result.audioBlob && mode === "Generate Instrumental") {
+installGeneratedInstrumental(result, style);
+} else {
 result.beat = result.beat || selectedBeat || "";
+}
 
 lastGeneratedResult = result;
 
@@ -2392,7 +2474,8 @@ resultText.innerHTML =
 "Craft: " + result.craftScore + "/100 — " + result.craftTier;
 
 engineMessage.textContent =
-result.message || "Generation submitted.";
+(result.message || "Generation submitted.") +
+(result.loadedIntoTrack ? " It is selected in Track 01 now—press Play Instrumental or Record." : "");
 
 if (result.audioUrl) {
 generatedAudio.src = result.audioUrl;
