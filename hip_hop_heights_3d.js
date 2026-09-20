@@ -684,6 +684,16 @@ function addHydrant(x, z) {
 }
 addHydrant(14.4, -39);
 
+// Digital street portal for The Viral Gallery. This adds a new landmark without
+// moving or replacing any existing storefront, collider, or mesh-ready slot.
+const viralGalleryAction = destinationAction('social_media_room.html', 'The Viral Gallery');
+const viralPortalMaterial = new THREE.MeshStandardMaterial({ color: 0x10243b, emissive: 0x0b74a5, emissiveIntensity: .92, metalness: .62, roughness: .2 });
+const viralPortal = room.box('Viral Gallery street portal', [.5, 5.3, 5.6], [18.05, 2.7, 42], 0x1bbfff, { material: viralPortalMaterial });
+addClickable(viralPortal, viralGalleryAction, 'The Viral Gallery');
+room.box('Viral Gallery screen', [.18, 3.75, 4.55], [17.72, 2.8, 42], 0x58ddff, { material: new THREE.MeshStandardMaterial({ color: 0x85ecff, emissive: 0x126d9a, emissiveIntensity: 1.3, metalness: .25, roughness: .15 }) });
+room.label('THE VIRAL GALLERY\nSOCIAL MEDIA EXHIBIT', [17.35, 4.05, 42], '#d9faff', [5.2, 1.35]);
+room.interact('ENTER THE VIRAL GALLERY', [15.6, 1.7, 42], viralGalleryAction, 3.1, 0x58ddff);
+
 function addParkedCar(x, z, color) {
   const paint = new THREE.MeshPhysicalMaterial({ color, roughness: .24, metalness: .32, clearcoat: .8, clearcoatRoughness: .15 });
   room.box('parked car body', [2.15, .72, 4.15], [x, .66, z], color, { material: paint });

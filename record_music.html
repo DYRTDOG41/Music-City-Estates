@@ -720,6 +720,7 @@ VIEW ARTIST CATALOG
 
 
 <script src="player-state.js"></script>
+<script src="music_city_missions.js"></script>
 <script src="music_city_catalog.js"></script>
 <script src="music_city_song_craft.js"></script>
 <script src="music_city_ai.js"></script>
@@ -1195,6 +1196,7 @@ if (!alreadySaved) {
 window.MCE.addRelease({
 id: trackId,
 title: lastGeneratedResult.title,
+artistName: current.name,
 source:
 "ai-" +
 (lastGeneratedResult.provider || "music-city"),

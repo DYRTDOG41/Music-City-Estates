@@ -24,7 +24,9 @@
       hiredAt: null,
       totalCommission: 0,
       promotionSpend: 0,
-      radioSpend: 0
+      radioSpend: 0,
+      syncSpend: 0,
+      cinemaSpend: 0
     },
     business: {
       actionCount: 0,
@@ -56,6 +58,16 @@
     hiphop: { fans: 100, xp: 150, label: "100 fans · 150 XP" },
     rnb: { fans: 175, xp: 250, label: "175 fans · 250 XP" },
     downtown: { fans: 300, xp: 400, label: "300 fans · 400 XP" }
+  };
+
+  var PERKS = {
+    socialMediaSuite: {
+      id: "socialMediaSuite",
+      label: "The Viral Gallery",
+      description: "A permanent social media exhibit with rotating content screens and career campaign tools.",
+      requires: { xp: 50 },
+      price: 250
+    }
   };
 
   var MANAGER_PROFILES = {
@@ -108,6 +120,49 @@
     managerCommissionPct: MANAGER_PROFILES.hustler.commissionPct,
     managedPromotionFee: MANAGER_PROFILES.hustler.promotionFee,
     radioSubmissionFee: MANAGER_PROFILES.hustler.radioFee
+  };
+
+  var SYNC_BRIEFS = [
+    {
+      id: "midnight-run",
+      title: "Midnight Run",
+      production: "Action Film Trailer",
+      scene: "A getaway car cuts through neon streets as the trailer builds to its final hit.",
+      wants: ["hip-hop", "trap", "cinematic", "dark", "energetic"],
+      avoids: "Uncleared samples, artist tags, or long intros",
+      fee: 35,
+      threshold: 58,
+      reward: { cash: 180, fans: 10, xp: 16 }
+    },
+    {
+      id: "last-light",
+      title: "Last Light",
+      production: "Drama End Credits",
+      scene: "The lead walks away from home while the final credits begin to roll.",
+      wants: ["r&b", "soul", "emotional", "acoustic", "melodic"],
+      avoids: "Explicit lyrics or an abrupt ending",
+      fee: 30,
+      threshold: 54,
+      reward: { cash: 155, fans: 8, xp: 14 }
+    },
+    {
+      id: "city-after-dark",
+      title: "City After Dark",
+      production: "Streaming Series Montage",
+      scene: "Friends move through clubs, rooftops, and late-night city blocks.",
+      wants: ["upbeat", "pop", "hip-hop", "dance", "night"],
+      avoids: "Slow openings or references to competing brands",
+      fee: 25,
+      threshold: 50,
+      reward: { cash: 130, fans: 7, xp: 12 }
+    }
+  ];
+
+  var CINEMA = {
+    submissionFee: 20,
+    submissionXp: 5,
+    contentTypes: ["short-film", "music-video", "documentary", "performance", "visualizer"],
+    productionMethods: ["live-action", "ai-generated", "hybrid"]
   };
 
   var BUSINESS_EVENTS = [
@@ -495,7 +550,9 @@
       hiredAt: source.hiredAt || null,
       totalCommission: toCount(source.totalCommission, 0),
       promotionSpend: toCount(source.promotionSpend, 0),
-      radioSpend: toCount(source.radioSpend, 0)
+      radioSpend: toCount(source.radioSpend, 0),
+      syncSpend: toCount(source.syncSpend, 0),
+      cinemaSpend: toCount(source.cinemaSpend, 0)
     };
   }
 
@@ -592,6 +649,7 @@
     return {
       id: String(item.id || "release-" + (index + 1)),
       title: String(item.title || "Untitled"),
+      artistName: item.artistName == null ? undefined : String(item.artistName),
       source: String(item.source || "unknown"),
       day: item.day == null ? undefined : toCount(item.day, undefined),
       createdAt: item.createdAt || undefined,
@@ -622,6 +680,19 @@
       radioManager: item.radioManager == null ? undefined : String(item.radioManager),
       radioInfluence: toCount(item.radioInfluence, 0),
       radioCraftInfluence: toCount(item.radioCraftInfluence, 0),
+      syncSubmissions: Array.isArray(item.syncSubmissions)
+        ? item.syncSubmissions.slice(-12).map(function (submission) {
+            return {
+              briefId: String(submission.briefId || "unknown"),
+              briefTitle: String(submission.briefTitle || "Sync Brief"),
+              submittedAt: submission.submittedAt || undefined,
+              manager: String(submission.manager || "Artist Management"),
+              feePaid: toCount(submission.feePaid, 0),
+              score: clamp(toCount(submission.score, 0), 0, 100),
+              outcome: submission.outcome === "placed" ? "placed" : "passed"
+            };
+          })
+        : [],
       certificationStatus:
         item.certificationStatus == null ? "not-certified" : String(item.certificationStatus),
       passportId:
@@ -1060,6 +1131,112 @@
     return save(next);
   }
 
+  function syncBriefById(id) {
+    for (var i = 0; i < SYNC_BRIEFS.length; i++) {
+      if (SYNC_BRIEFS[i].id === String(id)) return SYNC_BRIEFS[i];
+    }
+    return null;
+  }
+
+  function submitReleaseToSync(id, briefId) {
+    if (!current) load();
+    var next = snapshot();
+    var index = findReleaseIndex(id, next);
+    if (index < 0) throw new Error("Song not found in Music City releases.");
+    if (!next.manager.hired) throw new Error("A manager must unlock and handle sync submissions.");
+
+    var release = next.releases[index];
+    if (release.releaseStatus !== "released") {
+      throw new Error("Release the song before submitting it for sync.");
+    }
+
+    var brief = syncBriefById(briefId);
+    if (!brief) throw new Error("That sync brief is no longer available.");
+    var alreadySubmitted = release.syncSubmissions.some(function (entry) {
+      return entry.briefId === brief.id;
+    });
+    if (alreadySubmitted) throw new Error("Your manager already submitted this song to that brief.");
+    if (next.cash < brief.fee) {
+      throw new Error("This professional sync submission costs $" + brief.fee + ". You currently have $" + next.cash + ".");
+    }
+
+    var managerProfile = getManagerProfile(next);
+    var searchable = [release.style, release.beat, release.title].filter(Boolean).join(" ").toLowerCase();
+    var matchCount = brief.wants.reduce(function (total, keyword) {
+      return total + (searchable.indexOf(keyword.toLowerCase()) >= 0 ? 1 : 0);
+    }, 0);
+    var score = clamp(
+      toCount(release.craftScore, 0) + managerProfile.rank * 7 + matchCount * 6,
+      0,
+      100
+    );
+    var placed = score >= brief.threshold;
+
+    next.cash -= brief.fee;
+    next.manager.syncSpend += brief.fee;
+    if (placed) {
+      next.cash += brief.reward.cash;
+      next.fans += brief.reward.fans;
+      next.xp += brief.reward.xp;
+    } else {
+      next.xp += 3;
+    }
+
+    release.syncSubmissions.push({
+      briefId: brief.id,
+      briefTitle: brief.title,
+      submittedAt: new Date().toISOString(),
+      manager: managerProfile.name,
+      feePaid: brief.fee,
+      score: score,
+      outcome: placed ? "placed" : "passed"
+    });
+    next.releases[index] = normalizeRelease(release, index);
+    advanceBusinessAction(next, "sync");
+    return save(next);
+  }
+
+  function submitCinemaVideo(submission) {
+    if (!current) load();
+    var next = snapshot();
+    var item = submission && typeof submission === "object" ? submission : {};
+    if (!next.manager.hired) throw new Error("A manager must unlock and handle cinema submissions.");
+    if (!item.id || !String(item.title || "").trim()) throw new Error("Add a title before submitting the video.");
+    if (CINEMA.contentTypes.indexOf(String(item.contentType)) < 0) throw new Error("Choose a valid cinema format.");
+    if (CINEMA.productionMethods.indexOf(String(item.productionMethod)) < 0) throw new Error("Disclose how the video was produced.");
+    if (!item.rightsConfirmed) throw new Error("Confirm that you control the video, music, likenesses, and required permissions.");
+    if (next.cash < CINEMA.submissionFee) {
+      throw new Error("Cinema submission costs $" + CINEMA.submissionFee + ". You currently have $" + next.cash + ".");
+    }
+
+    var submissions = Array.isArray(next.flags.cinemaSubmissions)
+      ? next.flags.cinemaSubmissions.slice()
+      : [];
+    if (submissions.some(function (entry) { return String(entry.id) === String(item.id); })) {
+      return snapshot();
+    }
+
+    var managerProfile = getManagerProfile(next);
+    next.cash -= CINEMA.submissionFee;
+    next.xp += CINEMA.submissionXp;
+    next.manager.cinemaSpend += CINEMA.submissionFee;
+    submissions.push({
+      id: String(item.id),
+      title: String(item.title).trim(),
+      creator: String(item.creator || next.name || "Music City Creator").trim(),
+      contentType: String(item.contentType),
+      productionMethod: String(item.productionMethod),
+      aiTools: String(item.aiTools || "").trim(),
+      manager: managerProfile.name,
+      submittedAt: new Date().toISOString(),
+      feePaid: CINEMA.submissionFee,
+      rightsConfirmed: true
+    });
+    next.flags.cinemaSubmissions = submissions.slice(-30);
+    advanceBusinessAction(next, "cinema-video");
+    return save(next);
+  }
+
   function hireManager(profileId) {
     if (!current) load();
     var next = snapshot();
@@ -1276,6 +1453,40 @@
     return meets(UNLOCKS[id], state);
   }
 
+  function hasPerk(id, state) {
+    var s = state || current || load();
+    return Boolean(s.flags && s.flags.perks && s.flags.perks[id]);
+  }
+
+  function perkStatus(id, state) {
+    var s = state || current || load();
+    var perk = PERKS[id];
+    if (!perk) throw new Error("Unknown Music City perk.");
+    return {
+      owned: hasPerk(id, s),
+      eligible: meets(perk.requires, s),
+      affordable: s.cash >= perk.price,
+      xpNeeded: Math.max(0, toCount(perk.requires && perk.requires.xp, 0) - s.xp),
+      cashNeeded: Math.max(0, perk.price - s.cash),
+      price: perk.price
+    };
+  }
+
+  function purchasePerk(id) {
+    if (!current) load();
+    var perk = PERKS[id];
+    if (!perk) throw new Error("Unknown Music City perk.");
+    if (hasPerk(id, current)) return snapshot();
+    if (!meets(perk.requires, current)) throw new Error(perk.label + " requires " + perk.requires.xp + " XP.");
+    if (current.cash < perk.price) throw new Error("You need $" + perk.price + " to purchase " + perk.label + ".");
+    var next = snapshot();
+    next.cash -= perk.price;
+    next.flags = clone(next.flags || {});
+    next.flags.perks = clone(next.flags.perks || {});
+    next.flags.perks[id] = { purchasedAt: new Date().toISOString(), price: perk.price };
+    return save(next);
+  }
+
   function needed(req, state) {
     var s = state || current || load();
     req = req || {};
@@ -1302,10 +1513,13 @@
   var api = {
     DEFAULTS: clone(DEFAULTS),
     UNLOCKS: UNLOCKS,
+    PERKS: PERKS,
     CAREER_TITLES: CAREER_TITLES,
     ECONOMY: ECONOMY,
     BUSINESS_EVENTS: BUSINESS_EVENTS,
     MANAGER_PROFILES: MANAGER_PROFILES,
+    SYNC_BRIEFS: SYNC_BRIEFS,
+    CINEMA: CINEMA,
     KEYS: {
       career: CAREER_KEY,
       fans: WORLD_KEYS.fans,
@@ -1329,6 +1543,8 @@
     releaseSong: releaseSong,
     promoteRelease: promoteRelease,
     submitReleaseToRadio: submitReleaseToRadio,
+    submitReleaseToSync: submitReleaseToSync,
+    submitCinemaVideo: submitCinemaVideo,
     hireManager: hireManager,
     hasManager: hasManager,
     getManagerProfile: getManagerProfile,
@@ -1342,6 +1558,9 @@
     businessEventProgress: businessEventProgress,
     meets: meets,
     isUnlocked: isUnlocked,
+    hasPerk: hasPerk,
+    perkStatus: perkStatus,
+    purchasePerk: purchasePerk,
     needed: needed,
     getCareerTitle: getCareerTitle,
     numericLevel: numericLevel,

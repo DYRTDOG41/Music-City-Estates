@@ -129,6 +129,13 @@ test("saving a spend does not get merged back up", function () {
   assert.strictEqual(MCE._storage.dump().mceCash, "85");
 });
 
+test("saving an avatar stage name updates the shared career identity", function () {
+  start();
+  var state = MCE.save({ name: "Mic Legend" });
+  assert.strictEqual(state.name, "Mic Legend");
+  assert.strictEqual(JSON.parse(MCE._storage.dump()["mce-save"]).name, "Mic Legend");
+});
+
 test("battle unlock lives in one config object", function () {
   assert.strictEqual(MCE.UNLOCKS.battle.fans, 25);
   var locked = start();
@@ -138,11 +145,26 @@ test("battle unlock lives in one config object", function () {
   assert.strictEqual(MCE.needed(MCE.UNLOCKS.battle, locked).fans, 25);
 });
 
+test("The Viral Gallery requires XP and a permanent cash purchase", function () {
+  start();
+  assert.strictEqual(MCE.PERKS.socialMediaSuite.price, 250);
+  assert.strictEqual(MCE.perkStatus("socialMediaSuite").xpNeeded, 50);
+  assert.throws(function () { MCE.purchasePerk("socialMediaSuite"); }, /requires 50 XP/);
+  MCE.save({ xp: 50, cash: 200 });
+  assert.throws(function () { MCE.purchasePerk("socialMediaSuite"); }, /need \$250/);
+  MCE.save({ cash: 300 });
+  var purchased = MCE.purchasePerk("socialMediaSuite");
+  assert.strictEqual(purchased.cash, 50);
+  assert.strictEqual(MCE.hasPerk("socialMediaSuite", purchased), true);
+  assert.strictEqual(MCE.purchasePerk("socialMediaSuite").cash, 50);
+});
+
 test("named releases increase song count", function () {
   start();
-  var state = MCE.addRelease({ title: "Night Drive", source: "bedroom" });
+  var state = MCE.addRelease({ title: "Night Drive", artistName: "Nova", source: "bedroom" });
   assert.strictEqual(state.songs, 1);
   assert.strictEqual(state.releases[0].title, "Night Drive");
+  assert.strictEqual(state.releases[0].artistName, "Nova");
 });
 
 test("AI release metadata survives normalization", function () {
@@ -631,6 +653,65 @@ test("DJ pool card discounts and strengthens the next radio submission", functio
   assert.strictEqual(submitted.releases[0].radioInfluence, 5);
   assert.strictEqual(submitted.business.effects.radioDiscount, 0);
   assert.strictEqual(submitted.business.effects.radioInfluenceBonus, 0);
+});
+
+test("Sync Cinema is manager-gated and records a successful placement", function () {
+  start();
+  MCE.save({ cash: 1000, fans: 60, xp: 80 });
+  MCE.addRelease({
+    id: "sync-song",
+    title: "Neon Getaway",
+    style: "dark cinematic hip-hop",
+    craftScore: 70
+  });
+  MCE.releaseSong("sync-song");
+  assert.throws(function () {
+    MCE.submitReleaseToSync("sync-song", "midnight-run");
+  }, /manager must unlock/i);
+
+  MCE.hireManager("connector");
+  var before = MCE.get();
+  var placed = MCE.submitReleaseToSync("sync-song", "midnight-run");
+  var submission = placed.releases[0].syncSubmissions[0];
+  assert.strictEqual(submission.outcome, "placed");
+  assert.strictEqual(submission.briefTitle, "Midnight Run");
+  assert.ok(submission.score >= 58);
+  assert.strictEqual(placed.manager.syncSpend, 35);
+  assert.strictEqual(placed.cash, before.cash - 35 + 180);
+  assert.strictEqual(placed.fans, before.fans + 10);
+  assert.strictEqual(placed.xp, before.xp + 16);
+  assert.throws(function () {
+    MCE.submitReleaseToSync("sync-song", "midnight-run");
+  }, /already submitted/i);
+});
+
+test("cinema video submissions require a manager, rights, and production disclosure", function () {
+  start();
+  MCE.save({ cash: 500, xp: 20 });
+  var video = {
+    id: "video-1",
+    title: "City Lights",
+    creator: "Nova Films",
+    contentType: "music-video",
+    productionMethod: "ai-generated",
+    aiTools: "Artist-declared AI workflow",
+    rightsConfirmed: true
+  };
+  assert.throws(function () { MCE.submitCinemaVideo(video); }, /manager must unlock/i);
+  MCE.hireManager("hustler");
+  assert.throws(function () {
+    MCE.submitCinemaVideo(Object.assign({}, video, { rightsConfirmed: false }));
+  }, /Confirm that you control/i);
+  var before = MCE.get();
+  var submitted = MCE.submitCinemaVideo(video);
+  var entry = submitted.flags.cinemaSubmissions[0];
+  assert.strictEqual(entry.contentType, "music-video");
+  assert.strictEqual(entry.productionMethod, "ai-generated");
+  assert.strictEqual(entry.aiTools, "Artist-declared AI workflow");
+  assert.strictEqual(entry.manager, "The Hustler");
+  assert.strictEqual(submitted.cash, before.cash - MCE.CINEMA.submissionFee);
+  assert.strictEqual(submitted.xp, before.xp + MCE.CINEMA.submissionXp);
+  assert.strictEqual(submitted.manager.cinemaSpend, MCE.CINEMA.submissionFee);
 });
 
 test("every Business Deck card has a no-cash escape choice", function () {
