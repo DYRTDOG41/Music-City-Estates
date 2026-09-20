@@ -217,6 +217,46 @@ color: #7ef0a7;
 color: #ff8c8c;
 }
 
+.booth-guide { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:18px 0; }
+.guide-step { padding:14px; border:1px solid #31506a; border-radius:12px; background:rgba(3,11,20,.9); color:#aabbd0; font-size:13px; line-height:1.45; }
+.guide-step strong { display:block; margin-bottom:5px; color:#fff; }
+.guide-step.active { border-color:#18d8ff; box-shadow:0 0 18px rgba(24,216,255,.2); }
+.guide-number { display:inline-grid; place-items:center; width:24px; height:24px; margin-right:6px; border-radius:50%; background:#18d8ff; color:#001018; font-weight:900; }
+.beat-library { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+.beat-choice { padding:15px !important; text-align:left; cursor:pointer; }
+.beat-choice.selected { border-color:#7ef0ff !important; box-shadow:0 0 22px rgba(24,216,255,.65); }
+.beat-transport { display:grid; grid-template-columns:1fr auto; align-items:center; gap:12px; margin-top:12px; padding:14px; border:1px solid #31506a; border-radius:12px; background:#050b13; }
+.beat-transport strong, .beat-transport small { display:block; }
+.beat-transport small { margin-top:4px; color:#9db1c7; line-height:1.4; }
+.transport-button { min-width:170px; min-height:48px; padding:10px 14px; font-weight:900; cursor:pointer; }
+.transport-button.playing { border-color:#7ef0a7 !important; box-shadow:0 0 20px rgba(126,240,167,.32); }
+.headphone-note { margin:12px 0 0; color:#ffd98a; font-size:13px; line-height:1.45; }
+.session-console { overflow:hidden; border-color:#7057b7; background:linear-gradient(160deg,rgba(16,17,35,.97),rgba(5,10,20,.97)); }
+.session-toolbar { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:13px; }
+.session-toolbar p { margin:5px 0 0; color:#aabbd0; font-size:13px; }
+.session-actions { display:flex; gap:8px; flex-wrap:wrap; }
+.session-actions button { min-height:42px; padding:9px 12px; font-weight:900; cursor:pointer; }
+.track-lanes { display:grid; gap:7px; }
+.track-lane { display:grid; grid-template-columns:125px minmax(180px,1fr) 135px; align-items:center; gap:9px; padding:8px; border:1px solid #29394d; border-radius:9px; background:#050a12; }
+.track-lane.armed { border-color:#ff526d; box-shadow:inset 3px 0 #ff526d; }
+.track-name { min-width:0; }
+.track-name strong, .track-name small { display:block; }
+.track-name small { margin-top:3px; color:#8299b0; font-size:10px; }
+.arm-track { width:100%; padding:8px !important; margin-top:6px; font-size:10px; font-weight:900; cursor:pointer; }
+.track-lane.armed .arm-track { border-color:#ff526d !important; color:#ffd4da !important; }
+.timeline { position:relative; height:52px; overflow:hidden; border:1px solid #23354c; border-radius:6px; background:repeating-linear-gradient(90deg,#0b1725 0 24px,#142236 25px 26px); }
+.waveform { position:absolute; inset:5px; display:flex; align-items:center; justify-content:space-around; gap:2px; }
+.waveform i { width:3px; height:var(--wave); max-height:38px; border-radius:3px; background:#4fd8ff; opacity:.86; }
+.track-lane[data-track="beat"] .waveform i { background:#a47aff; }
+.timeline-empty { position:absolute; inset:0; display:grid; place-items:center; color:#5f738b; font-size:10px; letter-spacing:.08em; }
+.track-mix { display:grid; grid-template-columns:1fr auto; align-items:center; gap:6px; }
+.track-mix input { margin:0; padding:0; }
+.mute-track { min-width:38px; padding:7px !important; font-size:10px; cursor:pointer; }
+.mute-track.on { border-color:#ffd45c !important; color:#ffd45c !important; }
+.mix-readout { grid-column:1/-1; color:#7f96ad; font-size:9px; text-align:center; }
+.mix-coach { display:none; margin-top:12px; padding:12px; border-left:3px solid #a47aff; background:#0c1323; color:#c6d3e3; font-size:12px; line-height:1.55; }
+.mix-coach.show { display:block; }
+
 #generatedAudio {
 display: none;
 width: 100%;
@@ -305,9 +345,16 @@ line-height:1.5;
 
 @media(max-width:700px) {
 .row,
-.actions {
+.actions,
+.booth-guide,
+.beat-library,
+.beat-transport {
 grid-template-columns: 1fr;
 }
+.transport-button { width:100%; }
+.track-lane { grid-template-columns:92px 1fr; }
+.track-mix { grid-column:1/-1; }
+.session-actions { display:grid; grid-template-columns:1fr 1fr; width:100%; }
 }
 
 /* ===== MUSIC CITY ESTATES - RECORDING BOOTH ===== */
@@ -448,38 +495,43 @@ background: rgba(3, 8, 18, 0.88);
 <span id="studioName">BeGenius Studio</span>
 </div>
 
+<section class="booth-guide" aria-label="Recording booth directions">
+<div class="guide-step active" id="guideBeat"><strong><span class="guide-number">1</span>Pick a beat</strong>Choose the instrumental you want to write and record over.</div>
+<div class="guide-step" id="guideWrite"><strong><span class="guide-number">2</span>Preview &amp; write</strong>Play the beat without recording while you write or practice.</div>
+<div class="guide-step" id="guideRecord"><strong><span class="guide-number">3</span>Record with beat</strong>Tap Record. Your selected beat starts with your vocal take.</div>
+</section>
 
-<div style="margin:20px 0;">
+<div class="panel">
 <h3>🎧 Beat Library</h3>
-<p style="margin-bottom:15px;">Choose a beat to start your song:</p>
+<p>Choose a beat first. Then use <strong>Play Instrumental</strong> to write or practice without recording.</p>
 
-<button type="button"
-onclick="selectBeat('Midnight Drive', this)"
-style="padding:15px; margin:5px; text-align:left;">
+<div class="beat-library">
+<button type="button" class="beat-choice" data-beat="Midnight Drive" onclick="selectBeat('Midnight Drive', this)">
 🔥 <strong>Midnight Drive</strong><br>
-<small>Hip-Hop • Trap</small>
+<small>Hip-Hop • Trap • 88 BPM</small>
 </button>
 
-<button type="button"
-onclick="selectBeat('Velvet Nights', this)"
-style="padding:15px; margin:5px; text-align:left;">
+<button type="button" class="beat-choice" data-beat="Velvet Nights" onclick="selectBeat('Velvet Nights', this)">
 🌙 <strong>Velvet Nights</strong><br>
-<small>R&B • Smooth</small>
+<small>R&amp;B • Smooth • 76 BPM</small>
 </button>
 
-<button type="button"
-onclick="selectBeat('808 Pressure', this)"
-style="padding:15px; margin:5px; text-align:left;">
+<button type="button" class="beat-choice" data-beat="808 Pressure" onclick="selectBeat('808 Pressure', this)">
 💥 <strong>808 Pressure</strong><br>
-<small>Trap • Hard</small>
+<small>Trap • Hard • 142 BPM</small>
 </button>
 
-<button type="button"
-onclick="selectBeat('Soul Avenue', this)"
-style="padding:15px; margin:5px; text-align:left;">
+<button type="button" class="beat-choice" data-beat="Soul Avenue" onclick="selectBeat('Soul Avenue', this)">
 🎹 <strong>Soul Avenue</strong><br>
-<small>Hip-Hop • Soul</small>
+<small>Hip-Hop • Soul • 82 BPM</small>
 </button>
+</div>
+
+<div class="beat-transport">
+<div><strong id="selectedBeatLabel">No beat selected</strong><small id="beatModeLabel">Pick a beat to unlock writing and recording modes.</small></div>
+<button type="button" id="beatTransportButton" class="transport-button" onclick="toggleBeatPlayback()" disabled>▶ PLAY INSTRUMENTAL</button>
+</div>
+<p class="headphone-note">🎧 Headphones recommended while recording so the beat stays clear and does not echo into your microphone.</p>
 </div>
 <div class="panel">
 
@@ -520,9 +572,25 @@ placeholder="Describe the sound: melodic trap, soulful R&B, southern hip-hop..."
 </div>
 
 
+<div class="panel session-console">
+<div class="session-toolbar">
+<div><h3>2. Engineering Session</h3><p>Arm a vocal lane, record a take, then play and balance the whole session.</p></div>
+<div class="session-actions"><button type="button" id="playSessionButton" onclick="toggleSessionPlayback()">▶ PLAY SESSION</button><button type="button" id="aiMixButton" onclick="applyAIMix()">✨ AI MIX ASSIST</button></div>
+</div>
+<div class="track-lanes" id="trackLanes">
+<div class="track-lane" data-track="beat"><div class="track-name"><strong>01 BEAT</strong><small>Instrumental</small></div><div class="timeline"><div class="waveform" aria-hidden="true"><i style="--wave:28px"></i><i style="--wave:12px"></i><i style="--wave:36px"></i><i style="--wave:17px"></i><i style="--wave:31px"></i><i style="--wave:14px"></i><i style="--wave:38px"></i><i style="--wave:20px"></i><i style="--wave:32px"></i><i style="--wave:15px"></i><i style="--wave:35px"></i><i style="--wave:18px"></i></div></div><div class="track-mix"><input class="track-level" data-track="beat" type="range" min="0" max="100" value="72" aria-label="Beat level"><button type="button" class="mute-track" data-track="beat">M</button><span class="mix-readout">72% • CENTER</span></div></div>
+<div class="track-lane armed" data-track="lead"><div class="track-name"><strong>02 LEAD</strong><small>Main vocal</small><button type="button" class="arm-track" data-track="lead">● ARMED</button></div><div class="timeline"><span class="timeline-empty">RECORD LEAD TAKE</span><div class="waveform"></div></div><div class="track-mix"><input class="track-level" data-track="lead" type="range" min="0" max="100" value="100" aria-label="Lead vocal level"><button type="button" class="mute-track" data-track="lead">M</button><span class="mix-readout">100% • CENTER</span></div></div>
+<div class="track-lane" data-track="double"><div class="track-name"><strong>03 DOUBLE</strong><small>Vocal support</small><button type="button" class="arm-track" data-track="double">ARM</button></div><div class="timeline"><span class="timeline-empty">EMPTY LANE</span><div class="waveform"></div></div><div class="track-mix"><input class="track-level" data-track="double" type="range" min="0" max="100" value="64" aria-label="Double level"><button type="button" class="mute-track" data-track="double">M</button><span class="mix-readout">64% • LEFT</span></div></div>
+<div class="track-lane" data-track="adlibs"><div class="track-name"><strong>04 AD-LIBS</strong><small>Energy &amp; responses</small><button type="button" class="arm-track" data-track="adlibs">ARM</button></div><div class="timeline"><span class="timeline-empty">EMPTY LANE</span><div class="waveform"></div></div><div class="track-mix"><input class="track-level" data-track="adlibs" type="range" min="0" max="100" value="56" aria-label="Ad-libs level"><button type="button" class="mute-track" data-track="adlibs">M</button><span class="mix-readout">56% • RIGHT</span></div></div>
+<div class="track-lane" data-track="harmony"><div class="track-name"><strong>05 HARMONY</strong><small>Hook layer</small><button type="button" class="arm-track" data-track="harmony">ARM</button></div><div class="timeline"><span class="timeline-empty">EMPTY LANE</span><div class="waveform"></div></div><div class="track-mix"><input class="track-level" data-track="harmony" type="range" min="0" max="100" value="52" aria-label="Harmony level"><button type="button" class="mute-track" data-track="harmony">M</button><span class="mix-readout">52% • WIDE</span></div></div>
+</div>
+<div class="mix-coach" id="mixCoach"></div>
+</div>
+
+
 <div class="panel">
 
-<h3>2. Your Voice</h3>
+<h3>3. Record a Take</h3>
 
 <p>
 Record a vocal, freestyle, melody, hook or reference.
@@ -539,7 +607,7 @@ RECORD
 </button>
 
 <div id="recordStatus">
-Tap Record to begin
+Step 1: Pick a beat above before recording.
 </div>
 
 <audio
@@ -547,6 +615,8 @@ id="audioPreview"
 controls
 style="display:none;"
 ></audio>
+
+<p class="engine-status" id="takePlaybackNote" style="display:none;">Vocal take playback is voice-only. Use Play Instrumental to practice again or record another take over the beat.</p>
 
 </div>
 
@@ -566,7 +636,7 @@ Reference clips are limited to 30 seconds and 3 MB. The reference guides product
 
 <div class="panel">
 
-<h3>3. AI Production</h3>
+<h3>4. AI Production</h3>
 
 <div class="row">
 
@@ -764,19 +834,152 @@ document.getElementById("backButton").href =
 
 let selectedBeat = null;
 
-function selectBeat(beatName, button) {
+const beatLibrary = {
+"Midnight Drive": { bpm:88, bass:55, kicks:[0,6,8,11], snares:[4,12], hats:[0,2,4,6,8,10,12,14] },
+"Velvet Nights": { bpm:76, bass:65.4, kicks:[0,7,10], snares:[4,12], hats:[0,3,6,8,11,14] },
+"808 Pressure": { bpm:142, bass:43.7, kicks:[0,3,7,8,11,14], snares:[4,12], hats:[0,2,4,6,8,9,10,12,14,15] },
+"Soul Avenue": { bpm:82, bass:73.4, kicks:[0,5,8,11], snares:[4,12], hats:[0,2,5,7,8,10,13,15] }
+};
+
+let beatAudioContext = null;
+let beatMaster = null;
+let beatLoopTimer = null;
+let beatNoiseBuffer = null;
+let beatPlaybackMode = "stopped";
+
+function setGuideStep(step) {
+["guideBeat", "guideWrite", "guideRecord"].forEach(id =>
+document.getElementById(id).classList.remove("active")
+);
+document.getElementById(step).classList.add("active");
+}
+
+function updateBeatTransport() {
+const button = document.getElementById("beatTransportButton");
+const label = document.getElementById("selectedBeatLabel");
+const mode = document.getElementById("beatModeLabel");
+label.textContent = selectedBeat || "No beat selected";
+button.disabled = !selectedBeat || recording;
+button.classList.toggle("playing", beatPlaybackMode !== "stopped");
+button.textContent = beatPlaybackMode === "writing"
+? "■ STOP INSTRUMENTAL"
+: beatPlaybackMode === "recording"
+? "● BEAT PLAYING WITH TAKE"
+: "▶ PLAY INSTRUMENTAL";
+mode.textContent = beatPlaybackMode === "writing"
+? "Writing / practice mode — the microphone is off."
+: beatPlaybackMode === "recording"
+? "Recording mode — the instrumental is playing with your take."
+: selectedBeat
+? "Ready. Preview it for writing, or tap Record below."
+: "Pick a beat to unlock writing and recording modes.";
+}
+
+function makeBeatNoiseBuffer(context) {
+const length = Math.floor(context.sampleRate * .16);
+const buffer = context.createBuffer(1, length, context.sampleRate);
+const data = buffer.getChannelData(0);
+for (let index = 0; index < length; index += 1) data[index] = Math.random() * 2 - 1;
+return buffer;
+}
+
+function scheduleKick(time, config, strong) {
+const oscillator = beatAudioContext.createOscillator();
+const gain = beatAudioContext.createGain();
+oscillator.type = "sine";
+oscillator.frequency.setValueAtTime(strong ? 155 : 125, time);
+oscillator.frequency.exponentialRampToValueAtTime(config.bass, time + .16);
+gain.gain.setValueAtTime(strong ? .82 : .62, time);
+gain.gain.exponentialRampToValueAtTime(.001, time + .22);
+oscillator.connect(gain).connect(beatMaster);
+oscillator.start(time);
+oscillator.stop(time + .24);
+}
+
+function scheduleNoise(time, type) {
+const source = beatAudioContext.createBufferSource();
+const filter = beatAudioContext.createBiquadFilter();
+const gain = beatAudioContext.createGain();
+source.buffer = beatNoiseBuffer;
+filter.type = type === "snare" ? "bandpass" : "highpass";
+filter.frequency.value = type === "snare" ? 1600 : 6500;
+gain.gain.setValueAtTime(type === "snare" ? .34 : .11, time);
+gain.gain.exponentialRampToValueAtTime(.001, time + (type === "snare" ? .13 : .045));
+source.connect(filter).connect(gain).connect(beatMaster);
+source.start(time);
+source.stop(time + .16);
+}
+
+function scheduleBeatLoop(startTime, config) {
+const eighth = 60 / config.bpm / 2;
+for (let step = 0; step < 16; step += 1) {
+const time = startTime + step * eighth;
+if (config.kicks.includes(step)) scheduleKick(time, config, step === 0 || step === 8);
+if (config.snares.includes(step)) scheduleNoise(time, "snare");
+if (config.hats.includes(step)) scheduleNoise(time, "hat");
+}
+return eighth * 16;
+}
+
+function stopBeatPlayback(options) {
+if (beatLoopTimer) clearInterval(beatLoopTimer);
+beatLoopTimer = null;
+if (beatMaster) {
+try { beatMaster.gain.cancelScheduledValues(beatAudioContext.currentTime); beatMaster.gain.setValueAtTime(0, beatAudioContext.currentTime); beatMaster.disconnect(); }
+catch (error) {}
+}
+beatMaster = null;
+beatPlaybackMode = "stopped";
+updateBeatTransport();
+if (!options || !options.keepGuide) setGuideStep(selectedBeat ? "guideWrite" : "guideBeat");
+}
+
+async function startBeatPlayback(options) {
+if (!selectedBeat) return false;
+stopBeatPlayback({ keepGuide:true });
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+if (!AudioContext) {
+document.getElementById("recordStatus").textContent = "Instrumental playback is not supported in this browser.";
+return false;
+}
+beatAudioContext = beatAudioContext || new AudioContext();
+await beatAudioContext.resume();
+beatNoiseBuffer = beatNoiseBuffer || makeBeatNoiseBuffer(beatAudioContext);
+beatMaster = beatAudioContext.createGain();
+beatMaster.gain.value = options && options.mode === "recording" ? .34 : .42;
+beatMaster.connect(beatAudioContext.destination);
+const config = beatLibrary[selectedBeat];
+const loopSeconds = scheduleBeatLoop(beatAudioContext.currentTime + .06, config);
+beatLoopTimer = setInterval(() => scheduleBeatLoop(beatAudioContext.currentTime + .06, config), loopSeconds * 1000);
+beatPlaybackMode = options && options.mode === "recording" ? "recording" : "writing";
+setGuideStep(beatPlaybackMode === "recording" ? "guideRecord" : "guideWrite");
+updateBeatTransport();
+return true;
+}
+
+async function toggleBeatPlayback() {
+if (beatPlaybackMode === "writing") {
+stopBeatPlayback();
+document.getElementById("recordStatus").textContent = "Instrumental stopped. Press Play to keep writing, or Record when ready.";
+return;
+}
+const started = await startBeatPlayback({ mode:"writing" });
+if (started) document.getElementById("recordStatus").textContent = "Writing / practice mode: " + selectedBeat + " is playing. Your microphone is off.";
+}
+
+async function selectBeat(beatName, button) {
+if (recording) return;
 selectedBeat = beatName;
 
-document.querySelectorAll('button[onclick^="selectBeat"]').forEach(btn => {
-btn.style.boxShadow = "";
-btn.style.borderColor = "#18d8ff";
-});
-
-button.style.boxShadow = "0 0 22px rgba(24,216,255,.75)";
-button.style.borderColor = "#7ef0ff";
+document.querySelectorAll(".beat-choice").forEach(btn => btn.classList.remove("selected"));
+button.classList.add("selected");
+setGuideStep("guideWrite");
+updateBeatTransport();
 
 document.getElementById("recordStatus").textContent =
-"Beat selected: " + beatName;
+"Beat selected: " + beatName + ". Press Play Instrumental to write, or tap Record when ready.";
+
+if (beatPlaybackMode === "writing") await startBeatPlayback({ mode:"writing" });
 }
 
 function updateEngineStatus() {
@@ -830,6 +1033,119 @@ let meaningfulRevisionCount = 0;
 let craftSongKey = "";
 let lastCraftSnapshot = null;
 let referenceVersion = 0;
+let armedTrack = "lead";
+let recordingTrack = "lead";
+let sessionPlaying = false;
+let sessionAudios = [];
+let sessionStopTimer = null;
+const sessionTracks = {
+lead: { blob:null, url:"", durationMs:0 },
+double: { blob:null, url:"", durationMs:0 },
+adlibs: { blob:null, url:"", durationMs:0 },
+harmony: { blob:null, url:"", durationMs:0 }
+};
+
+function armSessionTrack(trackName) {
+if (recording) return;
+armedTrack = trackName;
+document.querySelectorAll(".track-lane").forEach(lane => lane.classList.toggle("armed", lane.dataset.track === trackName));
+document.querySelectorAll(".arm-track").forEach(button => button.textContent = button.dataset.track === trackName ? "● ARMED" : "ARM");
+document.getElementById("recordStatus").textContent = selectedBeat
+? trackName.toUpperCase() + " lane armed. Tap Record to perform it over " + selectedBeat + "."
+: trackName.toUpperCase() + " lane armed. Pick a beat before recording.";
+}
+
+function waveformMarkup(seed) {
+let value = Math.max(17, seed || 17);
+let html = "";
+for (let index = 0; index < 36; index += 1) {
+value = (value * 31 + 7) % 47;
+html += '<i style="--wave:' + (8 + value % 31) + 'px"></i>';
+}
+return html;
+}
+
+function renderRecordedTrack(trackName) {
+const lane = document.querySelector('.track-lane[data-track="' + trackName + '"]');
+const track = sessionTracks[trackName];
+lane.querySelector(".timeline-empty").style.display = track.blob ? "none" : "grid";
+lane.querySelector(".waveform").innerHTML = track.blob ? waveformMarkup(track.blob.size) : "";
+lane.querySelector(".track-name small").textContent = track.blob
+? "Take ready • " + Math.round(track.durationMs / 1000) + "s"
+: ({ lead:"Main vocal", double:"Vocal support", adlibs:"Energy & responses", harmony:"Hook layer" })[trackName];
+}
+
+function stopSessionPlayback() {
+if (sessionStopTimer) clearTimeout(sessionStopTimer);
+sessionStopTimer = null;
+sessionAudios.forEach(audio => { try { audio.pause(); audio.currentTime = 0; } catch (error) {} });
+sessionAudios = [];
+sessionPlaying = false;
+stopBeatPlayback({ keepGuide:true });
+document.getElementById("playSessionButton").textContent = "▶ PLAY SESSION";
+}
+
+async function toggleSessionPlayback() {
+if (sessionPlaying) {
+stopSessionPlayback();
+document.getElementById("recordStatus").textContent = "Session playback stopped.";
+return;
+}
+if (!selectedBeat) {
+document.getElementById("recordStatus").textContent = "Pick a beat before playing the session.";
+setGuideStep("guideBeat");
+return;
+}
+const recorded = Object.keys(sessionTracks).filter(trackName => sessionTracks[trackName].blob);
+if (!recorded.length) {
+document.getElementById("recordStatus").textContent = "Record at least one vocal lane before playing the full session.";
+return;
+}
+await startBeatPlayback({ mode:"writing" });
+const beatMuted = document.querySelector('.mute-track[data-track="beat"]').classList.contains("on");
+const beatLevel = Number(document.querySelector('.track-level[data-track="beat"]').value) / 100;
+if (beatMaster) beatMaster.gain.value = beatMuted ? 0 : beatLevel * .58;
+sessionAudios = recorded.map(trackName => {
+const audio = new Audio(sessionTracks[trackName].url);
+const muted = document.querySelector('.mute-track[data-track="' + trackName + '"]').classList.contains("on");
+audio.volume = muted ? 0 : Number(document.querySelector('.track-level[data-track="' + trackName + '"]').value) / 100;
+audio.play().catch(() => {});
+return audio;
+});
+sessionPlaying = true;
+document.getElementById("playSessionButton").textContent = "■ STOP SESSION";
+document.getElementById("recordStatus").textContent = "Playing the multitrack session. Adjust levels or mute lanes to hear the mix change.";
+const longest = Math.max.apply(null, recorded.map(trackName => sessionTracks[trackName].durationMs));
+sessionStopTimer = setTimeout(stopSessionPlayback, longest + 700);
+}
+
+function applyAIMix() {
+const starterMix = { beat:72, lead:100, double:64, adlibs:56, harmony:52 };
+Object.keys(starterMix).forEach(trackName => {
+const fader = document.querySelector('.track-level[data-track="' + trackName + '"]');
+fader.value = starterMix[trackName];
+fader.dispatchEvent(new Event("input"));
+});
+const available = Object.keys(sessionTracks).filter(trackName => sessionTracks[trackName].blob);
+const coach = document.getElementById("mixCoach");
+coach.classList.add("show");
+coach.innerHTML = "<strong>AI Mix Assist applied a starter balance.</strong><br>Lead stays centered and loud for clarity. The double sits lower to thicken the lead. Ad-libs are lower so they add energy without covering words. Harmony is tucked behind the hook. The beat leaves space for the vocal. " + (available.length < 2 ? "Record more lanes to hear the full lesson." : "Press Play Session, move a fader, and compare your choice.");
+}
+
+function bindSessionConsole() {
+document.querySelectorAll(".arm-track").forEach(button => button.addEventListener("click", () => armSessionTrack(button.dataset.track)));
+document.querySelectorAll(".track-level").forEach(fader => fader.addEventListener("input", () => {
+const lane = fader.closest(".track-lane");
+const pan = { beat:"CENTER", lead:"CENTER", double:"LEFT", adlibs:"RIGHT", harmony:"WIDE" }[fader.dataset.track];
+lane.querySelector(".mix-readout").textContent = fader.value + "% • " + pan;
+if (sessionPlaying && fader.dataset.track === "beat" && beatMaster) beatMaster.gain.value = Number(fader.value) / 100 * .58;
+}));
+document.querySelectorAll(".mute-track").forEach(button => button.addEventListener("click", () => {
+button.classList.toggle("on");
+button.textContent = button.classList.contains("on") ? "MUTE" : "M";
+if (sessionPlaying) { stopSessionPlayback(); toggleSessionPlayback(); }
+}));
+}
 
 
 async function toggleRecording() {
@@ -842,6 +1158,14 @@ document.getElementById("recordStatus");
 
 
 if (!recording) {
+
+if (!selectedBeat) {
+status.textContent = "Step 1: Pick a beat before recording your vocal.";
+setGuideStep("guideBeat");
+return;
+}
+
+if (sessionPlaying) stopSessionPlayback();
 
 try {
 
@@ -856,6 +1180,7 @@ mediaRecorder =
 new MediaRecorder(stream);
 
 audioChunks = [];
+recordingTrack = armedTrack;
 
 
 mediaRecorder.ondataavailable = event => {
@@ -889,11 +1214,19 @@ document.getElementById("audioPreview");
 
 audio.src = url;
 audio.style.display = "block";
+document.getElementById("takePlaybackNote").style.display = "block";
+
+const track = sessionTracks[recordingTrack];
+if (track.url) URL.revokeObjectURL(track.url);
+track.blob = blob;
+track.url = url;
+track.durationMs = referenceAudioDurationMs;
+renderRecordedTrack(recordingTrack);
 
 status.textContent =
-"Recording complete. Reference ready (" +
+recordingTrack.toUpperCase() + " take complete. Reference ready (" +
 Math.round(referenceAudioDurationMs / 1000) +
-"s). Play it back below.";
+"s). Play the vocal alone below or Play Session to hear every lane with the beat.";
 
 if (mediaStream) {
 mediaStream.getTracks().forEach(track => track.stop());
@@ -903,10 +1236,13 @@ mediaStream = null;
 };
 
 
+await startBeatPlayback({ mode:"recording" });
+
 mediaRecorder.start();
 
 recording = true;
 recordingStartedAt = Date.now();
+updateBeatTransport();
 
 button.textContent =
 "STOP";
@@ -914,7 +1250,7 @@ button.textContent =
 button.classList.add("recording");
 
 status.textContent =
-"Recording reference... 30 second maximum";
+"Recording " + recordingTrack.toUpperCase() + " over " + selectedBeat + "... 30 second maximum";
 
 autoStopTimer = setTimeout(() => {
 if (recording) {
@@ -941,6 +1277,7 @@ autoStopTimer = null;
 }
 
 mediaRecorder.stop();
+stopBeatPlayback({ keepGuide:true });
 
 recording = false;
 
@@ -948,6 +1285,7 @@ button.textContent =
 "RECORD";
 
 button.classList.remove("recording");
+updateBeatTransport();
 
 }
 }
@@ -999,8 +1337,15 @@ referenceAudioBlob = file;
 referenceVersion += 1;
 referenceAudioDurationMs = durationMs;
 
+const track = sessionTracks[armedTrack];
+if (track.url) URL.revokeObjectURL(track.url);
+track.blob = file;
+track.url = url;
+track.durationMs = durationMs;
+renderRecordedTrack(armedTrack);
+
 status.textContent =
-"Uploaded reference ready (" +
+"Uploaded audio added to " + armedTrack.toUpperCase() + " (" +
 Math.round(durationMs / 1000) +
 "s).";
 };
@@ -1035,7 +1380,13 @@ revisionCount:
 meaningfulRevisionCount,
 
 studio:
-studio
+studio,
+
+beat:
+selectedBeat,
+
+sessionTracks:
+Object.keys(sessionTracks).filter(trackName => sessionTracks[trackName].blob)
 
 };
 
@@ -1464,6 +1815,17 @@ document.getElementById("aiEngineStatus").className =
 }
 
 updateEngineStatus();
+bindSessionConsole();
+updateBeatTransport();
+
+window.addEventListener("beforeunload", () => {
+stopSessionPlayback();
+Object.keys(sessionTracks).forEach(trackName => {
+if (sessionTracks[trackName].url) URL.revokeObjectURL(sessionTracks[trackName].url);
+});
+if (mediaStream) mediaStream.getTracks().forEach(track => track.stop());
+if (beatAudioContext) beatAudioContext.close().catch(() => {});
+});
 
 </script>
 
