@@ -976,6 +976,134 @@ let beatLoopTimer = null;
 let beatNoiseBuffer = null;
 let beatPlaybackMode = "stopped";
 const localBeatUrls = [];
+let beatLockerDatabasePromise = null;
+
+function supportedBeatFile(file) {
+if (!file) return false;
+const extension = (String(file.name || "").split(".").pop() || "").toLowerCase();
+return String(file.type || "").startsWith("audio/") ||
+["mp3","wav","m4a","aac","mp4","webm","ogg","flac"].includes(extension);
+}
+
+function beatTitleFromFile(file) {
+return String(file && file.name || "My Beat")
+.replace(/\.[^.]+$/, "")
+.replace(/[_-]+/g, " ")
+.trim() || "My Beat";
+}
+
+function openBeatLockerDatabase() {
+if (!window.indexedDB) return Promise.reject(new Error("Beat Locker storage is not supported in this browser."));
+if (beatLockerDatabasePromise) return beatLockerDatabasePromise;
+beatLockerDatabasePromise = new Promise((resolve, reject) => {
+const request = indexedDB.open("music-city-beat-locker", 1);
+request.onupgradeneeded = () => {
+if (!request.result.objectStoreNames.contains("beats")) {
+request.result.createObjectStore("beats", { keyPath:"id" });
+}
+};
+request.onsuccess = () => resolve(request.result);
+request.onerror = () => reject(request.error || new Error("Beat Locker could not open."));
+});
+return beatLockerDatabasePromise;
+}
+
+async function getBeatLockerRecords() {
+const database = await openBeatLockerDatabase();
+return new Promise((resolve, reject) => {
+const request = database.transaction("beats", "readonly").objectStore("beats").getAll();
+request.onsuccess = () => resolve(Array.isArray(request.result) ? request.result : []);
+request.onerror = () => reject(request.error || new Error("Beat Locker could not load."));
+});
+}
+
+function uniqueBeatTitle(baseTitle) {
+let title = baseTitle;
+let suffix = 2;
+while (beatLibrary[title]) title = baseTitle + " " + suffix++;
+return title;
+}
+
+function installLockerBeat(record) {
+if (!record || !record.blob) return "";
+const title = uniqueBeatTitle(String(record.title || "My Beat"));
+const url = URL.createObjectURL(record.blob);
+localBeatUrls.push(url);
+beatLibrary[title] = {
+type:"audio",
+src:url,
+blob:record.blob,
+genre:record.genre || "My Beat",
+mood:"Beat Locker",
+bpm:Number(record.bpm || 0),
+producer:record.producer || "My Upload",
+source:"Beat Locker",
+locker:true,
+lockerId:record.id
+};
+return title;
+}
+
+async function loadBeatLocker() {
+try {
+const records = await getBeatLockerRecords();
+const installed = [];
+records.forEach(record => {
+const title = installLockerBeat(record);
+if (title) installed.push(title);
+});
+return installed;
+} catch (error) {
+const status = document.getElementById("beatLockerStatus");
+if (status) status.textContent = error.message || "Beat Locker is unavailable.";
+return [];
+}
+}
+
+async function saveBeatToLocker(file) {
+if (!supportedBeatFile(file)) throw new Error("Choose an MP3, WAV, M4A, AAC, OGG, FLAC, MP4, or WebM audio file.");
+const database = await openBeatLockerDatabase();
+const record = {
+id:"beat-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2,7),
+title:beatTitleFromFile(file),
+blob:file,
+mimeType:file.type || "",
+size:file.size || 0,
+savedAt:new Date().toISOString()
+};
+await new Promise((resolve, reject) => {
+const transaction = database.transaction("beats", "readwrite");
+transaction.objectStore("beats").put(record);
+transaction.oncomplete = () => resolve();
+transaction.onerror = () => reject(transaction.error || new Error("Beat could not be saved."));
+});
+return record;
+}
+
+async function handleQuickBeatUpload(event) {
+const input = event.target;
+const file = input.files && input.files[0];
+const status = document.getElementById("beatLockerStatus");
+if (!file) return;
+try {
+if (status) status.textContent = "Saving " + file.name + " to My Beat Locker...";
+const record = await saveBeatToLocker(file);
+const title = installLockerBeat(record);
+renderBeatCatalog();
+const button = Array.from(document.querySelectorAll(".beat-choice")).find(item => item.dataset.beat === title);
+if (button) await selectBeat(title, button);
+if (status) status.textContent = "✓ " + title + " saved. It will stay in My Beat Locker on this device.";
+} catch (error) {
+if (status) status.textContent = error.message || "Music City could not save that beat.";
+} finally {
+input.value = "";
+}
+}
+
+function setupQuickBeatLocker() {
+const input = document.getElementById("quickBeatUpload");
+if (input) input.addEventListener("change", handleQuickBeatUpload);
+}
 
 function beatMetaText(config) {
 const parts = [config.genre, config.mood, config.bpm ? config.bpm + " BPM" : ""].filter(Boolean);
@@ -1000,13 +1128,15 @@ const name = document.createElement("strong");
 name.textContent = title;
 const badge = document.createElement("span");
 badge.className = "beat-source-badge";
-badge.textContent = "ORIGINAL";
+badge.textContent = config.locker ? "MY BEAT" : config.generated ? "AI BEAT" : "ORIGINAL";
 const br = document.createElement("br");
 const meta = document.createElement("small");
 meta.textContent = beatMetaText(config);
 const credit = document.createElement("span");
 credit.className = "beat-credit";
-credit.textContent = "Produced by " + (config.producer || "Music City Estates");
+credit.textContent = config.locker
+? "Saved in My Beat Locker"
+: "Produced by " + (config.producer || "Music City Estates");
 button.append(icon, name, badge, br, meta, credit);
 button.addEventListener("click", () => selectBeat(title, button));
 container.appendChild(button);
@@ -1018,36 +1148,20 @@ const tools = document.getElementById("devBeatTools");
 const input = document.getElementById("ownerBeatUpload");
 if (!tools || !input || params.get("beatadmin") !== "1") return;
 tools.hidden = false;
-input.addEventListener("change", event => {
+input.addEventListener("change", async event => {
 const files = Array.from(event.target.files || []);
-files.forEach(file => {
-const extension = (file.name.split(".").pop() || "").toLowerCase();
-const supportedAudio = file.type.startsWith("audio/") || ["mp3","wav","m4a","aac","mp4","webm","ogg","flac"].includes(extension);
-if (!supportedAudio) return;
-let title = file.name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim() || "Private Test Beat";
-let uniqueTitle = title;
-let suffix = 2;
-while (beatLibrary[uniqueTitle]) uniqueTitle = title + " " + suffix++;
-const url = URL.createObjectURL(file);
-localBeatUrls.push(url);
-beatLibrary[uniqueTitle] = {
-type:"audio",
-src:url,
-blob:file,
-genre:"Private Test",
-mood:"Local file",
-bpm:0,
-producer:"Owner test",
-source:"Local device",
-localOnly:true
-};
-});
+let firstTitle = "";
+for (const file of files) {
+try {
+const record = await saveBeatToLocker(file);
+const title = installLockerBeat(record);
+if (!firstTitle) firstTitle = title;
+} catch (error) {}
+}
 renderBeatCatalog();
-const first = files[0];
-if (first) {
-const title = Object.keys(beatLibrary).find(key => beatLibrary[key].localOnly && beatLibrary[key].src === localBeatUrls[localBeatUrls.length - files.length]);
-const button = title ? document.querySelector('.beat-choice[data-beat="' + CSS.escape(title) + '"]') : null;
-if (title && button) selectBeat(title, button);
+if (firstTitle) {
+const button = Array.from(document.querySelectorAll(".beat-choice")).find(item => item.dataset.beat === firstTitle);
+if (button) selectBeat(firstTitle, button);
 }
 input.value = "";
 });
@@ -1258,6 +1372,55 @@ document.getElementById("recordStatus").textContent =
 "Beat selected: " + beatName + ". Press Play Instrumental to write, or tap Record when ready.";
 
 if (beatPlaybackMode === "writing") await startBeatPlayback({ mode:"writing" });
+}
+
+function toggleAdvancedStudio() {
+document.body.classList.toggle("advanced-open");
+const open = document.body.classList.contains("advanced-open");
+const button = document.getElementById("advancedToggle");
+if (button) button.textContent = open ? "✕ CLOSE ADVANCED STUDIO" : "⚙️ ADVANCED STUDIO TOOLS";
+}
+
+async function quickAIFinish() {
+const status = document.getElementById("masterStatus");
+const button = document.getElementById("quickFinishButton");
+
+if (recording) {
+if (status) status.textContent = "Stop recording first, then tap AI Finish.";
+return;
+}
+if (!selectedBeat) {
+if (status) status.textContent = "Step 1: Pick or add a beat first.";
+setGuideStep("guideBeat");
+return;
+}
+if (!sessionTracks.lead.blob) {
+if (status) status.textContent = "Step 2: Record your voice first. Your lead vocal is what AI Finish will polish.";
+return;
+}
+
+button.disabled = true;
+button.textContent = "✨ FINISHING YOUR SONG...";
+setMasterStatus("AI Finish is balancing the beat and your real voice, cleaning the vocal, compressing the mix, and creating one master...", "");
+
+try {
+const quickMix = { beat:68, lead:100, double:58, adlibs:50, harmony:48 };
+Object.keys(quickMix).forEach(trackName => {
+const fader = document.querySelector('.track-level[data-track="' + trackName + '"]');
+if (fader) fader.value = quickMix[trackName];
+});
+invalidateMixedMaster();
+const blob = await ensureSessionMix();
+if (!blob) throw new Error("Music City could not create the finished master.");
+setMasterStatus("✓ AI Finish complete. This is one smooth master made from your selected beat and your actual recorded voice. Play it below, then save the finished song.", "ready");
+const player = document.getElementById("masterAudio");
+await player.play().catch(() => {});
+} catch (error) {
+setMasterStatus(error.message || "AI Finish could not complete this song.", "error");
+} finally {
+button.disabled = false;
+button.textContent = "✨ AI FINISH MY SONG";
+}
 }
 
 function updateEngineStatus() {
@@ -2548,12 +2711,19 @@ document.getElementById("aiEngineStatus").className =
 
 }
 
+async function initializeRecordingBooth() {
 updateEngineStatus();
 bindSessionConsole();
-renderBeatCatalog();
+setupQuickBeatLocker();
 setupDevBeatLoader();
+await loadBeatLocker();
+renderBeatCatalog();
+armSessionTrack("lead");
 updateBeatTransport();
-restoreBoothSession();
+await restoreBoothSession();
+}
+
+initializeRecordingBooth();
 
 ["songTitle", "lyrics", "style", "originalLyricsConfirmed"].forEach(id => {
 document.getElementById(id).addEventListener("input", queueBoothSessionSave);
