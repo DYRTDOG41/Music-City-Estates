@@ -137,7 +137,8 @@
       referenceSongId: clean(request.referenceSongId),
       referenceDurationMs: Number(request.referenceDurationMs || 0),
       bpm: clamp(request.bpm || 0, 0, 200),
-      key: clean(request.key, "Auto")
+      key: clean(request.key, "Auto"),
+      variationSeed: Number(request.variationSeed || 0)
     };
   }
 
@@ -329,7 +330,7 @@
 
     const seed = hashText(
       request.title + "|" + request.style + "|" + request.key + "|" +
-      request.creativity + "|" + request.influence
+      request.creativity + "|" + request.influence + "|" + request.variationSeed
     );
     const random = createRandom(seed);
     const bpm = inferBpm(request);
