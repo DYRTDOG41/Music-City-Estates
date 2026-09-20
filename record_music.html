@@ -536,7 +536,7 @@ background: rgba(3, 8, 18, 0.88);
 <div class="dev-beat-tools" id="devBeatTools" hidden>
 <strong>OWNER TEST — LOAD AN INSTRUMENTAL FROM THIS DEVICE</strong>
 <small>This is private test mode only. The file is not uploaded or saved to the public beat library.</small>
-<input type="file" id="ownerBeatUpload" accept="audio/*" multiple>
+<input type="file" id="ownerBeatUpload" multiple>
 </div>
 
 <div class="beat-section-title"><strong>PRACTICE BEATS</strong><small>Built-in demo instrumentals</small></div>
@@ -967,7 +967,9 @@ tools.hidden = false;
 input.addEventListener("change", event => {
 const files = Array.from(event.target.files || []);
 files.forEach(file => {
-if (!file.type.startsWith("audio/")) return;
+const extension = (file.name.split(".").pop() || "").toLowerCase();
+const supportedAudio = file.type.startsWith("audio/") || ["mp3","wav","m4a","aac","mp4","webm","ogg","flac"].includes(extension);
+if (!supportedAudio) return;
 let title = file.name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim() || "Private Test Beat";
 let uniqueTitle = title;
 let suffix = 2;
