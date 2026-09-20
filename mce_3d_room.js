@@ -2,15 +2,22 @@ import * as THREE from 'three';
 
 export function createRoom(options={}) {
   const scene=new THREE.Scene();
-  scene.background=new THREE.Color(options.background||0x050307);
-  scene.fog=new THREE.FogExp2(options.fog||0x09040c,options.fogDensity||0.022);
+  scene.background=new THREE.Color(options.background||0x0b0c12);
+  scene.fog=new THREE.FogExp2(options.fog||0x11121a,options.fogDensity||0.016);
   const camera=new THREE.PerspectiveCamera(68,innerWidth/innerHeight,.08,180);
   camera.position.fromArray(options.spawn||[0,1.7,8]);
   const renderer=new THREE.WebGLRenderer({antialias:true});
   renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));renderer.setSize(innerWidth,innerHeight);
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure=options.exposure||1.28;
+  renderer.outputColorSpace=THREE.SRGBColorSpace;
   document.body.prepend(renderer.domElement);renderer.domElement.tabIndex=0;
-  scene.add(new THREE.HemisphereLight(options.sky||0x5b4772,0x080609,.75));
+  const hemisphere=new THREE.HemisphereLight(options.sky||0x9bb7d2,options.ground||0x302938,options.hemisphereIntensity||1.55);
+  const ambient=new THREE.AmbientLight(options.ambientColor||0xc7d5e5,options.ambientIntensity||.58);
+  const daylight=new THREE.DirectionalLight(options.daylightColor||0xffeed8,options.daylightIntensity||1.05);
+  daylight.position.set(8,14,10);daylight.castShadow=false;
+  scene.add(hemisphere,ambient,daylight);
   const keys={},colliders=[],interactions=[],animated=[];
   let yaw=options.yaw||0,pitch=0,drag=false,lastX=0,lastY=0,current=null,last=performance.now();
   const prompt=document.getElementById('interactPrompt');
@@ -21,7 +28,7 @@ export function createRoom(options={}) {
   function light(color,intensity,pos,distance=22){const l=new THREE.PointLight(color,intensity,distance,2);l.position.fromArray(pos);l.castShadow=true;scene.add(l);return l}
   function marker(pos,color=0xff315b){const g=new THREE.Mesh(new THREE.TorusGeometry(.7,.055,10,38),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.9}));g.rotation.x=Math.PI/2;g.position.set(pos[0],.035,pos[2]);scene.add(g);animated.push(t=>{g.rotation.z=t*.0018;g.material.opacity=.55+Math.sin(t*.004)*.3});return g}
   function interact(labelText,pos,action,radius=2.5,color){const item={label:labelText,pos:new THREE.Vector3(...pos),action,radius};interactions.push(item);marker(pos,color);return item}
-  function wallBounds(width,depth,height=5){box('floor',[width,.2,depth],[0,-.1,0],0x17131a,{receive:true});box('back wall',[width,height,.35],[0,height/2,-depth/2],0x221922,{collider:true});box('left wall',[.35,height,depth],[-width/2,height/2,0],0x1b151e,{collider:true});box('right wall',[.35,height,depth],[width/2,height/2,0],0x1b151e,{collider:true});box('front-left',[width*.38,height,.35],[-width*.31,height/2,depth/2],0x1b151e,{collider:true});box('front-right',[width*.38,height,.35],[width*.31,height/2,depth/2],0x1b151e,{collider:true})}
+  function wallBounds(width,depth,height=5){box('floor',[width,.2,depth],[0,-.1,0],options.floorColor||0x37323d,{receive:true,roughness:.82,metalness:.05});box('back wall',[width,height,.35],[0,height/2,-depth/2],options.wallColor||0x443844,{collider:true,roughness:.86,metalness:.04});box('left wall',[.35,height,depth],[-width/2,height/2,0],options.sideWallColor||0x3b343f,{collider:true,roughness:.86,metalness:.04});box('right wall',[.35,height,depth],[width/2,height/2,0],options.sideWallColor||0x3b343f,{collider:true,roughness:.86,metalness:.04});box('front-left',[width*.38,height,.35],[-width*.31,height/2,depth/2],options.sideWallColor||0x3b343f,{collider:true,roughness:.86,metalness:.04});box('front-right',[width*.38,height,.35],[width*.31,height/2,depth/2],options.sideWallColor||0x3b343f,{collider:true,roughness:.86,metalness:.04})}
   function blocked(p){const r=.35;return colliders.some(b=>p.x>b.min.x-r&&p.x<b.max.x+r&&p.z>b.min.z-r&&p.z<b.max.z+r)}
   function activate(){if(current)current.action()}
   addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.key.toLowerCase()==='e')activate()});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);

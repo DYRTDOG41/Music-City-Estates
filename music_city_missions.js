@@ -184,7 +184,9 @@
       ".mce-mission-progress{margin-top:5px;color:#9fabc0;font-size:8px;text-align:right;text-transform:uppercase;letter-spacing:.08em}" +
       ".mce-mission-action{display:block;margin-top:11px;padding:11px;border:1px solid #ffe08a;border-radius:9px;background:linear-gradient(135deg,#d06e12,#f0b829);color:#130b02;text-align:center;text-decoration:none;font-size:10px;font-weight:900;letter-spacing:.08em}" +
       ".mce-mission-dock.collapsed .mce-mission-body{display:none}.mce-mission-complete .mce-mission-badge{background:#65e69a}.mce-mission-complete .mce-mission-card{border-color:#65e69a}" +
-      "@media(max-width:700px){.mce-mission-dock{left:8px;bottom:8px;width:calc(100vw - 16px)}.mce-mission-body{padding:10px}.mce-mission-head{padding:8px 10px}}";
+      ".mce-mission-dock.room-mode{z-index:23;left:12px;top:72px;bottom:auto;width:min(280px,calc(100vw - 24px))}.mce-mission-dock.room-mode .mce-mission-head{padding:7px 9px}.mce-mission-dock.room-mode .mce-mission-badge{width:25px;height:25px;font-size:12px}.mce-mission-dock.room-mode .mce-mission-label small{font-size:6px}.mce-mission-dock.room-mode .mce-mission-label b{font-size:10px}.mce-mission-dock.room-mode .mce-mission-toggle{font-size:15px}" +
+      "@media(max-width:700px),(pointer:coarse){.mce-mission-dock:not(.room-mode){left:8px;bottom:8px;width:calc(100vw - 16px)}.mce-mission-body{padding:10px}.mce-mission-head{padding:8px 10px}.mce-mission-dock.room-mode{left:8px;top:164px;bottom:auto;width:min(210px,calc(100vw - 16px))}}" +
+      "@media(pointer:coarse) and (orientation:landscape){.mce-mission-dock.room-mode{left:8px;top:70px;width:220px}}";
     document.head.appendChild(style);
   }
 
@@ -200,7 +202,7 @@
       dock.className = "mce-mission-dock";
       var compactRooms = /\/(avatar_studio|bedroom_studio|begenius_studio|hip_hop_heights|hiphop_cafe|battle_room|warehouse)\.html$/;
       if (compactRooms.test(String(root.location && root.location.pathname || ""))) {
-        dock.classList.add("collapsed");
+        dock.classList.add("collapsed", "room-mode");
       }
       dock.setAttribute("aria-live", "polite");
       document.body.appendChild(dock);
