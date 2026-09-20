@@ -15,6 +15,12 @@ var micButton = byId("micButton");
 var audioButton = byId("audioButton");
 var tapAudio = byId("tapAudio");
 var remoteAudioMount = byId("remoteAudioMount");
+var recordReplay = byId("recordReplay");
+var recordStatus = byId("recordStatus");
+var recordingBadge = byId("recordingBadge");
+var replayPanel = byId("replayPanel");
+var battleReplay = byId("battleReplay");
+var downloadReplay = byId("downloadReplay");
 
 var peer = null;
 var hostConn = null;
@@ -45,6 +51,12 @@ var votesByPeer = new Map();
 var votes = { a: 0, b: 0 };
 var rewardHandled = {};
 var myPeerId = "";
+var replayArmed = false;
+var replayRecorder = null;
+var replayDestination = null;
+var replaySources = [];
+var replayChunks = [];
+var replayUrl = "";
 
 function setStatus(el, message, kind) {
   if (!el) return;
@@ -232,6 +244,108 @@ function updateMicUi() {
   micButton.textContent = micMuted ? "MIC: MUTED" : "MIC: ON";
 }
 
+function setReplayNotice(armed, active, message) {
+  if (recordingBadge) {
+    recordingBadge.classList.toggle("show", Boolean(armed || active));
+    recordingBadge.classList.toggle("live", Boolean(active));
+    recordingBadge.textContent = active ? "LOCAL BATTLE REPLAY RECORDING" : "LOCAL REPLAY ARMED";
+  }
+  if (recordStatus && message) setStatus(recordStatus, message, active ? "warn" : "");
+}
+
+function toggleReplayArm() {
+  if (!isHost || battle && (battle.phase === "countdown" || battle.phase === "active")) return;
+  if (!window.MediaRecorder) {
+    setStatus(recordStatus, "Battle replay recording is not supported in this browser.", "bad");
+    return;
+  }
+  replayArmed = !replayArmed;
+  recordReplay.textContent = replayArmed ? "DISARM LOCAL REPLAY" : "ARM LOCAL BATTLE REPLAY";
+  var message = replayArmed
+    ? "Replay armed. Everyone in the room is being notified before the battle starts."
+    : "Local replay is off. No battle audio will be saved.";
+  setReplayNotice(replayArmed, false, message);
+  broadcast({ type: "recording-state", armed: replayArmed, active: false });
+}
+
+function preferredReplayType() {
+  var types = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"];
+  for (var i = 0; i < types.length; i++) {
+    if (window.MediaRecorder && MediaRecorder.isTypeSupported(types[i])) return types[i];
+  }
+  return "";
+}
+
+function startReplayCapture() {
+  if (!isHost || !replayArmed || !audioContext || !beatMaster || !window.MediaRecorder) return;
+  try {
+    replayDestination = audioContext.createMediaStreamDestination();
+    beatMaster.connect(replayDestination);
+    replaySources = [];
+    [localStream, remotePerformerStream].forEach(function (stream) {
+      if (!stream || !stream.getAudioTracks().length) return;
+      var source = audioContext.createMediaStreamSource(stream);
+      source.connect(replayDestination);
+      replaySources.push(source);
+    });
+    replayChunks = [];
+    var mimeType = preferredReplayType();
+    replayRecorder = new MediaRecorder(replayDestination.stream, mimeType ? { mimeType: mimeType } : undefined);
+    replayRecorder.ondataavailable = function (event) { if (event.data && event.data.size) replayChunks.push(event.data); };
+    replayRecorder.onstop = finishReplayCapture;
+    replayRecorder.start(500);
+    setReplayNotice(true, true, "Recording the synchronized beat and available rapper microphones locally on this host device.");
+    broadcast({ type: "recording-state", armed: true, active: true });
+  } catch (err) {
+    replaySources.forEach(function (source) { try { source.disconnect(); } catch (disconnectErr) {} });
+    replaySources = [];
+    if (replayDestination) replayDestination.stream.getTracks().forEach(function (track) { track.stop(); });
+    replayDestination = null;
+    replayRecorder = null;
+    replayArmed = false;
+    if (recordReplay) recordReplay.textContent = "ARM LOCAL BATTLE REPLAY";
+    setReplayNotice(false, false, "Local replay is off.");
+    setStatus(recordStatus, "Could not start local replay: " + err.message, "bad");
+    broadcast({ type: "recording-state", armed: false, active: false });
+  }
+}
+
+function stopReplayCapture() {
+  if (!replayRecorder || replayRecorder.state === "inactive") return;
+  try { replayRecorder.stop(); } catch (err) {}
+  setReplayNotice(true, false, "Finalizing the local battle replay…");
+  broadcast({ type: "recording-state", armed: true, active: false });
+}
+
+function finishReplayCapture() {
+  var mimeType = replayRecorder && replayRecorder.mimeType ? replayRecorder.mimeType : "audio/webm";
+  replaySources.forEach(function (source) { try { source.disconnect(); } catch (err) {} });
+  replaySources = [];
+  if (beatMaster && replayDestination) {
+    try { beatMaster.disconnect(replayDestination); } catch (err) {}
+  }
+  if (replayDestination) replayDestination.stream.getTracks().forEach(function (track) { track.stop(); });
+  replayDestination = null;
+  replayRecorder = null;
+  replayArmed = false;
+  if (recordReplay) recordReplay.textContent = "ARM ANOTHER LOCAL REPLAY";
+  setReplayNotice(false, false, "Local replay recording is off.");
+  broadcast({ type: "recording-state", armed: false, active: false });
+  if (!replayChunks.length) {
+    setStatus(recordStatus, "The battle ended, but this browser did not produce a replay clip.", "bad");
+    return;
+  }
+  if (replayUrl) URL.revokeObjectURL(replayUrl);
+  var blob = new Blob(replayChunks, { type: mimeType });
+  replayChunks = [];
+  replayUrl = URL.createObjectURL(blob);
+  battleReplay.src = replayUrl;
+  downloadReplay.href = replayUrl;
+  downloadReplay.download = "music-city-battle-" + Date.now() + (mimeType.indexOf("mp4") >= 0 ? ".m4a" : ".webm");
+  replayPanel.classList.remove("hidden");
+  setReplayNotice(false, false, "Replay ready. Play it back or download it before closing this page.");
+}
+
 function toggleMic() {
   if (!localStream) return;
   micMuted = !micMuted;
@@ -391,7 +505,8 @@ function handleHostData(conn, data) {
       roomCode: roomCode,
       hostName: localName,
       hostNow: Date.now(),
-      soloMode: soloMode
+      soloMode: soloMode,
+      recordArmed: replayArmed
     });
 
     if (assigned === "audience") {
@@ -556,6 +671,7 @@ function handleGuestData(data) {
   if (data.type === "welcome") {
     assignedRole = data.role || "audience";
     soloMode = Boolean(data.soloMode);
+    if (data.recordArmed) setReplayNotice(true, false, "The host has armed a local battle replay. Your live rapper audio may be included when the battle begins.");
 
     if (assignedRole === "audience" && localStream) {
       stopLocalMic();
@@ -593,6 +709,15 @@ function handleGuestData(data) {
       participants.set(p.id, p);
     });
     renderParticipants();
+    return;
+  }
+
+  if (data.type === "recording-state") {
+    setReplayNotice(Boolean(data.armed), Boolean(data.active), data.active
+      ? "The host is recording this battle replay locally. Nothing uploads automatically."
+      : data.armed
+        ? "The host has armed a local replay. Your rapper audio may be included when the battle begins."
+        : "Local replay recording is off.");
     return;
   }
 
@@ -693,6 +818,7 @@ function beginBattle(data) {
   log("Battle count-in started. Beat drops in 4 seconds.");
   notifyArenaUi("battle");
   scheduleBeat(battle);
+  if (isHost) startReplayCapture();
 
   tickBattle();
   battleTimer = setInterval(tickBattle, 100);
@@ -753,6 +879,7 @@ function hostOpenVoting() {
   if (!isHost || !battle || battle.votingOpened) return;
   battle.votingOpened = true;
   battle.phase = "voting";
+  stopReplayCapture();
   var packet = {
     type: "voting-open",
     battleId: battle.id,
@@ -914,6 +1041,7 @@ function stopBattleFromHost() {
 
 function stopBattleLocal(reason) {
   clearBattleTimers();
+  stopReplayCapture();
   stopBeat();
   if (battle) battle.phase = "done";
   byId("countdown").textContent = "STOP";
@@ -1080,6 +1208,7 @@ byId("copyRapper").addEventListener("click", function () { copyInvite("rapper");
 byId("copyAudience").addEventListener("click", function () { copyInvite("audience"); });
 byId("startBattle").addEventListener("click", startBattleFromHost);
 byId("stopBattle").addEventListener("click", stopBattleFromHost);
+if (recordReplay) recordReplay.addEventListener("click", toggleReplayArm);
 byId("voteA").addEventListener("click", function () { castVote("a"); });
 byId("voteB").addEventListener("click", function () { castVote("b"); });
 micButton.addEventListener("click", toggleMic);
@@ -1088,6 +1217,8 @@ tapAudio.addEventListener("click", enableLiveAudio);
 
 window.addEventListener("beforeunload", function () {
   clearBattleTimers();
+  stopReplayCapture();
+  if (replayUrl) URL.revokeObjectURL(replayUrl);
   stopBeat();
   try { if (peer) peer.destroy(); } catch (err) {}
   if (localStream) localStream.getTracks().forEach(function (track) { track.stop(); });

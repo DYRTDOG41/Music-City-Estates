@@ -49,6 +49,7 @@
 .live-arena-overlay .vote-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.live-arena-overlay .vote-btn{padding:18px;font-size:16px}.live-arena-overlay .vote-a{background:#4c1830;color:#fff;border:1px solid #ff4d7b}.live-arena-overlay .vote-b{background:#40300d;color:#fff;border:1px solid #ffc83d}.live-arena-overlay .votes{display:flex;justify-content:center;gap:28px;margin-top:14px;font-size:20px;font-weight:900}
 .live-arena-overlay .note{font-size:12px;line-height:1.45;color:#b9aebc}
 #tapAudio{position:fixed;z-index:180;left:50%;bottom:18px;transform:translateX(-50%);display:none;padding:12px 16px;border:0;border-radius:10px;background:#ffc83d;color:#190d00;font-weight:900;box-shadow:0 0 30px #000}
+.live-arena-overlay .download{display:inline-flex;margin-top:9px;padding:11px 14px;border:1px solid #39bfe8;border-radius:9px;background:#103747;color:#eafaff;text-decoration:none;font-size:12px;font-weight:900}.recording-badge{display:none;position:fixed;z-index:175;left:14px;bottom:18px;padding:9px 12px;border:1px solid #ff315b;border-radius:999px;background:#2b0812;color:#ffd5de;font-size:10px;font-weight:900;letter-spacing:.08em;box-shadow:0 0 20px #ff315b55}.recording-badge.show{display:block}.recording-badge.live:before{content:"";display:inline-block;width:8px;height:8px;margin-right:7px;border-radius:50%;background:#ff315b;box-shadow:0 0 10px #ff315b}
 
 /* During a battle, the menu disappears and only the performance HUD floats over the real 3D arena. */
 .live-arena-overlay.battle-running{display:block;background:transparent;backdrop-filter:none;overflow:hidden;padding:0;pointer-events:none}
@@ -177,6 +178,8 @@
           <option value="45">45 seconds</option>
           <option value="60">60 seconds</option>
         </select>
+        <button id="recordReplay" class="secondary" style="width:100%;margin-top:12px">ARM LOCAL BATTLE REPLAY</button>
+        <div id="recordStatus" class="status">Optional: record the synchronized beat and both rapper microphones on this host device. Everyone in the room will be notified. Nothing uploads automatically.</div>
         <div class="actions">
           <button id="startBattle" class="primary">START LIVE BATTLE</button>
           <button id="stopBattle" class="danger" disabled>END BATTLE</button>
@@ -194,6 +197,13 @@
         <div class="votes"><span>A: <b id="votesA">0</b></span><span>B: <b id="votesB">0</b></span></div>
       </div>
 
+      <div id="replayPanel" class="panel wide hidden">
+        <h3>Local Battle Replay</h3>
+        <p class="note">This replay exists only on the host device. Play it back or download it before closing the page.</p>
+        <audio id="battleReplay" controls></audio>
+        <a id="downloadReplay" class="download" href="#" download="music-city-battle-replay.webm">DOWNLOAD REPLAY</a>
+      </div>
+
       <div id="liveBattleLogPanel" class="panel wide">
         <h3>Battle Log</h3>
         <div id="battleLog" class="status">Waiting for room activity.</div>
@@ -202,6 +212,7 @@
   </div>
 </div>
 <button id="tapAudio" class="primary">TAP TO ENABLE LIVE AUDIO</button>
+<div id="recordingBadge" class="recording-badge">REPLAY ARMED</div>
 <div id="remoteAudioMount" hidden></div>
 
 <script src="player-state.js"></script>
