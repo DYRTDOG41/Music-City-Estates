@@ -256,6 +256,19 @@ color: #ff8c8c;
 .mix-readout { grid-column:1/-1; color:#7f96ad; font-size:9px; text-align:center; }
 .mix-coach { display:none; margin-top:12px; padding:12px; border-left:3px solid #a47aff; background:#0c1323; color:#c6d3e3; font-size:12px; line-height:1.55; }
 .mix-coach.show { display:block; }
+.master-console { border-color:#22d3ee; background:linear-gradient(145deg,rgba(7,22,32,.97),rgba(8,11,24,.97)); }
+.master-flow { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:14px 0; }
+.master-step { padding:13px; border:1px solid #31506a; border-radius:11px; background:#070d17; color:#9db1c7; font-size:12px; line-height:1.45; }
+.master-step strong { display:block; margin-bottom:5px; color:#fff; }
+.master-actions { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.master-actions button, .master-import-label { min-height:50px; padding:12px; display:grid; place-items:center; text-align:center; font-weight:900; cursor:pointer; }
+.master-actions button:disabled { opacity:.45; cursor:not-allowed; transform:none; }
+.master-import-label { border:1px solid #18d8ff; border-radius:10px; background:linear-gradient(#182637,#0d1825); box-shadow:0 0 10px rgba(0,216,255,.15); }
+.master-import-label input { position:absolute; width:1px !important; height:1px; opacity:0; pointer-events:none; }
+.master-status { margin:12px 0 0; padding:11px 13px; border-left:3px solid #22d3ee; background:#07111c; color:#b8c7d9; font-size:13px; line-height:1.5; }
+.master-status.ready { border-left-color:#7ef0a7; color:#bdf7d0; }
+.master-status.error { border-left-color:#ff6868; color:#ffb0b0; }
+.master-audio { display:none; }
 
 #generatedAudio {
 display: none;
@@ -355,6 +368,7 @@ grid-template-columns: 1fr;
 .track-lane { grid-template-columns:92px 1fr; }
 .track-mix { grid-column:1/-1; }
 .session-actions { display:grid; grid-template-columns:1fr 1fr; width:100%; }
+.master-flow, .master-actions { grid-template-columns:1fr; }
 }
 
 /* ===== MUSIC CITY ESTATES - RECORDING BOOTH ===== */
@@ -587,7 +601,6 @@ placeholder="Describe the sound: melodic trap, soulful R&B, southern hip-hop..."
 <div class="mix-coach" id="mixCoach"></div>
 </div>
 
-
 <div class="panel">
 
 <h3>3. Record a Take</h3>
@@ -633,10 +646,34 @@ Reference clips are limited to 30 seconds and 3 MB. The reference guides product
 
 </div>
 
+<div class="panel master-console">
+<h3>4. Mixdown &amp; AI Finish</h3>
+<p>Turn the beat and every recorded lane into one finished playback. This mix works inside Music City and does not require ElevenLabs.</p>
+<div class="master-flow" aria-label="Song finishing steps">
+<div class="master-step"><strong>1. Mix &amp; Play</strong>Render the beat, lead, doubles, ad-libs, and harmony into one compressed master.</div>
+<div class="master-step"><strong>2. Optional Suno Finish</strong>Download the rough mix, open Suno in a new tab, and use its upload workflow.</div>
+<div class="master-step"><strong>3. Bring It Back</strong>Import the downloaded Suno result as the Final Master without losing the Music City session.</div>
+</div>
+<div class="master-actions">
+<button type="button" id="mixdownButton" onclick="mixAndPlay()">🎚️ MIX &amp; PLAY</button>
+<button type="button" id="downloadMixButton" onclick="downloadCurrentMaster()" disabled>⬇️ EXPORT ROUGH MIX</button>
+<button type="button" id="sunoFinishButton" onclick="finishInSuno()">✨ FINISH WITH SUNO</button>
+</div>
+<audio id="masterAudio" class="master-audio" controls preload="metadata"></audio>
+<div class="master-actions" style="margin-top:10px;">
+<label class="master-import-label" for="sunoMasterUpload">⬆️ IMPORT SUNO MASTER<input type="file" id="sunoMasterUpload" accept="audio/*" onchange="importSunoMaster(event)"></label>
+<button type="button" id="saveSessionButton" onclick="saveBoothSession(true)">💾 SAVE STUDIO SESSION</button>
+<button type="button" id="useMasterButton" onclick="useMasterAsFinishedSong()" disabled>✅ USE AS FINISHED SONG</button>
+</div>
+<p id="masterStatus" class="master-status">Record at least one vocal lane, then press Mix &amp; Play. Your mixed playback and Suno handoff are independent of the ElevenLabs connection.</p>
+</div>
+
 
 <div class="panel">
 
-<h3>4. AI Production</h3>
+<h3>5. Optional AI Production</h3>
+
+<p class="engine-status">This section generates alternate AI productions. It is separate from Mix &amp; Play above, which always uses the artist's recorded performance.</p>
 
 <div class="row">
 
@@ -645,7 +682,7 @@ Reference clips are limited to 30 seconds and 3 MB. The reference guides product
 
 <select id="creationMode">
 <option>Use Recording as Reference</option>
-<option>Generate Instrumental</option>
+<option selected>Generate Instrumental</option>
 <option>Create Full Song</option>
 <option disabled>Preserve My Exact Voice — Coming Later</option>
 </select>
@@ -667,10 +704,10 @@ Reference clips are limited to 30 seconds and 3 MB. The reference guides product
 <label>Music City AI Engine</label>
 <select id="aiProvider" onchange="updateEngineStatus()">
 <option value="demo">Music City Demo Engine — Works Now</option>
-<option value="elevenlabs">ElevenLabs Music — Backend Connected</option>
+<option value="elevenlabs">ElevenLabs Music — Optional Connection</option>
 <option value="stable-audio">Stable Audio — Secure Backend Required</option>
 <option value="google-lyria">Google Lyria — Secure Backend Required</option>
-<option value="partner">Partner API — Suno / MyTunes if approved</option>
+<option value="partner" disabled>Suno API Partnership — Awaiting Approval</option>
 </select>
 <p id="aiEngineStatus" class="engine-status ready">
 Demo mode is ready. It tests the complete Music City generation workflow without using paid AI credits.
@@ -970,6 +1007,8 @@ if (started) document.getElementById("recordStatus").textContent = "Writing / pr
 async function selectBeat(beatName, button) {
 if (recording) return;
 selectedBeat = beatName;
+invalidateMixedMaster();
+queueBoothSessionSave();
 
 document.querySelectorAll(".beat-choice").forEach(btn => btn.classList.remove("selected"));
 button.classList.add("selected");
@@ -992,11 +1031,11 @@ const engine = window.MusicCityAI
 const messages = {
 demo: "Demo mode is ready. It tests the complete Music City generation workflow without using paid AI credits.",
 elevenlabs: engine.backendConnected
-? "Music City is connected to the secure ElevenLabs backend. Add the protected ElevenLabs API key in Vercel to activate live generation."
+? "The secure backend route is available. Live ElevenLabs generation still requires its protected server-side API key. Mix & Play does not need it."
 : "ElevenLabs Music is wired in. Connect the secure backend URL and API key to enable live audio.",
 "stable-audio": "Stable Audio is reserved as a future provider adapter.",
 "google-lyria": "Google Lyria is reserved as a future provider adapter.",
-partner: "Partner mode is reserved for Suno, MyTunes, or another approved commercial API partnership."
+partner: "Use Finish with Suno in the Mixdown section. It saves your session, exports the rough mix, and opens Suno without pretending a private API is connected."
 };
 
 status.textContent = messages[provider] || "Select an AI provider.";
@@ -1038,6 +1077,12 @@ let recordingTrack = "lead";
 let sessionPlaying = false;
 let sessionAudios = [];
 let sessionStopTimer = null;
+let currentMasterBlob = null;
+let currentMasterUrl = "";
+let currentMasterKind = "";
+let mixDirty = true;
+let sessionSaveTimer = null;
+let boothDatabasePromise = null;
 const sessionTracks = {
 lead: { blob:null, url:"", durationMs:0 },
 double: { blob:null, url:"", durationMs:0 },
@@ -1130,6 +1175,423 @@ const available = Object.keys(sessionTracks).filter(trackName => sessionTracks[t
 const coach = document.getElementById("mixCoach");
 coach.classList.add("show");
 coach.innerHTML = "<strong>AI Mix Assist applied a starter balance.</strong><br>Lead stays centered and loud for clarity. The double sits lower to thicken the lead. Ad-libs are lower so they add energy without covering words. Harmony is tucked behind the hook. The beat leaves space for the vocal. " + (available.length < 2 ? "Record more lanes to hear the full lesson." : "Press Play Session, move a fader, and compare your choice.");
+invalidateMixedMaster();
+queueBoothSessionSave();
+}
+
+function setMasterStatus(message, state) {
+const status = document.getElementById("masterStatus");
+status.textContent = message;
+status.className = "master-status" + (state ? " " + state : "");
+}
+
+function invalidateMixedMaster() {
+mixDirty = true;
+if (currentMasterKind === "music-city-mix") {
+currentMasterBlob = null;
+currentMasterKind = "";
+if (currentMasterUrl) URL.revokeObjectURL(currentMasterUrl);
+currentMasterUrl = "";
+const player = document.getElementById("masterAudio");
+player.pause();
+player.removeAttribute("src");
+player.style.display = "none";
+document.getElementById("downloadMixButton").disabled = true;
+document.getElementById("useMasterButton").disabled = true;
+}
+}
+
+function setMasterBlob(blob, kind) {
+if (currentMasterUrl) URL.revokeObjectURL(currentMasterUrl);
+currentMasterBlob = blob;
+currentMasterKind = kind;
+currentMasterUrl = URL.createObjectURL(blob);
+mixDirty = false;
+const player = document.getElementById("masterAudio");
+player.src = currentMasterUrl;
+player.style.display = "block";
+document.getElementById("downloadMixButton").disabled = false;
+document.getElementById("useMasterButton").disabled = false;
+}
+
+function makeOfflineNoiseBuffer(context) {
+const length = Math.floor(context.sampleRate * .16);
+const buffer = context.createBuffer(1, length, context.sampleRate);
+const data = buffer.getChannelData(0);
+let seed = 7351;
+for (let index = 0; index < length; index += 1) {
+seed = (seed * 16807) % 2147483647;
+data[index] = seed / 1073741823.5 - 1;
+}
+return buffer;
+}
+
+function renderOfflineBeat(context, destination, durationSeconds) {
+const config = beatLibrary[selectedBeat];
+const noiseBuffer = makeOfflineNoiseBuffer(context);
+const eighth = 60 / config.bpm / 2;
+const totalSteps = Math.ceil(durationSeconds / eighth);
+
+for (let step = 0; step < totalSteps; step += 1) {
+const patternStep = step % 16;
+const time = step * eighth;
+if (config.kicks.includes(patternStep)) {
+const oscillator = context.createOscillator();
+const gain = context.createGain();
+oscillator.type = "sine";
+oscillator.frequency.setValueAtTime(patternStep === 0 || patternStep === 8 ? 155 : 125, time);
+oscillator.frequency.exponentialRampToValueAtTime(config.bass, Math.min(time + .16, durationSeconds));
+gain.gain.setValueAtTime(patternStep === 0 || patternStep === 8 ? .82 : .62, time);
+gain.gain.exponentialRampToValueAtTime(.001, Math.min(time + .22, durationSeconds));
+oscillator.connect(gain).connect(destination);
+oscillator.start(time);
+oscillator.stop(Math.min(time + .24, durationSeconds));
+}
+
+const noiseType = config.snares.includes(patternStep) ? "snare" : config.hats.includes(patternStep) ? "hat" : "";
+if (noiseType) {
+const source = context.createBufferSource();
+const filter = context.createBiquadFilter();
+const gain = context.createGain();
+source.buffer = noiseBuffer;
+filter.type = noiseType === "snare" ? "bandpass" : "highpass";
+filter.frequency.value = noiseType === "snare" ? 1600 : 6500;
+gain.gain.setValueAtTime(noiseType === "snare" ? .34 : .11, time);
+gain.gain.exponentialRampToValueAtTime(.001, Math.min(time + (noiseType === "snare" ? .13 : .045), durationSeconds));
+source.connect(filter).connect(gain).connect(destination);
+source.start(time);
+source.stop(Math.min(time + .16, durationSeconds));
+}
+}
+}
+
+async function decodeTrackBlob(context, blob) {
+const bytes = await blob.arrayBuffer();
+return context.decodeAudioData(bytes.slice(0));
+}
+
+function audioBufferToWave(buffer) {
+const channelCount = Math.min(2, buffer.numberOfChannels);
+const sampleCount = buffer.length;
+const output = new ArrayBuffer(44 + sampleCount * channelCount * 2);
+const view = new DataView(output);
+let offset = 0;
+const writeText = text => { for (let index = 0; index < text.length; index += 1) view.setUint8(offset++, text.charCodeAt(index)); };
+const write16 = value => { view.setUint16(offset, value, true); offset += 2; };
+const write32 = value => { view.setUint32(offset, value, true); offset += 4; };
+writeText("RIFF");
+write32(36 + sampleCount * channelCount * 2);
+writeText("WAVEfmt ");
+write32(16);
+write16(1);
+write16(channelCount);
+write32(buffer.sampleRate);
+write32(buffer.sampleRate * channelCount * 2);
+write16(channelCount * 2);
+write16(16);
+writeText("data");
+write32(sampleCount * channelCount * 2);
+
+const channels = [];
+for (let channel = 0; channel < channelCount; channel += 1) channels.push(buffer.getChannelData(channel));
+for (let sample = 0; sample < sampleCount; sample += 1) {
+for (let channel = 0; channel < channelCount; channel += 1) {
+const value = Math.max(-1, Math.min(1, channels[channel][sample]));
+view.setInt16(offset, value < 0 ? value * 32768 : value * 32767, true);
+offset += 2;
+}
+}
+return new Blob([output], { type:"audio/wav" });
+}
+
+async function renderSessionMix() {
+if (!selectedBeat) throw new Error("Pick a beat before creating the mixdown.");
+const trackNames = Object.keys(sessionTracks).filter(trackName => sessionTracks[trackName].blob);
+if (!trackNames.length) throw new Error("Record or upload at least one vocal lane before creating the mixdown.");
+
+const DecodeContext = window.AudioContext || window.webkitAudioContext;
+const OfflineContext = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+if (!DecodeContext || !OfflineContext) throw new Error("This browser does not support audio mixdown.");
+const decoder = new DecodeContext();
+let decodedTracks;
+try {
+decodedTracks = await Promise.all(trackNames.map(async trackName => ({
+trackName,
+buffer: await decodeTrackBlob(decoder, sessionTracks[trackName].blob)
+})));
+} finally {
+decoder.close().catch(() => {});
+}
+
+const durationSeconds = Math.min(30, Math.max.apply(null, decodedTracks.map(track => track.buffer.duration)));
+const sampleRate = 44100;
+const context = new OfflineContext(2, Math.ceil(durationSeconds * sampleRate), sampleRate);
+const compressor = context.createDynamicsCompressor();
+compressor.threshold.value = -18;
+compressor.knee.value = 18;
+compressor.ratio.value = 4;
+compressor.attack.value = .004;
+compressor.release.value = .24;
+compressor.connect(context.destination);
+
+const beatGain = context.createGain();
+const beatMuted = document.querySelector('.mute-track[data-track="beat"]').classList.contains("on");
+beatGain.gain.value = beatMuted ? 0 : Number(document.querySelector('.track-level[data-track="beat"]').value) / 100 * .68;
+beatGain.connect(compressor);
+renderOfflineBeat(context, beatGain, durationSeconds);
+
+const panByTrack = { lead:0, double:-.34, adlibs:.42, harmony:.18 };
+decodedTracks.forEach(({ trackName, buffer }) => {
+const source = context.createBufferSource();
+const highPass = context.createBiquadFilter();
+const presence = context.createBiquadFilter();
+const gain = context.createGain();
+const panner = context.createStereoPanner();
+const muted = document.querySelector('.mute-track[data-track="' + trackName + '"]').classList.contains("on");
+source.buffer = buffer;
+highPass.type = "highpass";
+highPass.frequency.value = 82;
+presence.type = "peaking";
+presence.frequency.value = 3200;
+presence.Q.value = .7;
+presence.gain.value = 1.8;
+gain.gain.value = muted ? 0 : Number(document.querySelector('.track-level[data-track="' + trackName + '"]').value) / 100 * .9;
+panner.pan.value = panByTrack[trackName] || 0;
+source.connect(highPass).connect(presence).connect(gain).connect(panner).connect(compressor);
+source.start(0);
+});
+
+return audioBufferToWave(await context.startRendering());
+}
+
+async function ensureSessionMix() {
+if (currentMasterBlob && !mixDirty) return currentMasterBlob;
+setMasterStatus("Mixing the beat and vocal lanes into one master...", "");
+const button = document.getElementById("mixdownButton");
+button.disabled = true;
+button.textContent = "MIXING...";
+try {
+const blob = await renderSessionMix();
+setMasterBlob(blob, "music-city-mix");
+await saveBoothSession(false);
+setMasterStatus("Music City mix ready. This playback is one mastered audio file—not several tracks playing separately.", "ready");
+return blob;
+} catch (error) {
+setMasterStatus(error.message || "Music City could not render this mix.", "error");
+throw error;
+} finally {
+button.disabled = false;
+button.textContent = "🎚️ MIX & PLAY";
+}
+}
+
+async function mixAndPlay() {
+try {
+await ensureSessionMix();
+const player = document.getElementById("masterAudio");
+await player.play().catch(() => {});
+} catch (error) {}
+}
+
+function safeSongFilename(suffix, extension) {
+const title = (document.getElementById("songTitle").value || "music-city-song")
+.trim().replace(/[^a-z0-9-_]+/gi, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "music-city-song";
+return title + "-" + suffix + "." + extension;
+}
+
+function downloadBlob(blob, filename) {
+const url = URL.createObjectURL(blob);
+const link = document.createElement("a");
+link.href = url;
+link.download = filename;
+document.body.appendChild(link);
+link.click();
+link.remove();
+setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+function downloadCurrentMaster() {
+if (!currentMasterBlob) {
+setMasterStatus("Create or import a master before downloading.", "error");
+return;
+}
+const extension = currentMasterBlob.type.includes("wav") ? "wav" : currentMasterBlob.type.includes("mpeg") ? "mp3" : "audio";
+downloadBlob(currentMasterBlob, safeSongFilename(currentMasterKind === "suno-master" ? "final-master" : "rough-mix", extension));
+setMasterStatus("Master downloaded to this device.", "ready");
+}
+
+async function finishInSuno() {
+const sunoWindow = window.open("about:blank", "musicCitySuno");
+if (sunoWindow) {
+sunoWindow.document.write("<title>Preparing Suno handoff</title><p style='font-family:sans-serif;padding:24px'>Music City is preparing your rough mix...</p>");
+}
+try {
+const blob = await ensureSessionMix();
+await saveBoothSession(false);
+localStorage.setItem("musicCitySunoReturnPending", "1");
+downloadBlob(blob, safeSongFilename("rough-mix-for-suno", "wav"));
+if (sunoWindow) sunoWindow.location.href = "https://suno.com/create";
+else {
+setMasterStatus("Your browser blocked the new tab. The session is saved; Music City is opening Suno in this tab, and Back will restore the studio.", "ready");
+setTimeout(() => { window.location.href = "https://suno.com/create"; }, 900);
+return;
+}
+setMasterStatus("Rough mix downloaded and Suno opened. Upload the WAV there, download your result, return to this studio tab, then choose Import Suno Master.", "ready");
+} catch (error) {
+if (sunoWindow) sunoWindow.close();
+}
+}
+
+function importSunoMaster(event) {
+const file = event.target.files && event.target.files[0];
+if (!file) return;
+if (!file.type.startsWith("audio/")) {
+setMasterStatus("Choose an audio file downloaded from Suno.", "error");
+event.target.value = "";
+return;
+}
+if (file.size > 50 * 1024 * 1024) {
+setMasterStatus("The returned master must be 50 MB or smaller for this device build.", "error");
+event.target.value = "";
+return;
+}
+setMasterBlob(file, "suno-master");
+localStorage.removeItem("musicCitySunoReturnPending");
+saveBoothSession(false);
+setMasterStatus("Suno master imported. Play it here, download it again, or save it as the finished song in your Artist Catalog.", "ready");
+}
+
+function openBoothDatabase() {
+if (!window.indexedDB) return Promise.reject(new Error("Session storage is not supported in this browser."));
+if (boothDatabasePromise) return boothDatabasePromise;
+boothDatabasePromise = new Promise((resolve, reject) => {
+const request = indexedDB.open("music-city-recording-booth", 1);
+request.onupgradeneeded = () => {
+if (!request.result.objectStoreNames.contains("sessions")) request.result.createObjectStore("sessions", { keyPath:"id" });
+};
+request.onsuccess = () => resolve(request.result);
+request.onerror = () => reject(request.error || new Error("Studio storage could not open."));
+});
+return boothDatabasePromise;
+}
+
+function collectMixSettings() {
+const settings = {};
+document.querySelectorAll(".track-level").forEach(fader => {
+settings[fader.dataset.track] = {
+level:Number(fader.value),
+muted:document.querySelector('.mute-track[data-track="' + fader.dataset.track + '"]').classList.contains("on")
+};
+});
+return settings;
+}
+
+async function saveBoothSession(showConfirmation) {
+try {
+const database = await openBoothDatabase();
+const tracks = {};
+Object.keys(sessionTracks).forEach(trackName => {
+tracks[trackName] = { blob:sessionTracks[trackName].blob, durationMs:sessionTracks[trackName].durationMs };
+});
+const record = {
+id:"current-" + studio,
+savedAt:new Date().toISOString(),
+title:document.getElementById("songTitle").value,
+lyrics:document.getElementById("lyrics").value,
+style:document.getElementById("style").value,
+selectedBeat,
+armedTrack,
+tracks,
+mixSettings:collectMixSettings(),
+masterBlob:currentMasterBlob,
+masterKind:currentMasterKind
+};
+await new Promise((resolve, reject) => {
+const transaction = database.transaction("sessions", "readwrite");
+transaction.objectStore("sessions").put(record);
+transaction.oncomplete = () => resolve();
+transaction.onerror = () => reject(transaction.error || new Error("Session save failed."));
+});
+if (showConfirmation) setMasterStatus("Studio session saved on this device. You can leave for Suno and return without losing the recording.", "ready");
+return record;
+} catch (error) {
+if (showConfirmation) setMasterStatus(error.message || "Music City could not save this studio session.", "error");
+return null;
+}
+}
+
+function queueBoothSessionSave() {
+if (sessionSaveTimer) clearTimeout(sessionSaveTimer);
+sessionSaveTimer = setTimeout(() => saveBoothSession(false), 350);
+}
+
+async function restoreBoothSession() {
+try {
+const database = await openBoothDatabase();
+const record = await new Promise((resolve, reject) => {
+const request = database.transaction("sessions", "readonly").objectStore("sessions").get("current-" + studio);
+request.onsuccess = () => resolve(request.result || null);
+request.onerror = () => reject(request.error);
+});
+if (!record) return;
+document.getElementById("songTitle").value = record.title || "";
+document.getElementById("lyrics").value = record.lyrics || "";
+document.getElementById("style").value = record.style || "";
+if (record.selectedBeat && beatLibrary[record.selectedBeat]) {
+selectedBeat = record.selectedBeat;
+const button = document.querySelector('.beat-choice[data-beat="' + record.selectedBeat + '"]');
+if (button) button.classList.add("selected");
+setGuideStep("guideWrite");
+updateBeatTransport();
+}
+Object.keys(sessionTracks).forEach(trackName => {
+const savedTrack = record.tracks && record.tracks[trackName];
+if (!savedTrack || !savedTrack.blob) return;
+sessionTracks[trackName].blob = savedTrack.blob;
+sessionTracks[trackName].durationMs = savedTrack.durationMs || 0;
+sessionTracks[trackName].url = URL.createObjectURL(savedTrack.blob);
+renderRecordedTrack(trackName);
+});
+Object.keys(record.mixSettings || {}).forEach(trackName => {
+const saved = record.mixSettings[trackName];
+const fader = document.querySelector('.track-level[data-track="' + trackName + '"]');
+const mute = document.querySelector('.mute-track[data-track="' + trackName + '"]');
+if (fader) { fader.value = saved.level; fader.dispatchEvent(new Event("input")); }
+if (mute && saved.muted) { mute.classList.add("on"); mute.textContent = "MUTE"; }
+});
+if (record.armedTrack && sessionTracks[record.armedTrack]) armSessionTrack(record.armedTrack);
+if (record.masterBlob) {
+setMasterBlob(record.masterBlob, record.masterKind || "music-city-mix");
+setMasterStatus(localStorage.getItem("musicCitySunoReturnPending")
+? "Welcome back. Your Music City session is restored—choose Import Suno Master when your Suno download is ready."
+: "Saved studio session restored on this device.", "ready");
+} else {
+setMasterStatus("Saved vocal session restored. Press Mix & Play to create the master.", "ready");
+}
+} catch (error) {}
+}
+
+async function useMasterAsFinishedSong() {
+if (!currentMasterBlob) return;
+const title = document.getElementById("songTitle").value.trim() || "Untitled Music City Song";
+lastGeneratedResult = {
+id:"master-" + Date.now(),
+title,
+style:document.getElementById("style").value || "Original Style",
+studio,
+beat:selectedBeat || "",
+provider:currentMasterKind,
+providerName:currentMasterKind === "suno-master" ? "Suno AI Finish" : "Music City Mixdown",
+createdAt:new Date().toISOString(),
+originalLyricsConfirmed:document.getElementById("originalLyricsConfirmed").checked,
+audioBlob:currentMasterBlob
+};
+document.getElementById("aiResult").style.display = "block";
+document.getElementById("resultText").innerHTML = "<strong>" + title + "</strong><br>Final master ready from " + lastGeneratedResult.providerName + ".";
+document.getElementById("catalogActions").style.display = "grid";
+document.getElementById("saveToCatalogButton").disabled = false;
+await saveGeneratedToCatalog();
+setMasterStatus("Finished master saved to the Artist Catalog.", "ready");
 }
 
 function bindSessionConsole() {
@@ -1139,11 +1601,15 @@ const lane = fader.closest(".track-lane");
 const pan = { beat:"CENTER", lead:"CENTER", double:"LEFT", adlibs:"RIGHT", harmony:"WIDE" }[fader.dataset.track];
 lane.querySelector(".mix-readout").textContent = fader.value + "% • " + pan;
 if (sessionPlaying && fader.dataset.track === "beat" && beatMaster) beatMaster.gain.value = Number(fader.value) / 100 * .58;
+invalidateMixedMaster();
+queueBoothSessionSave();
 }));
 document.querySelectorAll(".mute-track").forEach(button => button.addEventListener("click", () => {
 button.classList.toggle("on");
 button.textContent = button.classList.contains("on") ? "MUTE" : "M";
 if (sessionPlaying) { stopSessionPlayback(); toggleSessionPlayback(); }
+invalidateMixedMaster();
+queueBoothSessionSave();
 }));
 }
 
@@ -1222,6 +1688,8 @@ track.blob = blob;
 track.url = url;
 track.durationMs = referenceAudioDurationMs;
 renderRecordedTrack(recordingTrack);
+invalidateMixedMaster();
+queueBoothSessionSave();
 
 status.textContent =
 recordingTrack.toUpperCase() + " take complete. Reference ready (" +
@@ -1343,6 +1811,8 @@ track.blob = file;
 track.url = url;
 track.durationMs = durationMs;
 renderRecordedTrack(armedTrack);
+invalidateMixedMaster();
+queueBoothSessionSave();
 
 status.textContent =
 "Uploaded audio added to " + armedTrack.toUpperCase() + " (" +
@@ -1671,9 +2141,9 @@ generatedAudio.removeAttribute("src");
 try {
 
 if (mode === "Use Recording as Reference") {
-if (provider !== "elevenlabs") {
+if (provider !== "elevenlabs" && provider !== "demo") {
 throw new Error(
-"Audio Reference is currently connected through ElevenLabs Music."
+"That provider does not accept audio references in this build. Use the Demo Engine, connect ElevenLabs, or use Finish with Suno in the Mixdown section."
 );
 }
 
@@ -1683,30 +2153,18 @@ throw new Error(
 );
 }
 
-engineMessage.textContent =
-"Uploading and checking your audio reference...";
+request.referenceDurationMs = Math.max(50, Math.min(referenceAudioDurationMs || 10000, 30000));
 
-const reference =
-await window.MusicCityAI.uploadReference(
-referenceAudioBlob,
-{
-filename:
-referenceAudioBlob.name ||
-"music-city-reference.webm"
+if (provider === "elevenlabs") {
+engineMessage.textContent = "Uploading and checking your audio reference...";
+const reference = await window.MusicCityAI.uploadReference(referenceAudioBlob, {
+filename: referenceAudioBlob.name || "music-city-reference.webm"
+});
+request.referenceSongId = reference.songId;
+engineMessage.textContent = "Reference ready. Generating a new track from its musical characteristics...";
+} else {
+engineMessage.textContent = "Demo reference attached. Testing the workflow without paid AI credits...";
 }
-);
-
-request.referenceSongId =
-reference.songId;
-
-request.referenceDurationMs =
-Math.max(
-50,
-Math.min(referenceAudioDurationMs || 10000, 30000)
-);
-
-engineMessage.textContent =
-"Reference ready. Generating a new track from its musical characteristics...";
 }
 
 const result =
@@ -1817,6 +2275,16 @@ document.getElementById("aiEngineStatus").className =
 updateEngineStatus();
 bindSessionConsole();
 updateBeatTransport();
+restoreBoothSession();
+
+["songTitle", "lyrics", "style", "originalLyricsConfirmed"].forEach(id => {
+document.getElementById(id).addEventListener("input", queueBoothSessionSave);
+document.getElementById(id).addEventListener("change", queueBoothSessionSave);
+});
+
+document.addEventListener("visibilitychange", () => {
+if (document.visibilityState === "hidden") saveBoothSession(false);
+});
 
 window.addEventListener("beforeunload", () => {
 stopSessionPlayback();
@@ -1825,6 +2293,7 @@ if (sessionTracks[trackName].url) URL.revokeObjectURL(sessionTracks[trackName].u
 });
 if (mediaStream) mediaStream.getTracks().forEach(track => track.stop());
 if (beatAudioContext) beatAudioContext.close().catch(() => {});
+if (currentMasterUrl) URL.revokeObjectURL(currentMasterUrl);
 });
 
 </script>

@@ -40,4 +40,31 @@ check('AI Mix Assist applies and teaches a starter balance', () => {
   assert.match(booth, /Lead stays centered and loud for clarity/);
 });
 
-console.log('5 recording booth tests passed');
+check('mixdown renders one compressed WAV master in the browser', () => {
+  assert.match(booth, /async function renderSessionMix/);
+  assert.match(booth, /new OfflineContext\(2,/);
+  assert.match(booth, /createDynamicsCompressor\(\)/);
+  assert.match(booth, /audioBufferToWave/);
+  assert.match(booth, /This mix works inside Music City and does not require ElevenLabs/);
+});
+
+check('Suno handoff exports the rough mix and returns through master import', () => {
+  assert.match(booth, /async function finishInSuno/);
+  assert.match(booth, /https:\/\/suno\.com\/create/);
+  assert.match(booth, /IMPORT SUNO MASTER/);
+  assert.match(booth, /function importSunoMaster/);
+});
+
+check('recording booth persists tracks and masters before external handoff', () => {
+  assert.match(booth, /indexedDB\.open\("music-city-recording-booth", 1\)/);
+  assert.match(booth, /async function saveBoothSession/);
+  assert.match(booth, /async function restoreBoothSession/);
+  assert.match(booth, /await saveBoothSession\(false\)/);
+});
+
+check('demo reference workflow no longer falsely requires ElevenLabs', () => {
+  assert.match(booth, /provider !== "elevenlabs" && provider !== "demo"/);
+  assert.match(booth, /Demo reference attached/);
+});
+
+console.log('9 recording booth tests passed');
