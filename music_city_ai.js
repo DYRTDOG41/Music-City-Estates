@@ -599,6 +599,7 @@
     getStatus() {
       return {
         backendConfigured: Boolean(backendEndpoint),
+        backendConnected: Boolean(backendEndpoint),
         backendEndpoint: backendEndpoint || null,
         providers: this.getProviders()
       };
