@@ -58,6 +58,16 @@
     downtown: { fans: 300, xp: 400, label: "300 fans · 400 XP" }
   };
 
+  var PERKS = {
+    socialMediaSuite: {
+      id: "socialMediaSuite",
+      label: "The Viral Gallery",
+      description: "A permanent social media exhibit with rotating content screens and career campaign tools.",
+      requires: { xp: 50 },
+      price: 250
+    }
+  };
+
   var MANAGER_PROFILES = {
     hustler: {
       id: "hustler",
@@ -1276,6 +1286,40 @@
     return meets(UNLOCKS[id], state);
   }
 
+  function hasPerk(id, state) {
+    var s = state || current || load();
+    return Boolean(s.flags && s.flags.perks && s.flags.perks[id]);
+  }
+
+  function perkStatus(id, state) {
+    var s = state || current || load();
+    var perk = PERKS[id];
+    if (!perk) throw new Error("Unknown Music City perk.");
+    return {
+      owned: hasPerk(id, s),
+      eligible: meets(perk.requires, s),
+      affordable: s.cash >= perk.price,
+      xpNeeded: Math.max(0, toCount(perk.requires && perk.requires.xp, 0) - s.xp),
+      cashNeeded: Math.max(0, perk.price - s.cash),
+      price: perk.price
+    };
+  }
+
+  function purchasePerk(id) {
+    if (!current) load();
+    var perk = PERKS[id];
+    if (!perk) throw new Error("Unknown Music City perk.");
+    if (hasPerk(id, current)) return snapshot();
+    if (!meets(perk.requires, current)) throw new Error(perk.label + " requires " + perk.requires.xp + " XP.");
+    if (current.cash < perk.price) throw new Error("You need $" + perk.price + " to purchase " + perk.label + ".");
+    var next = snapshot();
+    next.cash -= perk.price;
+    next.flags = clone(next.flags || {});
+    next.flags.perks = clone(next.flags.perks || {});
+    next.flags.perks[id] = { purchasedAt: new Date().toISOString(), price: perk.price };
+    return save(next);
+  }
+
   function needed(req, state) {
     var s = state || current || load();
     req = req || {};
@@ -1302,6 +1346,7 @@
   var api = {
     DEFAULTS: clone(DEFAULTS),
     UNLOCKS: UNLOCKS,
+    PERKS: PERKS,
     CAREER_TITLES: CAREER_TITLES,
     ECONOMY: ECONOMY,
     BUSINESS_EVENTS: BUSINESS_EVENTS,
@@ -1342,6 +1387,9 @@
     businessEventProgress: businessEventProgress,
     meets: meets,
     isUnlocked: isUnlocked,
+    hasPerk: hasPerk,
+    perkStatus: perkStatus,
+    purchasePerk: purchasePerk,
     needed: needed,
     getCareerTitle: getCareerTitle,
     numericLevel: numericLevel,

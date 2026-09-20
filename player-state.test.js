@@ -145,6 +145,20 @@ test("battle unlock lives in one config object", function () {
   assert.strictEqual(MCE.needed(MCE.UNLOCKS.battle, locked).fans, 25);
 });
 
+test("The Viral Gallery requires XP and a permanent cash purchase", function () {
+  start();
+  assert.strictEqual(MCE.PERKS.socialMediaSuite.price, 250);
+  assert.strictEqual(MCE.perkStatus("socialMediaSuite").xpNeeded, 50);
+  assert.throws(function () { MCE.purchasePerk("socialMediaSuite"); }, /requires 50 XP/);
+  MCE.save({ xp: 50, cash: 200 });
+  assert.throws(function () { MCE.purchasePerk("socialMediaSuite"); }, /need \$250/);
+  MCE.save({ cash: 300 });
+  var purchased = MCE.purchasePerk("socialMediaSuite");
+  assert.strictEqual(purchased.cash, 50);
+  assert.strictEqual(MCE.hasPerk("socialMediaSuite", purchased), true);
+  assert.strictEqual(MCE.purchasePerk("socialMediaSuite").cash, 50);
+});
+
 test("named releases increase song count", function () {
   start();
   var state = MCE.addRelease({ title: "Night Drive", source: "bedroom" });
