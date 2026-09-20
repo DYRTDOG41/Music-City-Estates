@@ -11,17 +11,60 @@
     } catch (error) { return fallback; }
   }
 
+  function cleanColor(value, fallback) {
+    return /^#[0-9a-f]{6}$/i.test(value || '') ? value : fallback;
+  }
+
+  function careerProfile() {
+    try {
+      if (window.MCE) return window.MCE.load();
+    } catch (error) {}
+    return null;
+  }
+
+  function avatarProfile() {
+    return safeParse(localStorage.getItem('mceAvatar'), null);
+  }
+
+  function isArtistRole(role) {
+    return ['Artist', 'Rapper', 'Singer', 'Producer', 'DJ', 'Songwriter'].includes(role);
+  }
+
   function loadProfile() {
-    return safeParse(localStorage.getItem(PROFILE_KEY), { name: '', role: 'Artist', color: '#59dfff' });
+    const saved = safeParse(localStorage.getItem(PROFILE_KEY), {});
+    const career = careerProfile();
+    const avatar = avatarProfile();
+    const careerName = career && career.name && career.name !== 'Rookie' ? career.name : '';
+    const avatarName = avatar && avatar.name && avatar.name !== 'New Artist' ? avatar.name : '';
+    const savedRole = String(saved.role || '').slice(0, 20);
+    const role = savedRole || String(avatar && avatar.type || 'Artist').slice(0, 20);
+    const sharedArtistName = isArtistRole(role) ? careerName || avatarName : '';
+    return {
+      name: String(sharedArtistName || saved.name || avatarName || careerName || '').trim().slice(0, 24),
+      role,
+      color: cleanColor(saved.color, cleanColor(avatar && avatar.shirtColor, '#59dfff'))
+    };
   }
 
   function saveProfile(profile) {
     const clean = {
       name: String(profile.name || '').trim().slice(0, 24),
       role: String(profile.role || 'Artist').slice(0, 20),
-      color: /^#[0-9a-f]{6}$/i.test(profile.color || '') ? profile.color : '#59dfff'
+      color: cleanColor(profile.color, '#59dfff')
     };
     localStorage.setItem(PROFILE_KEY, JSON.stringify(clean));
+    if (clean.name && isArtistRole(clean.role)) {
+      try {
+        if (window.MCE) window.MCE.save({ name: clean.name });
+      } catch (error) {}
+      const avatar = avatarProfile();
+      if (avatar) {
+        avatar.name = clean.name;
+        avatar.type = clean.role === 'Artist' ? avatar.type || 'Rapper' : clean.role;
+        avatar.shirtColor = clean.color;
+        localStorage.setItem('mceAvatar', JSON.stringify(avatar));
+      }
+    }
     return clean;
   }
 
