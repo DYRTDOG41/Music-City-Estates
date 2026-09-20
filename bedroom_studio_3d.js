@@ -51,12 +51,87 @@ room.box('music stand', [1.4, .85, .08], [7.35, 2.15, -4.7], 0x121820, { metalne
 for (const x of [-7.2, -4.7, -2.2]) room.box('acoustic panel', [1.8, 2.2, .16], [x, 4.25, -8.68], 0xffffff, { material: new THREE.MeshStandardMaterial({ map: acoustic, color: x === -4.7 ? 0x6d54a7 : 0x52677e, roughness: .93 }) }); room.label('EVERY SUPERSTAR STARTS SOMEWHERE', [-4.7, 5.95, -8.48], '#bfefff', [7.6, .75]);
 
 const boothUI = document.getElementById('boothUI'), status = document.getElementById('status'), releaseButton = document.getElementById('releaseSong'), draftStatus = document.getElementById('draftStatus'); let savedDraft = null;
+const previewButton = document.getElementById('previewBeat'), micButton = document.getElementById('testMic'), micLevel = document.getElementById('micLevel'), micDb = document.getElementById('micDb'), micWave = [...document.querySelectorAll('#micWave i')];
+let boothAudioContext = null, beatMaster = null, beatTimer = null, beatStopTimer = null, beatStep = 0;
+let micStream = null, micContext = null, micAnalyser = null, micFrame = null;
 function updateStats() { state = window.MCE ? window.MCE.load() : state; for (const key of ['fans', 'cash', 'xp', 'level']) document.getElementById(key).textContent = Number(state[key] || (key === 'level' ? 1 : 0)).toLocaleString(); }
 function loadDraft() { try { savedDraft = JSON.parse(localStorage.getItem('musicCitySongDraft') || 'null'); } catch (error) { savedDraft = null; } const ready = savedDraft && savedDraft.studio === 'bedroom' && savedDraft.title; draftStatus.textContent = ready ? 'READY TO RELEASE: “' + savedDraft.title + '” has returned from your recording session.' : 'No song draft yet. Open the recorder to choose a beat, record vocals, build a hook, and polish your song.'; releaseButton.disabled = !ready; }
 function enterBooth() { loadDraft(); boothUI.classList.add('show'); document.getElementById('openRecorder').focus(); }
-function leaveBooth() { boothUI.classList.remove('show'); document.querySelector('canvas')?.focus(); }
+function stopBeatPreview() {
+  if (beatTimer) clearInterval(beatTimer);
+  if (beatStopTimer) clearTimeout(beatStopTimer);
+  beatTimer = beatStopTimer = null;
+  if (beatMaster) { try { beatMaster.disconnect(); } catch (error) {} }
+  beatMaster = null;
+  beatStep = 0;
+  previewButton.textContent = '▶ PREVIEW';
+}
+function hitKick(time) {
+  const oscillator = boothAudioContext.createOscillator(), gain = boothAudioContext.createGain();
+  oscillator.frequency.setValueAtTime(145, time); oscillator.frequency.exponentialRampToValueAtTime(46, time + .13);
+  gain.gain.setValueAtTime(.85, time); gain.gain.exponentialRampToValueAtTime(.001, time + .18);
+  oscillator.connect(gain).connect(beatMaster); oscillator.start(time); oscillator.stop(time + .2);
+}
+function hitHat(time) {
+  const length = Math.floor(boothAudioContext.sampleRate * .035), buffer = boothAudioContext.createBuffer(1, length, boothAudioContext.sampleRate), data = buffer.getChannelData(0);
+  for (let index = 0; index < length; index++) data[index] = Math.random() * 2 - 1;
+  const source = boothAudioContext.createBufferSource(), filter = boothAudioContext.createBiquadFilter(), gain = boothAudioContext.createGain();
+  source.buffer = buffer; filter.type = 'highpass'; filter.frequency.value = 6500; gain.gain.setValueAtTime(.11, time); gain.gain.exponentialRampToValueAtTime(.001, time + .04);
+  source.connect(filter).connect(gain).connect(beatMaster); source.start(time);
+}
+function hitSnare(time) {
+  const length = Math.floor(boothAudioContext.sampleRate * .12), buffer = boothAudioContext.createBuffer(1, length, boothAudioContext.sampleRate), data = buffer.getChannelData(0);
+  for (let index = 0; index < length; index++) data[index] = Math.random() * 2 - 1;
+  const source = boothAudioContext.createBufferSource(), filter = boothAudioContext.createBiquadFilter(), gain = boothAudioContext.createGain();
+  source.buffer = buffer; filter.type = 'highpass'; filter.frequency.value = 1100; gain.gain.setValueAtTime(.28, time); gain.gain.exponentialRampToValueAtTime(.001, time + .13);
+  source.connect(filter).connect(gain).connect(beatMaster); source.start(time);
+}
+async function toggleBeatPreview() {
+  if (beatTimer) { stopBeatPreview(); status.textContent = 'Beat preview stopped.'; return; }
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContext) { status.textContent = 'Beat preview is not supported in this browser.'; return; }
+  boothAudioContext = boothAudioContext || new AudioContext();
+  await boothAudioContext.resume();
+  beatMaster = boothAudioContext.createGain(); beatMaster.gain.value = .42; beatMaster.connect(boothAudioContext.destination);
+  const tick = () => { const time = boothAudioContext.currentTime + .02; if (beatStep % 8 === 0 || beatStep % 8 === 6) hitKick(time); if (beatStep % 8 === 4) hitSnare(time); hitHat(time); beatStep++; };
+  tick(); beatTimer = setInterval(tick, 250); beatStopTimer = setTimeout(() => { stopBeatPreview(); status.textContent = 'Beat preview complete. Choose a style or start your recording session.'; }, 8000);
+  previewButton.textContent = '■ STOP PREVIEW';
+  status.textContent = document.getElementById('beatStyle').value + ' preview playing through the booth monitors.';
+}
+function stopMicTest(message) {
+  if (micFrame) cancelAnimationFrame(micFrame);
+  micFrame = null;
+  if (micStream) micStream.getTracks().forEach(track => track.stop());
+  micStream = null; micAnalyser = null;
+  if (micContext) micContext.close().catch(() => {});
+  micContext = null;
+  micLevel.style.width = '0%'; micDb.textContent = 'OFF'; micButton.textContent = 'TEST MIC'; micButton.classList.remove('active'); document.getElementById('micWave').classList.remove('mic-live');
+  micWave.forEach(bar => { bar.style.transform = ''; bar.style.opacity = ''; });
+  if (message) status.textContent = message;
+}
+function renderMicLevel() {
+  if (!micAnalyser) return;
+  const samples = new Uint8Array(micAnalyser.fftSize); micAnalyser.getByteTimeDomainData(samples);
+  let sum = 0; for (const sample of samples) { const centered = (sample - 128) / 128; sum += centered * centered; }
+  const rms = Math.sqrt(sum / samples.length), decibels = Math.max(-60, 20 * Math.log10(Math.max(rms, .001))), percent = Math.max(2, Math.min(100, ((decibels + 60) / 60) * 100));
+  micLevel.style.width = percent.toFixed(0) + '%'; micDb.textContent = decibels.toFixed(0) + ' dB';
+  micWave.forEach((bar, index) => { const energy = Math.max(.18, percent / 100 * (index % 2 ? 1 : .72)); bar.style.transform = 'scaleY(' + energy.toFixed(2) + ')'; bar.style.opacity = String(Math.max(.35, energy)); });
+  micFrame = requestAnimationFrame(renderMicLevel);
+}
+async function toggleMicTest() {
+  if (micStream) { stopMicTest('Mic test stopped. No audio was saved or uploaded.'); return; }
+  if (!navigator.mediaDevices?.getUserMedia) { status.textContent = 'Microphone testing is not supported in this browser.'; return; }
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true }, video: false });
+    const AudioContext = window.AudioContext || window.webkitAudioContext; micContext = new AudioContext(); micAnalyser = micContext.createAnalyser(); micAnalyser.fftSize = 512;
+    micContext.createMediaStreamSource(micStream).connect(micAnalyser);
+    micButton.textContent = 'STOP MIC TEST'; micButton.classList.add('active'); document.getElementById('micWave').classList.add('mic-live'); status.textContent = 'Mic test is live locally. Speak to check your level; nothing is being recorded or uploaded.'; renderMicLevel();
+  } catch (error) { stopMicTest(); status.textContent = error.name === 'NotAllowedError' ? 'Microphone permission was not granted. You can still enter the recording workflow.' : 'Microphone test could not start: ' + error.message; }
+}
+function leaveBooth() { stopBeatPreview(); stopMicTest(); boothUI.classList.remove('show'); document.querySelector('canvas')?.focus(); }
 room.interact('ENTER VOCAL BOOTH', [5.9, 1.7, -.45], enterBooth, 3, 0x66e6ff); room.interact('OPEN PRODUCER DESK', [-4.7, 1.7, -3.35], () => { location.href = 'record_music.html?studio=bedroom'; }, 2.7, 0x8b66ff);
-document.getElementById('leaveBooth').onclick = leaveBooth; document.getElementById('openRecorder').onclick = () => { location.href = 'record_music.html?studio=bedroom'; };
-document.getElementById('previewBeat').onclick = (event) => { const playing = event.currentTarget.textContent.includes('STOP'); event.currentTarget.textContent = playing ? '▶ PREVIEW' : '■ STOP PREVIEW'; status.textContent = playing ? 'Beat preview stopped.' : document.getElementById('beatStyle').value + ' preview playing. Full audio selection opens inside the recording workflow.'; };
+document.getElementById('boothShortcut').onclick = enterBooth;
+document.getElementById('leaveBooth').onclick = leaveBooth; document.getElementById('openRecorder').onclick = () => { stopBeatPreview(); stopMicTest(); location.href = 'record_music.html?studio=bedroom'; };
+previewButton.onclick = toggleBeatPreview; micButton.onclick = toggleMicTest;
 releaseButton.onclick = () => { loadDraft(); if (!savedDraft || savedDraft.studio !== 'bedroom' || !savedDraft.title) return; window.MCE.addRelease({ title: savedDraft.title, source: 'bedroom' }); state = window.MCE.add({ fans: 10, xp: 15 }); status.textContent = '🔥 “' + savedDraft.title + '” released! +10 Fans • +15 XP'; localStorage.removeItem('musicCitySongDraft'); savedDraft = null; releaseButton.disabled = true; loadDraft(); updateStats(); };
-boothUI.addEventListener('click', (event) => { if (event.target === boothUI) leaveBooth(); }); addEventListener('keydown', (event) => { if (event.key === 'Escape' && boothUI.classList.contains('show')) leaveBooth(); }); updateStats(); loadDraft();
+boothUI.addEventListener('click', (event) => { if (event.target === boothUI) leaveBooth(); }); addEventListener('keydown', (event) => { if (event.key === 'Escape' && boothUI.classList.contains('show')) leaveBooth(); }); addEventListener('beforeunload', () => { stopBeatPreview(); stopMicTest(); }); updateStats(); loadDraft();
