@@ -225,6 +225,15 @@ color: #ff8c8c;
 .beat-library { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
 .beat-choice { padding:15px !important; text-align:left; cursor:pointer; }
 .beat-choice.selected { border-color:#7ef0ff !important; box-shadow:0 0 22px rgba(24,216,255,.65); }
+.beat-section-title { display:flex; justify-content:space-between; align-items:end; gap:10px; margin:15px 0 9px; }
+.beat-section-title strong { color:#fff; font-size:12px; letter-spacing:.12em; }
+.beat-section-title small { color:#859bb1; font-size:10px; }
+.beat-source-badge { display:inline-block; margin-left:6px; padding:2px 6px; border:1px solid #7ef0a766; border-radius:12px; color:#7ef0a7; font-size:8px; letter-spacing:.08em; vertical-align:middle; }
+.beat-credit { display:block; margin-top:5px; color:#89a6bf; font-size:9px; }
+.dev-beat-tools { margin:12px 0; padding:12px; border:1px dashed #6c7c8c; border-radius:10px; background:#060d16; }
+.dev-beat-tools strong,.dev-beat-tools small { display:block; }
+.dev-beat-tools small { margin:4px 0 9px; color:#8ea4b9; line-height:1.4; }
+.dev-beat-tools input { width:100%; }
 .beat-transport { display:grid; grid-template-columns:1fr auto; align-items:center; gap:12px; margin-top:12px; padding:14px; border:1px solid #31506a; border-radius:12px; background:#050b13; }
 .beat-transport strong, .beat-transport small { display:block; }
 .beat-transport small { margin-top:4px; color:#9db1c7; line-height:1.4; }
@@ -519,7 +528,19 @@ background: rgba(3, 8, 18, 0.88);
 <h3>🎧 Beat Library</h3>
 <p>Choose a beat first. Then use <strong>Play Instrumental</strong> to write or practice without recording.</p>
 
-<div class="beat-library">
+<section id="originalBeatSection" hidden>
+<div class="beat-section-title"><strong>⭐ MUSIC CITY ORIGINALS</strong><small>Real instrumentals selected for artists</small></div>
+<div class="beat-library" id="realBeatLibrary"></div>
+</section>
+
+<div class="dev-beat-tools" id="devBeatTools" hidden>
+<strong>OWNER TEST — LOAD AN INSTRUMENTAL FROM THIS DEVICE</strong>
+<small>This is private test mode only. The file is not uploaded or saved to the public beat library.</small>
+<input type="file" id="ownerBeatUpload" accept="audio/*" multiple>
+</div>
+
+<div class="beat-section-title"><strong>PRACTICE BEATS</strong><small>Built-in demo instrumentals</small></div>
+<div class="beat-library" id="practiceBeatLibrary">
 <button type="button" class="beat-choice" data-beat="Midnight Drive" onclick="selectBeat('Midnight Drive', this)">
 🔥 <strong>Midnight Drive</strong><br>
 <small>Hip-Hop • Trap • 88 BPM</small>
@@ -831,6 +852,7 @@ VIEW ARTIST CATALOG
 <script src="music_city_catalog.js"></script>
 <script src="music_city_song_craft.js"></script>
 <script src="music_city_ai.js"></script>
+<script src="music_city_beats.js"></script>
 
 <script>
 
@@ -872,17 +894,115 @@ document.getElementById("backButton").href =
 let selectedBeat = null;
 
 const beatLibrary = {
-"Midnight Drive": { bpm:88, bass:55, kicks:[0,6,8,11], snares:[4,12], hats:[0,2,4,6,8,10,12,14] },
-"Velvet Nights": { bpm:76, bass:65.4, kicks:[0,7,10], snares:[4,12], hats:[0,3,6,8,11,14] },
-"808 Pressure": { bpm:142, bass:43.7, kicks:[0,3,7,8,11,14], snares:[4,12], hats:[0,2,4,6,8,9,10,12,14,15] },
-"Soul Avenue": { bpm:82, bass:73.4, kicks:[0,5,8,11], snares:[4,12], hats:[0,2,5,7,8,10,13,15] }
+"Midnight Drive": { type:"synth", bpm:88, bass:55, genre:"Hip-Hop", mood:"Trap", kicks:[0,6,8,11], snares:[4,12], hats:[0,2,4,6,8,10,12,14] },
+"Velvet Nights": { type:"synth", bpm:76, bass:65.4, genre:"R&B", mood:"Smooth", kicks:[0,7,10], snares:[4,12], hats:[0,3,6,8,11,14] },
+"808 Pressure": { type:"synth", bpm:142, bass:43.7, genre:"Trap", mood:"Hard", kicks:[0,3,7,8,11,14], snares:[4,12], hats:[0,2,4,6,8,9,10,12,14,15] },
+"Soul Avenue": { type:"synth", bpm:82, bass:73.4, genre:"Hip-Hop", mood:"Soul", kicks:[0,5,8,11], snares:[4,12], hats:[0,2,5,7,8,10,13,15] }
 };
+
+(window.MusicCityBeatCatalog || []).forEach(beat => {
+const title = String(beat && beat.title || "").trim();
+const src = String(beat && beat.src || "").trim();
+if (!title || !src || beatLibrary[title]) return;
+beatLibrary[title] = {
+type:"audio",
+src,
+genre:String(beat.genre || "Original"),
+mood:String(beat.mood || ""),
+bpm:Number(beat.bpm || 0),
+producer:String(beat.producer || "Music City Estates"),
+source:String(beat.source || "Music City Original")
+};
+});
 
 let beatAudioContext = null;
 let beatMaster = null;
+let beatAudioElement = null;
 let beatLoopTimer = null;
 let beatNoiseBuffer = null;
 let beatPlaybackMode = "stopped";
+const localBeatUrls = [];
+
+function beatMetaText(config) {
+const parts = [config.genre, config.mood, config.bpm ? config.bpm + " BPM" : ""].filter(Boolean);
+return parts.join(" • ") || "Music City Original";
+}
+
+function renderBeatCatalog() {
+const section = document.getElementById("originalBeatSection");
+const container = document.getElementById("realBeatLibrary");
+if (!section || !container) return;
+container.innerHTML = "";
+const originals = Object.keys(beatLibrary).filter(title => beatLibrary[title].type === "audio");
+section.hidden = originals.length === 0;
+originals.forEach(title => {
+const config = beatLibrary[title];
+const button = document.createElement("button");
+button.type = "button";
+button.className = "beat-choice";
+button.dataset.beat = title;
+const icon = document.createTextNode("🎵 ");
+const name = document.createElement("strong");
+name.textContent = title;
+const badge = document.createElement("span");
+badge.className = "beat-source-badge";
+badge.textContent = "ORIGINAL";
+const br = document.createElement("br");
+const meta = document.createElement("small");
+meta.textContent = beatMetaText(config);
+const credit = document.createElement("span");
+credit.className = "beat-credit";
+credit.textContent = "Produced by " + (config.producer || "Music City Estates");
+button.append(icon, name, badge, br, meta, credit);
+button.addEventListener("click", () => selectBeat(title, button));
+container.appendChild(button);
+});
+}
+
+function setupDevBeatLoader() {
+const tools = document.getElementById("devBeatTools");
+const input = document.getElementById("ownerBeatUpload");
+if (!tools || !input || params.get("beatadmin") !== "1") return;
+tools.hidden = false;
+input.addEventListener("change", event => {
+const files = Array.from(event.target.files || []);
+files.forEach(file => {
+if (!file.type.startsWith("audio/")) return;
+let title = file.name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim() || "Private Test Beat";
+let uniqueTitle = title;
+let suffix = 2;
+while (beatLibrary[uniqueTitle]) uniqueTitle = title + " " + suffix++;
+const url = URL.createObjectURL(file);
+localBeatUrls.push(url);
+beatLibrary[uniqueTitle] = {
+type:"audio",
+src:url,
+genre:"Private Test",
+mood:"Local file",
+bpm:0,
+producer:"Owner test",
+source:"Local device",
+localOnly:true
+};
+});
+renderBeatCatalog();
+const first = files[0];
+if (first) {
+const title = Object.keys(beatLibrary).find(key => beatLibrary[key].localOnly && beatLibrary[key].src === localBeatUrls[localBeatUrls.length - files.length]);
+const button = title ? document.querySelector('.beat-choice[data-beat="' + CSS.escape(title) + '"]') : null;
+if (title && button) selectBeat(title, button);
+}
+input.value = "";
+});
+}
+
+function setBeatPlaybackLevel(level) {
+const safe = Math.max(0, Math.min(1, Number(level) || 0));
+if (beatAudioElement) beatAudioElement.volume = safe;
+if (beatMaster && beatAudioContext) {
+try { beatMaster.gain.setValueAtTime(safe, beatAudioContext.currentTime); } catch (error) { beatMaster.gain.value = safe; }
+}
+}
 
 function setGuideStep(step) {
 ["guideBeat", "guideWrite", "guideRecord"].forEach(id =>
@@ -961,6 +1081,10 @@ return eighth * 16;
 function stopBeatPlayback(options) {
 if (beatLoopTimer) clearInterval(beatLoopTimer);
 beatLoopTimer = null;
+if (beatAudioElement) {
+try { beatAudioElement.pause(); beatAudioElement.currentTime = 0; } catch (error) {}
+beatAudioElement = null;
+}
 if (beatMaster) {
 try { beatMaster.gain.cancelScheduledValues(beatAudioContext.currentTime); beatMaster.gain.setValueAtTime(0, beatAudioContext.currentTime); beatMaster.disconnect(); }
 catch (error) {}
@@ -974,6 +1098,23 @@ if (!options || !options.keepGuide) setGuideStep(selectedBeat ? "guideWrite" : "
 async function startBeatPlayback(options) {
 if (!selectedBeat) return false;
 stopBeatPlayback({ keepGuide:true });
+const config = beatLibrary[selectedBeat];
+if (!config) return false;
+const level = options && options.mode === "recording" ? .34 : .42;
+
+if (config.type === "audio" && config.src) {
+beatAudioElement = new Audio(config.src);
+beatAudioElement.preload = "auto";
+beatAudioElement.loop = true;
+beatAudioElement.volume = level;
+try {
+await beatAudioElement.play();
+} catch (error) {
+beatAudioElement = null;
+document.getElementById("recordStatus").textContent = "Music City could not play that instrumental. Check the audio file and try again.";
+return false;
+}
+} else {
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 if (!AudioContext) {
 document.getElementById("recordStatus").textContent = "Instrumental playback is not supported in this browser.";
@@ -983,11 +1124,12 @@ beatAudioContext = beatAudioContext || new AudioContext();
 await beatAudioContext.resume();
 beatNoiseBuffer = beatNoiseBuffer || makeBeatNoiseBuffer(beatAudioContext);
 beatMaster = beatAudioContext.createGain();
-beatMaster.gain.value = options && options.mode === "recording" ? .34 : .42;
+beatMaster.gain.value = level;
 beatMaster.connect(beatAudioContext.destination);
-const config = beatLibrary[selectedBeat];
 const loopSeconds = scheduleBeatLoop(beatAudioContext.currentTime + .06, config);
 beatLoopTimer = setInterval(() => scheduleBeatLoop(beatAudioContext.currentTime + .06, config), loopSeconds * 1000);
+}
+
 beatPlaybackMode = options && options.mode === "recording" ? "recording" : "writing";
 setGuideStep(beatPlaybackMode === "recording" ? "guideRecord" : "guideWrite");
 updateBeatTransport();
@@ -1149,7 +1291,7 @@ return;
 await startBeatPlayback({ mode:"writing" });
 const beatMuted = document.querySelector('.mute-track[data-track="beat"]').classList.contains("on");
 const beatLevel = Number(document.querySelector('.track-level[data-track="beat"]').value) / 100;
-if (beatMaster) beatMaster.gain.value = beatMuted ? 0 : beatLevel * .58;
+setBeatPlaybackLevel(beatMuted ? 0 : beatLevel * .58);
 sessionAudios = recorded.map(trackName => {
 const audio = new Audio(sessionTracks[trackName].url);
 const muted = document.querySelector('.mute-track[data-track="' + trackName + '"]').classList.contains("on");
@@ -1228,6 +1370,7 @@ return buffer;
 
 function renderOfflineBeat(context, destination, durationSeconds) {
 const config = beatLibrary[selectedBeat];
+if (!config || config.type === "audio") return;
 const noiseBuffer = makeOfflineNoiseBuffer(context);
 const eighth = 60 / config.bpm / 2;
 const totalSteps = Math.ceil(durationSeconds / eighth);
@@ -1314,11 +1457,18 @@ const OfflineContext = window.OfflineAudioContext || window.webkitOfflineAudioCo
 if (!DecodeContext || !OfflineContext) throw new Error("This browser does not support audio mixdown.");
 const decoder = new DecodeContext();
 let decodedTracks;
+let decodedBeat = null;
 try {
 decodedTracks = await Promise.all(trackNames.map(async trackName => ({
 trackName,
 buffer: await decodeTrackBlob(decoder, sessionTracks[trackName].blob)
 })));
+const beatConfig = beatLibrary[selectedBeat];
+if (beatConfig && beatConfig.type === "audio" && beatConfig.src) {
+const response = await fetch(beatConfig.src);
+if (!response.ok && response.status) throw new Error("Music City could not load the selected instrumental for mixdown.");
+decodedBeat = await decoder.decodeAudioData((await response.arrayBuffer()).slice(0));
+}
 } finally {
 decoder.close().catch(() => {});
 }
@@ -1338,7 +1488,16 @@ const beatGain = context.createGain();
 const beatMuted = document.querySelector('.mute-track[data-track="beat"]').classList.contains("on");
 beatGain.gain.value = beatMuted ? 0 : Number(document.querySelector('.track-level[data-track="beat"]').value) / 100 * .68;
 beatGain.connect(compressor);
+if (decodedBeat) {
+const source = context.createBufferSource();
+source.buffer = decodedBeat;
+source.loop = true;
+source.connect(beatGain);
+source.start(0, 0);
+source.stop(durationSeconds);
+} else {
 renderOfflineBeat(context, beatGain, durationSeconds);
+}
 
 const panByTrack = { lead:0, double:-.34, adlibs:.42, harmony:.18 };
 decodedTracks.forEach(({ trackName, buffer }) => {
@@ -1600,7 +1759,7 @@ document.querySelectorAll(".track-level").forEach(fader => fader.addEventListene
 const lane = fader.closest(".track-lane");
 const pan = { beat:"CENTER", lead:"CENTER", double:"LEFT", adlibs:"RIGHT", harmony:"WIDE" }[fader.dataset.track];
 lane.querySelector(".mix-readout").textContent = fader.value + "% • " + pan;
-if (sessionPlaying && fader.dataset.track === "beat" && beatMaster) beatMaster.gain.value = Number(fader.value) / 100 * .58;
+if (sessionPlaying && fader.dataset.track === "beat") setBeatPlaybackLevel(Number(fader.value) / 100 * .58);
 invalidateMixedMaster();
 queueBoothSessionSave();
 }));
@@ -2274,6 +2433,8 @@ document.getElementById("aiEngineStatus").className =
 
 updateEngineStatus();
 bindSessionConsole();
+renderBeatCatalog();
+setupDevBeatLoader();
 updateBeatTransport();
 restoreBoothSession();
 
@@ -2292,7 +2453,9 @@ Object.keys(sessionTracks).forEach(trackName => {
 if (sessionTracks[trackName].url) URL.revokeObjectURL(sessionTracks[trackName].url);
 });
 if (mediaStream) mediaStream.getTracks().forEach(track => track.stop());
+if (beatAudioElement) { try { beatAudioElement.pause(); } catch (error) {} }
 if (beatAudioContext) beatAudioContext.close().catch(() => {});
+localBeatUrls.forEach(url => URL.revokeObjectURL(url));
 if (currentMasterUrl) URL.revokeObjectURL(currentMasterUrl);
 });
 
