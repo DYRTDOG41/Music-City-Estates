@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "test": "node player-state.test.js && node music_city_social.test.js"
+    "test": "node player-state.test.js && node music_city_social.test.js && node music_city_missions.test.js"
   },
   "engines": {
     "node": "22.x"
