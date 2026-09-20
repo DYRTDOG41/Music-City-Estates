@@ -25,7 +25,8 @@
       totalCommission: 0,
       promotionSpend: 0,
       radioSpend: 0,
-      syncSpend: 0
+      syncSpend: 0,
+      cinemaSpend: 0
     },
     business: {
       actionCount: 0,
@@ -156,6 +157,13 @@
       reward: { cash: 130, fans: 7, xp: 12 }
     }
   ];
+
+  var CINEMA = {
+    submissionFee: 20,
+    submissionXp: 5,
+    contentTypes: ["short-film", "music-video", "documentary", "performance", "visualizer"],
+    productionMethods: ["live-action", "ai-generated", "hybrid"]
+  };
 
   var BUSINESS_EVENTS = [
     {
@@ -543,7 +551,8 @@
       totalCommission: toCount(source.totalCommission, 0),
       promotionSpend: toCount(source.promotionSpend, 0),
       radioSpend: toCount(source.radioSpend, 0),
-      syncSpend: toCount(source.syncSpend, 0)
+      syncSpend: toCount(source.syncSpend, 0),
+      cinemaSpend: toCount(source.cinemaSpend, 0)
     };
   }
 
@@ -1187,6 +1196,47 @@
     return save(next);
   }
 
+  function submitCinemaVideo(submission) {
+    if (!current) load();
+    var next = snapshot();
+    var item = submission && typeof submission === "object" ? submission : {};
+    if (!next.manager.hired) throw new Error("A manager must unlock and handle cinema submissions.");
+    if (!item.id || !String(item.title || "").trim()) throw new Error("Add a title before submitting the video.");
+    if (CINEMA.contentTypes.indexOf(String(item.contentType)) < 0) throw new Error("Choose a valid cinema format.");
+    if (CINEMA.productionMethods.indexOf(String(item.productionMethod)) < 0) throw new Error("Disclose how the video was produced.");
+    if (!item.rightsConfirmed) throw new Error("Confirm that you control the video, music, likenesses, and required permissions.");
+    if (next.cash < CINEMA.submissionFee) {
+      throw new Error("Cinema submission costs $" + CINEMA.submissionFee + ". You currently have $" + next.cash + ".");
+    }
+
+    var submissions = Array.isArray(next.flags.cinemaSubmissions)
+      ? next.flags.cinemaSubmissions.slice()
+      : [];
+    if (submissions.some(function (entry) { return String(entry.id) === String(item.id); })) {
+      return snapshot();
+    }
+
+    var managerProfile = getManagerProfile(next);
+    next.cash -= CINEMA.submissionFee;
+    next.xp += CINEMA.submissionXp;
+    next.manager.cinemaSpend += CINEMA.submissionFee;
+    submissions.push({
+      id: String(item.id),
+      title: String(item.title).trim(),
+      creator: String(item.creator || next.name || "Music City Creator").trim(),
+      contentType: String(item.contentType),
+      productionMethod: String(item.productionMethod),
+      aiTools: String(item.aiTools || "").trim(),
+      manager: managerProfile.name,
+      submittedAt: new Date().toISOString(),
+      feePaid: CINEMA.submissionFee,
+      rightsConfirmed: true
+    });
+    next.flags.cinemaSubmissions = submissions.slice(-30);
+    advanceBusinessAction(next, "cinema-video");
+    return save(next);
+  }
+
   function hireManager(profileId) {
     if (!current) load();
     var next = snapshot();
@@ -1469,6 +1519,7 @@
     BUSINESS_EVENTS: BUSINESS_EVENTS,
     MANAGER_PROFILES: MANAGER_PROFILES,
     SYNC_BRIEFS: SYNC_BRIEFS,
+    CINEMA: CINEMA,
     KEYS: {
       career: CAREER_KEY,
       fans: WORLD_KEYS.fans,
@@ -1493,6 +1544,7 @@
     promoteRelease: promoteRelease,
     submitReleaseToRadio: submitReleaseToRadio,
     submitReleaseToSync: submitReleaseToSync,
+    submitCinemaVideo: submitCinemaVideo,
     hireManager: hireManager,
     hasManager: hasManager,
     getManagerProfile: getManagerProfile,

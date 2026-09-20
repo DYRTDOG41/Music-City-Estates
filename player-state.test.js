@@ -685,6 +685,35 @@ test("Sync Cinema is manager-gated and records a successful placement", function
   }, /already submitted/i);
 });
 
+test("cinema video submissions require a manager, rights, and production disclosure", function () {
+  start();
+  MCE.save({ cash: 500, xp: 20 });
+  var video = {
+    id: "video-1",
+    title: "City Lights",
+    creator: "Nova Films",
+    contentType: "music-video",
+    productionMethod: "ai-generated",
+    aiTools: "Artist-declared AI workflow",
+    rightsConfirmed: true
+  };
+  assert.throws(function () { MCE.submitCinemaVideo(video); }, /manager must unlock/i);
+  MCE.hireManager("hustler");
+  assert.throws(function () {
+    MCE.submitCinemaVideo(Object.assign({}, video, { rightsConfirmed: false }));
+  }, /Confirm that you control/i);
+  var before = MCE.get();
+  var submitted = MCE.submitCinemaVideo(video);
+  var entry = submitted.flags.cinemaSubmissions[0];
+  assert.strictEqual(entry.contentType, "music-video");
+  assert.strictEqual(entry.productionMethod, "ai-generated");
+  assert.strictEqual(entry.aiTools, "Artist-declared AI workflow");
+  assert.strictEqual(entry.manager, "The Hustler");
+  assert.strictEqual(submitted.cash, before.cash - MCE.CINEMA.submissionFee);
+  assert.strictEqual(submitted.xp, before.xp + MCE.CINEMA.submissionXp);
+  assert.strictEqual(submitted.manager.cinemaSpend, MCE.CINEMA.submissionFee);
+});
+
 test("every Business Deck card has a no-cash escape choice", function () {
   MCE.BUSINESS_EVENTS.forEach(function (event) {
     var freeChoice = event.choices.some(function (choice) {
