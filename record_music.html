@@ -1,2752 +1,651 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Music City Estates Recording Booth</title>
-
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Music City Create</title>
 <style>
-
-* {
-box-sizing: border-box;
+*{box-sizing:border-box}
+:root{
+  --bg:#050912;--panel:#0b1220;--panel2:#101a2d;--line:#243955;
+  --cyan:#23d5ff;--green:#74f0ac;--gold:#ffd56a;--muted:#91a6bd;
+  --text:#f7fbff;--danger:#ff6b7a;--violet:#9d7bff
 }
-
-body {
-margin: 0;
-background:
-radial-gradient(circle at top, #151c35, #050609 60%);
-color: white;
-font-family: Arial, sans-serif;
-min-height: 100vh;
+html{background:var(--bg)}
+body{
+  margin:0;min-height:100vh;color:var(--text);font-family:Arial,Helvetica,sans-serif;
+  background:
+    radial-gradient(circle at 12% -8%,rgba(35,213,255,.20),transparent 32%),
+    radial-gradient(circle at 88% 0%,rgba(157,123,255,.18),transparent 28%),
+    linear-gradient(180deg,#07101c,#03060b 72%);
 }
-
-header {
-display: flex;
-justify-content: space-between;
-align-items: center;
-padding: 18px 25px;
-border-bottom: 1px solid #22d3ee;
-background: rgba(0,0,0,.75);
+button,input,textarea,select{font:inherit}
+button{cursor:pointer}
+.topbar{
+  position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;
+  gap:12px;padding:12px 16px;border-bottom:1px solid #1c334c;background:rgba(4,8,15,.92);
+  backdrop-filter:blur(12px)
 }
-
-header h1 {
-margin: 0;
-font-size: 20px;
+.brand{font-weight:900;letter-spacing:.08em;font-size:14px}
+.brand span{color:var(--cyan)}
+.top-actions{display:flex;gap:8px}
+.top-actions a{color:#dcecff;text-decoration:none;border:1px solid #2e4c6d;border-radius:10px;padding:9px 11px;font-size:12px;font-weight:800}
+.shell{width:min(1050px,94%);margin:24px auto 60px}
+.hero{text-align:center;margin:15px auto 22px}
+.hero h1{margin:0;font-size:clamp(30px,6vw,54px);letter-spacing:-.04em}
+.hero p{max-width:720px;margin:10px auto 0;color:#9fb5ca;line-height:1.55}
+.mode-tabs{
+  display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:6px;border:1px solid #213a54;
+  border-radius:15px;background:#07111e;margin:18px 0
 }
-
-.back {
-color: white;
-text-decoration: none;
-border: 1px solid #22d3ee;
-padding: 9px 14px;
-border-radius: 8px;
+.mode-tabs button{min-height:48px;border:0;border-radius:10px;background:transparent;color:#91a6bd;font-weight:900}
+.mode-tabs button.active{background:linear-gradient(135deg,#0e6882,#15577d);color:white;box-shadow:0 0 20px rgba(35,213,255,.22)}
+.card{
+  margin:14px 0;padding:18px;border:1px solid var(--line);border-radius:18px;background:rgba(10,18,31,.96);
+  box-shadow:0 14px 40px rgba(0,0,0,.20)
 }
-
-.container {
-width: min(900px, 94%);
-margin: 25px auto;
+.card h2,.card h3{margin:0 0 8px}
+.helper{margin:4px 0 12px;color:var(--muted);font-size:13px;line-height:1.5}
+textarea,input,select{
+  width:100%;border:1px solid #2c4562;border-radius:12px;background:#050b14;color:white;
+  padding:13px 14px;outline:none
 }
-
-.studio-badge {
-text-align: center;
-margin-bottom: 20px;
+textarea:focus,input:focus,select:focus{border-color:var(--cyan);box-shadow:0 0 0 2px rgba(35,213,255,.10)}
+textarea{min-height:135px;resize:vertical}
+.quick-prompt{min-height:170px;font-size:18px;line-height:1.5}
+.custom-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:14px}
+.field{display:grid;gap:6px;margin-bottom:12px}
+.field label{font-size:12px;font-weight:900;color:#cfe4f5;letter-spacing:.04em}
+.choice-row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.choice{
+  min-height:52px;border:1px solid #2b4563;border-radius:12px;background:#08111e;color:#aac0d4;font-weight:900
 }
-
-.studio-badge h2 {
-font-size: 30px;
-margin-bottom: 5px;
+.choice.active{border-color:var(--green);background:#0c2a20;color:#d9ffe8;box-shadow:0 0 18px rgba(116,240,172,.15)}
+.source-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.source-box{padding:15px;border:1px solid #29425e;border-radius:14px;background:#07101a}
+.source-box.ready{border-color:var(--green);box-shadow:inset 3px 0 var(--green)}
+.source-title{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.source-title strong{font-size:14px}
+.status-pill{padding:3px 7px;border-radius:99px;background:#152335;color:#91a6bd;font-size:9px;font-weight:900}
+.source-box.ready .status-pill{background:#153d2d;color:#baffd2}
+.inline-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}
+.file-label,.secondary-btn,.record-btn{
+  min-height:44px;display:grid;place-items:center;border:1px solid #335575;border-radius:10px;
+  background:#0c1928;color:#fff;font-size:12px;font-weight:900;text-align:center;padding:9px
 }
-
-.studio-badge span {
-color: #22d3ee;
+.file-label input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.record-btn.recording{border-color:var(--danger);background:#3a1218;animation:pulse 1s infinite}
+@keyframes pulse{50%{transform:scale(1.02);box-shadow:0 0 22px rgba(255,107,122,.28)}}
+audio{width:100%;margin-top:10px}
+.locker-list{display:grid;gap:7px;margin-top:10px}
+.locker-item{
+  display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;padding:9px 10px;border:1px solid #263c54;
+  border-radius:9px;background:#07111d
 }
-
-.panel {
-background: rgba(16,18,27,.94);
-border: 1px solid #30374c;
-border-radius: 18px;
-padding: 22px;
-margin-bottom: 18px;
-box-shadow: 0 0 25px rgba(34,211,238,.08);
+.locker-item button{border:1px solid #315575;border-radius:8px;background:#0d2135;color:white;padding:7px 10px;font-size:11px;font-weight:800}
+.locker-item.selected{border-color:var(--cyan);box-shadow:0 0 14px rgba(35,213,255,.14)}
+.advanced-box{display:none;margin-top:12px;padding-top:12px;border-top:1px solid #24384e}
+.advanced-box.open{display:block}
+.advanced-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.create-btn{
+  width:100%;min-height:64px;border:0;border-radius:15px;margin-top:14px;
+  background:linear-gradient(135deg,#22d3ee,#2bbd87);color:#00131a;font-size:18px;font-weight:1000;
+  box-shadow:0 14px 34px rgba(35,213,255,.18)
 }
-
-.panel h3 {
-margin-top: 0;
+.create-btn:disabled{opacity:.45;cursor:not-allowed}
+.create-status{min-height:24px;margin:10px 3px 0;color:#abc0d2;font-size:13px;line-height:1.5}
+.create-status.error{color:#ffadb5}
+.create-status.ok{color:#b8ffd1}
+.results{display:none}
+.results.show{display:block}
+.version-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.version-card{padding:15px;border:1px solid #2a4664;border-radius:15px;background:#07111e}
+.version-card.selected{border-color:var(--green);box-shadow:0 0 22px rgba(116,240,172,.16)}
+.version-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.version-label{font-weight:1000;font-size:15px}
+.version-desc{margin:8px 0;color:#95acc0;font-size:12px;line-height:1.45}
+.version-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.version-actions button{min-height:42px;border:1px solid #345c7e;border-radius:10px;background:#0d1d2d;color:#fff;font-weight:900}
+.version-actions .use{border-color:var(--green);background:#103524}
+.badge{padding:4px 7px;border-radius:99px;background:#14243a;color:#9fc5de;font-size:9px;font-weight:900;letter-spacing:.05em}
+.custom-only{display:none}
+body.custom-mode .custom-only{display:block}
+body.custom-mode .quick-only{display:none}
+.note{
+  margin-top:12px;padding:11px 12px;border-left:3px solid var(--gold);background:#171407;color:#e7dcae;
+  font-size:12px;line-height:1.5
 }
-
-textarea,
-input,
-select {
-width: 100%;
-padding: 14px;
-margin-top: 10px;
-background: #090b12;
-color: white;
-border: 1px solid #394056;
-border-radius: 10px;
-font-size: 16px;
+.footer-link{display:block;text-align:center;color:#82a5c0;margin-top:16px;text-decoration:none;font-size:12px;font-weight:800}
+@media(max-width:760px){
+  .custom-grid,.source-grid,.version-grid,.advanced-grid{grid-template-columns:1fr}
+  .inline-actions,.choice-row{grid-template-columns:1fr 1fr}
+  .shell{width:min(96%,700px);margin-top:12px}
+  .card{padding:15px}
+  .topbar{padding:10px 12px}
+  .top-actions a:last-child{display:none}
 }
-
-textarea {
-min-height: 120px;
-resize: vertical;
-}
-
-.row {
-display: grid;
-grid-template-columns: 1fr 1fr;
-gap: 15px;
-}
-
-.tags {
-display: flex;
-gap: 8px;
-flex-wrap: wrap;
-margin-top: 14px;
-}
-
-.tag {
-padding: 9px 14px;
-border-radius: 20px;
-border: 1px solid #3b4258;
-background: #121622;
-cursor: pointer;
-}
-
-.tag:hover {
-border-color: #22d3ee;
-}
-
-.record-area {
-text-align: center;
-padding: 28px 10px;
-}
-
-.record-circle {
-width: 105px;
-height: 105px;
-border-radius: 50%;
-border: none;
-font-size: 18px;
-font-weight: bold;
-background: #ff3b30;
-color: white;
-cursor: pointer;
-box-shadow: 0 0 30px rgba(255,59,48,.35);
-}
-
-.record-circle.recording {
-animation: pulse 1s infinite;
-}
-
-@keyframes pulse {
-50% {
-transform: scale(1.08);
-}
-}
-
-#recordStatus {
-margin: 15px 0;
-color: #aab3cc;
-}
-
-audio {
-width: 100%;
-margin-top: 18px;
-}
-
-.actions {
-display: grid;
-grid-template-columns: 1fr 1fr;
-gap: 12px;
-}
-
-button.action {
-border: none;
-padding: 15px;
-border-radius: 10px;
-font-size: 16px;
-cursor: pointer;
-}
-
-.primary {
-background: #22d3ee;
-color: #001018;
-font-weight: bold;
-}
-
-.secondary {
-background: #242938;
-color: white;
-}
-
-.ai-result {
-display: none;
-margin-top: 18px;
-padding: 18px;
-border: 1px solid #22d3ee;
-border-radius: 12px;
-background: #08151c;
-}
-
-.perk {
-color: #ffd86b;
-}
-
-.engine-box {
-margin-top: 18px;
-padding: 16px;
-border: 1px solid rgba(34,211,238,.45);
-border-radius: 12px;
-background: rgba(4,12,22,.7);
-}
-
-.engine-status {
-margin: 10px 0 0;
-color: #aab3cc;
-font-size: 14px;
-line-height: 1.4;
-}
-
-.engine-status.ready {
-color: #7ef0a7;
-}
-
-.engine-status.error {
-color: #ff8c8c;
-}
-
-.booth-guide { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:18px 0; }
-.guide-step { padding:14px; border:1px solid #31506a; border-radius:12px; background:rgba(3,11,20,.9); color:#aabbd0; font-size:13px; line-height:1.45; }
-.guide-step strong { display:block; margin-bottom:5px; color:#fff; }
-.guide-step.active { border-color:#18d8ff; box-shadow:0 0 18px rgba(24,216,255,.2); }
-.guide-number { display:inline-grid; place-items:center; width:24px; height:24px; margin-right:6px; border-radius:50%; background:#18d8ff; color:#001018; font-weight:900; }
-.beat-library { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
-.beat-choice { padding:15px !important; text-align:left; cursor:pointer; }
-.beat-choice.selected { border-color:#7ef0ff !important; box-shadow:0 0 22px rgba(24,216,255,.65); }
-.beat-section-title { display:flex; justify-content:space-between; align-items:end; gap:10px; margin:15px 0 9px; }
-.beat-section-title strong { color:#fff; font-size:12px; letter-spacing:.12em; }
-.beat-section-title small { color:#859bb1; font-size:10px; }
-.beat-source-badge { display:inline-block; margin-left:6px; padding:2px 6px; border:1px solid #7ef0a766; border-radius:12px; color:#7ef0a7; font-size:8px; letter-spacing:.08em; vertical-align:middle; }
-.beat-credit { display:block; margin-top:5px; color:#89a6bf; font-size:9px; }
-.dev-beat-tools { margin:12px 0; padding:12px; border:1px dashed #6c7c8c; border-radius:10px; background:#060d16; }
-.dev-beat-tools strong,.dev-beat-tools small { display:block; }
-.dev-beat-tools small { margin:4px 0 9px; color:#8ea4b9; line-height:1.4; }
-.dev-beat-tools input { width:100%; }
-.beat-transport { display:grid; grid-template-columns:1fr auto; align-items:center; gap:12px; margin-top:12px; padding:14px; border:1px solid #31506a; border-radius:12px; background:#050b13; }
-.beat-transport strong, .beat-transport small { display:block; }
-.beat-transport small { margin-top:4px; color:#9db1c7; line-height:1.4; }
-.transport-button { min-width:170px; min-height:48px; padding:10px 14px; font-weight:900; cursor:pointer; }
-.transport-button.playing { border-color:#7ef0a7 !important; box-shadow:0 0 20px rgba(126,240,167,.32); }
-.headphone-note { margin:12px 0 0; color:#ffd98a; font-size:13px; line-height:1.45; }
-.session-console { overflow:hidden; border-color:#7057b7; background:linear-gradient(160deg,rgba(16,17,35,.97),rgba(5,10,20,.97)); }
-.session-toolbar { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:13px; }
-.session-toolbar p { margin:5px 0 0; color:#aabbd0; font-size:13px; }
-.session-actions { display:flex; gap:8px; flex-wrap:wrap; }
-.session-actions button { min-height:42px; padding:9px 12px; font-weight:900; cursor:pointer; }
-.track-lanes { display:grid; gap:7px; }
-.track-lane { display:grid; grid-template-columns:125px minmax(180px,1fr) 135px; align-items:center; gap:9px; padding:8px; border:1px solid #29394d; border-radius:9px; background:#050a12; }
-.track-lane.armed { border-color:#ff526d; box-shadow:inset 3px 0 #ff526d; }
-.track-name { min-width:0; }
-.track-name strong, .track-name small { display:block; }
-.track-name small { margin-top:3px; color:#8299b0; font-size:10px; }
-.arm-track { width:100%; padding:8px !important; margin-top:6px; font-size:10px; font-weight:900; cursor:pointer; }
-.track-lane.armed .arm-track { border-color:#ff526d !important; color:#ffd4da !important; }
-.timeline { position:relative; height:52px; overflow:hidden; border:1px solid #23354c; border-radius:6px; background:repeating-linear-gradient(90deg,#0b1725 0 24px,#142236 25px 26px); }
-.waveform { position:absolute; inset:5px; display:flex; align-items:center; justify-content:space-around; gap:2px; }
-.waveform i { width:3px; height:var(--wave); max-height:38px; border-radius:3px; background:#4fd8ff; opacity:.86; }
-.track-lane[data-track="beat"] .waveform i { background:#a47aff; }
-.timeline-empty { position:absolute; inset:0; display:grid; place-items:center; color:#5f738b; font-size:10px; letter-spacing:.08em; }
-.track-mix { display:grid; grid-template-columns:1fr auto; align-items:center; gap:6px; }
-.track-mix input { margin:0; padding:0; }
-.mute-track { min-width:38px; padding:7px !important; font-size:10px; cursor:pointer; }
-.mute-track.on { border-color:#ffd45c !important; color:#ffd45c !important; }
-.mix-readout { grid-column:1/-1; color:#7f96ad; font-size:9px; text-align:center; }
-.mix-coach { display:none; margin-top:12px; padding:12px; border-left:3px solid #a47aff; background:#0c1323; color:#c6d3e3; font-size:12px; line-height:1.55; }
-.mix-coach.show { display:block; }
-.master-console { border-color:#22d3ee; background:linear-gradient(145deg,rgba(7,22,32,.97),rgba(8,11,24,.97)); }
-.master-flow { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:14px 0; }
-.master-step { padding:13px; border:1px solid #31506a; border-radius:11px; background:#070d17; color:#9db1c7; font-size:12px; line-height:1.45; }
-.master-step strong { display:block; margin-bottom:5px; color:#fff; }
-.master-actions { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
-.master-actions button, .master-import-label { min-height:50px; padding:12px; display:grid; place-items:center; text-align:center; font-weight:900; cursor:pointer; }
-.master-actions button:disabled { opacity:.45; cursor:not-allowed; transform:none; }
-.master-import-label { border:1px solid #18d8ff; border-radius:10px; background:linear-gradient(#182637,#0d1825); box-shadow:0 0 10px rgba(0,216,255,.15); }
-.master-import-label input { position:absolute; width:1px !important; height:1px; opacity:0; pointer-events:none; }
-.master-status { margin:12px 0 0; padding:11px 13px; border-left:3px solid #22d3ee; background:#07111c; color:#b8c7d9; font-size:13px; line-height:1.5; }
-.master-status.ready { border-left-color:#7ef0a7; color:#bdf7d0; }
-.master-status.error { border-left-color:#ff6868; color:#ffb0b0; }
-.master-audio { display:none; }
-
-.quick-flow { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:18px 0; }
-.quick-step { padding:15px; border:1px solid #31506a; border-radius:14px; background:#050b13; color:#aabbd0; font-size:13px; line-height:1.45; }
-.quick-step strong { display:block; color:#fff; font-size:14px; margin-bottom:5px; }
-.quick-step b { display:inline-grid; place-items:center; width:27px; height:27px; margin-right:7px; border-radius:50%; background:#18d8ff; color:#001018; }
-.quick-upload { display:grid; grid-template-columns:1fr auto; align-items:center; gap:10px; margin:12px 0; padding:14px; border:1px solid #7ef0a766; border-radius:12px; background:#07120f; }
-.quick-upload strong,.quick-upload small { display:block; }
-.quick-upload small { margin-top:4px; color:#9bb8a5; line-height:1.4; }
-.quick-upload label { min-height:48px; padding:12px 16px; display:grid; place-items:center; border:1px solid #7ef0a7; border-radius:10px; background:#0b251a; font-weight:900; cursor:pointer; white-space:nowrap; }
-.quick-upload input { position:absolute; width:1px !important; height:1px; opacity:0; pointer-events:none; }
-.quick-finish { width:100%; min-height:64px; margin-top:12px; font-size:18px; font-weight:900; border-color:#7ef0a7 !important; background:linear-gradient(135deg,#0a5038,#087d68) !important; }
-.quick-finish:disabled { opacity:.45; cursor:not-allowed; transform:none; }
-.quick-explain { padding:12px 14px; border-left:3px solid #7ef0a7; background:#07150f; color:#bce8cc; font-size:13px; line-height:1.5; }
-.advanced-toggle { width:100%; min-height:50px; margin:6px 0 18px; font-weight:900; }
-#songBuilderPanel,#engineeringPanel,#aiProducerPanel,#advancedReferenceTools,#advancedMasterTools { display:none; }
-body.advanced-open #songBuilderPanel,
-body.advanced-open #engineeringPanel,
-body.advanced-open #aiProducerPanel,
-body.advanced-open #advancedReferenceTools,
-body.advanced-open #advancedMasterTools { display:block; }
-body.advanced-open .advanced-toggle { border-color:#ffd86b !important; }
-
-
-#generatedAudio {
-display: none;
-width: 100%;
-margin-top: 14px;
-}
-
-.authorship-check {
-display:flex;
-align-items:flex-start;
-gap:10px;
-margin-top:12px;
-padding:12px;
-border:1px solid #334155;
-border-radius:10px;
-background:#090f19;
-font-size:14px;
-line-height:1.4;
-}
-
-.authorship-check input {
-width:auto !important;
-margin:3px 0 0 !important;
-}
-
-.craft-report {
-display:none;
-margin-top:16px;
-padding:16px;
-border:1px solid #8b5cf6;
-border-radius:12px;
-background:#100b20;
-}
-
-.craft-head {
-display:flex;
-justify-content:space-between;
-gap:12px;
-align-items:center;
-flex-wrap:wrap;
-}
-
-.craft-score {
-font-size:34px;
-font-weight:900;
-color:#c4b5fd;
-}
-
-.craft-tier {
-font-size:13px;
-font-weight:900;
-letter-spacing:.08em;
-color:#7dd3fc;
-}
-
-.craft-row {
-display:grid;
-grid-template-columns:145px 1fr 52px;
-gap:10px;
-align-items:center;
-margin-top:9px;
-font-size:12px;
-}
-
-.craft-bar {
-height:9px;
-background:#1f2937;
-border-radius:99px;
-overflow:hidden;
-}
-
-.craft-bar span {
-display:block;
-height:100%;
-background:linear-gradient(90deg,#22d3ee,#8b5cf6);
-}
-
-.craft-coaching {
-margin-top:14px;
-padding:12px;
-border-radius:10px;
-background:#08151c;
-color:#cbd5e1;
-font-size:13px;
-line-height:1.5;
-}
-
-@media(max-width:700px) {
-.row,
-.actions,
-.booth-guide,
-.quick-flow,
-.quick-upload,
-.beat-library,
-.beat-transport {
-grid-template-columns: 1fr;
-}
-.transport-button { width:100%; }
-.track-lane { grid-template-columns:92px 1fr; }
-.track-mix { grid-column:1/-1; }
-.session-actions { display:grid; grid-template-columns:1fr 1fr; width:100%; }
-.master-flow, .master-actions { grid-template-columns:1fr; }
-}
-
-/* ===== MUSIC CITY ESTATES - RECORDING BOOTH ===== */
-
-body {
-background:
-linear-gradient(rgba(3,8,18,.84), rgba(3,8,18,.92)),
-repeating-linear-gradient(
-135deg,
-#151b27 0px,
-#151b27 35px,
-#0d121c 35px,
-#0d121c 70px
-);
-min-height:100vh;
-}
-
-.container {
-max-width:1100px;
-margin:30px auto;
-padding:28px;
-border:2px solid #18d8ff;
-border-radius:24px;
-background:
-radial-gradient(circle at top, rgba(0,216,255,.12), transparent 45%),
-rgba(5,10,20,.94);
-box-shadow:
-0 0 30px rgba(0,216,255,.28),
-inset 0 0 45px rgba(0,0,0,.75);
-}
-
-.container:before {
-content:"🎙 VOCAL BOOTH • RECORDING LIVE";
-display:block;
-text-align:center;
-padding:12px;
-margin-bottom:20px;
-border:1px solid #18d8ff;
-border-radius:12px;
-color:#18d8ff;
-background:#07111c;
-font-weight:bold;
-letter-spacing:2px;
-}
-
-.studio-badge {
-text-align:center;
-padding:18px;
-margin-bottom:20px;
-border-radius:16px;
-background:rgba(0,0,0,.45);
-box-shadow:inset 0 0 20px rgba(0,216,255,.12);
-}
-
-.panel {
-margin-top:18px;
-padding:22px;
-border:1px solid rgba(24,216,255,.45);
-border-radius:16px;
-background:rgba(7,14,25,.90);
-box-shadow:inset 0 0 20px rgba(0,0,0,.55);
-}
-
-button {
-background:linear-gradient(#182637,#0d1825) !important;
-color:white !important;
-border:1px solid #18d8ff !important;
-border-radius:10px !important;
-box-shadow:0 0 10px rgba(0,216,255,.15);
-}
-
-button:hover {
-box-shadow:0 0 18px rgba(0,216,255,.55);
-transform:translateY(-2px);
-}
-
-input,
-textarea {
-background:#050b13 !important;
-color:white !important;
-border:1px solid #18d8ff !important;
-border-radius:10px !important;
-}
-
-input:focus,
-textarea:focus {
-outline:none;
-box-shadow:0 0 12px rgba(0,216,255,.45);
-}
-
-h2, h3 {
-color:white;
-}
-
-#studioName {
-color:#18d8ff;
-}
-
-
-</style>
-
-
-<style>
-body {
-background-image:
-linear-gradient(rgba(0,0,0,0.30), rgba(0,0,0,0.45)),
-url("begenius_booth.PNG") !important;
-
-background-size: cover !important;
-background-position: center center !important;
-background-repeat: no-repeat !important;
-background-attachment: fixed !important;
-min-height: 100vh;
-}
-
-.container {
-display: block;
-background: rgba(3, 8, 18, 0.88);
-}
-
-
 </style>
 </head>
 <body>
-
-<header>
-<a class="back" id="backButton" href="begenius_studio.html">
-← BACK TO STUDIO
-</a>
-
-<h1>MUSIC CITY ESTATES</h1>
+<header class="topbar">
+  <div class="brand">MUSIC CITY <span>CREATE</span></div>
+  <div class="top-actions">
+    <a id="backLink" href="begenius_studio.html">← Studio</a>
+    <a href="advanced_recording_studio.html">Advanced Studio</a>
+  </div>
 </header>
 
-<div class="container">
-
-<div class="studio-badge">
-<h2>🎙️ Recording Booth</h2>
-<span id="studioName">BeGenius Studio</span>
-</div>
-
-<section class="quick-flow" aria-label="Simple recording steps">
-<div class="quick-step"><strong><b>1</b>PICK A BEAT</strong>Choose one you already saved or add an instrumental from your phone.</div>
-<div class="quick-step"><strong><b>2</b>RECORD YOUR VOICE</strong>Put on headphones and tap the big Record button. The beat plays automatically.</div>
-<div class="quick-step"><strong><b>3</b>AI FINISH</strong>Music City balances and smooths your real vocal + beat into one finished master.</div>
-</section>
-
-<div class="panel" style="margin-top:0;">
-<label for="songTitle"><strong>Song title</strong></label>
-<input id="songTitle" placeholder="Name your song (optional)">
-</div>
-
-<section class="booth-guide" aria-label="Internal recording status" style="display:none;">
-<div class="guide-step active" id="guideBeat"></div>
-<div class="guide-step" id="guideWrite"></div>
-<div class="guide-step" id="guideRecord"></div>
-</section>
-
-<div class="panel">
-<h3>🎧 Beat Library</h3>
-<p>Pick a saved beat or add your own. Your uploaded beats stay in <strong>My Beat Locker</strong> on this device.</p>
-
-<div class="quick-upload">
-<div><strong>➕ ADD MY BEAT</strong><small>MP3, WAV, M4A and other common audio files. Once saved, it will show here when you return.</small></div>
-<label for="quickBeatUpload">CHOOSE FILE<input type="file" id="quickBeatUpload"></label>
-</div>
-<p id="beatLockerStatus" class="engine-status"></p>
-
-<section id="originalBeatSection" hidden>
-<div class="beat-section-title"><strong>🎵 MY BEAT LOCKER + MUSIC CITY BEATS</strong><small>Your saved instrumentals appear here</small></div>
-<div class="beat-library" id="realBeatLibrary"></div>
-</section>
-
-<div class="dev-beat-tools" id="devBeatTools" hidden>
-<strong>OWNER TEST — LOAD AN INSTRUMENTAL FROM THIS DEVICE</strong>
-<small>This is private test mode only. The file is not uploaded or saved to the public beat library.</small>
-<input type="file" id="ownerBeatUpload" multiple>
-</div>
-
-<div class="beat-section-title"><strong>PRACTICE BEATS</strong><small>Built-in demo instrumentals</small></div>
-<div class="beat-library" id="practiceBeatLibrary">
-<button type="button" class="beat-choice" data-beat="Midnight Drive" onclick="selectBeat('Midnight Drive', this)">
-🔥 <strong>Midnight Drive</strong><br>
-<small>Hip-Hop • Trap • 88 BPM</small>
-</button>
-
-<button type="button" class="beat-choice" data-beat="Velvet Nights" onclick="selectBeat('Velvet Nights', this)">
-🌙 <strong>Velvet Nights</strong><br>
-<small>R&amp;B • Smooth • 76 BPM</small>
-</button>
-
-<button type="button" class="beat-choice" data-beat="808 Pressure" onclick="selectBeat('808 Pressure', this)">
-💥 <strong>808 Pressure</strong><br>
-<small>Trap • Hard • 142 BPM</small>
-</button>
-
-<button type="button" class="beat-choice" data-beat="Soul Avenue" onclick="selectBeat('Soul Avenue', this)">
-🎹 <strong>Soul Avenue</strong><br>
-<small>Hip-Hop • Soul • 82 BPM</small>
-</button>
-</div>
-
-<div class="beat-transport">
-<div><strong id="selectedBeatLabel">No beat selected</strong><small id="beatModeLabel">Pick a beat to unlock writing and recording modes.</small></div>
-<button type="button" id="beatTransportButton" class="transport-button" onclick="toggleBeatPlayback()" disabled>▶ PLAY INSTRUMENTAL</button>
-</div>
-<p class="headphone-note">🎧 Headphones recommended while recording so the beat stays clear and does not echo into your microphone.</p>
-</div>
-<div class="panel" id="songBuilderPanel">
-
-<h3>Advanced: Song Notes &amp; Creative Direction</h3>
-
-<textarea
-id="lyrics"
-placeholder="Write your lyrics, verses, hook, or creative prompt..."
-></textarea>
-
-<label class="authorship-check">
-<input type="checkbox" id="originalLyricsConfirmed">
-<span>
-<strong>Artist-written lyrics</strong><br>
-Check this only if you wrote or substantially rewrote the lyrics yourself. AI-assisted editing is fine—the point is that you shaped the writing.
-</span>
-</label>
-
-<input
-id="style"
-placeholder="Describe the sound: melodic trap, soulful R&B, southern hip-hop..."
->
-
-<div class="tags">
-<div class="tag" onclick="addStyle('Hip-Hop')">Hip-Hop</div>
-<div class="tag" onclick="addStyle('R&B')">R&B</div>
-<div class="tag" onclick="addStyle('Trap')">Trap</div>
-<div class="tag" onclick="addStyle('Soul')">Soul</div>
-<div class="tag" onclick="addStyle('Pop')">Pop</div>
-<div class="tag" onclick="addStyle('Latin')">Latin</div>
-</div>
-
-</div>
-
-
-<div class="panel session-console" id="engineeringPanel">
-<div class="session-toolbar">
-<div><h3>2. Engineering Session</h3><p>Arm a vocal lane, record a take, then play and balance the whole session.</p></div>
-<div class="session-actions"><button type="button" id="playSessionButton" onclick="toggleSessionPlayback()">▶ PLAY SESSION</button><button type="button" id="aiMixButton" onclick="applyAIMix()">✨ AI MIX ASSIST</button></div>
-</div>
-<div class="track-lanes" id="trackLanes">
-<div class="track-lane" data-track="beat"><div class="track-name"><strong>01 BEAT</strong><small>Instrumental</small></div><div class="timeline"><div class="waveform" aria-hidden="true"><i style="--wave:28px"></i><i style="--wave:12px"></i><i style="--wave:36px"></i><i style="--wave:17px"></i><i style="--wave:31px"></i><i style="--wave:14px"></i><i style="--wave:38px"></i><i style="--wave:20px"></i><i style="--wave:32px"></i><i style="--wave:15px"></i><i style="--wave:35px"></i><i style="--wave:18px"></i></div></div><div class="track-mix"><input class="track-level" data-track="beat" type="range" min="0" max="100" value="72" aria-label="Beat level"><button type="button" class="mute-track" data-track="beat">M</button><span class="mix-readout">72% • CENTER</span></div></div>
-<div class="track-lane armed" data-track="lead"><div class="track-name"><strong>02 LEAD</strong><small>Main vocal</small><button type="button" class="arm-track" data-track="lead">● ARMED</button></div><div class="timeline"><span class="timeline-empty">RECORD LEAD TAKE</span><div class="waveform"></div></div><div class="track-mix"><input class="track-level" data-track="lead" type="range" min="0" max="100" value="100" aria-label="Lead vocal level"><button type="button" class="mute-track" data-track="lead">M</button><span class="mix-readout">100% • CENTER</span></div></div>
-<div class="track-lane" data-track="double"><div class="track-name"><strong>03 DOUBLE</strong><small>Vocal support</small><button type="button" class="arm-track" data-track="double">ARM</button></div><div class="timeline"><span class="timeline-empty">EMPTY LANE</span><div class="waveform"></div></div><div class="track-mix"><input class="track-level" data-track="double" type="range" min="0" max="100" value="64" aria-label="Double level"><button type="button" class="mute-track" data-track="double">M</button><span class="mix-readout">64% • LEFT</span></div></div>
-<div class="track-lane" data-track="adlibs"><div class="track-name"><strong>04 AD-LIBS</strong><small>Energy &amp; responses</small><button type="button" class="arm-track" data-track="adlibs">ARM</button></div><div class="timeline"><span class="timeline-empty">EMPTY LANE</span><div class="waveform"></div></div><div class="track-mix"><input class="track-level" data-track="adlibs" type="range" min="0" max="100" value="56" aria-label="Ad-libs level"><button type="button" class="mute-track" data-track="adlibs">M</button><span class="mix-readout">56% • RIGHT</span></div></div>
-<div class="track-lane" data-track="harmony"><div class="track-name"><strong>05 HARMONY</strong><small>Hook layer</small><button type="button" class="arm-track" data-track="harmony">ARM</button></div><div class="timeline"><span class="timeline-empty">EMPTY LANE</span><div class="waveform"></div></div><div class="track-mix"><input class="track-level" data-track="harmony" type="range" min="0" max="100" value="52" aria-label="Harmony level"><button type="button" class="mute-track" data-track="harmony">M</button><span class="mix-readout">52% • WIDE</span></div></div>
-</div>
-<div class="mix-coach" id="mixCoach"></div>
-</div>
-
-<div class="panel">
-
-<h3>2. Record Your Voice</h3>
-
-<p>Put on headphones, press Record, and perform the song over your selected beat. The beat starts automatically.</p>
-
-<div class="record-area">
-
-<button
-id="recordButton"
-class="record-circle"
-onclick="toggleRecording()"
->
-RECORD
-</button>
-
-<div id="recordStatus">
-Step 1: Pick or add a beat above. Then press Record.
-</div>
-
-<audio
-id="audioPreview"
-controls
-style="display:none;"
-></audio>
-
-<p class="engine-status" id="takePlaybackNote" style="display:none;">Vocal take playback is voice-only. Use Play Instrumental to practice again or record another take over the beat.</p>
-
-</div>
-
-<div id="advancedReferenceTools">
-<input
-type="file"
-id="audioUpload"
-accept="audio/*"
-onchange="loadUploadedAudio(event)"
->
-<p class="engine-status">Advanced reference upload is limited to 30 seconds and 3 MB.</p>
-</div>
-
-</div>
-
-<div class="panel master-console">
-<h3>3. AI Finish Your Song</h3>
-<p class="quick-explain"><strong>Your voice stays your voice.</strong> Music City automatically balances the instrumental and your recorded performance, cleans the vocal, adds presence and compression, then turns everything into one smooth master.</p>
-<button type="button" id="quickFinishButton" class="quick-finish" onclick="quickAIFinish()">✨ AI FINISH MY SONG</button>
-<audio id="masterAudio" class="master-audio" controls preload="metadata"></audio>
-<div class="master-actions" style="margin-top:10px;">
-<button type="button" id="useMasterButton" onclick="useMasterAsFinishedSong()" disabled>✅ SAVE FINISHED SONG</button>
-<button type="button" id="saveSessionButton" onclick="saveBoothSession(true)">💾 SAVE FOR LATER</button>
-</div>
-<p id="masterStatus" class="master-status">Pick a beat, record your voice, then tap AI Finish.</p>
-
-<div id="advancedMasterTools">
-<div class="master-actions" style="margin-top:10px;">
-<button type="button" id="mixdownButton" onclick="mixAndPlay()">🎚️ MANUAL MIX &amp; PLAY</button>
-<button type="button" id="downloadMixButton" onclick="downloadCurrentMaster()" disabled>⬇️ EXPORT MIX</button>
-<button type="button" id="sunoFinishButton" onclick="finishInSuno()">✨ SUNO HANDOFF</button>
-</div>
-<div class="master-actions" style="margin-top:10px;">
-<label class="master-import-label" for="sunoMasterUpload">⬆️ IMPORT SUNO MASTER<input type="file" id="sunoMasterUpload" accept="audio/*" onchange="importSunoMaster(event)"></label>
-</div>
-</div>
-</div>
-
-
-<div class="panel" id="aiProducerPanel">
-
-<h3>Advanced: Music City AI Producer</h3>
-
-<p class="engine-status">Generate an instrumental without leaving the studio. <strong>Music City Native</strong> works now as our self-contained prototype. <strong>Suno Premium</strong> is already reserved in the same provider layer for approved API access later.</p>
-
-<div class="row">
-
-<div>
-<label>Creation Mode</label>
-
-<select id="creationMode">
-<option selected>Generate Instrumental</option>
-<option disabled>Reference-Guided Instrumental — Native Model Phase 2</option>
-<option disabled>Create Full Song — Future Vocal Engine</option>
-</select>
-</div>
-
-<div>
-<label>Output</label>
-
-<select id="vocalStyle">
-<option selected>Instrumental Only</option>
-</select>
-</div>
-
-</div>
-
-<div class="engine-box">
-<label>AI Producer Engine</label>
-<select id="aiProvider" onchange="updateEngineStatus()">
-<option value="music-city-native" selected>Music City Native — Works Now</option>
-<option value="suno" disabled>Suno Premium — API Access Pending</option>
-</select>
-<p id="aiEngineStatus" class="engine-status ready">
-Music City Native generates an instrumental inside the app and loads it directly into Track 01.
-</p>
-
-<div class="row" style="margin-top:14px;">
-<div>
-<label>BPM</label>
-<input id="aiBpm" type="number" min="60" max="180" step="1" placeholder="Auto">
-</div>
-<div>
-<label>Key</label>
-<select id="aiKey">
-<option selected>Auto</option>
-<option>C minor</option>
-<option>C# minor</option>
-<option>D minor</option>
-<option>D# minor</option>
-<option>E minor</option>
-<option>F minor</option>
-<option>F# minor</option>
-<option>G minor</option>
-<option>G# minor</option>
-<option>A minor</option>
-<option>A# minor</option>
-<option>B minor</option>
-</select>
-</div>
-</div>
-
-<label style="display:block; margin-top:14px;">Generation Length</label>
-<select id="musicLength">
-<option value="8000">8 seconds — quick test</option>
-<option value="12000" selected>12 seconds — standard preview</option>
-<option value="15000">15 seconds — longer preview</option>
-</select>
-</div>
-
-<br>
-
-<label>Creativity</label>
-<input
-id="creativity"
-type="range"
-min="0"
-max="100"
-value="50"
->
-
-<br><br>
-
-<label>Style Influence</label>
-<input
-id="influence"
-type="range"
-min="0"
-max="100"
-value="50"
->
-
-<p
-id="studioPerk"
-class="perk"
->
-⭐ BeGenius Studio Perk: Advanced AI Production
-</p>
-
-</div>
-
-
-<div class="panel">
-
-<div class="actions">
-
-<button
-class="action secondary"
-onclick="saveDraft()"
->
-SAVE DRAFT
-</button>
-
-<button
-class="action primary"
-id="createSongButton"
-onclick="createSong()"
->
-🎹 GENERATE & LOAD TRACK 01
-</button>
-
-</div>
-
-<div
-id="aiResult"
-class="ai-result"
->
-<h3>🎵 AI Session Created</h3>
-
-<p id="resultText"></p>
-
-<p id="engineMessage">
-The Music City AI generation engine is ready.
-</p>
-
-<audio id="generatedAudio" controls></audio>
-
-<div id="craftReport" class="craft-report">
-<div class="craft-head">
-<div>
-<div class="craft-tier" id="craftTier">QUICK DRAFT</div>
-<strong>🎯 Music City A&R Craft Report</strong>
-</div>
-<div class="craft-score"><span id="craftScore">0</span>/100</div>
-</div>
-<div id="craftBreakdown"></div>
-<div id="craftCoaching" class="craft-coaching"></div>
-<p class="engine-status">
-This score measures creative input and process—not whether AI was used, not whether a song is objectively “good,” and not whether a detector thinks it is AI.
-</p>
-</div>
-
-<div class="actions" id="catalogActions" style="display:none; margin-top:14px;">
-<button
-class="action primary"
-id="saveToCatalogButton"
-onclick="saveGeneratedToCatalog()"
->
-💿 SAVE TO ARTIST CATALOG
-</button>
-
-<button
-class="action secondary"
-onclick="window.location.href='artist_catalog.html'"
->
-VIEW ARTIST CATALOG
-</button>
-</div>
-</div>
-
-</div>
-
-</div>
-
-<button type="button" class="advanced-toggle" id="advancedToggle" onclick="toggleAdvancedStudio()">⚙️ ADVANCED STUDIO TOOLS</button>
+<main class="shell">
+  <section class="hero">
+    <h1>Build the song.</h1>
+    <p>Start with an idea, your own beat, or your own voice. Music City creates two versions so you can listen, choose, and keep moving.</p>
+  </section>
+
+  <nav class="mode-tabs" aria-label="Create mode">
+    <button type="button" id="quickTab" class="active" onclick="setCreateMode('quick')">QUICK</button>
+    <button type="button" id="customTab" onclick="setCreateMode('custom')">CUSTOM</button>
+  </nav>
+
+  <section class="card quick-only">
+    <h2>What do you want to hear?</h2>
+    <p class="helper">Describe the genre, mood, instruments, tempo feel, and anything else that matters.</p>
+    <textarea id="quickPrompt" class="quick-prompt" placeholder="Example: dark melodic trap, emotional piano, heavy 808s, reflective late-night energy"></textarea>
+  </section>
+
+  <section class="card custom-only">
+    <h2>Shape the song</h2>
+    <p class="helper">Use your own lyrics and creative direction when you want more control.</p>
+    <div class="custom-grid">
+      <div>
+        <div class="field">
+          <label for="lyrics">LYRICS</label>
+          <textarea id="lyrics" placeholder="[Verse]\nWrite your lyrics here...\n\n[Chorus]\n..."></textarea>
+        </div>
+      </div>
+      <div>
+        <div class="field">
+          <label for="songTitle">TITLE</label>
+          <input id="songTitle" placeholder="Untitled Song">
+        </div>
+        <div class="field">
+          <label for="style">STYLE</label>
+          <textarea id="style" style="min-height:100px" placeholder="Southern hip-hop, soulful piano, deep bass, 92 BPM, cinematic"></textarea>
+        </div>
+        <div class="field">
+          <label for="provider">MODEL</label>
+          <select id="provider">
+            <option value="music-city-native">Music City Native — Prototype</option>
+            <option value="suno" disabled>Suno Premium — API Access Pending</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Song type</h2>
+    <p class="helper">Choose whether you want a beat only or a finished version built around your own recorded voice.</p>
+    <div class="choice-row">
+      <button type="button" id="voiceChoice" class="choice active" onclick="setSongType('voice')">🎙️ MY VOICE</button>
+      <button type="button" id="instrumentalChoice" class="choice" onclick="setSongType('instrumental')">🎹 INSTRUMENTAL</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Add audio</h2>
+    <p class="helper">You can start from your own beat, your own voice, both, or neither. Beats saved here remain in My Beat Locker on this device.</p>
+
+    <div class="source-grid">
+      <div class="source-box" id="beatSourceBox">
+        <div class="source-title">
+          <strong>🎧 Beat / Instrumental</strong>
+          <span class="status-pill" id="beatStatusPill">OPTIONAL</span>
+        </div>
+        <p class="helper" id="selectedBeatText">No beat selected. Music City can generate one from your description.</p>
+        <div class="inline-actions">
+          <label class="file-label">ADD BEAT<input id="beatUpload" type="file"></label>
+          <button class="secondary-btn" type="button" onclick="clearSelectedBeat()">CLEAR</button>
+        </div>
+        <div id="beatLockerList" class="locker-list"></div>
+        <audio id="beatPreview" controls style="display:none"></audio>
+      </div>
+
+      <div class="source-box" id="voiceSourceBox">
+        <div class="source-title">
+          <strong>🎤 Your Voice</strong>
+          <span class="status-pill" id="voiceStatusPill">REQUIRED FOR MY VOICE</span>
+        </div>
+        <p class="helper" id="voiceStatusText">Record a vocal or upload one you already made. Your actual recording is preserved in the finished version.</p>
+        <div class="inline-actions">
+          <button class="record-btn" id="recordVoiceButton" type="button" onclick="toggleVoiceRecording()">● RECORD VOICE</button>
+          <label class="file-label">UPLOAD VOICE<input id="voiceUpload" type="file"></label>
+        </div>
+        <audio id="voicePreview" controls style="display:none"></audio>
+      </div>
+    </div>
+    <p class="note">🎧 Use headphones when recording over a beat so the instrumental does not bleed back into the microphone.</p>
+  </section>
+
+  <section class="card custom-only">
+    <button type="button" class="secondary-btn" style="width:100%" onclick="toggleAdvanced()">⚙️ ADVANCED OPTIONS</button>
+    <div class="advanced-box" id="advancedBox">
+      <div class="advanced-grid">
+        <div class="field">
+          <label for="bpm">BPM</label>
+          <input id="bpm" type="number" min="60" max="180" placeholder="Auto">
+        </div>
+        <div class="field">
+          <label for="key">KEY</label>
+          <select id="key">
+            <option>Auto</option><option>C minor</option><option>C# minor</option><option>D minor</option>
+            <option>D# minor</option><option>E minor</option><option>F minor</option><option>F# minor</option>
+            <option>G minor</option><option>G# minor</option><option>A minor</option><option>A# minor</option><option>B minor</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="creativity">CREATIVITY</label>
+          <input id="creativity" type="range" min="0" max="100" value="55">
+        </div>
+        <div class="field">
+          <label for="influence">STYLE INFLUENCE</label>
+          <input id="influence" type="range" min="0" max="100" value="65">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <button type="button" id="createButton" class="create-btn" onclick="createTwoVersions()">✨ CREATE 2 VERSIONS</button>
+    <p class="create-status" id="createStatus">Ready when you are.</p>
+  </section>
+
+  <section class="card results" id="resultsSection">
+    <h2>Your versions</h2>
+    <p class="helper">Listen to both. Pick the one that feels closest, save it, or create again.</p>
+    <div class="version-grid" id="versionGrid"></div>
+    <button type="button" class="secondary-btn" style="width:100%;margin-top:12px" onclick="createTwoVersions()">↻ CREATE 2 MORE</button>
+  </section>
+
+  <a class="footer-link" href="advanced_recording_studio.html">Open Advanced Studio for multitrack editing →</a>
+</main>
 
 <script src="player-state.js"></script>
-<script src="music_city_missions.js"></script>
 <script src="music_city_catalog.js"></script>
-<script src="music_city_song_craft.js"></script>
 <script src="music_city_ai.js"></script>
 <script src="music_city_beats.js"></script>
-
 <script>
+const params = new URLSearchParams(location.search);
+const studio = params.get("studio") || "begenius";
+if (studio === "bedroom") document.getElementById("backLink").href = "bedroom_studio.html";
 
-const params =
-new URLSearchParams(window.location.search);
-
-const studio =
-params.get("studio") || "begenius";
-
-
-if (studio === "bedroom") {
-
-document.getElementById("studioName").textContent =
-"Bedroom Studio";
-
-document.getElementById("studioPerk").textContent =
-"Starter Studio — Basic AI Production";
-
-document.getElementById("backButton").href =
-"bedroom_studio.html";
-
-}
-
-
-if (studio === "begenius") {
-
-document.getElementById("studioName").textContent =
-"BeGenius Studio";
-
-document.getElementById("studioPerk").textContent =
-"⭐ BeGenius Studio Perk: Advanced AI Production";
-
-document.getElementById("backButton").href =
-"begenius_studio.html";
-
-}
-
-
+let createMode = "quick";
+let songType = "voice";
+let beatRecords = [];
 let selectedBeat = null;
+let voiceBlob = null;
+let voiceUrl = "";
+let mediaRecorder = null;
+let mediaStream = null;
+let voiceChunks = [];
+let recordingBeatAudio = null;
+let recordingTimer = null;
+let resultVersions = [];
+let resultUrls = [];
+let generationRound = 0;
+let beatDbPromise = null;
 
-const beatLibrary = {
-"Midnight Drive": { type:"synth", bpm:88, bass:55, genre:"Hip-Hop", mood:"Trap", kicks:[0,6,8,11], snares:[4,12], hats:[0,2,4,6,8,10,12,14] },
-"Velvet Nights": { type:"synth", bpm:76, bass:65.4, genre:"R&B", mood:"Smooth", kicks:[0,7,10], snares:[4,12], hats:[0,3,6,8,11,14] },
-"808 Pressure": { type:"synth", bpm:142, bass:43.7, genre:"Trap", mood:"Hard", kicks:[0,3,7,8,11,14], snares:[4,12], hats:[0,2,4,6,8,9,10,12,14,15] },
-"Soul Avenue": { type:"synth", bpm:82, bass:73.4, genre:"Hip-Hop", mood:"Soul", kicks:[0,5,8,11], snares:[4,12], hats:[0,2,5,7,8,10,13,15] }
-};
+function setCreateMode(mode){
+  createMode = mode === "custom" ? "custom" : "quick";
+  document.body.classList.toggle("custom-mode", createMode === "custom");
+  document.getElementById("quickTab").classList.toggle("active", createMode === "quick");
+  document.getElementById("customTab").classList.toggle("active", createMode === "custom");
+}
+function setSongType(type){
+  songType = type === "instrumental" ? "instrumental" : "voice";
+  document.getElementById("voiceChoice").classList.toggle("active", songType === "voice");
+  document.getElementById("instrumentalChoice").classList.toggle("active", songType === "instrumental");
+  document.getElementById("voiceSourceBox").style.opacity = songType === "voice" ? "1" : ".55";
+  document.getElementById("voiceStatusPill").textContent = songType === "voice" ? "REQUIRED FOR MY VOICE" : "NOT USED";
+  updateSourceBoxes();
+}
+function toggleAdvanced(){document.getElementById("advancedBox").classList.toggle("open")}
 
-(window.MusicCityBeatCatalog || []).forEach(beat => {
-const title = String(beat && beat.title || "").trim();
-const src = String(beat && beat.src || "").trim();
-if (!title || !src || beatLibrary[title]) return;
-beatLibrary[title] = {
-type:"audio",
-src,
-genre:String(beat.genre || "Original"),
-mood:String(beat.mood || ""),
-bpm:Number(beat.bpm || 0),
-producer:String(beat.producer || "Music City Estates"),
-source:String(beat.source || "Music City Original")
-};
+function status(message,state){
+  const el=document.getElementById("createStatus");
+  el.textContent=message;
+  el.className="create-status"+(state?" "+state:"");
+}
+
+function supportedAudio(file){
+  if(!file)return false;
+  const ext=(String(file.name||"").split(".").pop()||"").toLowerCase();
+  return String(file.type||"").startsWith("audio/")||["mp3","wav","m4a","aac","mp4","webm","ogg","flac"].includes(ext);
+}
+function cleanTitle(name){
+  return String(name||"My Beat").replace(/\.[^.]+$/,"").replace(/[_-]+/g," ").trim()||"My Beat";
+}
+
+function openBeatDb(){
+  if(beatDbPromise)return beatDbPromise;
+  beatDbPromise=new Promise((resolve,reject)=>{
+    const req=indexedDB.open("music-city-beat-locker",1);
+    req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains("beats"))req.result.createObjectStore("beats",{keyPath:"id"})};
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error||new Error("Beat Locker could not open."));
+  });
+  return beatDbPromise;
+}
+async function saveBeatRecord(file){
+  const db=await openBeatDb();
+  const record={
+    id:"beat-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,7),
+    title:cleanTitle(file.name),blob:file,mimeType:file.type||"",size:file.size||0,savedAt:new Date().toISOString()
+  };
+  await new Promise((resolve,reject)=>{
+    const tx=db.transaction("beats","readwrite");
+    tx.objectStore("beats").put(record);
+    tx.oncomplete=resolve;
+    tx.onerror=()=>reject(tx.error||new Error("Beat could not be saved."));
+  });
+  return record;
+}
+async function listBeatRecords(){
+  const db=await openBeatDb();
+  return new Promise((resolve,reject)=>{
+    const req=db.transaction("beats","readonly").objectStore("beats").getAll();
+    req.onsuccess=()=>resolve(req.result||[]);
+    req.onerror=()=>reject(req.error||new Error("Beat Locker could not load."));
+  });
+}
+function revokeBeatUrls(){
+  beatRecords.forEach(record=>{if(record.objectUrl)URL.revokeObjectURL(record.objectUrl)});
+}
+async function loadBeatLocker(){
+  revokeBeatUrls();
+  beatRecords=(await listBeatRecords()).map(record=>({...record,objectUrl:URL.createObjectURL(record.blob)}));
+  (window.MusicCityBeatCatalog||[]).forEach((beat,index)=>{
+    if(!beat||!beat.src)return;
+    beatRecords.push({
+      id:"catalog-"+index,title:beat.title||("Music City Beat "+(index+1)),src:beat.src,objectUrl:beat.src,
+      genre:beat.genre||"Music City Original",producer:beat.producer||"Music City Estates",catalog:true
+    });
+  });
+  renderBeatLocker();
+}
+function renderBeatLocker(){
+  const box=document.getElementById("beatLockerList");
+  box.innerHTML="";
+  if(!beatRecords.length){
+    box.innerHTML='<div class="helper">No saved beats yet.</div>';
+    return;
+  }
+  beatRecords.forEach(record=>{
+    const row=document.createElement("div");
+    row.className="locker-item"+(selectedBeat&&selectedBeat.id===record.id?" selected":"");
+    const text=document.createElement("div");
+    text.innerHTML="<strong>"+escapeHtml(record.title)+"</strong><br><small>"+escapeHtml(record.catalog?(record.genre||"Music City Original"):"Saved in My Beat Locker")+"</small>";
+    const btn=document.createElement("button");
+    btn.type="button";btn.textContent=selectedBeat&&selectedBeat.id===record.id?"SELECTED":"USE";
+    btn.onclick=()=>selectBeatRecord(record);
+    row.append(text,btn);box.appendChild(row);
+  });
+}
+function selectBeatRecord(record){
+  selectedBeat=record;
+  renderBeatLocker();
+  const audio=document.getElementById("beatPreview");
+  audio.src=record.objectUrl||record.src;
+  audio.style.display="block";
+  document.getElementById("selectedBeatText").textContent=record.title+" is selected.";
+  updateSourceBoxes();
+}
+function clearSelectedBeat(){
+  selectedBeat=null;renderBeatLocker();
+  const audio=document.getElementById("beatPreview");audio.pause();audio.removeAttribute("src");audio.style.display="none";
+  document.getElementById("selectedBeatText").textContent="No beat selected. Music City can generate one from your description.";
+  updateSourceBoxes();
+}
+async function selectedBeatBlob(){
+  if(!selectedBeat)return null;
+  if(selectedBeat.blob)return selectedBeat.blob;
+  const response=await fetch(selectedBeat.src||selectedBeat.objectUrl);
+  if(!response.ok)throw new Error("Music City could not load that beat.");
+  return response.blob();
+}
+
+function setVoiceBlob(blob,label){
+  if(voiceUrl)URL.revokeObjectURL(voiceUrl);
+  voiceBlob=blob;
+  voiceUrl=URL.createObjectURL(blob);
+  const player=document.getElementById("voicePreview");
+  player.src=voiceUrl;player.style.display="block";
+  document.getElementById("voiceStatusText").textContent=(label||"Voice recording")+" is ready.";
+  updateSourceBoxes();
+}
+function updateSourceBoxes(){
+  document.getElementById("beatSourceBox").classList.toggle("ready",!!selectedBeat);
+  document.getElementById("beatStatusPill").textContent=selectedBeat?"READY":"OPTIONAL";
+  document.getElementById("voiceSourceBox").classList.toggle("ready",songType==="voice"&&!!voiceBlob);
+  if(songType==="voice")document.getElementById("voiceStatusPill").textContent=voiceBlob?"READY":"REQUIRED";
+}
+
+async function toggleVoiceRecording(){
+  const button=document.getElementById("recordVoiceButton");
+  if(mediaRecorder&&mediaRecorder.state==="recording"){
+    mediaRecorder.stop();return;
+  }
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    status("Microphone recording is not supported in this browser.","error");return;
+  }
+  try{
+    mediaStream=await navigator.mediaDevices.getUserMedia({audio:true});
+    mediaRecorder=new MediaRecorder(mediaStream);
+    voiceChunks=[];
+    mediaRecorder.ondataavailable=e=>{if(e.data&&e.data.size)voiceChunks.push(e.data)};
+    mediaRecorder.onstop=()=>{
+      if(recordingTimer)clearTimeout(recordingTimer);
+      if(recordingBeatAudio){recordingBeatAudio.pause();recordingBeatAudio.currentTime=0;recordingBeatAudio=null}
+      const blob=new Blob(voiceChunks,{type:mediaRecorder.mimeType||"audio/webm"});
+      setVoiceBlob(blob,"Recorded vocal");
+      mediaStream.getTracks().forEach(t=>t.stop());mediaStream=null;
+      button.textContent="● RECORD VOICE";button.classList.remove("recording");
+      status("Voice recorded. You can Create when ready.","ok");
+    };
+    if(selectedBeat){
+      recordingBeatAudio=new Audio(selectedBeat.objectUrl||selectedBeat.src);
+      recordingBeatAudio.currentTime=0;recordingBeatAudio.volume=.45;
+      await recordingBeatAudio.play().catch(()=>{});
+    }
+    mediaRecorder.start();
+    button.textContent="■ STOP RECORDING";button.classList.add("recording");
+    status("Recording your voice"+(selectedBeat?" over "+selectedBeat.title:"")+". Tap Stop when finished.");
+    recordingTimer=setTimeout(()=>{if(mediaRecorder&&mediaRecorder.state==="recording")mediaRecorder.stop()},240000);
+  }catch(error){
+    status("Microphone permission is required to record your voice.","error");
+  }
+}
+
+async function decodeBlob(context,blob){
+  return context.decodeAudioData((await blob.arrayBuffer()).slice(0));
+}
+function waveBlob(buffer){
+  const channels=Math.min(2,buffer.numberOfChannels),samples=buffer.length;
+  const out=new ArrayBuffer(44+samples*channels*2),view=new DataView(out);let o=0;
+  const txt=s=>{for(let i=0;i<s.length;i++)view.setUint8(o++,s.charCodeAt(i))};
+  const u16=v=>{view.setUint16(o,v,true);o+=2},u32=v=>{view.setUint32(o,v,true);o+=4};
+  txt("RIFF");u32(36+samples*channels*2);txt("WAVEfmt ");u32(16);u16(1);u16(channels);
+  u32(buffer.sampleRate);u32(buffer.sampleRate*channels*2);u16(channels*2);u16(16);txt("data");u32(samples*channels*2);
+  const data=[];for(let c=0;c<channels;c++)data.push(buffer.getChannelData(c));
+  for(let i=0;i<samples;i++)for(let c=0;c<channels;c++){const v=Math.max(-1,Math.min(1,data[c][i]));view.setInt16(o,v<0?v*32768:v*32767,true);o+=2}
+  return new Blob([out],{type:"audio/wav"});
+}
+async function renderVersion(beatBlob,voice,preset){
+  const AC=window.AudioContext||window.webkitAudioContext;
+  const OC=window.OfflineAudioContext||window.webkitOfflineAudioContext;
+  if(!AC||!OC)throw new Error("This browser cannot render the song.");
+  const decoder=new AC();let beatBuffer,voiceBuffer=null;
+  try{
+    beatBuffer=await decodeBlob(decoder,beatBlob);
+    if(voice)voiceBuffer=await decodeBlob(decoder,voice);
+  }finally{decoder.close().catch(()=>{})}
+  const duration=Math.min(240,Math.max(beatBuffer.duration,voiceBuffer?voiceBuffer.duration:0));
+  const rate=44100,ctx=new OC(2,Math.ceil(duration*rate),rate);
+  const master=ctx.createDynamicsCompressor();
+  master.threshold.value=preset==="A"?-16:-19;master.knee.value=18;master.ratio.value=preset==="A"?3.4:4.5;
+  master.attack.value=.004;master.release.value=.22;master.connect(ctx.destination);
+
+  const beat=ctx.createBufferSource(),beatGain=ctx.createGain();
+  beat.buffer=beatBuffer;beat.loop=beatBuffer.duration<duration-.1;beatGain.gain.value=preset==="A"?.70:.64;
+  beat.connect(beatGain).connect(master);beat.start(0);beat.stop(duration);
+
+  if(voiceBuffer){
+    const source=ctx.createBufferSource(),hp=ctx.createBiquadFilter(),presence=ctx.createBiquadFilter(),gain=ctx.createGain();
+    source.buffer=voiceBuffer;hp.type="highpass";hp.frequency.value=preset==="A"?78:88;
+    presence.type="peaking";presence.frequency.value=preset==="A"?3000:3600;presence.Q.value=.75;presence.gain.value=preset==="A"?2.1:3.1;
+    gain.gain.value=preset==="A"?.92:1.0;
+    source.connect(hp).connect(presence).connect(gain).connect(master);source.start(0);
+  }
+  return waveBlob(await ctx.startRendering());
+}
+
+function getPromptAndTitle(){
+  if(createMode==="quick"){
+    const prompt=document.getElementById("quickPrompt").value.trim();
+    return{prompt,title:"Music City Creation",lyrics:""};
+  }
+  const style=document.getElementById("style").value.trim();
+  const lyrics=document.getElementById("lyrics").value.trim();
+  return{prompt:style||"Original Style",title:document.getElementById("songTitle").value.trim()||"Untitled Song",lyrics};
+}
+function advancedValues(){
+  return{
+    bpm:Number(document.getElementById("bpm").value||0),
+    key:document.getElementById("key").value,
+    creativity:Number(document.getElementById("creativity").value||55),
+    influence:Number(document.getElementById("influence").value||65)
+  };
+}
+async function makeBaseBeat(versionIndex,details){
+  const existing=await selectedBeatBlob();
+  if(existing)return{blob:existing,source:selectedBeat.title,providerName:"My Beat Locker"};
+  const adv=advancedValues();
+  const result=await window.MusicCityAI.generate({
+    provider:"music-city-native",title:details.title,style:details.prompt||"Original Style",lyrics:details.lyrics,
+    mode:"Generate Instrumental",vocalStyle:"Instrumental Only",musicLengthMs:15000,
+    bpm:adv.bpm,key:adv.key,creativity:adv.creativity,influence:adv.influence,
+    variationSeed:generationRound*10+versionIndex+1,studio
+  });
+  if(!result.audioBlob)throw new Error("Music City Native did not return audio.");
+  return{blob:result.audioBlob,source:"Music City Native",providerName:result.providerName||"Music City Native"};
+}
+async function createTwoVersions(){
+  const details=getPromptAndTitle();
+  if(!details.prompt&&!selectedBeat){
+    status("Describe the song or add a beat before creating.","error");return;
+  }
+  if(songType==="voice"&&!voiceBlob){
+    status("Add or record your voice first, or switch to Instrumental.","error");return;
+  }
+  const button=document.getElementById("createButton");
+  button.disabled=true;button.textContent="CREATING 2 VERSIONS...";
+  status("Building Version A and Version B...");
+  clearResults();
+  generationRound+=1;
+  try{
+    const built=[];
+    for(let i=0;i<2;i++){
+      status("Creating Version "+(i===0?"A":"B")+"...");
+      const base=await makeBaseBeat(i,details);
+      const master=await renderVersion(base.blob,songType==="voice"?voiceBlob:null,i===0?"A":"B");
+      built.push({
+        id:"creation-"+Date.now().toString(36)+"-"+i+"-"+Math.random().toString(36).slice(2,6),
+        label:i===0?"Version A":"Version B",blob:master,title:details.title,style:details.prompt,
+        source:base.source,provider:base.providerName,createdAt:new Date().toISOString(),
+        description:i===0?"Balanced mix — beat and vocal sit together naturally.":"Vocal-forward mix — more vocal presence and tighter compression."
+      });
+    }
+    resultVersions=built;renderResults();
+    status("Two versions are ready. Listen and choose the one you like.","ok");
+  }catch(error){
+    status(error.message||"Music City could not create the versions.","error");
+  }finally{
+    button.disabled=false;button.textContent="✨ CREATE 2 VERSIONS";
+  }
+}
+function clearResults(){
+  resultUrls.forEach(url=>URL.revokeObjectURL(url));resultUrls=[];resultVersions=[];
+  document.getElementById("resultsSection").classList.remove("show");
+  document.getElementById("versionGrid").innerHTML="";
+}
+function renderResults(){
+  const grid=document.getElementById("versionGrid");grid.innerHTML="";
+  resultVersions.forEach((version,index)=>{
+    const url=URL.createObjectURL(version.blob);resultUrls.push(url);
+    const card=document.createElement("article");card.className="version-card";card.id="versionCard"+index;
+    card.innerHTML=
+      '<div class="version-head"><span class="version-label">'+version.label+'</span><span class="badge">'+escapeHtml(version.source)+'</span></div>'+
+      '<p class="version-desc">'+escapeHtml(version.description)+'</p>'+
+      '<audio controls src="'+url+'"></audio>'+
+      '<div class="version-actions"><button class="use" type="button" onclick="chooseVersion('+index+')">✓ USE THIS VERSION</button>'+
+      '<button type="button" onclick="saveVersion('+index+')">SAVE</button></div>';
+    grid.appendChild(card);
+  });
+  document.getElementById("resultsSection").classList.add("show");
+  document.getElementById("resultsSection").scrollIntoView({behavior:"smooth",block:"start"});
+}
+async function saveVersion(index){
+  const version=resultVersions[index];if(!version)return;
+  try{
+    await window.MusicCityCatalog.saveTrack({
+      id:version.id,title:version.title,style:version.style,studio,beat:version.source,
+      provider:version.provider,createdAt:version.createdAt,audioBlob:version.blob
+    });
+    if(window.MCE){
+      const state=window.MCE.get();
+      if(!state.releases.some(r=>String(r.id)===String(version.id))){
+        window.MCE.addRelease({id:version.id,title:version.title,artistName:state.name,source:"music-city-create",
+          createdAt:version.createdAt,style:version.style,studio,beat:version.source,provider:version.provider,audioKey:version.id,radioStatus:"not-submitted"});
+      }
+    }
+    status(version.label+" saved to your Artist Catalog.","ok");
+  }catch(error){status(error.message||"Could not save that version.","error")}
+}
+async function chooseVersion(index){
+  resultVersions.forEach((v,i)=>document.getElementById("versionCard"+i)?.classList.toggle("selected",i===index));
+  await saveVersion(index);
+  localStorage.setItem("musicCityChosenVersion",resultVersions[index].id);
+  status(resultVersions[index].label+" selected and saved. You can keep creating or open Advanced Studio.","ok");
+}
+function escapeHtml(value){
+  return String(value==null?"":value).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+}
+
+document.getElementById("beatUpload").addEventListener("change",async e=>{
+  const file=e.target.files&&e.target.files[0];e.target.value="";
+  if(!file)return;if(!supportedAudio(file)){status("Choose a supported audio file.","error");return}
+  try{
+    status("Saving beat to My Beat Locker...");
+    const record=await saveBeatRecord(file);await loadBeatLocker();
+    const installed=beatRecords.find(r=>r.id===record.id);if(installed)selectBeatRecord(installed);
+    status(record.title+" saved to My Beat Locker.","ok");
+  }catch(error){status(error.message||"Beat could not be saved.","error")}
+});
+document.getElementById("voiceUpload").addEventListener("change",e=>{
+  const file=e.target.files&&e.target.files[0];e.target.value="";
+  if(!file)return;if(!supportedAudio(file)){status("Choose a supported vocal audio file.","error");return}
+  setVoiceBlob(file,file.name);status("Voice audio ready.","ok");
 });
 
-let beatAudioContext = null;
-let beatMaster = null;
-let beatAudioElement = null;
-let beatLoopTimer = null;
-let beatNoiseBuffer = null;
-let beatPlaybackMode = "stopped";
-const localBeatUrls = [];
-let beatLockerDatabasePromise = null;
-
-function supportedBeatFile(file) {
-if (!file) return false;
-const extension = (String(file.name || "").split(".").pop() || "").toLowerCase();
-return String(file.type || "").startsWith("audio/") ||
-["mp3","wav","m4a","aac","mp4","webm","ogg","flac"].includes(extension);
+async function init(){
+  try{await loadBeatLocker()}catch(error){}
+  setCreateMode("quick");setSongType("voice");updateSourceBoxes();
 }
-
-function beatTitleFromFile(file) {
-return String(file && file.name || "My Beat")
-.replace(/\.[^.]+$/, "")
-.replace(/[_-]+/g, " ")
-.trim() || "My Beat";
-}
-
-function openBeatLockerDatabase() {
-if (!window.indexedDB) return Promise.reject(new Error("Beat Locker storage is not supported in this browser."));
-if (beatLockerDatabasePromise) return beatLockerDatabasePromise;
-beatLockerDatabasePromise = new Promise((resolve, reject) => {
-const request = indexedDB.open("music-city-beat-locker", 1);
-request.onupgradeneeded = () => {
-if (!request.result.objectStoreNames.contains("beats")) {
-request.result.createObjectStore("beats", { keyPath:"id" });
-}
-};
-request.onsuccess = () => resolve(request.result);
-request.onerror = () => reject(request.error || new Error("Beat Locker could not open."));
+window.addEventListener("beforeunload",()=>{
+  if(voiceUrl)URL.revokeObjectURL(voiceUrl);
+  revokeBeatUrls();resultUrls.forEach(url=>URL.revokeObjectURL(url));
+  if(mediaStream)mediaStream.getTracks().forEach(t=>t.stop());
 });
-return beatLockerDatabasePromise;
-}
-
-async function getBeatLockerRecords() {
-const database = await openBeatLockerDatabase();
-return new Promise((resolve, reject) => {
-const request = database.transaction("beats", "readonly").objectStore("beats").getAll();
-request.onsuccess = () => resolve(Array.isArray(request.result) ? request.result : []);
-request.onerror = () => reject(request.error || new Error("Beat Locker could not load."));
-});
-}
-
-function uniqueBeatTitle(baseTitle) {
-let title = baseTitle;
-let suffix = 2;
-while (beatLibrary[title]) title = baseTitle + " " + suffix++;
-return title;
-}
-
-function installLockerBeat(record) {
-if (!record || !record.blob) return "";
-const title = uniqueBeatTitle(String(record.title || "My Beat"));
-const url = URL.createObjectURL(record.blob);
-localBeatUrls.push(url);
-beatLibrary[title] = {
-type:"audio",
-src:url,
-blob:record.blob,
-genre:record.genre || "My Beat",
-mood:"Beat Locker",
-bpm:Number(record.bpm || 0),
-producer:record.producer || "My Upload",
-source:"Beat Locker",
-locker:true,
-lockerId:record.id
-};
-return title;
-}
-
-async function loadBeatLocker() {
-try {
-const records = await getBeatLockerRecords();
-const installed = [];
-records.forEach(record => {
-const title = installLockerBeat(record);
-if (title) installed.push(title);
-});
-return installed;
-} catch (error) {
-const status = document.getElementById("beatLockerStatus");
-if (status) status.textContent = error.message || "Beat Locker is unavailable.";
-return [];
-}
-}
-
-async function saveBeatToLocker(file) {
-if (!supportedBeatFile(file)) throw new Error("Choose an MP3, WAV, M4A, AAC, OGG, FLAC, MP4, or WebM audio file.");
-const database = await openBeatLockerDatabase();
-const record = {
-id:"beat-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2,7),
-title:beatTitleFromFile(file),
-blob:file,
-mimeType:file.type || "",
-size:file.size || 0,
-savedAt:new Date().toISOString()
-};
-await new Promise((resolve, reject) => {
-const transaction = database.transaction("beats", "readwrite");
-transaction.objectStore("beats").put(record);
-transaction.oncomplete = () => resolve();
-transaction.onerror = () => reject(transaction.error || new Error("Beat could not be saved."));
-});
-return record;
-}
-
-async function handleQuickBeatUpload(event) {
-const input = event.target;
-const file = input.files && input.files[0];
-const status = document.getElementById("beatLockerStatus");
-if (!file) return;
-try {
-if (status) status.textContent = "Saving " + file.name + " to My Beat Locker...";
-const record = await saveBeatToLocker(file);
-const title = installLockerBeat(record);
-renderBeatCatalog();
-const button = Array.from(document.querySelectorAll(".beat-choice")).find(item => item.dataset.beat === title);
-if (button) await selectBeat(title, button);
-if (status) status.textContent = "✓ " + title + " saved. It will stay in My Beat Locker on this device.";
-} catch (error) {
-if (status) status.textContent = error.message || "Music City could not save that beat.";
-} finally {
-input.value = "";
-}
-}
-
-function setupQuickBeatLocker() {
-const input = document.getElementById("quickBeatUpload");
-if (input) input.addEventListener("change", handleQuickBeatUpload);
-}
-
-function beatMetaText(config) {
-const parts = [config.genre, config.mood, config.bpm ? config.bpm + " BPM" : ""].filter(Boolean);
-return parts.join(" • ") || "Music City Original";
-}
-
-function renderBeatCatalog() {
-const section = document.getElementById("originalBeatSection");
-const container = document.getElementById("realBeatLibrary");
-if (!section || !container) return;
-container.innerHTML = "";
-const originals = Object.keys(beatLibrary).filter(title => beatLibrary[title].type === "audio");
-section.hidden = originals.length === 0;
-originals.forEach(title => {
-const config = beatLibrary[title];
-const button = document.createElement("button");
-button.type = "button";
-button.className = "beat-choice";
-button.dataset.beat = title;
-const icon = document.createTextNode("🎵 ");
-const name = document.createElement("strong");
-name.textContent = title;
-const badge = document.createElement("span");
-badge.className = "beat-source-badge";
-badge.textContent = config.locker ? "MY BEAT" : config.generated ? "AI BEAT" : "ORIGINAL";
-const br = document.createElement("br");
-const meta = document.createElement("small");
-meta.textContent = beatMetaText(config);
-const credit = document.createElement("span");
-credit.className = "beat-credit";
-credit.textContent = config.locker
-? "Saved in My Beat Locker"
-: "Produced by " + (config.producer || "Music City Estates");
-button.append(icon, name, badge, br, meta, credit);
-button.addEventListener("click", () => selectBeat(title, button));
-container.appendChild(button);
-});
-}
-
-function setupDevBeatLoader() {
-const tools = document.getElementById("devBeatTools");
-const input = document.getElementById("ownerBeatUpload");
-if (!tools || !input || params.get("beatadmin") !== "1") return;
-tools.hidden = false;
-input.addEventListener("change", async event => {
-const files = Array.from(event.target.files || []);
-let firstTitle = "";
-for (const file of files) {
-try {
-const record = await saveBeatToLocker(file);
-const title = installLockerBeat(record);
-if (!firstTitle) firstTitle = title;
-} catch (error) {}
-}
-renderBeatCatalog();
-if (firstTitle) {
-const button = Array.from(document.querySelectorAll(".beat-choice")).find(item => item.dataset.beat === firstTitle);
-if (button) selectBeat(firstTitle, button);
-}
-input.value = "";
-});
-}
-
-function setBeatPlaybackLevel(level) {
-const safe = Math.max(0, Math.min(1, Number(level) || 0));
-if (beatAudioElement) beatAudioElement.volume = safe;
-if (beatMaster && beatAudioContext) {
-try { beatMaster.gain.setValueAtTime(safe, beatAudioContext.currentTime); } catch (error) { beatMaster.gain.value = safe; }
-}
-}
-
-function installGeneratedInstrumental(result, style) {
-if (!result || !result.audioUrl) return "";
-
-let baseTitle = String(result.title || "Music City Beat").trim() + " — AI Instrumental";
-let beatTitle = baseTitle;
-let suffix = 2;
-while (beatLibrary[beatTitle]) beatTitle = baseTitle + " " + suffix++;
-
-beatLibrary[beatTitle] = {
-type:"audio",
-src:result.audioUrl,
-blob:result.audioBlob || null,
-genre:String(style || "Original"),
-mood:"AI Producer",
-bpm:Number(result.bpm || document.getElementById("aiBpm").value || 0),
-producer:result.providerName || "Music City Native",
-source:result.provider || "music-city-native",
-generated:true
-};
-
-if (!localBeatUrls.includes(result.audioUrl)) localBeatUrls.push(result.audioUrl);
-renderBeatCatalog();
-
-const button = Array.from(document.querySelectorAll(".beat-choice"))
-.find(item => item.dataset.beat === beatTitle);
-
-if (button) selectBeat(beatTitle, button);
-
-const beatLane = document.querySelector('.track-lane[data-track="beat"] .track-name small');
-if (beatLane) {
-beatLane.textContent = (result.providerName || "Music City Native") +
-(result.bpm ? " • " + result.bpm + " BPM" : "");
-}
-
-result.beat = beatTitle;
-result.loadedIntoTrack = true;
-queueBoothSessionSave();
-return beatTitle;
-}
-
-function setGuideStep(step) {
-["guideBeat", "guideWrite", "guideRecord"].forEach(id =>
-document.getElementById(id).classList.remove("active")
-);
-document.getElementById(step).classList.add("active");
-}
-
-function updateBeatTransport() {
-const button = document.getElementById("beatTransportButton");
-const label = document.getElementById("selectedBeatLabel");
-const mode = document.getElementById("beatModeLabel");
-label.textContent = selectedBeat || "No beat selected";
-button.disabled = !selectedBeat || recording;
-button.classList.toggle("playing", beatPlaybackMode !== "stopped");
-button.textContent = beatPlaybackMode === "writing"
-? "■ STOP INSTRUMENTAL"
-: beatPlaybackMode === "recording"
-? "● BEAT PLAYING WITH TAKE"
-: "▶ PLAY INSTRUMENTAL";
-mode.textContent = beatPlaybackMode === "writing"
-? "Writing / practice mode — the microphone is off."
-: beatPlaybackMode === "recording"
-? "Recording mode — the instrumental is playing with your take."
-: selectedBeat
-? "Ready. Preview it for writing, or tap Record below."
-: "Pick a beat to unlock writing and recording modes.";
-}
-
-function makeBeatNoiseBuffer(context) {
-const length = Math.floor(context.sampleRate * .16);
-const buffer = context.createBuffer(1, length, context.sampleRate);
-const data = buffer.getChannelData(0);
-for (let index = 0; index < length; index += 1) data[index] = Math.random() * 2 - 1;
-return buffer;
-}
-
-function scheduleKick(time, config, strong) {
-const oscillator = beatAudioContext.createOscillator();
-const gain = beatAudioContext.createGain();
-oscillator.type = "sine";
-oscillator.frequency.setValueAtTime(strong ? 155 : 125, time);
-oscillator.frequency.exponentialRampToValueAtTime(config.bass, time + .16);
-gain.gain.setValueAtTime(strong ? .82 : .62, time);
-gain.gain.exponentialRampToValueAtTime(.001, time + .22);
-oscillator.connect(gain).connect(beatMaster);
-oscillator.start(time);
-oscillator.stop(time + .24);
-}
-
-function scheduleNoise(time, type) {
-const source = beatAudioContext.createBufferSource();
-const filter = beatAudioContext.createBiquadFilter();
-const gain = beatAudioContext.createGain();
-source.buffer = beatNoiseBuffer;
-filter.type = type === "snare" ? "bandpass" : "highpass";
-filter.frequency.value = type === "snare" ? 1600 : 6500;
-gain.gain.setValueAtTime(type === "snare" ? .34 : .11, time);
-gain.gain.exponentialRampToValueAtTime(.001, time + (type === "snare" ? .13 : .045));
-source.connect(filter).connect(gain).connect(beatMaster);
-source.start(time);
-source.stop(time + .16);
-}
-
-function scheduleBeatLoop(startTime, config) {
-const eighth = 60 / config.bpm / 2;
-for (let step = 0; step < 16; step += 1) {
-const time = startTime + step * eighth;
-if (config.kicks.includes(step)) scheduleKick(time, config, step === 0 || step === 8);
-if (config.snares.includes(step)) scheduleNoise(time, "snare");
-if (config.hats.includes(step)) scheduleNoise(time, "hat");
-}
-return eighth * 16;
-}
-
-function stopBeatPlayback(options) {
-if (beatLoopTimer) clearInterval(beatLoopTimer);
-beatLoopTimer = null;
-if (beatAudioElement) {
-try { beatAudioElement.pause(); beatAudioElement.currentTime = 0; } catch (error) {}
-beatAudioElement = null;
-}
-if (beatMaster) {
-try { beatMaster.gain.cancelScheduledValues(beatAudioContext.currentTime); beatMaster.gain.setValueAtTime(0, beatAudioContext.currentTime); beatMaster.disconnect(); }
-catch (error) {}
-}
-beatMaster = null;
-beatPlaybackMode = "stopped";
-updateBeatTransport();
-if (!options || !options.keepGuide) setGuideStep(selectedBeat ? "guideWrite" : "guideBeat");
-}
-
-async function startBeatPlayback(options) {
-if (!selectedBeat) return false;
-stopBeatPlayback({ keepGuide:true });
-const config = beatLibrary[selectedBeat];
-if (!config) return false;
-const level = options && options.mode === "recording" ? .34 : .42;
-
-if (config.type === "audio" && config.src) {
-beatAudioElement = new Audio(config.src);
-beatAudioElement.preload = "auto";
-beatAudioElement.loop = true;
-beatAudioElement.volume = level;
-try {
-await beatAudioElement.play();
-} catch (error) {
-beatAudioElement = null;
-document.getElementById("recordStatus").textContent = "Music City could not play that instrumental. Check the audio file and try again.";
-return false;
-}
-} else {
-const AudioContext = window.AudioContext || window.webkitAudioContext;
-if (!AudioContext) {
-document.getElementById("recordStatus").textContent = "Instrumental playback is not supported in this browser.";
-return false;
-}
-beatAudioContext = beatAudioContext || new AudioContext();
-await beatAudioContext.resume();
-beatNoiseBuffer = beatNoiseBuffer || makeBeatNoiseBuffer(beatAudioContext);
-beatMaster = beatAudioContext.createGain();
-beatMaster.gain.value = level;
-beatMaster.connect(beatAudioContext.destination);
-const loopSeconds = scheduleBeatLoop(beatAudioContext.currentTime + .06, config);
-beatLoopTimer = setInterval(() => scheduleBeatLoop(beatAudioContext.currentTime + .06, config), loopSeconds * 1000);
-}
-
-beatPlaybackMode = options && options.mode === "recording" ? "recording" : "writing";
-setGuideStep(beatPlaybackMode === "recording" ? "guideRecord" : "guideWrite");
-updateBeatTransport();
-return true;
-}
-
-async function toggleBeatPlayback() {
-if (beatPlaybackMode === "writing") {
-stopBeatPlayback();
-document.getElementById("recordStatus").textContent = "Instrumental stopped. Press Play to keep writing, or Record when ready.";
-return;
-}
-const started = await startBeatPlayback({ mode:"writing" });
-if (started) document.getElementById("recordStatus").textContent = "Writing / practice mode: " + selectedBeat + " is playing. Your microphone is off.";
-}
-
-async function selectBeat(beatName, button) {
-if (recording) return;
-selectedBeat = beatName;
-invalidateMixedMaster();
-queueBoothSessionSave();
-
-document.querySelectorAll(".beat-choice").forEach(btn => btn.classList.remove("selected"));
-button.classList.add("selected");
-setGuideStep("guideWrite");
-updateBeatTransport();
-
-document.getElementById("recordStatus").textContent =
-"Beat selected: " + beatName + ". Press Play Instrumental to write, or tap Record when ready.";
-
-if (beatPlaybackMode === "writing") await startBeatPlayback({ mode:"writing" });
-}
-
-function toggleAdvancedStudio() {
-document.body.classList.toggle("advanced-open");
-const open = document.body.classList.contains("advanced-open");
-const button = document.getElementById("advancedToggle");
-if (button) button.textContent = open ? "✕ CLOSE ADVANCED STUDIO" : "⚙️ ADVANCED STUDIO TOOLS";
-}
-
-async function quickAIFinish() {
-const status = document.getElementById("masterStatus");
-const button = document.getElementById("quickFinishButton");
-
-if (recording) {
-if (status) status.textContent = "Stop recording first, then tap AI Finish.";
-return;
-}
-if (!selectedBeat) {
-if (status) status.textContent = "Step 1: Pick or add a beat first.";
-setGuideStep("guideBeat");
-return;
-}
-if (!sessionTracks.lead.blob) {
-if (status) status.textContent = "Step 2: Record your voice first. Your lead vocal is what AI Finish will polish.";
-return;
-}
-
-button.disabled = true;
-button.textContent = "✨ FINISHING YOUR SONG...";
-setMasterStatus("AI Finish is balancing the beat and your real voice, cleaning the vocal, compressing the mix, and creating one master...", "");
-
-try {
-const quickMix = { beat:68, lead:100, double:58, adlibs:50, harmony:48 };
-Object.keys(quickMix).forEach(trackName => {
-const fader = document.querySelector('.track-level[data-track="' + trackName + '"]');
-if (fader) fader.value = quickMix[trackName];
-});
-invalidateMixedMaster();
-const blob = await ensureSessionMix();
-if (!blob) throw new Error("Music City could not create the finished master.");
-setMasterStatus("✓ AI Finish complete. This is one smooth master made from your selected beat and your actual recorded voice. Play it below, then save the finished song.", "ready");
-const player = document.getElementById("masterAudio");
-await player.play().catch(() => {});
-} catch (error) {
-setMasterStatus(error.message || "AI Finish could not complete this song.", "error");
-} finally {
-button.disabled = false;
-button.textContent = "✨ AI FINISH MY SONG";
-}
-}
-
-function updateEngineStatus() {
-const provider = document.getElementById("aiProvider").value;
-const status = document.getElementById("aiEngineStatus");
-const createButton = document.getElementById("createSongButton");
-
-if (provider === "music-city-native") {
-status.textContent = "Music City Native is ready. It renders a real instrumental inside this browser, then automatically loads it into Track 01. This is our self-contained prototype while we prepare a fine-tuned model.";
-status.className = "engine-status ready";
-createButton.disabled = false;
-createButton.textContent = "🎹 GENERATE & LOAD TRACK 01";
-return;
-}
-
-if (provider === "suno") {
-status.textContent = "Suno Premium is wired into the provider architecture but API credentials are not activated yet. No Suno key will ever be exposed in the browser.";
-status.className = "engine-status";
-createButton.disabled = true;
-createButton.textContent = "SUNO PREMIUM — ACCESS PENDING";
-return;
-}
-
-status.textContent = "Select an available Music City AI Producer engine.";
-status.className = "engine-status";
-}
-
-function addStyle(style) {
-
-const input =
-document.getElementById("style");
-
-if (input.value.length > 0) {
-input.value += ", ";
-}
-
-input.value += style;
-}
-
-
-let mediaRecorder;
-let mediaStream;
-let audioChunks = [];
-let recording = false;
-let recordingStartedAt = 0;
-let autoStopTimer = null;
-let referenceAudioBlob = null;
-let referenceAudioDurationMs = 0;
-let lastGeneratedResult = null;
-let generationPasses = 0;
-let meaningfulRevisionCount = 0;
-let craftSongKey = "";
-let lastCraftSnapshot = null;
-let referenceVersion = 0;
-let armedTrack = "lead";
-let recordingTrack = "lead";
-let sessionPlaying = false;
-let sessionAudios = [];
-let sessionStopTimer = null;
-let currentMasterBlob = null;
-let currentMasterUrl = "";
-let currentMasterKind = "";
-let mixDirty = true;
-let sessionSaveTimer = null;
-let boothDatabasePromise = null;
-const sessionTracks = {
-lead: { blob:null, url:"", durationMs:0 },
-double: { blob:null, url:"", durationMs:0 },
-adlibs: { blob:null, url:"", durationMs:0 },
-harmony: { blob:null, url:"", durationMs:0 }
-};
-
-function armSessionTrack(trackName) {
-if (recording) return;
-armedTrack = trackName;
-document.querySelectorAll(".track-lane").forEach(lane => lane.classList.toggle("armed", lane.dataset.track === trackName));
-document.querySelectorAll(".arm-track").forEach(button => button.textContent = button.dataset.track === trackName ? "● ARMED" : "ARM");
-document.getElementById("recordStatus").textContent = selectedBeat
-? trackName.toUpperCase() + " lane armed. Tap Record to perform it over " + selectedBeat + "."
-: trackName.toUpperCase() + " lane armed. Pick a beat before recording.";
-}
-
-function waveformMarkup(seed) {
-let value = Math.max(17, seed || 17);
-let html = "";
-for (let index = 0; index < 36; index += 1) {
-value = (value * 31 + 7) % 47;
-html += '<i style="--wave:' + (8 + value % 31) + 'px"></i>';
-}
-return html;
-}
-
-function renderRecordedTrack(trackName) {
-const lane = document.querySelector('.track-lane[data-track="' + trackName + '"]');
-const track = sessionTracks[trackName];
-lane.querySelector(".timeline-empty").style.display = track.blob ? "none" : "grid";
-lane.querySelector(".waveform").innerHTML = track.blob ? waveformMarkup(track.blob.size) : "";
-lane.querySelector(".track-name small").textContent = track.blob
-? "Take ready • " + Math.round(track.durationMs / 1000) + "s"
-: ({ lead:"Main vocal", double:"Vocal support", adlibs:"Energy & responses", harmony:"Hook layer" })[trackName];
-}
-
-function stopSessionPlayback() {
-if (sessionStopTimer) clearTimeout(sessionStopTimer);
-sessionStopTimer = null;
-sessionAudios.forEach(audio => { try { audio.pause(); audio.currentTime = 0; } catch (error) {} });
-sessionAudios = [];
-sessionPlaying = false;
-stopBeatPlayback({ keepGuide:true });
-document.getElementById("playSessionButton").textContent = "▶ PLAY SESSION";
-}
-
-async function toggleSessionPlayback() {
-if (sessionPlaying) {
-stopSessionPlayback();
-document.getElementById("recordStatus").textContent = "Session playback stopped.";
-return;
-}
-if (!selectedBeat) {
-document.getElementById("recordStatus").textContent = "Pick a beat before playing the session.";
-setGuideStep("guideBeat");
-return;
-}
-const recorded = Object.keys(sessionTracks).filter(trackName => sessionTracks[trackName].blob);
-if (!recorded.length) {
-document.getElementById("recordStatus").textContent = "Record at least one vocal lane before playing the full session.";
-return;
-}
-await startBeatPlayback({ mode:"writing" });
-const beatMuted = document.querySelector('.mute-track[data-track="beat"]').classList.contains("on");
-const beatLevel = Number(document.querySelector('.track-level[data-track="beat"]').value) / 100;
-setBeatPlaybackLevel(beatMuted ? 0 : beatLevel * .58);
-sessionAudios = recorded.map(trackName => {
-const audio = new Audio(sessionTracks[trackName].url);
-const muted = document.querySelector('.mute-track[data-track="' + trackName + '"]').classList.contains("on");
-audio.volume = muted ? 0 : Number(document.querySelector('.track-level[data-track="' + trackName + '"]').value) / 100;
-audio.play().catch(() => {});
-return audio;
-});
-sessionPlaying = true;
-document.getElementById("playSessionButton").textContent = "■ STOP SESSION";
-document.getElementById("recordStatus").textContent = "Playing the multitrack session. Adjust levels or mute lanes to hear the mix change.";
-const longest = Math.max.apply(null, recorded.map(trackName => sessionTracks[trackName].durationMs));
-sessionStopTimer = setTimeout(stopSessionPlayback, longest + 700);
-}
-
-function applyAIMix() {
-const starterMix = { beat:72, lead:100, double:64, adlibs:56, harmony:52 };
-Object.keys(starterMix).forEach(trackName => {
-const fader = document.querySelector('.track-level[data-track="' + trackName + '"]');
-fader.value = starterMix[trackName];
-fader.dispatchEvent(new Event("input"));
-});
-const available = Object.keys(sessionTracks).filter(trackName => sessionTracks[trackName].blob);
-const coach = document.getElementById("mixCoach");
-coach.classList.add("show");
-coach.innerHTML = "<strong>AI Mix Assist applied a starter balance.</strong><br>Lead stays centered and loud for clarity. The double sits lower to thicken the lead. Ad-libs are lower so they add energy without covering words. Harmony is tucked behind the hook. The beat leaves space for the vocal. " + (available.length < 2 ? "Record more lanes to hear the full lesson." : "Press Play Session, move a fader, and compare your choice.");
-invalidateMixedMaster();
-queueBoothSessionSave();
-}
-
-function setMasterStatus(message, state) {
-const status = document.getElementById("masterStatus");
-status.textContent = message;
-status.className = "master-status" + (state ? " " + state : "");
-}
-
-function invalidateMixedMaster() {
-mixDirty = true;
-if (currentMasterKind === "music-city-mix") {
-currentMasterBlob = null;
-currentMasterKind = "";
-if (currentMasterUrl) URL.revokeObjectURL(currentMasterUrl);
-currentMasterUrl = "";
-const player = document.getElementById("masterAudio");
-player.pause();
-player.removeAttribute("src");
-player.style.display = "none";
-document.getElementById("downloadMixButton").disabled = true;
-document.getElementById("useMasterButton").disabled = true;
-}
-}
-
-function setMasterBlob(blob, kind) {
-if (currentMasterUrl) URL.revokeObjectURL(currentMasterUrl);
-currentMasterBlob = blob;
-currentMasterKind = kind;
-currentMasterUrl = URL.createObjectURL(blob);
-mixDirty = false;
-const player = document.getElementById("masterAudio");
-player.src = currentMasterUrl;
-player.style.display = "block";
-document.getElementById("downloadMixButton").disabled = false;
-document.getElementById("useMasterButton").disabled = false;
-}
-
-function makeOfflineNoiseBuffer(context) {
-const length = Math.floor(context.sampleRate * .16);
-const buffer = context.createBuffer(1, length, context.sampleRate);
-const data = buffer.getChannelData(0);
-let seed = 7351;
-for (let index = 0; index < length; index += 1) {
-seed = (seed * 16807) % 2147483647;
-data[index] = seed / 1073741823.5 - 1;
-}
-return buffer;
-}
-
-function renderOfflineBeat(context, destination, durationSeconds) {
-const config = beatLibrary[selectedBeat];
-if (!config || config.type === "audio") return;
-const noiseBuffer = makeOfflineNoiseBuffer(context);
-const eighth = 60 / config.bpm / 2;
-const totalSteps = Math.ceil(durationSeconds / eighth);
-
-for (let step = 0; step < totalSteps; step += 1) {
-const patternStep = step % 16;
-const time = step * eighth;
-if (config.kicks.includes(patternStep)) {
-const oscillator = context.createOscillator();
-const gain = context.createGain();
-oscillator.type = "sine";
-oscillator.frequency.setValueAtTime(patternStep === 0 || patternStep === 8 ? 155 : 125, time);
-oscillator.frequency.exponentialRampToValueAtTime(config.bass, Math.min(time + .16, durationSeconds));
-gain.gain.setValueAtTime(patternStep === 0 || patternStep === 8 ? .82 : .62, time);
-gain.gain.exponentialRampToValueAtTime(.001, Math.min(time + .22, durationSeconds));
-oscillator.connect(gain).connect(destination);
-oscillator.start(time);
-oscillator.stop(Math.min(time + .24, durationSeconds));
-}
-
-const noiseType = config.snares.includes(patternStep) ? "snare" : config.hats.includes(patternStep) ? "hat" : "";
-if (noiseType) {
-const source = context.createBufferSource();
-const filter = context.createBiquadFilter();
-const gain = context.createGain();
-source.buffer = noiseBuffer;
-filter.type = noiseType === "snare" ? "bandpass" : "highpass";
-filter.frequency.value = noiseType === "snare" ? 1600 : 6500;
-gain.gain.setValueAtTime(noiseType === "snare" ? .34 : .11, time);
-gain.gain.exponentialRampToValueAtTime(.001, Math.min(time + (noiseType === "snare" ? .13 : .045), durationSeconds));
-source.connect(filter).connect(gain).connect(destination);
-source.start(time);
-source.stop(Math.min(time + .16, durationSeconds));
-}
-}
-}
-
-async function decodeTrackBlob(context, blob) {
-const bytes = await blob.arrayBuffer();
-return context.decodeAudioData(bytes.slice(0));
-}
-
-function audioBufferToWave(buffer) {
-const channelCount = Math.min(2, buffer.numberOfChannels);
-const sampleCount = buffer.length;
-const output = new ArrayBuffer(44 + sampleCount * channelCount * 2);
-const view = new DataView(output);
-let offset = 0;
-const writeText = text => { for (let index = 0; index < text.length; index += 1) view.setUint8(offset++, text.charCodeAt(index)); };
-const write16 = value => { view.setUint16(offset, value, true); offset += 2; };
-const write32 = value => { view.setUint32(offset, value, true); offset += 4; };
-writeText("RIFF");
-write32(36 + sampleCount * channelCount * 2);
-writeText("WAVEfmt ");
-write32(16);
-write16(1);
-write16(channelCount);
-write32(buffer.sampleRate);
-write32(buffer.sampleRate * channelCount * 2);
-write16(channelCount * 2);
-write16(16);
-writeText("data");
-write32(sampleCount * channelCount * 2);
-
-const channels = [];
-for (let channel = 0; channel < channelCount; channel += 1) channels.push(buffer.getChannelData(channel));
-for (let sample = 0; sample < sampleCount; sample += 1) {
-for (let channel = 0; channel < channelCount; channel += 1) {
-const value = Math.max(-1, Math.min(1, channels[channel][sample]));
-view.setInt16(offset, value < 0 ? value * 32768 : value * 32767, true);
-offset += 2;
-}
-}
-return new Blob([output], { type:"audio/wav" });
-}
-
-async function renderSessionMix() {
-if (!selectedBeat) throw new Error("Pick a beat before creating the mixdown.");
-const trackNames = Object.keys(sessionTracks).filter(trackName => sessionTracks[trackName].blob);
-if (!trackNames.length) throw new Error("Record or upload at least one vocal lane before creating the mixdown.");
-
-const DecodeContext = window.AudioContext || window.webkitAudioContext;
-const OfflineContext = window.OfflineAudioContext || window.webkitOfflineAudioContext;
-if (!DecodeContext || !OfflineContext) throw new Error("This browser does not support audio mixdown.");
-const decoder = new DecodeContext();
-let decodedTracks;
-let decodedBeat = null;
-try {
-decodedTracks = await Promise.all(trackNames.map(async trackName => ({
-trackName,
-buffer: await decodeTrackBlob(decoder, sessionTracks[trackName].blob)
-})));
-const beatConfig = beatLibrary[selectedBeat];
-if (beatConfig && beatConfig.type === "audio" && beatConfig.src) {
-const response = await fetch(beatConfig.src);
-if (!response.ok && response.status) throw new Error("Music City could not load the selected instrumental for mixdown.");
-decodedBeat = await decoder.decodeAudioData((await response.arrayBuffer()).slice(0));
-}
-} finally {
-decoder.close().catch(() => {});
-}
-
-const durationSeconds = Math.min(240, Math.max.apply(null, decodedTracks.map(track => track.buffer.duration)));
-const sampleRate = 44100;
-const context = new OfflineContext(2, Math.ceil(durationSeconds * sampleRate), sampleRate);
-const compressor = context.createDynamicsCompressor();
-compressor.threshold.value = -18;
-compressor.knee.value = 18;
-compressor.ratio.value = 4;
-compressor.attack.value = .004;
-compressor.release.value = .24;
-compressor.connect(context.destination);
-
-const beatGain = context.createGain();
-const beatMuted = document.querySelector('.mute-track[data-track="beat"]').classList.contains("on");
-beatGain.gain.value = beatMuted ? 0 : Number(document.querySelector('.track-level[data-track="beat"]').value) / 100 * .68;
-beatGain.connect(compressor);
-if (decodedBeat) {
-const source = context.createBufferSource();
-source.buffer = decodedBeat;
-source.loop = true;
-source.connect(beatGain);
-source.start(0, 0);
-source.stop(durationSeconds);
-} else {
-renderOfflineBeat(context, beatGain, durationSeconds);
-}
-
-const panByTrack = { lead:0, double:-.34, adlibs:.42, harmony:.18 };
-decodedTracks.forEach(({ trackName, buffer }) => {
-const source = context.createBufferSource();
-const highPass = context.createBiquadFilter();
-const presence = context.createBiquadFilter();
-const gain = context.createGain();
-const panner = context.createStereoPanner();
-const muted = document.querySelector('.mute-track[data-track="' + trackName + '"]').classList.contains("on");
-source.buffer = buffer;
-highPass.type = "highpass";
-highPass.frequency.value = 82;
-presence.type = "peaking";
-presence.frequency.value = 3200;
-presence.Q.value = .7;
-presence.gain.value = 1.8;
-gain.gain.value = muted ? 0 : Number(document.querySelector('.track-level[data-track="' + trackName + '"]').value) / 100 * .9;
-panner.pan.value = panByTrack[trackName] || 0;
-source.connect(highPass).connect(presence).connect(gain).connect(panner).connect(compressor);
-source.start(0);
-});
-
-return audioBufferToWave(await context.startRendering());
-}
-
-async function ensureSessionMix() {
-if (currentMasterBlob && !mixDirty) return currentMasterBlob;
-setMasterStatus("Mixing the beat and vocal lanes into one master...", "");
-const button = document.getElementById("mixdownButton");
-button.disabled = true;
-button.textContent = "MIXING...";
-try {
-const blob = await renderSessionMix();
-setMasterBlob(blob, "music-city-mix");
-await saveBoothSession(false);
-setMasterStatus("Music City mix ready. This playback is one mastered audio file—not several tracks playing separately.", "ready");
-return blob;
-} catch (error) {
-setMasterStatus(error.message || "Music City could not render this mix.", "error");
-throw error;
-} finally {
-button.disabled = false;
-button.textContent = "🎚️ MIX & PLAY";
-}
-}
-
-async function mixAndPlay() {
-try {
-await ensureSessionMix();
-const player = document.getElementById("masterAudio");
-await player.play().catch(() => {});
-} catch (error) {}
-}
-
-function safeSongFilename(suffix, extension) {
-const title = (document.getElementById("songTitle").value || "music-city-song")
-.trim().replace(/[^a-z0-9-_]+/gi, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "music-city-song";
-return title + "-" + suffix + "." + extension;
-}
-
-function downloadBlob(blob, filename) {
-const url = URL.createObjectURL(blob);
-const link = document.createElement("a");
-link.href = url;
-link.download = filename;
-document.body.appendChild(link);
-link.click();
-link.remove();
-setTimeout(() => URL.revokeObjectURL(url), 1500);
-}
-
-function downloadCurrentMaster() {
-if (!currentMasterBlob) {
-setMasterStatus("Create or import a master before downloading.", "error");
-return;
-}
-const extension = currentMasterBlob.type.includes("wav") ? "wav" : currentMasterBlob.type.includes("mpeg") ? "mp3" : "audio";
-downloadBlob(currentMasterBlob, safeSongFilename(currentMasterKind === "suno-master" ? "final-master" : "rough-mix", extension));
-setMasterStatus("Master downloaded to this device.", "ready");
-}
-
-async function finishInSuno() {
-const sunoWindow = window.open("about:blank", "musicCitySuno");
-if (sunoWindow) {
-sunoWindow.document.write("<title>Preparing Suno handoff</title><p style='font-family:sans-serif;padding:24px'>Music City is preparing your rough mix...</p>");
-}
-try {
-const blob = await ensureSessionMix();
-await saveBoothSession(false);
-localStorage.setItem("musicCitySunoReturnPending", "1");
-downloadBlob(blob, safeSongFilename("rough-mix-for-suno", "wav"));
-if (sunoWindow) sunoWindow.location.href = "https://suno.com/create";
-else {
-setMasterStatus("Your browser blocked the new tab. The session is saved; Music City is opening Suno in this tab, and Back will restore the studio.", "ready");
-setTimeout(() => { window.location.href = "https://suno.com/create"; }, 900);
-return;
-}
-setMasterStatus("Rough mix downloaded and Suno opened. Upload the WAV there, download your result, return to this studio tab, then choose Import Suno Master.", "ready");
-} catch (error) {
-if (sunoWindow) sunoWindow.close();
-}
-}
-
-function importSunoMaster(event) {
-const file = event.target.files && event.target.files[0];
-if (!file) return;
-if (!file.type.startsWith("audio/")) {
-setMasterStatus("Choose an audio file downloaded from Suno.", "error");
-event.target.value = "";
-return;
-}
-if (file.size > 50 * 1024 * 1024) {
-setMasterStatus("The returned master must be 50 MB or smaller for this device build.", "error");
-event.target.value = "";
-return;
-}
-setMasterBlob(file, "suno-master");
-localStorage.removeItem("musicCitySunoReturnPending");
-saveBoothSession(false);
-setMasterStatus("Suno master imported. Play it here, download it again, or save it as the finished song in your Artist Catalog.", "ready");
-}
-
-function openBoothDatabase() {
-if (!window.indexedDB) return Promise.reject(new Error("Session storage is not supported in this browser."));
-if (boothDatabasePromise) return boothDatabasePromise;
-boothDatabasePromise = new Promise((resolve, reject) => {
-const request = indexedDB.open("music-city-recording-booth", 1);
-request.onupgradeneeded = () => {
-if (!request.result.objectStoreNames.contains("sessions")) request.result.createObjectStore("sessions", { keyPath:"id" });
-};
-request.onsuccess = () => resolve(request.result);
-request.onerror = () => reject(request.error || new Error("Studio storage could not open."));
-});
-return boothDatabasePromise;
-}
-
-function collectMixSettings() {
-const settings = {};
-document.querySelectorAll(".track-level").forEach(fader => {
-settings[fader.dataset.track] = {
-level:Number(fader.value),
-muted:document.querySelector('.mute-track[data-track="' + fader.dataset.track + '"]').classList.contains("on")
-};
-});
-return settings;
-}
-
-async function saveBoothSession(showConfirmation) {
-try {
-const database = await openBoothDatabase();
-const tracks = {};
-Object.keys(sessionTracks).forEach(trackName => {
-tracks[trackName] = { blob:sessionTracks[trackName].blob, durationMs:sessionTracks[trackName].durationMs };
-});
-const selectedBeatConfig = selectedBeat ? beatLibrary[selectedBeat] : null;
-const record = {
-id:"current-" + studio,
-savedAt:new Date().toISOString(),
-title:document.getElementById("songTitle").value,
-lyrics:document.getElementById("lyrics").value,
-style:document.getElementById("style").value,
-selectedBeat,
-selectedBeatAudio:selectedBeatConfig && selectedBeatConfig.type === "audio" && selectedBeatConfig.blob ? {
-title:selectedBeat,
-blob:selectedBeatConfig.blob,
-genre:selectedBeatConfig.genre || "",
-mood:selectedBeatConfig.mood || "",
-bpm:selectedBeatConfig.bpm || 0,
-producer:selectedBeatConfig.producer || "",
-source:selectedBeatConfig.source || "Music City audio",
-generated:Boolean(selectedBeatConfig.generated),
-localOnly:Boolean(selectedBeatConfig.localOnly)
-} : null,
-armedTrack,
-tracks,
-mixSettings:collectMixSettings(),
-masterBlob:currentMasterBlob,
-masterKind:currentMasterKind
-};
-await new Promise((resolve, reject) => {
-const transaction = database.transaction("sessions", "readwrite");
-transaction.objectStore("sessions").put(record);
-transaction.oncomplete = () => resolve();
-transaction.onerror = () => reject(transaction.error || new Error("Session save failed."));
-});
-if (showConfirmation) setMasterStatus("Studio session saved on this device. You can leave for Suno and return without losing the recording.", "ready");
-return record;
-} catch (error) {
-if (showConfirmation) setMasterStatus(error.message || "Music City could not save this studio session.", "error");
-return null;
-}
-}
-
-function queueBoothSessionSave() {
-if (sessionSaveTimer) clearTimeout(sessionSaveTimer);
-sessionSaveTimer = setTimeout(() => saveBoothSession(false), 350);
-}
-
-async function restoreBoothSession() {
-try {
-const database = await openBoothDatabase();
-const record = await new Promise((resolve, reject) => {
-const request = database.transaction("sessions", "readonly").objectStore("sessions").get("current-" + studio);
-request.onsuccess = () => resolve(request.result || null);
-request.onerror = () => reject(request.error);
-});
-if (!record) return;
-document.getElementById("songTitle").value = record.title || "";
-document.getElementById("lyrics").value = record.lyrics || "";
-document.getElementById("style").value = record.style || "";
-
-if (record.selectedBeatAudio && record.selectedBeatAudio.blob && record.selectedBeatAudio.title) {
-const savedBeat = record.selectedBeatAudio;
-const restoredUrl = URL.createObjectURL(savedBeat.blob);
-localBeatUrls.push(restoredUrl);
-beatLibrary[savedBeat.title] = {
-type:"audio",
-src:restoredUrl,
-blob:savedBeat.blob,
-genre:savedBeat.genre || "Original",
-mood:savedBeat.mood || "Saved session",
-bpm:Number(savedBeat.bpm || 0),
-producer:savedBeat.producer || "Music City",
-source:savedBeat.source || "Saved session",
-generated:Boolean(savedBeat.generated),
-localOnly:Boolean(savedBeat.localOnly)
-};
-renderBeatCatalog();
-}
-
-if (record.selectedBeat && beatLibrary[record.selectedBeat]) {
-selectedBeat = record.selectedBeat;
-const button = Array.from(document.querySelectorAll(".beat-choice"))
-.find(item => item.dataset.beat === record.selectedBeat);
-if (button) button.classList.add("selected");
-setGuideStep("guideWrite");
-updateBeatTransport();
-}
-Object.keys(sessionTracks).forEach(trackName => {
-const savedTrack = record.tracks && record.tracks[trackName];
-if (!savedTrack || !savedTrack.blob) return;
-sessionTracks[trackName].blob = savedTrack.blob;
-sessionTracks[trackName].durationMs = savedTrack.durationMs || 0;
-sessionTracks[trackName].url = URL.createObjectURL(savedTrack.blob);
-renderRecordedTrack(trackName);
-});
-Object.keys(record.mixSettings || {}).forEach(trackName => {
-const saved = record.mixSettings[trackName];
-const fader = document.querySelector('.track-level[data-track="' + trackName + '"]');
-const mute = document.querySelector('.mute-track[data-track="' + trackName + '"]');
-if (fader) { fader.value = saved.level; fader.dispatchEvent(new Event("input")); }
-if (mute && saved.muted) { mute.classList.add("on"); mute.textContent = "MUTE"; }
-});
-if (record.armedTrack && sessionTracks[record.armedTrack]) armSessionTrack(record.armedTrack);
-if (record.masterBlob) {
-setMasterBlob(record.masterBlob, record.masterKind || "music-city-mix");
-setMasterStatus(localStorage.getItem("musicCitySunoReturnPending")
-? "Welcome back. Your Music City session is restored—choose Import Suno Master when your Suno download is ready."
-: "Saved studio session restored on this device.", "ready");
-} else {
-setMasterStatus("Saved vocal session restored. Press Mix & Play to create the master.", "ready");
-}
-} catch (error) {}
-}
-
-async function useMasterAsFinishedSong() {
-if (!currentMasterBlob) return;
-const title = document.getElementById("songTitle").value.trim() || "Untitled Music City Song";
-lastGeneratedResult = {
-id:"master-" + Date.now(),
-title,
-style:document.getElementById("style").value || "Original Style",
-studio,
-beat:selectedBeat || "",
-provider:currentMasterKind,
-providerName:currentMasterKind === "suno-master" ? "Suno AI Finish" : "Music City Mixdown",
-createdAt:new Date().toISOString(),
-originalLyricsConfirmed:document.getElementById("originalLyricsConfirmed").checked,
-audioBlob:currentMasterBlob
-};
-document.getElementById("aiResult").style.display = "block";
-document.getElementById("resultText").innerHTML = "<strong>" + title + "</strong><br>Final master ready from " + lastGeneratedResult.providerName + ".";
-document.getElementById("catalogActions").style.display = "grid";
-document.getElementById("saveToCatalogButton").disabled = false;
-await saveGeneratedToCatalog();
-setMasterStatus("Finished master saved to the Artist Catalog.", "ready");
-}
-
-function bindSessionConsole() {
-document.querySelectorAll(".arm-track").forEach(button => button.addEventListener("click", () => armSessionTrack(button.dataset.track)));
-document.querySelectorAll(".track-level").forEach(fader => fader.addEventListener("input", () => {
-const lane = fader.closest(".track-lane");
-const pan = { beat:"CENTER", lead:"CENTER", double:"LEFT", adlibs:"RIGHT", harmony:"WIDE" }[fader.dataset.track];
-lane.querySelector(".mix-readout").textContent = fader.value + "% • " + pan;
-if (sessionPlaying && fader.dataset.track === "beat") setBeatPlaybackLevel(Number(fader.value) / 100 * .58);
-invalidateMixedMaster();
-queueBoothSessionSave();
-}));
-document.querySelectorAll(".mute-track").forEach(button => button.addEventListener("click", () => {
-button.classList.toggle("on");
-button.textContent = button.classList.contains("on") ? "MUTE" : "M";
-if (sessionPlaying) { stopSessionPlayback(); toggleSessionPlayback(); }
-invalidateMixedMaster();
-queueBoothSessionSave();
-}));
-}
-
-
-async function toggleRecording() {
-
-const button =
-document.getElementById("recordButton");
-
-const status =
-document.getElementById("recordStatus");
-
-
-if (!recording) {
-
-if (!selectedBeat) {
-status.textContent = "Step 1: Pick a beat before recording your vocal.";
-setGuideStep("guideBeat");
-return;
-}
-
-if (sessionPlaying) stopSessionPlayback();
-
-try {
-
-const stream =
-await navigator.mediaDevices.getUserMedia({
-audio: true
-});
-
-mediaStream = stream;
-
-mediaRecorder =
-new MediaRecorder(stream);
-
-audioChunks = [];
-recordingTrack = armedTrack;
-
-
-mediaRecorder.ondataavailable = event => {
-
-audioChunks.push(event.data);
-
-};
-
-
-mediaRecorder.onstop = () => {
-
-const blob =
-new Blob(
-audioChunks,
-{ type: mediaRecorder.mimeType || "audio/webm" }
-);
-
-referenceAudioBlob = blob;
-referenceVersion += 1;
-const takeDurationMs = Math.max(50, Math.min(Date.now() - recordingStartedAt, 240000));
-referenceAudioDurationMs = Math.min(takeDurationMs, 30000);
-
-const url =
-URL.createObjectURL(blob);
-
-const audio =
-document.getElementById("audioPreview");
-
-audio.src = url;
-audio.style.display = "block";
-document.getElementById("takePlaybackNote").style.display = "block";
-
-const track = sessionTracks[recordingTrack];
-if (track.url) URL.revokeObjectURL(track.url);
-track.blob = blob;
-track.url = url;
-track.durationMs = takeDurationMs;
-renderRecordedTrack(recordingTrack);
-invalidateMixedMaster();
-queueBoothSessionSave();
-
-status.textContent =
-recordingTrack.toUpperCase() + " take complete. Reference ready (" +
-Math.round(takeDurationMs / 1000) +
-"s). Your vocal is ready. Tap AI Finish when you are happy with the take.";
-
-if (mediaStream) {
-mediaStream.getTracks().forEach(track => track.stop());
-mediaStream = null;
-}
-
-};
-
-
-await startBeatPlayback({ mode:"recording" });
-
-mediaRecorder.start();
-
-recording = true;
-recordingStartedAt = Date.now();
-updateBeatTransport();
-
-button.textContent =
-"STOP";
-
-button.classList.add("recording");
-
-status.textContent =
-"Recording your voice over " + selectedBeat + "... tap STOP when the song is finished (4 minute maximum).";
-
-autoStopTimer = setTimeout(() => {
-if (recording) {
-toggleRecording();
-}
-}, 240000);
-
-}
-
-catch(error) {
-
-status.textContent =
-"Microphone permission is required.";
-
-}
-
-}
-
-else {
-
-if (autoStopTimer) {
-clearTimeout(autoStopTimer);
-autoStopTimer = null;
-}
-
-mediaRecorder.stop();
-stopBeatPlayback({ keepGuide:true });
-
-recording = false;
-
-button.textContent =
-"RECORD";
-
-button.classList.remove("recording");
-updateBeatTransport();
-
-}
-}
-
-
-function loadUploadedAudio(event) {
-
-const file =
-event.target.files[0];
-
-if (!file) return;
-
-const status =
-document.getElementById("recordStatus");
-
-if (file.size > 3 * 1024 * 1024) {
-status.textContent =
-"Reference audio must be 3 MB or smaller.";
-event.target.value = "";
-return;
-}
-
-const url =
-URL.createObjectURL(file);
-
-const audio =
-document.getElementById("audioPreview");
-
-audio.src = url;
-audio.style.display = "block";
-
-audio.onloadedmetadata = () => {
-const durationMs =
-Math.round((audio.duration || 0) * 1000);
-
-if (!durationMs || durationMs > 30000) {
-referenceAudioBlob = null;
-referenceAudioDurationMs = 0;
-audio.removeAttribute("src");
-audio.style.display = "none";
-event.target.value = "";
-status.textContent =
-"Reference audio must be 30 seconds or shorter.";
-URL.revokeObjectURL(url);
-return;
-}
-
-referenceAudioBlob = file;
-referenceVersion += 1;
-referenceAudioDurationMs = durationMs;
-
-const track = sessionTracks[armedTrack];
-if (track.url) URL.revokeObjectURL(track.url);
-track.blob = file;
-track.url = url;
-track.durationMs = durationMs;
-renderRecordedTrack(armedTrack);
-invalidateMixedMaster();
-queueBoothSessionSave();
-
-status.textContent =
-"Uploaded audio added to " + armedTrack.toUpperCase() + " (" +
-Math.round(durationMs / 1000) +
-"s).";
-};
-
-audio.onerror = () => {
-referenceAudioBlob = null;
-referenceAudioDurationMs = 0;
-audio.style.display = "none";
-status.textContent =
-"Music City could not read that audio file.";
-};
-}
-
-
-function saveDraft() {
-
-const draft = {
-
-title:
-document.getElementById("songTitle").value,
-
-lyrics:
-document.getElementById("lyrics").value,
-
-style:
-document.getElementById("style").value,
-
-originalLyricsConfirmed:
-document.getElementById("originalLyricsConfirmed").checked,
-
-revisionCount:
-meaningfulRevisionCount,
-
-studio:
-studio,
-
-beat:
-selectedBeat,
-
-sessionTracks:
-Object.keys(sessionTracks).filter(trackName => sessionTracks[trackName].blob)
-
-};
-
-localStorage.setItem(
-"musicCitySongDraft",
-JSON.stringify(draft)
-);
-
-alert("Song draft saved.");
-}
-
-
-function buildCraftSnapshot(title, style, mode) {
-return {
-title: String(title || "").trim().toLowerCase(),
-lyrics: document.getElementById("lyrics").value.trim(),
-style: String(style || "").trim().toLowerCase(),
-beat: selectedBeat || "",
-originalLyricsConfirmed:
-document.getElementById("originalLyricsConfirmed").checked,
-referenceVersion: referenceVersion,
-mode: mode,
-vocalStyle: document.getElementById("vocalStyle").value,
-creativity: Number(document.getElementById("creativity").value || 50),
-influence: Number(document.getElementById("influence").value || 50)
-};
-}
-
-function hasMeaningfulRevision(before, after) {
-if (!before) return false;
-
-const textChanged =
-before.lyrics !== after.lyrics ||
-before.style !== after.style;
-
-const creativeChoiceChanged =
-before.beat !== after.beat ||
-before.originalLyricsConfirmed !== after.originalLyricsConfirmed ||
-before.referenceVersion !== after.referenceVersion ||
-before.mode !== after.mode ||
-before.vocalStyle !== after.vocalStyle;
-
-const controlChanged =
-Math.abs(before.creativity - after.creativity) >= 8 ||
-Math.abs(before.influence - after.influence) >= 8;
-
-return textChanged || creativeChoiceChanged || controlChanged;
-}
-
-
-function buildCraftInput(title, style, mode) {
-return {
-title: title,
-lyrics: document.getElementById("lyrics").value,
-style: style,
-originalLyricsConfirmed:
-document.getElementById("originalLyricsConfirmed").checked,
-audioAttached: Boolean(referenceAudioBlob),
-referenceDurationMs: referenceAudioDurationMs,
-beat: selectedBeat,
-revisionCount: meaningfulRevisionCount,
-creativity: Number(document.getElementById("creativity").value || 50),
-influence: Number(document.getElementById("influence").value || 50),
-mode: mode,
-vocalStyle: document.getElementById("vocalStyle").value
-};
-}
-
-function renderCraftReport(report) {
-const box = document.getElementById("craftReport");
-const score = document.getElementById("craftScore");
-const tier = document.getElementById("craftTier");
-const breakdown = document.getElementById("craftBreakdown");
-const coaching = document.getElementById("craftCoaching");
-
-box.style.display = "block";
-score.textContent = report.score;
-tier.textContent = report.tier.toUpperCase();
-
-const labels = {
-authorship: "Original Writing",
-performance: "Human Performance",
-direction: "Creative Direction",
-revision: "Revision Work",
-intentionality: "Intentional AI Use"
-};
-
-breakdown.innerHTML = Object.keys(report.breakdown)
-.map(key => {
-const value = report.breakdown[key];
-const max = report.maxima[key];
-const width = Math.round((value / max) * 100);
-return (
-'<div class="craft-row">' +
-'<span>' + labels[key] + '</span>' +
-'<div class="craft-bar"><span style="width:' + width + '%"></span></div>' +
-'<strong>' + value + '/' + max + '</strong>' +
-'</div>'
-);
-}).join("");
-
-coaching.innerHTML =
-"<strong>A&R Coaching:</strong><br>" +
-report.nextSteps.map(step => "• " + step).join("<br>");
-}
-
-
-async function saveGeneratedToCatalog() {
-
-const button =
-document.getElementById("saveToCatalogButton");
-
-const engineMessage =
-document.getElementById("engineMessage");
-
-if (!lastGeneratedResult ||
-!lastGeneratedResult.audioBlob) {
-engineMessage.textContent =
-"Generate a live AI track before saving it to the catalog.";
-return;
-}
-
-button.disabled = true;
-button.textContent =
-"SAVING...";
-
-try {
-
-const trackId =
-lastGeneratedResult.id ||
-("track-" + Date.now());
-
-await window.MusicCityCatalog.saveTrack({
-id: trackId,
-title: lastGeneratedResult.title,
-style: lastGeneratedResult.style || "",
-studio: lastGeneratedResult.studio || studio,
-beat: lastGeneratedResult.beat || "",
-provider: lastGeneratedResult.providerName || lastGeneratedResult.provider,
-createdAt: lastGeneratedResult.createdAt,
-craftScore: lastGeneratedResult.craftScore || 0,
-craftTier: lastGeneratedResult.craftTier || "Quick Draft",
-craftBreakdown: lastGeneratedResult.craftBreakdown || {},
-revisionCount: lastGeneratedResult.revisionCount || 0,
-originalLyricsConfirmed: Boolean(lastGeneratedResult.originalLyricsConfirmed),
-audioBlob: lastGeneratedResult.audioBlob
-});
-
-const current =
-window.MCE.get();
-
-const alreadySaved =
-current.releases.some(release =>
-String(release.id) === String(trackId)
-);
-
-if (!alreadySaved) {
-window.MCE.addRelease({
-id: trackId,
-title: lastGeneratedResult.title,
-artistName: current.name,
-source:
-"ai-" +
-(lastGeneratedResult.provider || "music-city"),
-createdAt: lastGeneratedResult.createdAt,
-style: lastGeneratedResult.style || "",
-studio: lastGeneratedResult.studio || studio,
-beat: lastGeneratedResult.beat || "",
-provider:
-lastGeneratedResult.providerName ||
-lastGeneratedResult.provider ||
-"Music City AI",
-audioKey: trackId,
-craftScore: lastGeneratedResult.craftScore || 0,
-craftTier: lastGeneratedResult.craftTier || "Quick Draft",
-craftBreakdown: lastGeneratedResult.craftBreakdown || {},
-revisionCount: lastGeneratedResult.revisionCount || 0,
-originalLyricsConfirmed: Boolean(lastGeneratedResult.originalLyricsConfirmed),
-radioStatus: "not-submitted"
-});
-}
-
-button.textContent =
-"✓ SAVED TO CATALOG";
-
-engineMessage.textContent =
-"Saved to your Artist Catalog. The track is now part of your Music City career on this device.";
-
-}
-catch(error) {
-
-button.disabled = false;
-button.textContent =
-"💿 SAVE TO ARTIST CATALOG";
-
-engineMessage.textContent =
-error.message ||
-"Music City could not save this track.";
-
-}
-
-}
-
-
-async function createSong() {
-
-const title =
-document.getElementById("songTitle").value
-|| "Untitled Song";
-
-const style =
-document.getElementById("style").value
-|| "Original Style";
-
-const mode =
-document.getElementById("creationMode").value;
-
-const provider =
-document.getElementById("aiProvider").value;
-
-const nextCraftKey =
-title.trim().toLowerCase();
-
-if (craftSongKey !== nextCraftKey) {
-craftSongKey = nextCraftKey;
-generationPasses = 0;
-meaningfulRevisionCount = 0;
-lastCraftSnapshot = null;
-}
-
-const request = {
-provider: provider,
-title: title,
-lyrics: document.getElementById("lyrics").value,
-style: style,
-studio: studio,
-mode: mode,
-vocalStyle: document.getElementById("vocalStyle").value,
-creativity: document.getElementById("creativity").value,
-influence: document.getElementById("influence").value,
-beat: selectedBeat,
-audioAttached:
-Boolean(referenceAudioBlob),
-musicLengthMs:
-Number(document.getElementById("musicLength").value || 12000),
-bpm:
-Number(document.getElementById("aiBpm").value || 0),
-key:
-document.getElementById("aiKey").value,
-referenceSongId: "",
-referenceDurationMs: 0,
-originalLyricsConfirmed:
-document.getElementById("originalLyricsConfirmed").checked,
-revisionCount:
-Math.max(0, generationPasses - 1)
-};
-
-localStorage.setItem(
-"musicCitySongDraft",
-JSON.stringify(request)
-);
-
-const resultBox =
-document.getElementById("aiResult");
-
-const resultText =
-document.getElementById("resultText");
-
-const engineMessage =
-document.getElementById("engineMessage");
-
-const generatedAudio =
-document.getElementById("generatedAudio");
-
-resultBox.style.display = "block";
-resultText.innerHTML =
-"<strong>" + title + "</strong><br>" +
-"Submitting to Music City AI...";
-
-engineMessage.textContent =
-"Creating production job...";
-
-generatedAudio.style.display = "none";
-generatedAudio.removeAttribute("src");
-
-try {
-
-if (mode === "Use Recording as Reference") {
-throw new Error(
-"Reference-guided native generation is reserved for the fine-tuned Music City model phase. Generate an instrumental from style, BPM and key for this prototype."
-);
-}
-
-const result =
-await window.MusicCityAI.generate(request);
-
-const currentCraftSnapshot =
-buildCraftSnapshot(title, style, mode);
-
-if (generationPasses > 0 &&
-hasMeaningfulRevision(lastCraftSnapshot, currentCraftSnapshot)) {
-meaningfulRevisionCount += 1;
-}
-
-generationPasses += 1;
-lastCraftSnapshot = currentCraftSnapshot;
-
-const craftReport =
-window.MusicCitySongCraft.scoreSong(
-buildCraftInput(title, style, mode)
-);
-
-result.craftReport = craftReport;
-result.craftScore = craftReport.score;
-result.craftTier = craftReport.tier;
-result.craftBreakdown = craftReport.breakdown;
-result.revisionCount = meaningfulRevisionCount;
-result.originalLyricsConfirmed =
-craftReport.signals.originalLyricsConfirmed;
-
-renderCraftReport(craftReport);
-
-document.getElementById("createSongButton").textContent =
-"🎹 GENERATE ANOTHER — PASS " + (generationPasses + 1);
-
-result.style = style;
-result.studio = studio;
-
-if (result.audioBlob && mode === "Generate Instrumental") {
-installGeneratedInstrumental(result, style);
-} else {
-result.beat = result.beat || selectedBeat || "";
-}
-
-lastGeneratedResult = result;
-
-const catalogActions =
-document.getElementById("catalogActions");
-
-const saveButton =
-document.getElementById("saveToCatalogButton");
-
-if (result.audioBlob) {
-catalogActions.style.display = "grid";
-saveButton.disabled = false;
-saveButton.textContent =
-"💿 SAVE TO ARTIST CATALOG";
-}
-else {
-catalogActions.style.display = "none";
-}
-
-resultText.innerHTML =
-"<strong>" + result.title + "</strong><br>" +
-"Style: " + style + "<br>" +
-"Mode: " + mode + "<br>" +
-"Beat: " + (result.beat || "No beat selected") + "<br>" +
-"Engine: " + result.providerName + "<br>" +
-"Status: " + result.status + "<br>" +
-"Craft: " + result.craftScore + "/100 — " + result.craftTier;
-
-engineMessage.textContent =
-(result.message || "Generation submitted.") +
-(result.loadedIntoTrack ? " It is selected in Track 01 now—press Play Instrumental or Record." : "");
-
-if (result.audioUrl) {
-generatedAudio.src = result.audioUrl;
-generatedAudio.style.display = "block";
-}
-
-const sessions =
-JSON.parse(
-localStorage.getItem("musicCityAISessions") || "[]"
-);
-
-const storedSession =
-Object.assign({}, result);
-
-delete storedSession.audioBlob;
-
-sessions.unshift(storedSession);
-
-localStorage.setItem(
-"musicCityAISessions",
-JSON.stringify(sessions.slice(0, 25))
-);
-
-}
-catch(error) {
-
-resultText.innerHTML =
-"<strong>" + title + "</strong><br>" +
-"Music City could not submit this provider yet.";
-
-engineMessage.textContent =
-error.message || "AI generation failed.";
-
-document.getElementById("aiEngineStatus").className =
-"engine-status error";
-
-}
-
-}
-
-async function initializeRecordingBooth() {
-updateEngineStatus();
-bindSessionConsole();
-setupQuickBeatLocker();
-setupDevBeatLoader();
-await loadBeatLocker();
-renderBeatCatalog();
-armSessionTrack("lead");
-updateBeatTransport();
-await restoreBoothSession();
-}
-
-initializeRecordingBooth();
-
-["songTitle", "lyrics", "style", "originalLyricsConfirmed"].forEach(id => {
-document.getElementById(id).addEventListener("input", queueBoothSessionSave);
-document.getElementById(id).addEventListener("change", queueBoothSessionSave);
-});
-
-document.addEventListener("visibilitychange", () => {
-if (document.visibilityState === "hidden") saveBoothSession(false);
-});
-
-window.addEventListener("beforeunload", () => {
-stopSessionPlayback();
-Object.keys(sessionTracks).forEach(trackName => {
-if (sessionTracks[trackName].url) URL.revokeObjectURL(sessionTracks[trackName].url);
-});
-if (mediaStream) mediaStream.getTracks().forEach(track => track.stop());
-if (beatAudioElement) { try { beatAudioElement.pause(); } catch (error) {} }
-if (beatAudioContext) beatAudioContext.close().catch(() => {});
-localBeatUrls.forEach(url => URL.revokeObjectURL(url));
-if (currentMasterUrl) URL.revokeObjectURL(currentMasterUrl);
-});
-
+init();
 </script>
-
 </body>
 </html>
