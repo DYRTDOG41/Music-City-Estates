@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Music City Pro Studio</title>
+<style>
+*{box-sizing:border-box}
+:root{color-scheme:dark}
+body{margin:0;background:#05080d;color:#fff;font-family:Arial,Helvetica,sans-serif;min-height:100vh}
+.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px max(14px,env(safe-area-inset-right)) 12px max(14px,env(safe-area-inset-left));background:rgba(5,8,13,.96);border-bottom:1px solid #203044;backdrop-filter:blur(12px)}
+.brand{min-width:0}.brand strong{display:block;font-size:15px;letter-spacing:.06em}.brand small{display:block;color:#8fa6bc;margin-top:3px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+button,a.btn{border:1px solid #2e5876;border-radius:9px;background:#0b1823;color:#eaf8ff;padding:10px 12px;font-weight:800;text-decoration:none;cursor:pointer}
+a.primary{border-color:#22d3ee;background:linear-gradient(135deg,#075e73,#0c7b6d)}
+.shell{display:grid;grid-template-rows:auto minmax(560px,1fr);min-height:calc(100vh - 68px)}
+.intro{padding:14px 16px;background:linear-gradient(90deg,#07111c,#0b1222);border-bottom:1px solid #1e3449}
+.intro-grid{max-width:1400px;margin:auto;display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center}
+.intro h1{font-size:18px;margin:0 0 5px}.intro p{margin:0;color:#9eb2c7;font-size:12px;line-height:1.45}
+.badge{display:inline-block;margin-left:6px;padding:2px 7px;border:1px solid #7ef0a766;border-radius:99px;color:#7ef0a7;font-size:9px;vertical-align:middle}
+.frame-wrap{position:relative;min-height:560px;background:#020408}
+iframe{display:block;width:100%;height:calc(100vh - 150px);min-height:560px;border:0;background:#020408}
+.fallback{position:absolute;right:14px;bottom:14px;z-index:5;max-width:320px;padding:10px 12px;border:1px solid #2a435a;border-radius:10px;background:rgba(5,11,18,.9);font-size:11px;color:#a9bed1;line-height:1.45;box-shadow:0 8px 25px rgba(0,0,0,.35)}
+.fallback strong{color:#fff;display:block;margin-bottom:4px}
+@media(max-width:700px){
+.topbar{align-items:flex-start}.brand small{max-width:180px}.actions{gap:6px}.actions .btn{padding:9px;font-size:11px}
+.shell{grid-template-rows:auto minmax(520px,1fr)}.intro-grid{grid-template-columns:1fr}.intro{padding:11px 12px}
+iframe{height:calc(100vh - 170px);min-height:520px}.fallback{left:10px;right:10px;bottom:10px;max-width:none}
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+<div class="brand">
+<strong>🎚 MUSIC CITY PRO STUDIO <span class="badge">BETA</span></strong>
+<small>Professional DAW workspace • hosted openDAW integration</small>
+</div>
+<div class="actions">
+<a class="btn" id="backLink" href="advanced_recording_studio.html">← MUSIC CITY MIXER</a>
+<a class="btn primary" href="https://opendaw.studio/" target="_blank" rel="noopener">↗ FULL SCREEN DAW</a>
+</div>
+</header>
+<main class="shell">
+<section class="intro">
+<div class="intro-grid">
+<div>
+<h1>Professional production without rebuilding a DAW from scratch.</h1>
+<p>This room uses the hosted openDAW studio as an advanced editing workspace. Music City remains a separate game layer. If microphone, MIDI, audio worklets, or storage are restricted inside the embedded view, use <strong>Full Screen DAW</strong> above.</p>
+</div>
+<div><small id="studioContext">Music City session bridge</small></div>
+</div>
+</section>
+<section class="frame-wrap">
+<iframe
+id="proDaw"
+title="openDAW professional music studio"
+src="https://opendaw.studio/"
+allow="microphone; autoplay; midi; clipboard-read; clipboard-write; fullscreen"
+allowfullscreen
+referrerpolicy="strict-origin-when-cross-origin"></iframe>
+<div class="fallback">
+<strong>iPhone / Safari note</strong>
+For the most reliable microphone and audio-engine performance, tap <b>FULL SCREEN DAW</b>. Your Music City session remains saved locally when you return.
+</div>
+</section>
+</main>
+<script>
+const params = new URLSearchParams(location.search);
+const studio = params.get("studio") || "begenius";
+const back = document.getElementById("backLink");
+back.href = "advanced_recording_studio.html?studio=" + encodeURIComponent(studio);
+document.getElementById("studioContext").textContent =
+studio === "bedroom" ? "Bedroom Studio → Pro Studio" : "BeGenius Studio → Pro Studio";
+</script>
+</body>
+</html>
