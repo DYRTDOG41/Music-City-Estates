@@ -30,7 +30,7 @@ function render(snapshot){latestMessages=snapshot.messages;const list=document.g
 function connect(){const saved=window.MCESocial.loadProfile();if(!saved.name)return;if(connection)connection.close();connection=window.MCESocial.createRoom(activeRoom,render);document.getElementById('chatInput').disabled=false;document.getElementById('sendButton').disabled=false}
 document.getElementById('saveProfile').onclick=()=>{const saved=window.MCESocial.saveProfile({name:document.getElementById('playerName').value,role:document.getElementById('playerRole').value,color:document.getElementById('playerColor').value});if(!saved.name){document.getElementById('playerName').focus();return}connect()};document.querySelectorAll('[data-room]').forEach((button)=>button.onclick=()=>{activeRoom=button.dataset.room;document.querySelectorAll('[data-room]').forEach((item)=>item.classList.toggle('active',item===button));document.getElementById('roomTitle').textContent=roomNames[activeRoom];connect()});document.getElementById('chatForm').onsubmit=(event)=>{event.preventDefault();const input=document.getElementById('chatInput');if(connection)connection.send(input.value);input.value='';input.focus()};addEventListener('beforeunload',()=>connection&&connection.close());if(profile.name)connect();
 </script>
-<script src="music_city_soundtrack_catalog.js"></script>
-<script src="music_city_soundtrack.js"></script>
+<script src="music_city_soundtrack_catalog.js?v=organ-donor-global-1"></script>
+<script src="music_city_soundtrack.js?v=organ-donor-global-1"></script>
 </body>
 </html>
