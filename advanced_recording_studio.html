@@ -258,10 +258,18 @@ color: #ff8c8c;
 .waveform i { width:3px; height:var(--wave); max-height:38px; border-radius:3px; background:#4fd8ff; opacity:.86; }
 .track-lane[data-track="beat"] .waveform i { background:#a47aff; }
 .timeline-empty { position:absolute; inset:0; display:grid; place-items:center; color:#5f738b; font-size:10px; letter-spacing:.08em; }
-.track-mix { display:grid; grid-template-columns:1fr auto; align-items:center; gap:6px; }
+.timeline-ruler { display:grid; grid-template-columns:repeat(5,1fr); margin:0 144px 7px 134px; color:#61758d; font-size:9px; letter-spacing:.05em; }
+.timeline-ruler span:not(:first-child){text-align:right}
+.timeline { --playhead:0%; }
+.timeline::after { content:""; position:absolute; z-index:4; top:0; bottom:0; left:var(--playhead); width:2px; background:#ff526d; box-shadow:0 0 7px rgba(255,82,109,.75); opacity:0; pointer-events:none; }
+.session-playing .timeline::after { opacity:.9; }
+.track-mix { display:grid; grid-template-columns:minmax(70px,1fr) auto auto; align-items:center; gap:6px; }
 .track-mix input { margin:0; padding:0; }
-.mute-track { min-width:38px; padding:7px !important; font-size:10px; cursor:pointer; }
-.mute-track.on { border-color:#ffd45c !important; color:#ffd45c !important; }
+.track-mix .pan-control { grid-column:1/-1; display:grid; grid-template-columns:28px 1fr 32px; align-items:center; gap:6px; color:#6f849b; font-size:9px; }
+.pan-control input { width:100%; }
+.mute-track,.solo-track { min-width:38px; padding:7px !important; font-size:10px; cursor:pointer; }
+.mute-track.on { border-color:#ffd45c !important; color:#ffd45c !important; background:#3b3010 !important; }
+.solo-track.on { border-color:#7ef0a7 !important; color:#7ef0a7 !important; background:#0b2d1b !important; }
 .mix-readout { grid-column:1/-1; color:#7f96ad; font-size:9px; text-align:center; }
 .mix-coach { display:none; margin-top:12px; padding:12px; border-left:3px solid #a47aff; background:#0c1323; color:#c6d3e3; font-size:12px; line-height:1.55; }
 .mix-coach.show { display:block; }
@@ -398,6 +406,7 @@ line-height:1.5;
 grid-template-columns: 1fr;
 }
 .transport-button { width:100%; }
+.timeline-ruler { display:none; }
 .track-lane { grid-template-columns:92px 1fr; }
 .track-mix { grid-column:1/-1; }
 .session-actions { display:grid; grid-template-columns:1fr 1fr; width:100%; }
@@ -648,12 +657,13 @@ placeholder="Describe the sound: melodic trap, soulful R&B, southern hip-hop..."
 <div><h3>2. Engineering Session</h3><p>Arm a vocal lane, record a take, then play and balance the whole session.</p></div>
 <div class="session-actions"><button type="button" id="playSessionButton" onclick="toggleSessionPlayback()">▶ PLAY SESSION</button><button type="button" id="aiMixButton" onclick="applyAIMix()">✨ AI MIX ASSIST</button></div>
 </div>
+<div class="timeline-ruler" aria-hidden="true"><span>0:00</span><span>0:15</span><span>0:30</span><span>0:45</span><span>1:00+</span></div>
 <div class="track-lanes" id="trackLanes">
-<div class="track-lane" data-track="beat"><div class="track-name"><strong>01 BEAT</strong><small>Instrumental</small></div><div class="timeline"><div class="waveform" aria-hidden="true"><i style="--wave:28px"></i><i style="--wave:12px"></i><i style="--wave:36px"></i><i style="--wave:17px"></i><i style="--wave:31px"></i><i style="--wave:14px"></i><i style="--wave:38px"></i><i style="--wave:20px"></i><i style="--wave:32px"></i><i style="--wave:15px"></i><i style="--wave:35px"></i><i style="--wave:18px"></i></div></div><div class="track-mix"><input class="track-level" data-track="beat" type="range" min="0" max="100" value="72" aria-label="Beat level"><button type="button" class="mute-track" data-track="beat">M</button><span class="mix-readout">72% • CENTER</span></div></div>
-<div class="track-lane armed" data-track="lead"><div class="track-name"><strong>02 LEAD</strong><small>Main vocal</small><button type="button" class="arm-track" data-track="lead">● ARMED</button></div><div class="timeline"><span class="timeline-empty">RECORD LEAD TAKE</span><div class="waveform"></div></div><div class="track-mix"><input class="track-level" data-track="lead" type="range" min="0" max="100" value="100" aria-label="Lead vocal level"><button type="button" class="mute-track" data-track="lead">M</button><span class="mix-readout">100% • CENTER</span></div></div>
-<div class="track-lane" data-track="double"><div class="track-name"><strong>03 DOUBLE</strong><small>Vocal support</small><button type="button" class="arm-track" data-track="double">ARM</button></div><div class="timeline"><span class="timeline-empty">EMPTY LANE</span><div class="waveform"></div></div><div class="track-mix"><input class="track-level" data-track="double" type="range" min="0" max="100" value="64" aria-label="Double level"><button type="button" class="mute-track" data-track="double">M</button><span class="mix-readout">64% • LEFT</span></div></div>
-<div class="track-lane" data-track="adlibs"><div class="track-name"><strong>04 AD-LIBS</strong><small>Energy &amp; responses</small><button type="button" class="arm-track" data-track="adlibs">ARM</button></div><div class="timeline"><span class="timeline-empty">EMPTY LANE</span><div class="waveform"></div></div><div class="track-mix"><input class="track-level" data-track="adlibs" type="range" min="0" max="100" value="56" aria-label="Ad-libs level"><button type="button" class="mute-track" data-track="adlibs">M</button><span class="mix-readout">56% • RIGHT</span></div></div>
-<div class="track-lane" data-track="harmony"><div class="track-name"><strong>05 HARMONY</strong><small>Hook layer</small><button type="button" class="arm-track" data-track="harmony">ARM</button></div><div class="timeline"><span class="timeline-empty">EMPTY LANE</span><div class="waveform"></div></div><div class="track-mix"><input class="track-level" data-track="harmony" type="range" min="0" max="100" value="52" aria-label="Harmony level"><button type="button" class="mute-track" data-track="harmony">M</button><span class="mix-readout">52% • WIDE</span></div></div>
+<div class="track-lane" data-track="beat"><div class="track-name"><strong>01 BEAT</strong><small>Instrumental</small></div><div class="timeline"><div class="waveform" aria-hidden="true"><i style="--wave:28px"></i><i style="--wave:12px"></i><i style="--wave:36px"></i><i style="--wave:17px"></i><i style="--wave:31px"></i><i style="--wave:14px"></i><i style="--wave:38px"></i><i style="--wave:20px"></i><i style="--wave:32px"></i><i style="--wave:15px"></i><i style="--wave:35px"></i><i style="--wave:18px"></i></div></div><div class="track-mix"><input class="track-level" data-track="beat" type="range" min="0" max="100" value="72" aria-label="Beat level"><button type="button" class="mute-track" data-track="beat">M</button><button type="button" class="solo-track" data-track="beat">S</button><div class="pan-control"><span>PAN</span><input class="track-pan" data-track="beat" type="range" min="-100" max="100" value="0" aria-label="Beat pan"><b>C</b></div><span class="mix-readout">72% • C</span></div></div>
+<div class="track-lane armed" data-track="lead"><div class="track-name"><strong>02 LEAD</strong><small>Main vocal</small><button type="button" class="arm-track" data-track="lead">● ARMED</button></div><div class="timeline"><span class="timeline-empty">RECORD LEAD TAKE</span><div class="waveform"></div></div><div class="track-mix"><input class="track-level" data-track="lead" type="range" min="0" max="100" value="100" aria-label="Lead vocal level"><button type="button" class="mute-track" data-track="lead">M</button><button type="button" class="solo-track" data-track="lead">S</button><div class="pan-control"><span>PAN</span><input class="track-pan" data-track="lead" type="range" min="-100" max="100" value="0" aria-label="Lead vocal pan"><b>C</b></div><span class="mix-readout">100% • C</span></div></div>
+<div class="track-lane" data-track="double"><div class="track-name"><strong>03 DOUBLE</strong><small>Vocal support</small><button type="button" class="arm-track" data-track="double">ARM</button></div><div class="timeline"><span class="timeline-empty">EMPTY LANE</span><div class="waveform"></div></div><div class="track-mix"><input class="track-level" data-track="double" type="range" min="0" max="100" value="64" aria-label="Double level"><button type="button" class="mute-track" data-track="double">M</button><button type="button" class="solo-track" data-track="double">S</button><div class="pan-control"><span>PAN</span><input class="track-pan" data-track="double" type="range" min="-100" max="100" value="-32" aria-label="Double pan"><b>L32</b></div><span class="mix-readout">64% • L32</span></div></div>
+<div class="track-lane" data-track="adlibs"><div class="track-name"><strong>04 AD-LIBS</strong><small>Energy &amp; responses</small><button type="button" class="arm-track" data-track="adlibs">ARM</button></div><div class="timeline"><span class="timeline-empty">EMPTY LANE</span><div class="waveform"></div></div><div class="track-mix"><input class="track-level" data-track="adlibs" type="range" min="0" max="100" value="56" aria-label="Ad-libs level"><button type="button" class="mute-track" data-track="adlibs">M</button><button type="button" class="solo-track" data-track="adlibs">S</button><div class="pan-control"><span>PAN</span><input class="track-pan" data-track="adlibs" type="range" min="-100" max="100" value="42" aria-label="Ad-libs pan"><b>R42</b></div><span class="mix-readout">56% • R42</span></div></div>
+<div class="track-lane" data-track="harmony"><div class="track-name"><strong>05 HARMONY</strong><small>Hook layer</small><button type="button" class="arm-track" data-track="harmony">ARM</button></div><div class="timeline"><span class="timeline-empty">EMPTY LANE</span><div class="waveform"></div></div><div class="track-mix"><input class="track-level" data-track="harmony" type="range" min="0" max="100" value="52" aria-label="Harmony level"><button type="button" class="mute-track" data-track="harmony">M</button><button type="button" class="solo-track" data-track="harmony">S</button><div class="pan-control"><span>PAN</span><input class="track-pan" data-track="harmony" type="range" min="-100" max="100" value="18" aria-label="Harmony pan"><b>R18</b></div><span class="mix-readout">52% • R18</span></div></div>
 </div>
 <div class="mix-coach" id="mixCoach"></div>
 </div>
@@ -1480,6 +1490,9 @@ let recordingTrack = "lead";
 let sessionPlaying = false;
 let sessionAudios = [];
 let sessionStopTimer = null;
+let sessionPlayheadFrame = null;
+let sessionPlaybackStartedAt = 0;
+let sessionPlaybackDurationMs = 0;
 let currentMasterBlob = null;
 let currentMasterUrl = "";
 let currentMasterKind = "";
@@ -1506,21 +1519,96 @@ document.getElementById("recordStatus").textContent = selectedBeat
 function waveformMarkup(seed) {
 let value = Math.max(17, seed || 17);
 let html = "";
-for (let index = 0; index < 36; index += 1) {
+for (let index = 0; index < 48; index += 1) {
 value = (value * 31 + 7) % 47;
 html += '<i style="--wave:' + (8 + value % 31) + 'px"></i>';
 }
 return html;
 }
 
+async function realWaveformMarkup(blob) {
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+if (!AudioCtx || !blob) return "";
+const context = new AudioCtx();
+try {
+const buffer = await decodeTrackBlob(context, blob);
+const data = buffer.getChannelData(0);
+const buckets = 64;
+const step = Math.max(1, Math.floor(data.length / buckets));
+let peakMax = .0001;
+const peaks = [];
+for (let bucket = 0; bucket < buckets; bucket += 1) {
+let peak = 0;
+const start = bucket * step;
+const end = Math.min(data.length, start + step);
+for (let sample = start; sample < end; sample += Math.max(1, Math.floor(step / 180))) {
+peak = Math.max(peak, Math.abs(data[sample] || 0));
+}
+peaks.push(peak);
+peakMax = Math.max(peakMax, peak);
+}
+return peaks.map(peak => {
+const height = 7 + Math.round((peak / peakMax) * 31);
+return '<i style="--wave:' + height + 'px"></i>';
+}).join("");
+} catch (error) {
+return "";
+} finally {
+context.close().catch(() => {});
+}
+}
+
 function renderRecordedTrack(trackName) {
 const lane = document.querySelector('.track-lane[data-track="' + trackName + '"]');
 const track = sessionTracks[trackName];
+const waveform = lane.querySelector(".waveform");
 lane.querySelector(".timeline-empty").style.display = track.blob ? "none" : "grid";
-lane.querySelector(".waveform").innerHTML = track.blob ? waveformMarkup(track.blob.size) : "";
+waveform.innerHTML = track.blob ? waveformMarkup(track.blob.size) : "";
 lane.querySelector(".track-name small").textContent = track.blob
 ? "Take ready • " + Math.round(track.durationMs / 1000) + "s"
 : ({ lead:"Main vocal", double:"Vocal support", adlibs:"Energy & responses", harmony:"Hook layer" })[trackName];
+if (track.blob) {
+realWaveformMarkup(track.blob).then(markup => {
+if (markup && sessionTracks[trackName].blob === track.blob) waveform.innerHTML = markup;
+});
+}
+}
+
+function getPanLabel(value) {
+const pan = Number(value) || 0;
+if (Math.abs(pan) < 3) return "C";
+return (pan < 0 ? "L" : "R") + Math.abs(Math.round(pan));
+}
+
+function anySoloActive() {
+return Array.from(document.querySelectorAll(".solo-track")).some(button => button.classList.contains("on"));
+}
+
+function trackIsAudible(trackName) {
+const mute = document.querySelector('.mute-track[data-track="' + trackName + '"]');
+const solo = document.querySelector('.solo-track[data-track="' + trackName + '"]');
+if (mute && mute.classList.contains("on")) return false;
+return !anySoloActive() || (solo && solo.classList.contains("on"));
+}
+
+function getTrackPan(trackName) {
+const pan = document.querySelector('.track-pan[data-track="' + trackName + '"]');
+return pan ? Math.max(-1, Math.min(1, Number(pan.value) / 100)) : 0;
+}
+
+function resetSessionPlayhead() {
+if (sessionPlayheadFrame) cancelAnimationFrame(sessionPlayheadFrame);
+sessionPlayheadFrame = null;
+document.getElementById("trackLanes").classList.remove("session-playing");
+document.querySelectorAll(".timeline").forEach(timeline => timeline.style.setProperty("--playhead", "0%"));
+}
+
+function updateSessionPlayhead() {
+if (!sessionPlaying || !sessionPlaybackDurationMs) return resetSessionPlayhead();
+const elapsed = performance.now() - sessionPlaybackStartedAt;
+const progress = Math.min(1, elapsed / sessionPlaybackDurationMs);
+document.querySelectorAll(".timeline").forEach(timeline => timeline.style.setProperty("--playhead", (progress * 100).toFixed(2) + "%"));
+if (progress < 1) sessionPlayheadFrame = requestAnimationFrame(updateSessionPlayhead);
 }
 
 function stopSessionPlayback() {
@@ -1529,6 +1617,7 @@ sessionStopTimer = null;
 sessionAudios.forEach(audio => { try { audio.pause(); audio.currentTime = 0; } catch (error) {} });
 sessionAudios = [];
 sessionPlaying = false;
+resetSessionPlayhead();
 stopBeatPlayback({ keepGuide:true });
 document.getElementById("playSessionButton").textContent = "▶ PLAY SESSION";
 }
@@ -1550,29 +1639,38 @@ document.getElementById("recordStatus").textContent = "Record at least one vocal
 return;
 }
 await startBeatPlayback({ mode:"writing" });
-const beatMuted = document.querySelector('.mute-track[data-track="beat"]').classList.contains("on");
 const beatLevel = Number(document.querySelector('.track-level[data-track="beat"]').value) / 100;
-setBeatPlaybackLevel(beatMuted ? 0 : beatLevel * .58);
+setBeatPlaybackLevel(trackIsAudible("beat") ? beatLevel * .58 : 0);
 sessionAudios = recorded.map(trackName => {
 const audio = new Audio(sessionTracks[trackName].url);
-const muted = document.querySelector('.mute-track[data-track="' + trackName + '"]').classList.contains("on");
-audio.volume = muted ? 0 : Number(document.querySelector('.track-level[data-track="' + trackName + '"]').value) / 100;
+audio.volume = trackIsAudible(trackName) ? Number(document.querySelector('.track-level[data-track="' + trackName + '"]').value) / 100 : 0;
 audio.play().catch(() => {});
 return audio;
 });
 sessionPlaying = true;
+document.getElementById("trackLanes").classList.add("session-playing");
 document.getElementById("playSessionButton").textContent = "■ STOP SESSION";
-document.getElementById("recordStatus").textContent = "Playing the multitrack session. Adjust levels or mute lanes to hear the mix change.";
+document.getElementById("recordStatus").textContent = "Playing the multitrack session. Level, Mute and Solo update the audition; Pan is applied to the rendered mix.";
 const longest = Math.max.apply(null, recorded.map(trackName => sessionTracks[trackName].durationMs));
+sessionPlaybackDurationMs = Math.max(600, longest);
+sessionPlaybackStartedAt = performance.now();
+resetSessionPlayhead();
+sessionPlaying = true;
+document.getElementById("trackLanes").classList.add("session-playing");
+updateSessionPlayhead();
 sessionStopTimer = setTimeout(stopSessionPlayback, longest + 700);
 }
 
 function applyAIMix() {
 const starterMix = { beat:72, lead:100, double:64, adlibs:56, harmony:52 };
+const starterPan = { beat:0, lead:0, double:-32, adlibs:42, harmony:18 };
 Object.keys(starterMix).forEach(trackName => {
 const fader = document.querySelector('.track-level[data-track="' + trackName + '"]');
+const pan = document.querySelector('.track-pan[data-track="' + trackName + '"]');
 fader.value = starterMix[trackName];
+if (pan) pan.value = starterPan[trackName];
 fader.dispatchEvent(new Event("input"));
+if (pan) pan.dispatchEvent(new Event("input"));
 });
 const available = Object.keys(sessionTracks).filter(trackName => sessionTracks[trackName].blob);
 const coach = document.getElementById("mixCoach");
@@ -1746,9 +1844,10 @@ compressor.release.value = .24;
 compressor.connect(context.destination);
 
 const beatGain = context.createGain();
-const beatMuted = document.querySelector('.mute-track[data-track="beat"]').classList.contains("on");
-beatGain.gain.value = beatMuted ? 0 : Number(document.querySelector('.track-level[data-track="beat"]').value) / 100 * .68;
-beatGain.connect(compressor);
+const beatPanner = context.createStereoPanner();
+beatGain.gain.value = trackIsAudible("beat") ? Number(document.querySelector('.track-level[data-track="beat"]').value) / 100 * .68 : 0;
+beatPanner.pan.value = getTrackPan("beat");
+beatGain.connect(beatPanner).connect(compressor);
 if (decodedBeat) {
 const source = context.createBufferSource();
 source.buffer = decodedBeat;
@@ -1760,14 +1859,12 @@ source.stop(durationSeconds);
 renderOfflineBeat(context, beatGain, durationSeconds);
 }
 
-const panByTrack = { lead:0, double:-.34, adlibs:.42, harmony:.18 };
 decodedTracks.forEach(({ trackName, buffer }) => {
 const source = context.createBufferSource();
 const highPass = context.createBiquadFilter();
 const presence = context.createBiquadFilter();
 const gain = context.createGain();
 const panner = context.createStereoPanner();
-const muted = document.querySelector('.mute-track[data-track="' + trackName + '"]').classList.contains("on");
 source.buffer = buffer;
 highPass.type = "highpass";
 highPass.frequency.value = 82;
@@ -1775,8 +1872,8 @@ presence.type = "peaking";
 presence.frequency.value = 3200;
 presence.Q.value = .7;
 presence.gain.value = 1.8;
-gain.gain.value = muted ? 0 : Number(document.querySelector('.track-level[data-track="' + trackName + '"]').value) / 100 * .9;
-panner.pan.value = panByTrack[trackName] || 0;
+gain.gain.value = trackIsAudible(trackName) ? Number(document.querySelector('.track-level[data-track="' + trackName + '"]').value) / 100 * .9 : 0;
+panner.pan.value = getTrackPan(trackName);
 source.connect(highPass).connect(presence).connect(gain).connect(panner).connect(compressor);
 source.start(0);
 });
@@ -1900,7 +1997,9 @@ const settings = {};
 document.querySelectorAll(".track-level").forEach(fader => {
 settings[fader.dataset.track] = {
 level:Number(fader.value),
-muted:document.querySelector('.mute-track[data-track="' + fader.dataset.track + '"]').classList.contains("on")
+pan:Number((document.querySelector('.track-pan[data-track="' + fader.dataset.track + '"]') || {}).value || 0),
+muted:document.querySelector('.mute-track[data-track="' + fader.dataset.track + '"]').classList.contains("on"),
+soloed:document.querySelector('.solo-track[data-track="' + fader.dataset.track + '"]').classList.contains("on")
 };
 });
 return settings;
@@ -2009,8 +2108,12 @@ Object.keys(record.mixSettings || {}).forEach(trackName => {
 const saved = record.mixSettings[trackName];
 const fader = document.querySelector('.track-level[data-track="' + trackName + '"]');
 const mute = document.querySelector('.mute-track[data-track="' + trackName + '"]');
+const solo = document.querySelector('.solo-track[data-track="' + trackName + '"]');
+const pan = document.querySelector('.track-pan[data-track="' + trackName + '"]');
 if (fader) { fader.value = saved.level; fader.dispatchEvent(new Event("input")); }
+if (pan && Number.isFinite(Number(saved.pan))) { pan.value = saved.pan; pan.dispatchEvent(new Event("input")); }
 if (mute && saved.muted) { mute.classList.add("on"); mute.textContent = "MUTE"; }
+if (solo && saved.soloed) { solo.classList.add("on"); solo.textContent = "SOLO"; }
 });
 if (record.armedTrack && sessionTracks[record.armedTrack]) armSessionTrack(record.armedTrack);
 if (record.masterBlob) {
@@ -2047,23 +2150,54 @@ await saveGeneratedToCatalog();
 setMasterStatus("Finished master saved to the Artist Catalog.", "ready");
 }
 
+function refreshTrackReadout(trackName) {
+const lane = document.querySelector('.track-lane[data-track="' + trackName + '"]');
+const fader = document.querySelector('.track-level[data-track="' + trackName + '"]');
+const pan = document.querySelector('.track-pan[data-track="' + trackName + '"]');
+if (!lane || !fader) return;
+const label = getPanLabel(pan ? pan.value : 0);
+const panLabel = lane.querySelector(".pan-control b");
+if (panLabel) panLabel.textContent = label;
+lane.querySelector(".mix-readout").textContent = fader.value + "% • " + label;
+}
+
+function restartSessionAuditionIfPlaying() {
+if (!sessionPlaying) return;
+stopSessionPlayback();
+toggleSessionPlayback();
+}
+
 function bindSessionConsole() {
 document.querySelectorAll(".arm-track").forEach(button => button.addEventListener("click", () => armSessionTrack(button.dataset.track)));
 document.querySelectorAll(".track-level").forEach(fader => fader.addEventListener("input", () => {
-const lane = fader.closest(".track-lane");
-const pan = { beat:"CENTER", lead:"CENTER", double:"LEFT", adlibs:"RIGHT", harmony:"WIDE" }[fader.dataset.track];
-lane.querySelector(".mix-readout").textContent = fader.value + "% • " + pan;
-if (sessionPlaying && fader.dataset.track === "beat") setBeatPlaybackLevel(Number(fader.value) / 100 * .58);
+refreshTrackReadout(fader.dataset.track);
+if (sessionPlaying && fader.dataset.track === "beat") {
+const level = Number(fader.value) / 100;
+setBeatPlaybackLevel(trackIsAudible("beat") ? level * .58 : 0);
+}
+invalidateMixedMaster();
+queueBoothSessionSave();
+}));
+document.querySelectorAll(".track-pan").forEach(pan => pan.addEventListener("input", () => {
+refreshTrackReadout(pan.dataset.track);
 invalidateMixedMaster();
 queueBoothSessionSave();
 }));
 document.querySelectorAll(".mute-track").forEach(button => button.addEventListener("click", () => {
 button.classList.toggle("on");
 button.textContent = button.classList.contains("on") ? "MUTE" : "M";
-if (sessionPlaying) { stopSessionPlayback(); toggleSessionPlayback(); }
+restartSessionAuditionIfPlaying();
 invalidateMixedMaster();
 queueBoothSessionSave();
 }));
+document.querySelectorAll(".solo-track").forEach(button => button.addEventListener("click", () => {
+button.classList.toggle("on");
+button.textContent = button.classList.contains("on") ? "SOLO" : "S";
+restartSessionAuditionIfPlaying();
+invalidateMixedMaster();
+queueBoothSessionSave();
+}));
+document.querySelectorAll(".track-level").forEach(fader => refreshTrackReadout(fader.dataset.track));
 }
 
 
