@@ -17,6 +17,11 @@ a.primary{border-color:#22d3ee;background:linear-gradient(135deg,#075e73,#0c7b6d
 .intro{padding:14px 16px;background:linear-gradient(90deg,#07111c,#0b1222);border-bottom:1px solid #1e3449}
 .intro-grid{max-width:1400px;margin:auto;display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center}
 .intro h1{font-size:18px;margin:0 0 5px}.intro p{margin:0;color:#9eb2c7;font-size:12px;line-height:1.45}
+.pack{max-width:1400px;margin:10px auto 0;padding:10px;border:1px solid #20384d;border-radius:10px;background:#06101a}
+.pack-head{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.pack-head strong{font-size:12px}.pack-head small{color:#8099b0}
+.pack-files{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}.pack-files button{font-size:10px;padding:8px 10px}
+.pack-note{margin-top:8px;color:#7690a8;font-size:10px;line-height:1.4}
 .badge{display:inline-block;margin-left:6px;padding:2px 7px;border:1px solid #7ef0a766;border-radius:99px;color:#7ef0a7;font-size:9px;vertical-align:middle}
 .frame-wrap{position:relative;min-height:560px;background:#020408}
 iframe{display:block;width:100%;height:calc(100vh - 150px);min-height:560px;border:0;background:#020408}
@@ -49,6 +54,11 @@ iframe{height:calc(100vh - 170px);min-height:520px}.fallback{left:10px;right:10p
 </div>
 <div><small id="studioContext">Music City session bridge</small></div>
 </div>
+<div class="pack" id="sessionPack">
+<div class="pack-head"><strong>Music City Session Pack</strong><small id="packStatus">Loading your saved rough mix and vocal stems…</small></div>
+<div class="pack-files" id="packFiles"></div>
+<div class="pack-note">Download the files you want to work on, then import them into openDAW. When you finish, export one stereo master, return to Music City, and choose <b>Import Pro Studio Master</b>.</div>
+</div>
 </section>
 <section class="frame-wrap">
 <iframe
@@ -64,6 +74,7 @@ For the most reliable microphone and audio-engine performance, tap <b>FULL SCREE
 </div>
 </section>
 </main>
+<script src="music_city_beats.js"></script>
 <script>
 const params = new URLSearchParams(location.search);
 const studio = params.get("studio") || "begenius";
@@ -71,6 +82,96 @@ const back = document.getElementById("backLink");
 back.href = "advanced_recording_studio.html?studio=" + encodeURIComponent(studio);
 document.getElementById("studioContext").textContent =
 studio === "bedroom" ? "Bedroom Studio → Pro Studio" : "BeGenius Studio → Pro Studio";
+
+function openBoothDatabase() {
+return new Promise((resolve, reject) => {
+const request = indexedDB.open("music-city-recording-booth", 1);
+request.onsuccess = () => resolve(request.result);
+request.onerror = () => reject(request.error || new Error("Studio session storage is unavailable."));
+});
+}
+
+function safeName(value) {
+return String(value || "music-city-session")
+.trim().replace(/[^a-z0-9-_]+/gi, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "music-city-session";
+}
+
+function downloadBlob(blob, filename) {
+const url = URL.createObjectURL(blob);
+const link = document.createElement("a");
+link.href = url;
+link.download = filename;
+document.body.appendChild(link);
+link.click();
+link.remove();
+setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+function addDownloadButton(container, label, blob, filename) {
+if (!blob) return false;
+const button = document.createElement("button");
+button.type = "button";
+button.textContent = "⬇ " + label;
+button.addEventListener("click", () => downloadBlob(blob, filename));
+container.appendChild(button);
+return true;
+}
+
+async function resolveCatalogBeatBlob(record) {
+if (record.selectedBeatAudio && record.selectedBeatAudio.blob) return record.selectedBeatAudio.blob;
+const beat = (window.MusicCityBeatCatalog || []).find(item =>
+String(item && item.title || "").trim() === String(record.selectedBeat || "").trim()
+);
+if (!beat || !beat.src) return null;
+try {
+const response = await fetch(beat.src);
+if (!response.ok) return null;
+return await response.blob();
+} catch (error) {
+return null;
+}
+}
+
+async function loadSessionPack() {
+const status = document.getElementById("packStatus");
+const files = document.getElementById("packFiles");
+try {
+const database = await openBoothDatabase();
+const record = await new Promise((resolve, reject) => {
+const request = database.transaction("sessions", "readonly").objectStore("sessions").get("current-" + studio);
+request.onsuccess = () => resolve(request.result || null);
+request.onerror = () => reject(request.error);
+});
+if (!record) {
+status.textContent = "No saved Music City session found yet.";
+return;
+}
+const base = safeName(record.title || "music-city-session");
+let count = 0;
+if (record.masterBlob) {
+count += addDownloadButton(files, "Rough Mix", record.masterBlob, base + "-rough-mix.wav") ? 1 : 0;
+}
+const beatBlob = await resolveCatalogBeatBlob(record);
+if (beatBlob) {
+const ext = beatBlob.type && beatBlob.type.includes("mpeg") ? "mp3" : beatBlob.type && beatBlob.type.includes("wav") ? "wav" : "audio";
+count += addDownloadButton(files, "Beat", beatBlob, base + "-beat." + ext) ? 1 : 0;
+}
+const labels = {lead:"Lead Vocal",double:"Double",adlibs:"Ad-libs",harmony:"Harmony"};
+Object.keys(labels).forEach(trackName => {
+const saved = record.tracks && record.tracks[trackName];
+if (!saved || !saved.blob) return;
+const ext = saved.blob.type && saved.blob.type.includes("mpeg") ? "mp3" : saved.blob.type && saved.blob.type.includes("wav") ? "wav" : "webm";
+if (addDownloadButton(files, labels[trackName], saved.blob, base + "-" + trackName + "." + ext)) count += 1;
+});
+status.textContent = count
+? count + " file" + (count === 1 ? "" : "s") + " ready from your Music City session."
+: "The session is saved, but there are no downloadable audio files yet.";
+} catch (error) {
+status.textContent = error.message || "Could not load the saved Music City session.";
+}
+}
+
+loadSessionPack();
 </script>
 </body>
 </html>
