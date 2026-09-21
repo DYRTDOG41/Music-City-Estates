@@ -1,0 +1,266 @@
+(function(root){
+"use strict";
+
+const STORAGE_KEY="mceSoundtrackStateV1";
+const BLOCKED=[
+  "record_music.html",
+  "advanced_recording_studio.html",
+  "live_freestyle.html",
+  "battle_room.html"
+];
+
+const path=(location.pathname.split("/").pop()||"index.html").toLowerCase();
+if(BLOCKED.includes(path)) return;
+
+const zone=(()=>{
+  if(/hip_hop|hiphop|warehouse/.test(path)) return "heights";
+  if(/begenius|bedroom/.test(path)) return "studio";
+  if(/nightclub|social/.test(path)) return "social";
+  if(/sync_cinema/.test(path)) return "cinema";
+  if(/avatar|manager/.test(path)) return "downtown";
+  if(/music_city_radio/.test(path)) return "radio";
+  return "city";
+})();
+
+const cues={
+  city:{title:"Neon Boulevard",bpm:92,root:2,progression:[0,-3,-5,-2],bass:[0,0,-3,-5],hat:2,lead:[0,3,7,10,7,3],mood:"City Cruise"},
+  heights:{title:"Heights After Dark",bpm:96,root:1,progression:[0,-5,-3,-2],bass:[0,-5,-3,-2],hat:2,lead:[0,7,3,10,7,5],mood:"Hip-Hop Heights"},
+  studio:{title:"Studio District",bpm:86,root:4,progression:[0,-3,-5,-3],bass:[0,-3,-5,-3],hat:4,lead:[0,3,7,5,3,10],mood:"Lobby Session"},
+  social:{title:"After Hours",bpm:104,root:9,progression:[0,-2,-5,-3],bass:[0,-2,-5,-3],hat:2,lead:[0,5,7,10,12,7],mood:"Nightlife"},
+  cinema:{title:"Silver Screen Drive",bpm:82,root:7,progression:[0,-5,-2,-3],bass:[0,-5,-2,-3],hat:4,lead:[0,7,10,12,10,7],mood:"Sync District"},
+  downtown:{title:"Downtown Ambition",bpm:90,root:0,progression:[0,-3,-2,-5],bass:[0,-3,-2,-5],hat:2,lead:[0,3,5,10,7,5],mood:"Career Mode"},
+  radio:{title:"Music City Airwaves",bpm:94,root:5,progression:[0,-2,-5,-3],bass:[0,-2,-5,-3],hat:2,lead:[0,7,10,5,3,7],mood:"Music City Radio"}
+};
+const cue=cues[zone]||cues.city;
+
+let state={muted:false,volume:.34,anchor:Date.now(),trackIndex:0,trackTime:0};
+try{
+  const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
+  if(saved&&typeof saved==="object") state={...state,...saved};
+}catch(e){}
+if(!Number.isFinite(state.anchor)) state.anchor=Date.now();
+
+let context=null,master=null,compressor=null,noiseBuffer=null;
+let scheduler=null,nextTime=0,stepIndex=0,started=false,suppressed=false;
+let mediaAudio=null,mediaSaveTimer=null;
+let widget=null,titleNode=null,modeNode=null,toggleNode=null;
+
+const catalog=Array.isArray(root.MusicCitySoundtrackCatalog)?root.MusicCitySoundtrackCatalog:[];
+const realTracks=catalog.filter(t=>{
+  if(!t||!t.src) return false;
+  return !Array.isArray(t.zones)||!t.zones.length||t.zones.includes(zone)||t.zones.includes("all");
+});
+
+function saveState(){
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch(e){}
+}
+function makeWidget(){
+  if(widget) return;
+  widget=document.createElement("div");
+  widget.id="mceSoundtrackWidget";
+  widget.innerHTML='<div class="mce-radio-icon">📻</div><div class="mce-radio-copy"><strong>MUSIC CITY RADIO</strong><span class="mce-radio-title"></span><small class="mce-radio-mode"></small></div><button type="button" class="mce-radio-toggle" aria-label="Mute soundtrack">🔊</button>';
+  const style=document.createElement("style");
+  style.textContent=
+    '#mceSoundtrackWidget{position:fixed;right:12px;bottom:12px;z-index:99999;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:9px;max-width:min(340px,calc(100% - 24px));padding:9px 10px;border:1px solid rgba(38,211,255,.62);border-radius:13px;background:rgba(3,9,18,.91);color:#fff;font-family:Arial,sans-serif;box-shadow:0 8px 28px rgba(0,0,0,.35);backdrop-filter:blur(9px)}'+
+    '#mceSoundtrackWidget .mce-radio-icon{font-size:22px}#mceSoundtrackWidget .mce-radio-copy{min-width:0}#mceSoundtrackWidget strong,#mceSoundtrackWidget span,#mceSoundtrackWidget small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'+
+    '#mceSoundtrackWidget strong{font-size:9px;letter-spacing:.12em;color:#64ddff}#mceSoundtrackWidget span{margin-top:2px;font-size:12px;font-weight:900}#mceSoundtrackWidget small{margin-top:2px;color:#9fb4c8;font-size:9px}'+
+    '#mceSoundtrackWidget button{width:40px;height:40px;border:1px solid #315879;border-radius:10px;background:#0b1a2a;color:white;font-size:17px;cursor:pointer}'+
+    '@media(max-width:520px){#mceSoundtrackWidget{left:10px;right:10px;bottom:10px;max-width:none}}';
+  document.head.appendChild(style);
+  document.body.appendChild(widget);
+  titleNode=widget.querySelector(".mce-radio-title");
+  modeNode=widget.querySelector(".mce-radio-mode");
+  toggleNode=widget.querySelector(".mce-radio-toggle");
+  toggleNode.addEventListener("click",()=>{
+    state.muted=!state.muted;
+    saveState();
+    if(state.muted) fadeTo(0,.16); else { unlock(); fadeTo(suppressed?0:state.volume,.22); }
+    renderWidget();
+  });
+  renderWidget();
+}
+function renderWidget(){
+  if(!widget) return;
+  const real=realTracks.length?realTracks[state.trackIndex%realTracks.length]:null;
+  titleNode.textContent=real?(real.title||"Music City Soundtrack"):cue.title;
+  modeNode.textContent=started?(suppressed?"Paused for other audio":(real?(real.artist||"Game Soundtrack"):cue.mood)):"Tap anywhere to start soundtrack";
+  toggleNode.textContent=state.muted?"🔇":"🔊";
+  toggleNode.setAttribute("aria-label",state.muted?"Unmute soundtrack":"Mute soundtrack");
+}
+function fadeTo(value,seconds){
+  if(mediaAudio){
+    mediaAudio.volume=Math.max(0,Math.min(1,value));
+    return;
+  }
+  if(!master||!context) return;
+  const now=context.currentTime;
+  master.gain.cancelScheduledValues(now);
+  master.gain.setValueAtTime(master.gain.value,now);
+  master.gain.linearRampToValueAtTime(Math.max(0,value),now+Math.max(.02,seconds||.2));
+}
+function freq(midi){return 440*Math.pow(2,(midi-69)/12)}
+function buildNoise(){
+  const len=Math.floor(context.sampleRate*.14);
+  const b=context.createBuffer(1,len,context.sampleRate),d=b.getChannelData(0);
+  let seed=7517;
+  for(let i=0;i<len;i++){seed=(seed*16807)%2147483647;d[i]=(seed/1073741823.5)-1}
+  return b;
+}
+function env(g,t,peak,attack,release){
+  g.gain.setValueAtTime(.0001,t);
+  g.gain.linearRampToValueAtTime(peak,t+attack);
+  g.gain.exponentialRampToValueAtTime(.0001,t+attack+release);
+}
+function kick(t,strong){
+  const o=context.createOscillator(),g=context.createGain();
+  o.type="sine";o.frequency.setValueAtTime(strong?148:120,t);o.frequency.exponentialRampToValueAtTime(45,t+.16);
+  env(g,t,strong?.55:.4,.002,.22);o.connect(g).connect(compressor);o.start(t);o.stop(t+.25);
+}
+function noise(t,kind){
+  const s=context.createBufferSource(),f=context.createBiquadFilter(),g=context.createGain();
+  s.buffer=noiseBuffer;f.type=kind==="snare"?"bandpass":"highpass";f.frequency.value=kind==="snare"?1700:6900;
+  env(g,t,kind==="snare"?.16:.045,.001,kind==="snare"?.11:.035);
+  s.connect(f).connect(g).connect(compressor);s.start(t);s.stop(t+.14);
+}
+function bass(t,midi,dur){
+  const o=context.createOscillator(),f=context.createBiquadFilter(),g=context.createGain();
+  o.type="sine";o.frequency.value=freq(midi);f.type="lowpass";f.frequency.value=260;f.Q.value=.8;
+  g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(.16,t+.015);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(f).connect(g).connect(compressor);o.start(t);o.stop(t+dur+.02);
+}
+function chord(t,midi,dur){
+  [0,3,7].forEach((n,i)=>{
+    const o=context.createOscillator(),f=context.createBiquadFilter(),g=context.createGain();
+    o.type=i?"sine":"triangle";o.frequency.value=freq(midi+n+12);f.type="lowpass";f.frequency.value=1250;
+    g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(.025,t+.12);
+    g.gain.setValueAtTime(.025,Math.max(t+.13,t+dur-.18));g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    o.connect(f).connect(g).connect(compressor);o.start(t);o.stop(t+dur+.03);
+  });
+}
+function pluck(t,midi){
+  const o=context.createOscillator(),f=context.createBiquadFilter(),g=context.createGain();
+  o.type="triangle";o.frequency.value=freq(midi+12);f.type="lowpass";f.frequency.value=3200;f.Q.value=.8;
+  env(g,t,.035,.006,.18);o.connect(f).connect(g).connect(compressor);o.start(t);o.stop(t+.21);
+}
+function scheduleStep(step,t){
+  const pat=step%16,bar=Math.floor(step/16),q=60/cue.bpm,six=q/4;
+  const chordOffset=cue.progression[bar%cue.progression.length],root=36+cue.root+chordOffset;
+  if(pat===0||pat===8||((zone==="heights"||zone==="social")&&(pat===3||pat===11))) kick(t,pat===0);
+  if(pat===4||pat===12) noise(t,"snare");
+  if(pat%cue.hat===0) noise(t,"hat");
+  if(pat%4===0) bass(t,root,q*.88);
+  if(pat===0) chord(t,48+cue.root+chordOffset,q*4);
+  if(pat%2===0){
+    const idx=(Math.floor(step/2)+bar)%cue.lead.length;
+    if((step+cue.root)%3!==1) pluck(t,60+cue.root+chordOffset+cue.lead[idx]);
+  }
+  return six;
+}
+function schedulerTick(){
+  if(!context||context.state!=="running") return;
+  while(nextTime<context.currentTime+.25){
+    const len=scheduleStep(stepIndex,nextTime);
+    nextTime+=len;stepIndex++;
+  }
+}
+function startProcedural(){
+  if(started&&context) return Promise.resolve();
+  const AC=root.AudioContext||root.webkitAudioContext;
+  if(!AC) return Promise.reject(new Error("Audio not supported"));
+  context=context||new AC();
+  master=context.createGain();master.gain.value=0;
+  compressor=context.createDynamicsCompressor();compressor.threshold.value=-18;compressor.knee.value=18;compressor.ratio.value=3.5;compressor.attack.value=.006;compressor.release.value=.24;
+  compressor.connect(master).connect(context.destination);
+  noiseBuffer=buildNoise();
+  const six=(60/cue.bpm)/4;
+  const elapsed=Math.max(0,(Date.now()-state.anchor)/1000);
+  stepIndex=Math.floor(elapsed/six);
+  nextTime=context.currentTime+.06;
+  scheduler=setInterval(schedulerTick,80);
+  schedulerTick();
+  started=true;
+  return context.resume().then(()=>fadeTo(state.muted||suppressed?0:state.volume,.35));
+}
+function saveMediaPosition(){
+  if(!mediaAudio) return;
+  state.trackTime=Number(mediaAudio.currentTime||0);
+  state.trackIndex=Number(state.trackIndex||0);
+  saveState();
+}
+function startRealTrack(){
+  if(!realTracks.length) return Promise.reject(new Error("No soundtrack files"));
+  if(mediaAudio) return mediaAudio.play();
+  const track=realTracks[state.trackIndex%realTracks.length];
+  mediaAudio=new Audio(track.src);
+  mediaAudio.dataset.mceSoundtrack="1";
+  mediaAudio.preload="auto";
+  mediaAudio.volume=state.muted||suppressed?0:state.volume;
+  mediaAudio.currentTime=Math.max(0,Number(state.trackTime||0));
+  mediaAudio.addEventListener("timeupdate",()=>{
+    if(!mediaSaveTimer) mediaSaveTimer=setTimeout(()=>{mediaSaveTimer=null;saveMediaPosition()},1000);
+  });
+  mediaAudio.addEventListener("ended",()=>{
+    state.trackIndex=(state.trackIndex+1)%realTracks.length;state.trackTime=0;saveState();
+    mediaAudio=null;startRealTrack().catch(()=>{});renderWidget();
+  });
+  started=true;
+  return mediaAudio.play();
+}
+function unlock(){
+  const p=realTracks.length?startRealTrack():startProcedural();
+  Promise.resolve(p).then(()=>{renderWidget()}).catch(()=>{renderWidget()});
+}
+function suppress(on){
+  suppressed=Boolean(on);
+  if(mediaAudio) mediaAudio.volume=state.muted||suppressed?0:state.volume;
+  else fadeTo(state.muted||suppressed?0:state.volume,.18);
+  renderWidget();
+}
+function anyExternalMediaPlaying(){
+  return Array.from(document.querySelectorAll("audio,video")).some(el=>!el.dataset.mceSoundtrack&&!el.paused&&!el.ended);
+}
+
+document.addEventListener("play",e=>{
+  const el=e.target;
+  if((el instanceof HTMLMediaElement)&&!el.dataset.mceSoundtrack) suppress(true);
+},true);
+["pause","ended"].forEach(name=>document.addEventListener(name,e=>{
+  const el=e.target;
+  if((el instanceof HTMLMediaElement)&&!el.dataset.mceSoundtrack){
+    setTimeout(()=>suppress(anyExternalMediaPlaying()),40);
+  }
+},true));
+
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden){
+    saveMediaPosition();
+    if(context&&context.state==="running") context.suspend().catch(()=>{});
+  }else if(started){
+    if(context) context.resume().then(()=>fadeTo(state.muted||suppressed?0:state.volume,.2)).catch(()=>{});
+    if(mediaAudio) mediaAudio.play().catch(()=>{});
+  }
+});
+window.addEventListener("pagehide",saveMediaPosition);
+window.addEventListener("beforeunload",saveMediaPosition);
+
+makeWidget();
+const gesture=()=>{
+  unlock();
+  document.removeEventListener("pointerdown",gesture,true);
+  document.removeEventListener("touchstart",gesture,true);
+  document.removeEventListener("keydown",gesture,true);
+};
+document.addEventListener("pointerdown",gesture,true);
+document.addEventListener("touchstart",gesture,true);
+document.addEventListener("keydown",gesture,true);
+setTimeout(()=>unlock(),120);
+
+root.MusicCitySoundtrack={
+  start:unlock,
+  mute(){state.muted=true;saveState();fadeTo(0,.15);renderWidget()},
+  unmute(){state.muted=false;saveState();unlock();fadeTo(suppressed?0:state.volume,.2);renderWidget()},
+  pauseForSession(){suppress(true)},
+  resumeAfterSession(){suppress(false)},
+  getState(){return{...state,zone,title:realTracks.length?(realTracks[state.trackIndex%realTracks.length].title||"Music City Soundtrack"):cue.title,suppressed,started}}
+};
+})(window);
