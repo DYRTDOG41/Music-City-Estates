@@ -9,8 +9,8 @@
       title:"Organ Donor",
       artist:"willwill3515",
       instrumental:true,
-      source:"Artist-provided Suno instrumental",
-      src:"https://cdn1.suno.ai/ee011258-2b3f-4ea6-abe4-f992ceb0acdd.mp3",
+      source:"Artist-provided instrumental",
+      src:"https://music-city-radio-assets.floot.app/_cdn/static/f70669ce-7e4a-43ad-8321-5dc11147744b-organ-donor.mp3",
       zones:["radio"]
     }
   ];
