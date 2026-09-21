@@ -655,7 +655,7 @@ placeholder="Describe the sound: melodic trap, soulful R&B, southern hip-hop..."
 <div class="panel session-console" id="engineeringPanel">
 <div class="session-toolbar">
 <div><h3>2. Engineering Session</h3><p>Arm a vocal lane, record a take, then play and balance the whole session.</p></div>
-<div class="session-actions"><button type="button" id="playSessionButton" onclick="toggleSessionPlayback()">▶ PLAY SESSION</button><button type="button" id="aiMixButton" onclick="applyAIMix()">✨ AI MIX ASSIST</button></div>
+<div class="session-actions"><button type="button" id="playSessionButton" onclick="toggleSessionPlayback()">▶ PLAY SESSION</button><button type="button" id="aiMixButton" onclick="applyAIMix()">✨ AI MIX ASSIST</button><button type="button" id="proStudioButton" onclick="launchProStudio()">🎚 PRO STUDIO</button></div>
 </div>
 <div class="timeline-ruler" aria-hidden="true"><span>0:00</span><span>0:15</span><span>0:30</span><span>0:45</span><span>1:00+</span></div>
 <div class="track-lanes" id="trackLanes">
@@ -1389,6 +1389,13 @@ document.body.classList.toggle("advanced-open");
 const open = document.body.classList.contains("advanced-open");
 const button = document.getElementById("advancedToggle");
 if (button) button.textContent = open ? "✕ CLOSE ADVANCED STUDIO" : "⚙️ ADVANCED STUDIO TOOLS";
+}
+
+async function launchProStudio() {
+try { await saveBoothSession(false); } catch (error) {}
+const status = document.getElementById("recordStatus");
+if (status) status.textContent = "Opening Music City Pro Studio. Your current booth session is saved on this device.";
+window.location.href = "pro_studio.html?studio=" + encodeURIComponent(studio);
 }
 
 async function quickAIFinish() {
