@@ -82,7 +82,8 @@ iframe{height:calc(100vh - 170px);min-height:520px}.fallback{left:10px;right:10p
 <iframe
 id="proDaw"
 title="openDAW professional music studio"
-src="https://opendaw.studio/"
+src="about:blank"
+data-src="https://opendaw.studio/"
 allow="microphone; autoplay; midi; clipboard-read; clipboard-write; fullscreen"
 allowfullscreen
 referrerpolicy="strict-origin-when-cross-origin"></iframe>
@@ -120,6 +121,8 @@ document.getElementById("packNote").innerHTML =
 } else {
 document.getElementById("mobileStudio").classList.remove("show");
 document.getElementById("desktopStudio").classList.remove("hidden");
+const proDaw = document.getElementById("proDaw");
+proDaw.src = proDaw.dataset.src;
 }
 
 function openBoothDatabase() {
