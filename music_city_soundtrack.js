@@ -41,7 +41,7 @@ try{
 if(!Number.isFinite(state.anchor)) state.anchor=Date.now();
 
 let context=null,master=null,compressor=null,noiseBuffer=null;
-let scheduler=null,nextTime=0,stepIndex=0,started=false,suppressed=false;
+let scheduler=null,nextTime=0,stepIndex=0,started=false,suppressed=false,lastError="";
 let mediaAudio=null,mediaSaveTimer=null;
 let widget=null,titleNode=null,modeNode=null,toggleNode=null;
 
@@ -91,7 +91,7 @@ function renderWidget(){
   if(!widget) return;
   const real=realTracks.length?realTracks[state.trackIndex%realTracks.length]:null;
   titleNode.textContent=real?(real.title||"Music City Soundtrack"):cue.title;
-  modeNode.textContent=started?(suppressed?"Paused for other audio":(real?(real.artist||"Game Soundtrack"):cue.mood)):"Tap ▶ to start music";
+  modeNode.textContent=started?(suppressed?"Paused for other audio":(real?(real.artist||"Game Soundtrack"):cue.mood)):(lastError||"Tap ▶ to start music");
   toggleNode.textContent=!started?"▶":(state.muted?"🔇":"🔊");
   toggleNode.setAttribute("aria-label",!started?"Start soundtrack":(state.muted?"Unmute soundtrack":"Mute soundtrack"));
 }
@@ -245,11 +245,16 @@ async function unlock(){
           try{mediaAudio.pause();}catch(ignore){}
           mediaAudio=null;
         }
+        if(zone==="radio"){
+          lastError="Organ Donor failed to load — tap ▶ to retry";
+          throw error;
+        }
         await startProcedural();
       }
     }else{
       await startProcedural();
     }
+    lastError="";
     renderWidget();
   }catch(error){
     started=false;
