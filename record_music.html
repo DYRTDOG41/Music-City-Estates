@@ -284,7 +284,15 @@ body.custom-mode .quick-only{display:none}
     <button type="button" class="secondary-btn" style="width:100%;margin-top:12px" onclick="createTwoVersions()">↻ CREATE 2 MORE</button>
   </section>
 
-  <a class="footer-link" href="advanced_recording_studio.html">Open Advanced Studio for multitrack editing →</a>
+  <section class="card">
+    <h2>Take it further</h2>
+    <p class="helper">Keep this simple booth for fast recording, or carry the same beat and vocal into the professional studio without starting over.</p>
+    <div class="inline-actions">
+      <button type="button" class="create-btn" id="sendProStudioButton" onclick="sendToProStudio()">🎚 SEND TO PRO STUDIO</button>
+      <button type="button" class="secondary-btn" onclick="openAdvancedStudio()">OPEN ADVANCED MIXER</button>
+    </div>
+    <p class="note" id="proStudioBridgeStatus">Your current beat and vocal will be copied into the multitrack session on this device.</p>
+  </section>
 </main>
 
 <script src="player-state.js"></script>
@@ -328,6 +336,7 @@ function setSongType(type){
   updateSourceBoxes();
 }
 function toggleAdvanced(){document.getElementById("advancedBox").classList.toggle("open")}
+function openAdvancedStudio(){location.href="advanced_recording_studio.html?studio="+encodeURIComponent(studio)}
 
 function status(message,state){
   const el=document.getElementById("createStatus");
@@ -462,6 +471,96 @@ async function selectedBeatBlob(){
   const response=await fetch(selectedBeat.src||selectedBeat.objectUrl);
   if(!response.ok)throw new Error("Music City could not load that beat.");
   return response.blob();
+}
+
+function openBoothSessionDb(){
+  return new Promise((resolve,reject)=>{
+    const request=indexedDB.open("music-city-recording-booth",1);
+    request.onupgradeneeded=()=>{
+      if(!request.result.objectStoreNames.contains("sessions"))request.result.createObjectStore("sessions",{keyPath:"id"});
+    };
+    request.onsuccess=()=>resolve(request.result);
+    request.onerror=()=>reject(request.error||new Error("Studio session storage could not open."));
+  });
+}
+
+async function saveQuickSessionForProStudio(){
+  if(!voiceBlob&&!selectedBeat)throw new Error("Add a beat or record a vocal before opening Pro Studio.");
+  const details=getPromptAndTitle();
+  const beatBlob=selectedBeat?await selectedBeatBlob():null;
+  let roughMix=null;
+  if(beatBlob&&voiceBlob){
+    try{roughMix=await renderVersion(beatBlob,voiceBlob,"A")}catch(error){}
+  }else if(beatBlob&&!voiceBlob){
+    roughMix=beatBlob;
+  }
+  const player=document.getElementById("voicePreview");
+  const leadDuration=Number.isFinite(player.duration)?Math.round(player.duration*1000):0;
+  const record={
+    id:"current-"+studio,
+    savedAt:new Date().toISOString(),
+    title:details.title||"Music City Session",
+    lyrics:details.lyrics||"",
+    style:details.prompt||"",
+    selectedBeat:selectedBeat?selectedBeat.title:"",
+    selectedBeatAudio:selectedBeat&&beatBlob?{
+      title:selectedBeat.title,
+      blob:beatBlob,
+      genre:selectedBeat.genre||"Original",
+      mood:selectedBeat.mood||"Quick Studio",
+      bpm:Number(selectedBeat.bpm||0),
+      producer:selectedBeat.producer||"Music City",
+      source:selectedBeat.catalog?"Music City Catalog":"Quick Studio",
+      generated:false,
+      localOnly:!selectedBeat.catalog
+    }:null,
+    armedTrack:"lead",
+    tracks:{
+      lead:{blob:voiceBlob,durationMs:leadDuration},
+      double:{blob:null,durationMs:0},
+      adlibs:{blob:null,durationMs:0},
+      harmony:{blob:null,durationMs:0}
+    },
+    mixSettings:{
+      beat:{level:72,pan:0,muted:false,soloed:false},
+      lead:{level:100,pan:0,muted:false,soloed:false},
+      double:{level:64,pan:-32,muted:false,soloed:false},
+      adlibs:{level:56,pan:42,muted:false,soloed:false},
+      harmony:{level:52,pan:18,muted:false,soloed:false}
+    },
+    masterBlob:roughMix,
+    masterKind:roughMix?"music-city-mix":""
+  };
+  const db=await openBoothSessionDb();
+  await new Promise((resolve,reject)=>{
+    const tx=db.transaction("sessions","readwrite");
+    tx.objectStore("sessions").put(record);
+    tx.oncomplete=resolve;
+    tx.onerror=()=>reject(tx.error||new Error("Could not save the Pro Studio session."));
+  });
+  return record;
+}
+
+async function sendToProStudio(){
+  const button=document.getElementById("sendProStudioButton");
+  const bridge=document.getElementById("proStudioBridgeStatus");
+  if(mediaRecorder&&mediaRecorder.state==="recording"){
+    bridge.textContent="Stop the recording first, then send the session to Pro Studio.";
+    return;
+  }
+  button.disabled=true;
+  button.textContent="PREPARING SESSION...";
+  bridge.textContent="Saving your beat, vocal and rough mix for the professional workspace...";
+  try{
+    await saveQuickSessionForProStudio();
+    localStorage.setItem("musicCityProReturnPending","1");
+    bridge.textContent="Session ready. Opening Music City Pro Studio...";
+    location.href="pro_studio.html?studio="+encodeURIComponent(studio);
+  }catch(error){
+    bridge.textContent=error.message||"Music City could not prepare the Pro Studio session.";
+    button.disabled=false;
+    button.textContent="🎚 SEND TO PRO STUDIO";
+  }
 }
 
 function setVoiceBlob(blob,label){
