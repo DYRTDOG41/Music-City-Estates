@@ -33,7 +33,7 @@ const cues={
 };
 const cue=cues[zone]||cues.city;
 
-let state={muted:false,volume:.34,anchor:Date.now(),trackIndex:0,trackTime:0};
+let state={muted:false,volume:.42,anchor:Date.now(),trackIndex:0,trackTime:0};
 try{
   const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
   if(saved&&typeof saved==="object") state={...state,...saved};
@@ -71,7 +71,15 @@ function makeWidget(){
   titleNode=widget.querySelector(".mce-radio-title");
   modeNode=widget.querySelector(".mce-radio-mode");
   toggleNode=widget.querySelector(".mce-radio-toggle");
-  toggleNode.addEventListener("click",()=>{
+  toggleNode.addEventListener("click",event=>{
+    event.preventDefault();
+    event.stopPropagation();
+    if(!started){
+      state.muted=false;
+      saveState();
+      unlock();
+      return;
+    }
     state.muted=!state.muted;
     saveState();
     if(state.muted) fadeTo(0,.16); else { unlock(); fadeTo(suppressed?0:state.volume,.22); }
@@ -83,9 +91,9 @@ function renderWidget(){
   if(!widget) return;
   const real=realTracks.length?realTracks[state.trackIndex%realTracks.length]:null;
   titleNode.textContent=real?(real.title||"Music City Soundtrack"):cue.title;
-  modeNode.textContent=started?(suppressed?"Paused for other audio":(real?(real.artist||"Game Soundtrack"):cue.mood)):"Tap anywhere to start soundtrack";
-  toggleNode.textContent=state.muted?"🔇":"🔊";
-  toggleNode.setAttribute("aria-label",state.muted?"Unmute soundtrack":"Mute soundtrack");
+  modeNode.textContent=started?(suppressed?"Paused for other audio":(real?(real.artist||"Game Soundtrack"):cue.mood)):"Tap ▶ to start music";
+  toggleNode.textContent=!started?"▶":(state.muted?"🔇":"🔊");
+  toggleNode.setAttribute("aria-label",!started?"Start soundtrack":(state.muted?"Unmute soundtrack":"Mute soundtrack"));
 }
 function fadeTo(value,seconds){
   if(mediaAudio){
@@ -163,23 +171,38 @@ function schedulerTick(){
     nextTime+=len;stepIndex++;
   }
 }
-function startProcedural(){
-  if(started&&context) return Promise.resolve();
+async function startProcedural(){
   const AC=root.AudioContext||root.webkitAudioContext;
-  if(!AC) return Promise.reject(new Error("Audio not supported"));
-  context=context||new AC();
-  master=context.createGain();master.gain.value=0;
-  compressor=context.createDynamicsCompressor();compressor.threshold.value=-18;compressor.knee.value=18;compressor.ratio.value=3.5;compressor.attack.value=.006;compressor.release.value=.24;
-  compressor.connect(master).connect(context.destination);
-  noiseBuffer=buildNoise();
-  const six=(60/cue.bpm)/4;
-  const elapsed=Math.max(0,(Date.now()-state.anchor)/1000);
-  stepIndex=Math.floor(elapsed/six);
-  nextTime=context.currentTime+.06;
-  scheduler=setInterval(schedulerTick,80);
+  if(!AC) throw new Error("Audio not supported");
+
+  if(!context){
+    context=new AC();
+    master=context.createGain();master.gain.value=0;
+    compressor=context.createDynamicsCompressor();
+    compressor.threshold.value=-18;
+    compressor.knee.value=18;
+    compressor.ratio.value=3.5;
+    compressor.attack.value=.006;
+    compressor.release.value=.24;
+    compressor.connect(master).connect(context.destination);
+    noiseBuffer=buildNoise();
+
+    const six=(60/cue.bpm)/4;
+    const elapsed=Math.max(0,(Date.now()-state.anchor)/1000);
+    stepIndex=Math.floor(elapsed/six);
+    nextTime=context.currentTime+.06;
+  }
+
+  if(context.state!=="running") await context.resume();
+
+  if(!scheduler){
+    nextTime=Math.max(nextTime,context.currentTime+.06);
+    scheduler=setInterval(schedulerTick,80);
+  }
+
   schedulerTick();
   started=true;
-  return context.resume().then(()=>fadeTo(state.muted||suppressed?0:state.volume,.35));
+  fadeTo(state.muted||suppressed?0:state.volume,.35);
 }
 function saveMediaPosition(){
   if(!mediaAudio) return;
@@ -187,28 +210,40 @@ function saveMediaPosition(){
   state.trackIndex=Number(state.trackIndex||0);
   saveState();
 }
-function startRealTrack(){
-  if(!realTracks.length) return Promise.reject(new Error("No soundtrack files"));
-  if(mediaAudio) return mediaAudio.play();
-  const track=realTracks[state.trackIndex%realTracks.length];
-  mediaAudio=new Audio(track.src);
-  mediaAudio.dataset.mceSoundtrack="1";
-  mediaAudio.preload="auto";
-  mediaAudio.volume=state.muted||suppressed?0:state.volume;
-  mediaAudio.currentTime=Math.max(0,Number(state.trackTime||0));
-  mediaAudio.addEventListener("timeupdate",()=>{
-    if(!mediaSaveTimer) mediaSaveTimer=setTimeout(()=>{mediaSaveTimer=null;saveMediaPosition()},1000);
-  });
-  mediaAudio.addEventListener("ended",()=>{
-    state.trackIndex=(state.trackIndex+1)%realTracks.length;state.trackTime=0;saveState();
-    mediaAudio=null;startRealTrack().catch(()=>{});renderWidget();
-  });
+async function startRealTrack(){
+  if(!realTracks.length) throw new Error("No soundtrack files");
+  if(!mediaAudio){
+    const track=realTracks[state.trackIndex%realTracks.length];
+    mediaAudio=new Audio(track.src);
+    mediaAudio.dataset.mceSoundtrack="1";
+    mediaAudio.preload="auto";
+    mediaAudio.volume=state.muted||suppressed?0:state.volume;
+    mediaAudio.currentTime=Math.max(0,Number(state.trackTime||0));
+    mediaAudio.addEventListener("timeupdate",()=>{
+      if(!mediaSaveTimer) mediaSaveTimer=setTimeout(()=>{mediaSaveTimer=null;saveMediaPosition()},1000);
+    });
+    mediaAudio.addEventListener("ended",()=>{
+      state.trackIndex=(state.trackIndex+1)%realTracks.length;
+      state.trackTime=0;
+      saveState();
+      mediaAudio=null;
+      started=false;
+      startRealTrack().then(renderWidget).catch(()=>{started=false;renderWidget()});
+    });
+  }
+  await mediaAudio.play();
   started=true;
-  return mediaAudio.play();
 }
-function unlock(){
-  const p=realTracks.length?startRealTrack():startProcedural();
-  Promise.resolve(p).then(()=>{renderWidget()}).catch(()=>{renderWidget()});
+async function unlock(){
+  try{
+    if(state.muted) state.muted=false;
+    if(realTracks.length) await startRealTrack();
+    else await startProcedural();
+    renderWidget();
+  }catch(error){
+    started=false;
+    renderWidget();
+  }
 }
 function suppress(on){
   suppressed=Boolean(on);
@@ -244,7 +279,8 @@ window.addEventListener("pagehide",saveMediaPosition);
 window.addEventListener("beforeunload",saveMediaPosition);
 
 makeWidget();
-const gesture=()=>{
+const gesture=event=>{
+  if(event && event.target && event.target.closest && event.target.closest("#mceSoundtrackWidget")) return;
   unlock();
   document.removeEventListener("pointerdown",gesture,true);
   document.removeEventListener("touchstart",gesture,true);
@@ -253,7 +289,6 @@ const gesture=()=>{
 document.addEventListener("pointerdown",gesture,true);
 document.addEventListener("touchstart",gesture,true);
 document.addEventListener("keydown",gesture,true);
-setTimeout(()=>unlock(),120);
 
 root.MusicCitySoundtrack={
   start:unlock,
