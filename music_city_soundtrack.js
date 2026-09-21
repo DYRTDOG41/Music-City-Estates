@@ -237,8 +237,19 @@ async function startRealTrack(){
 async function unlock(){
   try{
     if(state.muted) state.muted=false;
-    if(realTracks.length) await startRealTrack();
-    else await startProcedural();
+    if(realTracks.length){
+      try{
+        await startRealTrack();
+      }catch(error){
+        if(mediaAudio){
+          try{mediaAudio.pause();}catch(ignore){}
+          mediaAudio=null;
+        }
+        await startProcedural();
+      }
+    }else{
+      await startProcedural();
+    }
     renderWidget();
   }catch(error){
     started=false;

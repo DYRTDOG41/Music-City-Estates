@@ -1,9 +1,17 @@
 (function(root){
   "use strict";
-  // Add mastered soundtrack files here later. The global soundtrack engine will
-  // automatically use these instead of the built-in procedural score.
-  // Example:
-  // { id:"city-theme", title:"City Lights", artist:"Music City Estates",
-  //   src:"audio/city-lights.mp3", zones:["city","studio","heights","social"] }
-  root.MusicCitySoundtrackCatalog = root.MusicCitySoundtrackCatalog || [];
+
+  // Music City Estates soundtrack / station rotation.
+  // Use tracks here only when Music City has permission to play them.
+  root.MusicCitySoundtrackCatalog = [
+    {
+      id:"organ-donor",
+      title:"Organ Donor",
+      artist:"willwill3515",
+      instrumental:true,
+      source:"Artist-provided Suno instrumental",
+      src:"https://cdn1.suno.ai/ee011258-2b3f-4ea6-abe4-f992ceb0acdd.mp3",
+      zones:["radio"]
+    }
+  ];
 })(window);
