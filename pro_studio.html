@@ -102,7 +102,7 @@ back.href = "advanced_recording_studio.html?studio=" + encodeURIComponent(studio
 document.getElementById("studioContext").textContent =
 studio === "bedroom" ? "Bedroom Studio → Pro Studio" : "BeGenius Studio → Pro Studio";
 document.getElementById("mobileMixerButton").href =
-"advanced_recording_studio.html?studio=" + encodeURIComponent(studio);
+"advanced_recording_studio.html?studio=" + encodeURIComponent(studio) + "&mobilepro=1";
 
 const isMobileStudioDevice =
 window.matchMedia("(max-width: 820px)").matches ||
