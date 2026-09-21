@@ -69,6 +69,12 @@ textarea{min-height:135px;resize:vertical}
 .status-pill{padding:3px 7px;border-radius:99px;background:#152335;color:#91a6bd;font-size:9px;font-weight:900}
 .source-box.ready .status-pill{background:#153d2d;color:#baffd2}
 .inline-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}
+.inline-actions.three{grid-template-columns:repeat(3,1fr)}
+.workflow{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.workflow-step{padding:12px;border:1px solid #29425e;border-radius:12px;background:#07101a;min-height:86px}
+.workflow-step strong{display:block;color:#dff7ff;font-size:12px;margin-bottom:5px}
+.workflow-step span{color:#91a6bd;font-size:11px;line-height:1.4}
+.writing-btn.active{border-color:var(--green);background:#103524;color:#d9ffe8;box-shadow:0 0 18px rgba(116,240,172,.15)}
 .file-label,.secondary-btn,.record-btn{
   min-height:44px;display:grid;place-items:center;border:1px solid #335575;border-radius:10px;
   background:#0c1928;color:#fff;font-size:12px;font-weight:900;text-align:center;padding:9px
@@ -117,8 +123,8 @@ body.custom-mode .quick-only{display:none}
 }
 .footer-link{display:block;text-align:center;color:#82a5c0;margin-top:16px;text-decoration:none;font-size:12px;font-weight:800}
 @media(max-width:760px){
-  .custom-grid,.source-grid,.version-grid,.advanced-grid{grid-template-columns:1fr}
-  .inline-actions,.choice-row{grid-template-columns:1fr 1fr}
+  .custom-grid,.source-grid,.version-grid,.advanced-grid,.workflow{grid-template-columns:1fr}
+  .inline-actions,.inline-actions.three,.choice-row{grid-template-columns:1fr 1fr}
   .shell{width:min(96%,700px);margin-top:12px}
   .card{padding:15px}
   .topbar{padding:10px 12px}
@@ -145,6 +151,17 @@ body.custom-mode .quick-only{display:none}
     <button type="button" id="quickTab" class="active" onclick="setCreateMode('quick')">QUICK</button>
     <button type="button" id="customTab" onclick="setCreateMode('custom')">CUSTOM</button>
   </nav>
+
+  <section class="card">
+    <h2>Studio flow</h2>
+    <p class="helper">Follow these four steps. You can listen and write to a beat before recording, and the same beat will play while your microphone is recording.</p>
+    <div class="workflow">
+      <div class="workflow-step"><strong>1 • CHOOSE A BEAT</strong><span>Pick a Music City beat or add your own instrumental.</span></div>
+      <div class="workflow-step"><strong>2 • WRITE / TEST</strong><span>Loop the beat while you write, rehearse, or test your flow.</span></div>
+      <div class="workflow-step"><strong>3 • RECORD</strong><span>Tap Record. The beat restarts and plays in your headphones while vocals are captured.</span></div>
+      <div class="workflow-step"><strong>4 • MIX</strong><span>Create two mixed versions, compare them, and keep the one you want.</span></div>
+    </div>
+  </section>
 
   <section class="card quick-only">
     <h2>What do you want to hear?</h2>
@@ -201,9 +218,10 @@ body.custom-mode .quick-only{display:none}
           <strong>🎧 Beat / Instrumental</strong>
           <span class="status-pill" id="beatStatusPill">OPTIONAL</span>
         </div>
-        <p class="helper" id="selectedBeatText">No beat selected. Music City can generate one from your description.</p>
-        <div class="inline-actions">
+        <p class="helper" id="selectedBeatText">Step 1: choose a beat below or add your own. You can still generate one later from your description.</p>
+        <div class="inline-actions three">
           <label class="file-label">ADD BEAT<input id="beatUpload" type="file"></label>
+          <button class="secondary-btn writing-btn" id="writingModeButton" type="button" onclick="toggleWritingMode()" disabled>▶ WRITE / TEST</button>
           <button class="secondary-btn" type="button" onclick="clearSelectedBeat()">CLEAR</button>
         </div>
         <div id="beatLockerList" class="locker-list"></div>
@@ -215,7 +233,7 @@ body.custom-mode .quick-only{display:none}
           <strong>🎤 Your Voice</strong>
           <span class="status-pill" id="voiceStatusPill">REQUIRED FOR MY VOICE</span>
         </div>
-        <p class="helper" id="voiceStatusText">Record a vocal or upload one you already made. Your actual recording is preserved in the finished version.</p>
+        <p class="helper" id="voiceStatusText">Step 3: record a vocal or upload one you already made. If a beat is selected, it will restart from the beginning and play while you record.</p>
         <div class="inline-actions">
           <button class="record-btn" id="recordVoiceButton" type="button" onclick="toggleVoiceRecording()">● RECORD VOICE</button>
           <label class="file-label">UPLOAD VOICE<input id="voiceUpload" type="file"></label>
@@ -266,7 +284,15 @@ body.custom-mode .quick-only{display:none}
     <button type="button" class="secondary-btn" style="width:100%;margin-top:12px" onclick="createTwoVersions()">↻ CREATE 2 MORE</button>
   </section>
 
-  <a class="footer-link" href="advanced_recording_studio.html">Open Advanced Studio for multitrack editing →</a>
+  <section class="card">
+    <h2>Take it further</h2>
+    <p class="helper">Keep this simple booth for fast recording, or carry the same beat and vocal into the professional studio without starting over.</p>
+    <div class="inline-actions">
+      <button type="button" class="create-btn" id="sendProStudioButton" onclick="sendToProStudio()">🎚 SEND TO PRO STUDIO</button>
+      <button type="button" class="secondary-btn" onclick="openAdvancedStudio()">OPEN ADVANCED MIXER</button>
+    </div>
+    <p class="note" id="proStudioBridgeStatus">Your current beat and vocal will be copied into the multitrack session on this device.</p>
+  </section>
 </main>
 
 <script src="player-state.js"></script>
@@ -289,6 +315,7 @@ let mediaStream = null;
 let voiceChunks = [];
 let recordingBeatAudio = null;
 let recordingTimer = null;
+let writingModeActive = false;
 let resultVersions = [];
 let resultUrls = [];
 let generationRound = 0;
@@ -309,6 +336,7 @@ function setSongType(type){
   updateSourceBoxes();
 }
 function toggleAdvanced(){document.getElementById("advancedBox").classList.toggle("open")}
+function openAdvancedStudio(){location.href="advanced_recording_studio.html?studio="+encodeURIComponent(studio)}
 
 function status(message,state){
   const el=document.getElementById("createStatus");
@@ -390,19 +418,51 @@ function renderBeatLocker(){
     row.append(text,btn);box.appendChild(row);
   });
 }
+function stopWritingMode(reset){
+  const audio=document.getElementById("beatPreview");
+  audio.pause();
+  if(reset!==false)audio.currentTime=0;
+  audio.loop=false;
+  writingModeActive=false;
+  const button=document.getElementById("writingModeButton");
+  button.classList.remove("active");
+  button.textContent="▶ WRITE / TEST";
+}
+async function toggleWritingMode(){
+  if(!selectedBeat){status("Choose a beat first, then tap Write / Test.","error");return}
+  const audio=document.getElementById("beatPreview");
+  if(writingModeActive&&!audio.paused){
+    stopWritingMode(false);
+    status("Writing mode paused. Tap Write / Test to continue.");
+    return;
+  }
+  audio.loop=true;
+  try{
+    await audio.play();
+    writingModeActive=true;
+    const button=document.getElementById("writingModeButton");
+    button.classList.add("active");
+    button.textContent="Ⅱ PAUSE WRITING";
+    status("Writing / test mode is playing "+selectedBeat.title+". Rehearse or write, then tap Record when ready.","ok");
+  }catch(error){
+    status("Tap the beat player once, then try Write / Test again.","error");
+  }
+}
 function selectBeatRecord(record){
+  stopWritingMode(true);
   selectedBeat=record;
   renderBeatLocker();
   const audio=document.getElementById("beatPreview");
   audio.src=record.objectUrl||record.src;
   audio.style.display="block";
-  document.getElementById("selectedBeatText").textContent=record.title+" is selected.";
+  document.getElementById("selectedBeatText").textContent="Step 2: "+record.title+" is selected. Tap WRITE / TEST to loop it, or go straight to Record.";
   updateSourceBoxes();
 }
 function clearSelectedBeat(){
+  stopWritingMode(true);
   selectedBeat=null;renderBeatLocker();
-  const audio=document.getElementById("beatPreview");audio.pause();audio.removeAttribute("src");audio.style.display="none";
-  document.getElementById("selectedBeatText").textContent="No beat selected. Music City can generate one from your description.";
+  const audio=document.getElementById("beatPreview");audio.removeAttribute("src");audio.style.display="none";
+  document.getElementById("selectedBeatText").textContent="Step 1: choose a beat below or add your own. You can still generate one later from your description.";
   updateSourceBoxes();
 }
 async function selectedBeatBlob(){
@@ -411,6 +471,96 @@ async function selectedBeatBlob(){
   const response=await fetch(selectedBeat.src||selectedBeat.objectUrl);
   if(!response.ok)throw new Error("Music City could not load that beat.");
   return response.blob();
+}
+
+function openBoothSessionDb(){
+  return new Promise((resolve,reject)=>{
+    const request=indexedDB.open("music-city-recording-booth",1);
+    request.onupgradeneeded=()=>{
+      if(!request.result.objectStoreNames.contains("sessions"))request.result.createObjectStore("sessions",{keyPath:"id"});
+    };
+    request.onsuccess=()=>resolve(request.result);
+    request.onerror=()=>reject(request.error||new Error("Studio session storage could not open."));
+  });
+}
+
+async function saveQuickSessionForProStudio(){
+  if(!voiceBlob&&!selectedBeat)throw new Error("Add a beat or record a vocal before opening Pro Studio.");
+  const details=getPromptAndTitle();
+  const beatBlob=selectedBeat?await selectedBeatBlob():null;
+  let roughMix=null;
+  if(beatBlob&&voiceBlob){
+    try{roughMix=await renderVersion(beatBlob,voiceBlob,"A")}catch(error){}
+  }else if(beatBlob&&!voiceBlob){
+    roughMix=beatBlob;
+  }
+  const player=document.getElementById("voicePreview");
+  const leadDuration=Number.isFinite(player.duration)?Math.round(player.duration*1000):0;
+  const record={
+    id:"current-"+studio,
+    savedAt:new Date().toISOString(),
+    title:details.title||"Music City Session",
+    lyrics:details.lyrics||"",
+    style:details.prompt||"",
+    selectedBeat:selectedBeat?selectedBeat.title:"",
+    selectedBeatAudio:selectedBeat&&beatBlob?{
+      title:selectedBeat.title,
+      blob:beatBlob,
+      genre:selectedBeat.genre||"Original",
+      mood:selectedBeat.mood||"Quick Studio",
+      bpm:Number(selectedBeat.bpm||0),
+      producer:selectedBeat.producer||"Music City",
+      source:selectedBeat.catalog?"Music City Catalog":"Quick Studio",
+      generated:false,
+      localOnly:!selectedBeat.catalog
+    }:null,
+    armedTrack:"lead",
+    tracks:{
+      lead:{blob:voiceBlob,durationMs:leadDuration},
+      double:{blob:null,durationMs:0},
+      adlibs:{blob:null,durationMs:0},
+      harmony:{blob:null,durationMs:0}
+    },
+    mixSettings:{
+      beat:{level:72,pan:0,muted:false,soloed:false},
+      lead:{level:100,pan:0,muted:false,soloed:false},
+      double:{level:64,pan:-32,muted:false,soloed:false},
+      adlibs:{level:56,pan:42,muted:false,soloed:false},
+      harmony:{level:52,pan:18,muted:false,soloed:false}
+    },
+    masterBlob:roughMix,
+    masterKind:roughMix?"music-city-mix":""
+  };
+  const db=await openBoothSessionDb();
+  await new Promise((resolve,reject)=>{
+    const tx=db.transaction("sessions","readwrite");
+    tx.objectStore("sessions").put(record);
+    tx.oncomplete=resolve;
+    tx.onerror=()=>reject(tx.error||new Error("Could not save the Pro Studio session."));
+  });
+  return record;
+}
+
+async function sendToProStudio(){
+  const button=document.getElementById("sendProStudioButton");
+  const bridge=document.getElementById("proStudioBridgeStatus");
+  if(mediaRecorder&&mediaRecorder.state==="recording"){
+    bridge.textContent="Stop the recording first, then send the session to Pro Studio.";
+    return;
+  }
+  button.disabled=true;
+  button.textContent="PREPARING SESSION...";
+  bridge.textContent="Saving your beat, vocal and rough mix for the professional workspace...";
+  try{
+    await saveQuickSessionForProStudio();
+    localStorage.setItem("musicCityProReturnPending","1");
+    bridge.textContent="Session ready. Opening Music City Pro Studio...";
+    location.href="pro_studio.html?studio="+encodeURIComponent(studio);
+  }catch(error){
+    bridge.textContent=error.message||"Music City could not prepare the Pro Studio session.";
+    button.disabled=false;
+    button.textContent="🎚 SEND TO PRO STUDIO";
+  }
 }
 
 function setVoiceBlob(blob,label){
@@ -424,9 +574,13 @@ function setVoiceBlob(blob,label){
 }
 function updateSourceBoxes(){
   document.getElementById("beatSourceBox").classList.toggle("ready",!!selectedBeat);
-  document.getElementById("beatStatusPill").textContent=selectedBeat?"READY":"OPTIONAL";
+  document.getElementById("beatStatusPill").textContent=selectedBeat?"READY":"CHOOSE / ADD";
+  const writingButton=document.getElementById("writingModeButton");
+  writingButton.disabled=!selectedBeat;
   document.getElementById("voiceSourceBox").classList.toggle("ready",songType==="voice"&&!!voiceBlob);
   if(songType==="voice")document.getElementById("voiceStatusPill").textContent=voiceBlob?"READY":"REQUIRED";
+  const recordButton=document.getElementById("recordVoiceButton");
+  if(!mediaRecorder||mediaRecorder.state!=="recording")recordButton.textContent=selectedBeat?"● RECORD OVER BEAT":"● RECORD VOICE";
 }
 
 async function toggleVoiceRecording(){
@@ -438,6 +592,7 @@ async function toggleVoiceRecording(){
     status("Microphone recording is not supported in this browser.","error");return;
   }
   try{
+    stopWritingMode(true);
     mediaStream=await navigator.mediaDevices.getUserMedia({audio:true});
     mediaRecorder=new MediaRecorder(mediaStream);
     voiceChunks=[];
@@ -448,17 +603,19 @@ async function toggleVoiceRecording(){
       const blob=new Blob(voiceChunks,{type:mediaRecorder.mimeType||"audio/webm"});
       setVoiceBlob(blob,"Recorded vocal");
       mediaStream.getTracks().forEach(t=>t.stop());mediaStream=null;
-      button.textContent="● RECORD VOICE";button.classList.remove("recording");
-      status("Voice recorded. You can Create when ready.","ok");
+      button.classList.remove("recording");updateSourceBoxes();
+      status("Voice recorded. Listen back, then Create two mixed versions when ready.","ok");
     };
     if(selectedBeat){
       recordingBeatAudio=new Audio(selectedBeat.objectUrl||selectedBeat.src);
-      recordingBeatAudio.currentTime=0;recordingBeatAudio.volume=.45;
+      recordingBeatAudio.currentTime=0;recordingBeatAudio.volume=.72;recordingBeatAudio.loop=true;
       await recordingBeatAudio.play().catch(()=>{});
     }
     mediaRecorder.start();
     button.textContent="■ STOP RECORDING";button.classList.add("recording");
-    status("Recording your voice"+(selectedBeat?" over "+selectedBeat.title:"")+". Tap Stop when finished.");
+    status(selectedBeat
+      ?"Recording over "+selectedBeat.title+". The beat is playing while your microphone captures your voice. Tap Stop when finished."
+      :"Recording your voice without a beat. Tap Stop when finished.");
     recordingTimer=setTimeout(()=>{if(mediaRecorder&&mediaRecorder.state==="recording")mediaRecorder.stop()},240000);
   }catch(error){
     status("Microphone permission is required to record your voice.","error");
@@ -641,6 +798,8 @@ async function init(){
   setCreateMode("quick");setSongType("voice");updateSourceBoxes();
 }
 window.addEventListener("beforeunload",()=>{
+  stopWritingMode(true);
+  if(recordingBeatAudio){recordingBeatAudio.pause();recordingBeatAudio=null}
   if(voiceUrl)URL.revokeObjectURL(voiceUrl);
   revokeBeatUrls();resultUrls.forEach(url=>URL.revokeObjectURL(url));
   if(mediaStream)mediaStream.getTracks().forEach(t=>t.stop());
