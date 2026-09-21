@@ -61,11 +61,11 @@ function makeWidget(){
   widget.innerHTML='<div class="mce-radio-icon">📻</div><div class="mce-radio-copy"><strong>MUSIC CITY RADIO</strong><span class="mce-radio-title"></span><small class="mce-radio-mode"></small></div><button type="button" class="mce-radio-toggle" aria-label="Mute soundtrack">🔊</button>';
   const style=document.createElement("style");
   style.textContent=
-    '#mceSoundtrackWidget{position:fixed;right:12px;bottom:12px;z-index:99999;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:9px;max-width:min(340px,calc(100% - 24px));padding:9px 10px;border:1px solid rgba(38,211,255,.62);border-radius:13px;background:rgba(3,9,18,.91);color:#fff;font-family:Arial,sans-serif;box-shadow:0 8px 28px rgba(0,0,0,.35);backdrop-filter:blur(9px)}'+
-    '#mceSoundtrackWidget .mce-radio-icon{font-size:22px}#mceSoundtrackWidget .mce-radio-copy{min-width:0}#mceSoundtrackWidget strong,#mceSoundtrackWidget span,#mceSoundtrackWidget small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'+
-    '#mceSoundtrackWidget strong{font-size:9px;letter-spacing:.12em;color:#64ddff}#mceSoundtrackWidget span{margin-top:2px;font-size:12px;font-weight:900}#mceSoundtrackWidget small{margin-top:2px;color:#9fb4c8;font-size:9px}'+
-    '#mceSoundtrackWidget button{width:40px;height:40px;border:1px solid #315879;border-radius:10px;background:#0b1a2a;color:white;font-size:17px;cursor:pointer}'+
-    '@media(max-width:520px){#mceSoundtrackWidget{left:10px;right:10px;bottom:10px;max-width:none}}';
+    '#mceSoundtrackWidget{position:fixed;right:12px;top:86px;bottom:auto;z-index:99999;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:9px;width:min(320px,calc(100% - 24px));padding:9px 10px;border:1px solid rgba(38,211,255,.62);border-radius:13px;background:rgba(3,9,18,.91);color:#fff;font-family:Arial,sans-serif;box-shadow:0 8px 28px rgba(0,0,0,.35);backdrop-filter:blur(9px)}'+
+    '#mceSoundtrackWidget .mce-radio-icon{font-size:20px}#mceSoundtrackWidget .mce-radio-copy{min-width:0}#mceSoundtrackWidget strong,#mceSoundtrackWidget span,#mceSoundtrackWidget small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'+
+    '#mceSoundtrackWidget strong{font-size:8px;letter-spacing:.12em;color:#64ddff}#mceSoundtrackWidget span{margin-top:2px;font-size:11px;font-weight:900}#mceSoundtrackWidget small{margin-top:2px;color:#9fb4c8;font-size:8px}'+
+    '#mceSoundtrackWidget button{width:38px;height:38px;border:1px solid #315879;border-radius:10px;background:#0b1a2a;color:white;font-size:16px;cursor:pointer}'+
+    '@media(max-width:520px){#mceSoundtrackWidget{top:max(82px,calc(env(safe-area-inset-top) + 64px));right:10px;left:auto;bottom:auto;width:min(245px,calc(100% - 20px));padding:7px 8px;gap:7px}#mceSoundtrackWidget .mce-radio-icon{font-size:17px}#mceSoundtrackWidget button{width:34px;height:34px;font-size:14px}}';
   document.head.appendChild(style);
   document.body.appendChild(widget);
   titleNode=widget.querySelector(".mce-radio-title");
