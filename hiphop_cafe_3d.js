@@ -105,6 +105,52 @@ const performer = buildAvatar(room, avatarData, [0, .52, -10.7], .96);
 performer.rotation.y = Math.PI;
 room.label((avatarData.name || state.name || 'NEW ARTIST').toUpperCase(), [0, 4.1, -10.7], '#ffffff', [4.2, .58]);
 
+// Live performance lighting rig. These stay dark until a real song is playing.
+const performanceLights = [];
+const performanceLightTargets = [];
+const lightPositions = [
+  [-7.2, 6.7, -7.2],
+  [-2.4, 6.9, -6.4],
+  [2.4, 6.9, -6.4],
+  [7.2, 6.7, -7.2]
+];
+lightPositions.forEach((position, index) => {
+  const target = new THREE.Object3D();
+  target.position.set(0, 1.2, -10.6);
+  scene.add(target);
+  performanceLightTargets.push(target);
+
+  const spot = new THREE.SpotLight(0xffffff, 0, 19, .34, .72, 1.15);
+  spot.position.set(...position);
+  spot.target = target;
+  spot.castShadow = false;
+  scene.add(spot);
+  performanceLights.push(spot);
+
+  room.cylinder('performance light can', .23, .34, [position[0], position[1], position[2]], 0x15131b, {
+    metalness: .88,
+    roughness: .25
+  });
+});
+
+// LED strips around the starter stage pulse only while the song is active.
+const performanceLeds = [];
+for (const [x, z] of [[-7.2,-7.22],[-3.6,-7.22],[0,-7.22],[3.6,-7.22],[7.2,-7.22]]) {
+  const led = room.box('performance led', [2.7,.065,.08], [x,.53,z], 0xffffff, {
+    material: new THREE.MeshBasicMaterial({ color:0xffffff, toneMapped:false }),
+    cast:false
+  });
+  led.visible = false;
+  performanceLeds.push(led);
+}
+
+const discoBall = new THREE.Mesh(
+  new THREE.SphereGeometry(.34, 16, 12),
+  new THREE.MeshStandardMaterial({ color:0xbfd4e5, metalness:.95, roughness:.13 })
+);
+discoBall.position.set(0, 6.25, -9.1);
+scene.add(discoBall);
+
 // Café counter and future commerce zone.
 room.box('café counter', [10, 1.25, 2], [11.2, .63, 4.5], 0x3b2116, { collider: true, roughness: .6 });
 room.box('counter top', [10.4, .16, 2.25], [11.2, 1.3, 4.5], 0x171212, { metalness: .38, roughness: .36 });
@@ -226,6 +272,7 @@ function leaveStageView(showResults) {
 }
 
 room.animated.push((time) => {
+  const applauding = Date.now() < applauseUntil;
   if (active) {
     performer.position.y = .52 + Math.sin(time * .009) * .045;
     performer.rotation.z = Math.sin(time * .006) * .035;
@@ -233,7 +280,32 @@ room.animated.push((time) => {
     performer.position.y += (.52 - performer.position.y) * .12;
     performer.rotation.z *= .88;
   }
-  if (Date.now() < applauseUntil) {
+
+  const lightingOn = active || applauding;
+  discoBall.rotation.y = time * .0008;
+  discoBall.rotation.x = Math.sin(time * .00045) * .16;
+  performanceLights.forEach((light, index) => {
+    if (!lightingOn) {
+      light.intensity += (0 - light.intensity) * .18;
+      return;
+    }
+    const phase = time * (.00125 + index * .00008) + index * 1.43;
+    const hue = (time * .00008 + index * .19) % 1;
+    light.color.setHSL(hue, .92, .61);
+    light.intensity = applauding ? 58 : 42 + Math.sin(phase * 2.2) * 14;
+    performanceLightTargets[index].position.x = Math.sin(phase) * 5.8;
+    performanceLightTargets[index].position.y = 1.05 + Math.sin(phase * .7) * .7;
+    performanceLightTargets[index].position.z = -10.4 + Math.cos(phase * .8) * 1.9;
+  });
+  performanceLeds.forEach((led, index) => {
+    led.visible = lightingOn;
+    if (!lightingOn) return;
+    const hue = (time * .00013 + index * .16) % 1;
+    led.material.color.setHSL(hue, .95, .58);
+    led.scale.y = .72 + Math.abs(Math.sin(time * .006 + index)) * .55;
+  });
+
+  if (applauding) {
     crowd.forEach(({ group, seed: memberSeed }) => {
       group.position.y += Math.abs(Math.sin(time * .018 + memberSeed)) * .025;
     });
