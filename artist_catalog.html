@@ -35,6 +35,13 @@ button{padding:11px 10px;border:1px solid #22d3ee;border-radius:9px;background:#
 button.primary{background:#22d3ee;color:#041019}
 button:disabled{opacity:.45;cursor:not-allowed}
 .reward{font-size:12px;color:#96a3bb;margin-top:10px}
+.growth{margin-top:13px;padding:12px;border:1px solid #2f5b6f;border-radius:12px;background:linear-gradient(145deg,#07131d,#0a1019)}
+.growth-head{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.growth-head strong{color:#8eeaff;font-size:12px;letter-spacing:.06em}.growth-head span{font-size:11px;color:#a9b8c8}
+.growth p{margin:7px 0 0;font-size:11px;color:#a8b3ca;line-height:1.45}
+.growth-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px}
+.growth-actions button{font-size:10px;padding:10px 7px}
+@media(max-width:700px){.growth-actions{grid-template-columns:1fr}}
 @media(max-width:700px){header{align-items:flex-start;flex-direction:column}.actions{grid-template-columns:1fr}}
 </style>
 </head>
@@ -128,6 +135,92 @@ function submitRadioById(id) {
     renderCatalog();
   } catch (error) {
     showNotice(error.message || "Could not submit this song to radio.");
+  }
+}
+
+
+function fallbackCopyInvite(text) {
+  const box = document.createElement("textarea");
+  box.value = text;
+  box.setAttribute("readonly", "");
+  box.style.position = "fixed";
+  box.style.opacity = "0";
+  document.body.appendChild(box);
+  box.select();
+  box.setSelectionRange(0, text.length);
+  let ok = false;
+  try { ok = document.execCommand("copy"); } catch (error) {}
+  box.remove();
+  return ok;
+}
+
+async function inviteFriendById(id, title) {
+  try {
+    const before = window.MCE.getStreetTeamStatus(id);
+    if (before.remaining <= 0) {
+      showNotice("You already earned all 10 Street Team invite rewards for this song.");
+      return;
+    }
+
+    const inviteUrl = new URL("index.html", window.location.href).href;
+    const artist = window.MCE.get().name || "an artist";
+    const inviteText =
+      artist + ' just made "' + (title || "a new song") +
+      '" in Music City Estates. Come check out the music career world: ' + inviteUrl;
+
+    let completed = false;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Music City Estates",
+          text: inviteText,
+          url: inviteUrl
+        });
+        completed = true;
+      } catch (error) {
+        if (error && error.name === "AbortError") {
+          showNotice("Invite canceled. No XP was used or awarded.");
+          return;
+        }
+      }
+    }
+
+    if (!completed) {
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(inviteText);
+          completed = true;
+        }
+      } catch (error) {}
+    }
+
+    if (!completed) completed = fallbackCopyInvite(inviteText);
+    if (!completed) throw new Error("Could not open or copy the invite on this device.");
+
+    const after = window.MCE.claimStreetTeamInvite(id);
+    const status = window.MCE.getStreetTeamStatus(id, after);
+    showNotice(
+      "Street Team invite counted: +5 XP. " +
+      status.count + "/10 rewarded invites used for this song. " +
+      status.remaining + " remain."
+    );
+    renderCatalog();
+  } catch (error) {
+    showNotice(error.message || "Could not count that Street Team invite.");
+  }
+}
+
+function claimHustleById(id, hustleId) {
+  try {
+    const hustle = window.MCE.CAREER_HUSTLES[hustleId];
+    window.MCE.claimCareerHustle(id, hustleId);
+    showNotice(
+      hustle.label + " complete: +" + hustle.xp + " XP" +
+      (hustle.cash ? " • +$" + hustle.cash : "") + "."
+    );
+    renderCatalog();
+  } catch (error) {
+    showNotice(error.message || "Could not complete that career hustle.");
   }
 }
 
@@ -279,6 +372,46 @@ async function renderCatalog() {
       audio.src = url;
       card.appendChild(audio);
     }
+
+    const streetTeam = release.id
+      ? window.MCE.getStreetTeamStatus(track.id, state)
+      : { count:0, max:10, remaining:10, earnedXp:0 };
+    const hustles = release.id
+      ? window.MCE.getCareerHustleStatus(track.id, state)
+      : { rehearsal:false, streetPromo:false };
+
+    const growth = document.createElement("section");
+    growth.className = "growth";
+    growth.innerHTML =
+      '<div class="growth-head"><strong>📣 STREET TEAM + CAREER HUSTLES</strong><span>' +
+      streetTeam.count + '/10 INVITES • +' + streetTeam.earnedXp + ' XP EARNED</span></div>' +
+      '<p>Invite people into Music City after making your song. Each completed share/copy earns +5 XP, up to 10 rewarded invites per song. Your friend does not have to accept or join for the invite XP to count.</p>';
+
+    const growthActions = document.createElement("div");
+    growthActions.className = "growth-actions";
+
+    const inviteButton = document.createElement("button");
+    inviteButton.textContent = streetTeam.remaining > 0
+      ? "📨 INVITE FRIEND +5 XP (" + streetTeam.remaining + " LEFT)"
+      : "✓ 10 INVITE REWARDS COMPLETE";
+    inviteButton.disabled = !release.id || streetTeam.remaining <= 0;
+    inviteButton.onclick = () => inviteFriendById(track.id, track.title);
+    growthActions.appendChild(inviteButton);
+
+    const rehearseButton = document.createElement("button");
+    rehearseButton.textContent = hustles.rehearsal ? "✓ REHEARSAL COMPLETE" : "🎤 REHEARSE +2 XP";
+    rehearseButton.disabled = !release.id || hustles.rehearsal;
+    rehearseButton.onclick = () => claimHustleById(track.id, "rehearsal");
+    growthActions.appendChild(rehearseButton);
+
+    const streetPromoButton = document.createElement("button");
+    streetPromoButton.textContent = hustles.streetPromo ? "✓ STREET PROMO COMPLETE" : "🗣 STREET PROMO +2 XP / +$10";
+    streetPromoButton.disabled = !release.id || hustles.streetPromo;
+    streetPromoButton.onclick = () => claimHustleById(track.id, "street-promo");
+    growthActions.appendChild(streetPromoButton);
+
+    growth.appendChild(growthActions);
+    card.appendChild(growth);
 
     const actions = document.createElement("div");
     actions.className = "actions";
