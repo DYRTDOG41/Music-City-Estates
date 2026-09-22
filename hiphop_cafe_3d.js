@@ -223,6 +223,22 @@ let active = false;
 let usedActions = new Set();
 let applauseUntil = 0;
 let performanceTrackMap = {};
+let stageAction = { type:'', startedAt:0, duration:0 };
+
+const performerTorso = performer.children[2];
+const performerLeftArm = performer.children[3];
+const performerRightArm = performer.children[4];
+const performerLeftLeg = performer.children[5];
+const performerRightLeg = performer.children[6];
+
+function triggerStageAction(type) {
+  stageAction = {
+    type,
+    startedAt: performance.now(),
+    duration: type === 'crowd' ? 2200 : 1800
+  };
+}
+
 
 async function preloadPerformanceTracks() {
   if (!window.MusicCityCatalog) return;
@@ -273,13 +289,57 @@ function leaveStageView(showResults) {
 
 room.animated.push((time) => {
   const applauding = Date.now() < applauseUntil;
+  const actionAge = time - stageAction.startedAt;
+  const actionActive = Boolean(stageAction.type) && actionAge >= 0 && actionAge < stageAction.duration;
+  const actionEase = actionActive ? Math.sin(Math.PI * Math.min(1, actionAge / stageAction.duration)) : 0;
+
+  // Return limbs/body smoothly to the neutral performance pose between actions.
+  performerLeftArm.rotation.x *= .78;
+  performerRightArm.rotation.x *= .78;
+  performerLeftArm.rotation.z += (-.12 - performerLeftArm.rotation.z) * .22;
+  performerRightArm.rotation.z += (.12 - performerRightArm.rotation.z) * .22;
+  performerLeftLeg.rotation.z *= .82;
+  performerRightLeg.rotation.z *= .82;
+  performerTorso.rotation.x *= .82;
+  performerTorso.rotation.z *= .82;
+
   if (active) {
     performer.position.y = .52 + Math.sin(time * .009) * .045;
     performer.rotation.z = Math.sin(time * .006) * .035;
+    performer.rotation.y += (Math.PI - performer.rotation.y) * .16;
+
+    if (actionActive && stageAction.type === 'timing') {
+      // RIDE THE BEAT: rhythmic bounce, shoulder/arm swing, slight footwork.
+      performer.position.y += Math.abs(Math.sin(actionAge * .018)) * .16 * actionEase;
+      performer.rotation.z += Math.sin(actionAge * .015) * .095 * actionEase;
+      performerLeftArm.rotation.x = Math.sin(actionAge * .021) * .72 * actionEase;
+      performerRightArm.rotation.x = -Math.sin(actionAge * .021) * .72 * actionEase;
+      performerLeftLeg.rotation.z = Math.sin(actionAge * .018) * .12 * actionEase;
+      performerRightLeg.rotation.z = -Math.sin(actionAge * .018) * .12 * actionEase;
+    } else if (actionActive && stageAction.type === 'presence') {
+      // OWN THE STAGE: plant the stance and throw both arms wide like a headliner.
+      performer.position.y += .07 * actionEase;
+      performer.rotation.z *= .35;
+      performerLeftArm.rotation.z = -.12 - 1.12 * actionEase;
+      performerRightArm.rotation.z = .12 + 1.12 * actionEase;
+      performerLeftArm.rotation.x = -.35 * actionEase;
+      performerRightArm.rotation.x = -.35 * actionEase;
+      performerTorso.rotation.x = -.10 * actionEase;
+    } else if (actionActive && stageAction.type === 'crowd') {
+      // WORK THE CROWD: sweep toward the audience and reach/point outward.
+      performer.rotation.y = Math.PI + Math.sin(actionAge * .0065) * .70 * actionEase;
+      performerRightArm.rotation.x = -1.18 * actionEase;
+      performerRightArm.rotation.z = .12 + .48 * actionEase;
+      performerLeftArm.rotation.z = -.12 - .46 * actionEase;
+      performerTorso.rotation.z = Math.sin(actionAge * .0065) * .08 * actionEase;
+    }
   } else {
     performer.position.y += (.52 - performer.position.y) * .12;
     performer.rotation.z *= .88;
+    performer.rotation.y += (Math.PI - performer.rotation.y) * .16;
   }
+
+  if (!actionActive && stageAction.type) stageAction = { type:'', startedAt:0, duration:0 };
 
   const lightingOn = active || applauding;
   discoBall.rotation.y = time * .0008;
@@ -615,6 +675,7 @@ actionButtons.forEach((button) => {
     if (!active || usedActions.has(type)) return;
 
     usedActions.add(type);
+    triggerStageAction(type);
     const gain = 18 + Math.floor(Math.random() * 15);
     score += gain;
     energy.style.width = `${Math.min(score, 100)}%`;
