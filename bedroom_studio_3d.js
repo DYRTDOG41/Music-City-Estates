@@ -106,7 +106,21 @@ let boothAudioContext = null, beatMaster = null, beatTimer = null, beatStopTimer
 let micStream = null, micContext = null, micAnalyser = null, micFrame = null;
 function updateStats() { state = window.MCE ? window.MCE.load() : state; for (const key of ['fans', 'cash', 'xp', 'level']) document.getElementById(key).textContent = Number(state[key] || (key === 'level' ? 1 : 0)).toLocaleString(); }
 function loadDraft() { try { savedDraft = JSON.parse(localStorage.getItem('musicCitySongDraft') || 'null'); } catch (error) { savedDraft = null; } const ready = savedDraft && savedDraft.studio === 'bedroom' && savedDraft.title; draftStatus.textContent = ready ? 'READY TO RELEASE: “' + savedDraft.title + '” has returned from your recording session.' : 'No song draft yet. Open the recorder to choose a beat, record vocals, build a hook, and polish your song.'; releaseButton.disabled = !ready; }
-function enterBooth() { loadDraft(); boothUI.classList.add('show'); document.getElementById('openRecorder').focus(); }
+function setBoothSoundtrackPaused(active) {
+  try {
+    if (window.MusicCitySoundtrack) {
+      if (active && window.MusicCitySoundtrack.pauseForSession) window.MusicCitySoundtrack.pauseForSession();
+      if (!active && window.MusicCitySoundtrack.resumeAfterSession) window.MusicCitySoundtrack.resumeAfterSession();
+    }
+    window.dispatchEvent(new CustomEvent('mce-audio-session',{detail:{active:Boolean(active),source:'bedroom-studio-booth'}}));
+  } catch (error) {}
+}
+function enterBooth() {
+  loadDraft();
+  setBoothSoundtrackPaused(true);
+  boothUI.classList.add('show');
+  document.getElementById('openRecorder').focus();
+}
 function stopBeatPreview() {
   if (beatTimer) clearInterval(beatTimer);
   if (beatStopTimer) clearTimeout(beatStopTimer);
@@ -178,10 +192,16 @@ async function toggleMicTest() {
     micButton.textContent = 'STOP MIC TEST'; micButton.classList.add('active'); document.getElementById('micWave').classList.add('mic-live'); status.textContent = 'Mic test is live locally. Speak to check your level; nothing is being recorded or uploaded.'; renderMicLevel();
   } catch (error) { stopMicTest(); status.textContent = error.name === 'NotAllowedError' ? 'Microphone permission was not granted. You can still enter the recording workflow.' : 'Microphone test could not start: ' + error.message; }
 }
-function leaveBooth() { stopBeatPreview(); stopMicTest(); boothUI.classList.remove('show'); document.querySelector('canvas')?.focus(); }
+function leaveBooth() {
+  stopBeatPreview();
+  stopMicTest();
+  boothUI.classList.remove('show');
+  setBoothSoundtrackPaused(false);
+  document.querySelector('canvas')?.focus();
+}
 room.interact('ENTER VOCAL BOOTH', [5.9, 1.7, -.45], enterBooth, 3, 0x66e6ff); room.interact('OPEN PRODUCER DESK', [-4.7, 1.7, -3.35], () => { location.href = 'record_music.html?studio=bedroom'; }, 2.7, 0x8b66ff);
 document.getElementById('boothShortcut').onclick = enterBooth;
-document.getElementById('leaveBooth').onclick = leaveBooth; document.getElementById('openRecorder').onclick = () => { stopBeatPreview(); stopMicTest(); location.href = 'record_music.html?studio=bedroom'; };
+document.getElementById('leaveBooth').onclick = leaveBooth; document.getElementById('openRecorder').onclick = () => { stopBeatPreview(); stopMicTest(); setBoothSoundtrackPaused(true); location.href = 'record_music.html?studio=bedroom'; };
 previewButton.onclick = toggleBeatPreview; micButton.onclick = toggleMicTest;
 releaseButton.onclick = () => { loadDraft(); if (!savedDraft || savedDraft.studio !== 'bedroom' || !savedDraft.title) return; window.MCE.addRelease({ title: savedDraft.title, source: 'bedroom' }); state = window.MCE.add({ fans: 10, xp: 15 }); status.textContent = '🔥 “' + savedDraft.title + '” released! +10 Fans • +15 XP'; localStorage.removeItem('musicCitySongDraft'); savedDraft = null; releaseButton.disabled = true; loadDraft(); updateStats(); };
 boothUI.addEventListener('click', (event) => { if (event.target === boothUI) leaveBooth(); }); addEventListener('keydown', (event) => { if (event.key === 'Escape' && boothUI.classList.contains('show')) leaveBooth(); }); addEventListener('beforeunload', () => { stopBeatPreview(); stopMicTest(); }); updateStats(); loadDraft();

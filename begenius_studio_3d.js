@@ -397,7 +397,13 @@ for (const [x, z] of [[-19.2, -12], [-19.2, 10], [19.2, -11], [19.2, 10]]) {
 room.box('recording entrance', [6.2, 4.7, .32], [14.6, 2.35, -14.1], 0x0e0d0b, { collider: true, metalness: .48, roughness: .34 });
 room.label('RECORDING SUITE', [14.6, 4.05, -13.9], '#e7c66e', [4.7, .72]);
 room.label('CREATE • RECORD • RELEASE', [14.6, 3.25, -13.88], '#ffffff', [4.5, .48]);
-room.interact('ENTER RECORDING SUITE', [14.6, 1.7, -11.6], () => { location.href = 'record_music.html?studio=begenius'; }, 3, 0xd8b765);
+room.interact('ENTER RECORDING SUITE', [14.6, 1.7, -11.6], () => {
+  try {
+    if (window.MusicCitySoundtrack && window.MusicCitySoundtrack.pauseForSession) window.MusicCitySoundtrack.pauseForSession();
+    window.dispatchEvent(new CustomEvent('mce-audio-session',{detail:{active:true,source:'begenius-recording-suite'}}));
+  } catch (error) {}
+  location.href = 'record_music.html?studio=begenius';
+}, 3, 0xd8b765);
 room.box('exit arch', [6.2, 4.7, .32], [-14.6, 2.35, 14.1], 0x0e0d0b, { collider: true, metalness: .48, roughness: .34 });
 room.label('HIP-HOP HEIGHTS', [-14.6, 4.05, 13.9], '#e7c66e', [4.7, .72]);
 room.interact('RETURN TO HIP-HOP HEIGHTS', [-14.6, 1.7, 11.5], () => { location.href = 'hip_hop_heights.html'; }, 3, 0xd8b765);
