@@ -1,4 +1,5 @@
 import { createRoom, buildAvatar } from './mce_3d_room.js';
+import { buildCafeVerticalSlice } from './hiphop_cafe_visuals.js';
 
 let state = window.MCE ? window.MCE.load() : {
   fans: Number(localStorage.getItem('mceFans')) || 0,
@@ -104,6 +105,9 @@ const avatarData = JSON.parse(localStorage.getItem('mceAvatar') || 'null') || { 
 const performer = buildAvatar(room, avatarData, [0, .52, -10.7], .96);
 performer.rotation.y = Math.PI;
 room.label((avatarData.name || state.name || 'NEW ARTIST').toUpperCase(), [0, 4.1, -10.7], '#ffffff', [4.2, .58]);
+
+const verticalSlice = buildCafeVerticalSlice(room, { performer });
+
 
 // Live performance lighting rig. These stay dark until a real song is playing.
 const performanceLights = [];
@@ -279,11 +283,19 @@ function enterStageView(title) {
   liveStageHud.classList.add('show');
   document.body.classList.add('live-performance-mode');
   panel.classList.remove('show');
+  verticalSlice.setPerformanceMode(true);
+  room.setCameraOverride({
+    position: [0, 2.15, 6.8],
+    target: [0, 1.82, -10.45],
+    lerp: .075
+  });
 }
 
 function leaveStageView(showResults) {
   liveStageHud.classList.remove('show');
   document.body.classList.remove('live-performance-mode');
+  verticalSlice.setPerformanceMode(false);
+  room.clearCameraOverride(true);
   if (showResults) panel.classList.add('show');
 }
 
@@ -622,6 +634,14 @@ startButton.onclick = async () => {
         liveStagePhase.textContent = 'PART ' + part + '/3 • ' + phase.toUpperCase() + ' • ' + timeLabel;
         liveStageProgress.style.width = Math.max(0, Math.min(100, percent * 100)) + '%';
         liveStageScore.textContent = Math.max(0, Math.min(100, Math.round(score))) + '%';
+        const cameraX = Math.sin(percent * Math.PI * 2) * .75;
+        const cameraY = 2.12 + Math.sin(percent * Math.PI) * .16;
+        const cameraZ = 6.8 - percent * 1.55;
+        room.setCameraOverride({
+          position: [cameraX, cameraY, cameraZ],
+          target: [0, 1.82, -10.45],
+          lerp: .055
+        });
       },
       onTrackEnded: () => {
         if (!active) return;
@@ -634,6 +654,11 @@ startButton.onclick = async () => {
         liveStagePhase.textContent = 'SONG COMPLETE • ' + verdict.label;
         liveStageProgress.style.width = '100%';
         liveStageScore.textContent = verdict.vote + '%';
+        room.setCameraOverride({
+          position: [0, 2.02, 5.1],
+          target: [0, 1.76, -10.45],
+          lerp: .06
+        });
         setPerformanceButtons(false);
       },
       onComplete: (reaction) => {
