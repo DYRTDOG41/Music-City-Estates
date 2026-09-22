@@ -154,13 +154,24 @@ async function play(options){
     if(config.onComplete)try{config.onComplete(reaction)}catch(error){}
   });
 
+  let playPromise=null;
+  try{
+    playPromise=audio.play();
+  }catch(error){
+    ended=true;clean();
+    if(active===session)active=null;
+    try{URL.revokeObjectURL(url)}catch(ignore){}
+    dispatchSession(false,source);
+    throw new Error("Tap START SET again if iPhone blocked the song from playing.");
+  }
+
   const context=ensureApplauseContext();
   if(context&&context.state==="suspended"){
-    try{await context.resume()}catch(error){}
+    try{context.resume().catch(()=>{})}catch(error){}
   }
 
   try{
-    await audio.play();
+    await playPromise;
   }catch(error){
     ended=true;clean();
     if(active===session)active=null;
