@@ -1577,8 +1577,8 @@
       cash: payout.net,
       grossCash: payout.gross,
       commission: payout.commission,
-      fans: Math.max(0, baseFans + toCount(effects.showFanBonus, 0)),
-      xp: Math.max(0, baseXp + toCount(effects.showXpBonus, 0)),
+      fans: Math.max(0, baseFans + Math.floor(toNumber(effects.showFanBonus, 0))),
+      xp: Math.max(0, baseXp + Math.floor(toNumber(effects.showXpBonus, 0))),
       base: {
         cash: Math.max(0, toCount(data.cash, 0)),
         fans: Math.max(0, toCount(data.fans, 0)),
