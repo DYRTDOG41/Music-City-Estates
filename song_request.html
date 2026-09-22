@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Request This Song • Music City Estates</title>
+<style>
+:root{color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:
+radial-gradient(circle at 18% 12%,#32215a55,transparent 34%),
+radial-gradient(circle at 82% 78%,#0a91a955,transparent 38%),
+linear-gradient(155deg,#05070b,#0d0a18 58%,#03131a);color:#fff;font-family:Arial,Helvetica,sans-serif}
+.wrap{width:min(720px,calc(100% - 24px));margin:0 auto;padding:max(28px,env(safe-area-inset-top)) 0 max(36px,env(safe-area-inset-bottom))}
+.brand{font-size:10px;font-weight:1000;letter-spacing:.18em;color:#72e8ff;margin-bottom:18px}
+.card{border:1px solid #5cdcff66;border-radius:24px;background:#07101bd9;box-shadow:0 26px 70px #000b,0 0 30px #55dfff17;backdrop-filter:blur(16px);padding:24px}
+.kicker{display:inline-block;padding:6px 10px;border:1px solid #ffb04f66;border-radius:999px;background:#3a2414;color:#ffd19a;font-size:9px;font-weight:1000;letter-spacing:.12em}
+h1{font-size:clamp(30px,8vw,52px);line-height:.95;margin:18px 0 10px}h1 span{color:#69e7ff}
+.artist{font-size:14px;color:#9fb0c2;margin-bottom:18px}
+.explain{font-size:14px;line-height:1.55;color:#c9d6e2}
+.rule{margin:18px 0;padding:12px;border:1px solid #334d60;border-radius:13px;background:#0c1824;font-size:12px;line-height:1.5;color:#b9c9d9}
+label{display:block;margin-top:18px;font-size:10px;font-weight:900;letter-spacing:.09em;color:#8fdaef}
+input{width:100%;margin-top:7px;padding:14px;border:1px solid #36566d;border-radius:12px;background:#050b13;color:#fff;font-size:16px;outline:none}
+input:focus{border-color:#67e6ff;box-shadow:0 0 0 3px #41d8ff18}
+button{width:100%;margin-top:14px;padding:16px;border:0;border-radius:14px;background:linear-gradient(135deg,#58e0ff,#9b71ff);color:#071018;font-size:14px;font-weight:1000;letter-spacing:.05em;cursor:pointer}
+button:disabled{opacity:.38;cursor:not-allowed}
+.secondary{background:#0b1823;color:#d7f5ff;border:1px solid #3c6178}
+.status{display:none;margin-top:15px;padding:13px;border-radius:12px;background:#0b1a25;border:1px solid #36647c;color:#d7eef7;font-size:12px;line-height:1.5}
+.status.show{display:block}
+.small{margin-top:18px;color:#75889a;font-size:10px;line-height:1.5}
+</style>
+</head>
+<body>
+<main class="wrap">
+<div class="brand">MUSIC CITY ESTATES • HUMAN POPULAR DEMAND</div>
+<section class="card">
+<span class="kicker">REAL LISTENER REQUEST</span>
+<h1>Request <span id="songTitle">this song</span></h1>
+<div class="artist">by <b id="artistName">Music City Artist</b></div>
+<p class="explain">If you want to hear this record again at the artist's next show, request it here. A real player/listener request can restore full performance rewards for a repeat song.</p>
+<div class="rule"><b>No NPC requests count.</b> This confirmation has to come from a different real player or invited person's browser/device and must match the artist's original request link.</div>
+<label for="requesterName">YOUR NAME</label>
+<input id="requesterName" maxlength="40" placeholder="What should the artist see?">
+<button id="requestButton" type="button">🔥 REQUEST THIS SONG</button>
+<button id="copyButton" class="secondary" type="button" style="display:none">COPY CONFIRMATION LINK</button>
+<div id="status" class="status"></div>
+<p class="small">Music City does not award the artist anything just because this page was opened. The request only becomes Popular Demand after you actively request the song and the artist opens your confirmation.</p>
+</section>
+</main>
+<script src="player-state.js"></script>
+<script>
+const params=new URLSearchParams(location.search);
+const songId=String(params.get("song")||"");
+const title=String(params.get("title")||"this song");
+const artistName=String(params.get("artist")||"Music City Artist");
+const artistId=String(params.get("artistId")||"");
+const offerToken=String(params.get("offer")||"");
+const titleEl=document.getElementById("songTitle");
+const artistEl=document.getElementById("artistName");
+const nameInput=document.getElementById("requesterName");
+const requestButton=document.getElementById("requestButton");
+const copyButton=document.getElementById("copyButton");
+const statusEl=document.getElementById("status");
+titleEl.textContent=title;
+artistEl.textContent=artistName;
+
+let profileName="";
+try{
+  const social=JSON.parse(localStorage.getItem("mce-social-profile")||"{}");
+  profileName=String(social.name||"");
+}catch(error){}
+if(!profileName&&window.MCE){
+  const player=window.MCE.get();
+  if(player&&player.name&&player.name!=="Rookie")profileName=player.name;
+}
+nameInput.value=profileName;
+let confirmationUrl="";
+
+function showStatus(message){
+  statusEl.textContent=message;
+  statusEl.classList.add("show");
+}
+function fallbackCopy(text){
+  const box=document.createElement("textarea");
+  box.value=text;box.readOnly=true;box.style.position="fixed";box.style.opacity="0";
+  document.body.appendChild(box);box.select();box.setSelectionRange(0,text.length);
+  let ok=false;try{ok=document.execCommand("copy")}catch(error){}
+  box.remove();return ok;
+}
+async function copyText(text){
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(text);return true}
+  }catch(error){}
+  return fallbackCopy(text);
+}
+
+if(!songId||!artistId||!offerToken){
+  requestButton.disabled=true;
+  showStatus("This request link is incomplete. Ask the artist to share a fresh Popular Demand link.");
+}else if(window.MCE&&window.MCE.getPlayerId()===artistId){
+  requestButton.disabled=true;
+  showStatus("This is your own artist device. Popular Demand has to come from another real person.");
+}
+
+requestButton.onclick=async()=>{
+  const requesterName=String(nameInput.value||"Music City listener").trim().slice(0,40)||"Music City listener";
+  const requesterId=window.MCE?window.MCE.getPlayerId():("listener-"+Date.now().toString(36));
+  if(requesterId===artistId){showStatus("Popular Demand must come from another real player or invited person.");return}
+  const payload={
+    requestId:"request-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,9),
+    songId,
+    title,
+    artistName,
+    artistId,
+    offerToken,
+    requesterId,
+    requesterName,
+    requestedAt:new Date().toISOString(),
+    source:"human-request-link"
+  };
+  const back=new URL("artist_catalog.html",location.href);
+  back.searchParams.set("popularDemand",JSON.stringify(payload));
+  confirmationUrl=back.href;
+  const text=requesterName+' requested "'+title+'" by '+artistName+' for Popular Demand in Music City Estates. Open this confirmation so the request counts: '+confirmationUrl;
+  let shared=false;
+  if(navigator.share){
+    try{
+      await navigator.share({title:"Music City Popular Demand",text,url:confirmationUrl});
+      shared=true;
+    }catch(error){
+      if(error&&error.name==="AbortError"){showStatus("Request created, but sharing was canceled. You can copy the confirmation link below.");copyButton.style.display="block";return}
+    }
+  }
+  if(!shared)shared=await copyText(text);
+  copyButton.style.display="block";
+  requestButton.disabled=true;
+  showStatus(shared
+    ?"Request created. Send the confirmation back to the artist. Once they open it, your real-player request becomes Popular Demand."
+    :"Request created. Use COPY CONFIRMATION LINK and send it back to the artist.");
+};
+
+copyButton.onclick=async()=>{
+  if(!confirmationUrl)return;
+  const ok=await copyText(confirmationUrl);
+  showStatus(ok?"Confirmation link copied. Send it back to the artist.":"Could not copy automatically. Use your browser share controls.");
+};
+</script>
+</body>
+</html>
