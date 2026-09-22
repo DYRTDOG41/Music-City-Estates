@@ -274,13 +274,17 @@ let applauseUntil = 0;
 let performanceTrackMap = {};
 let stageAction = { type:'', startedAt:0, duration:0 };
 
-const performerTorso = performer.children[2];
-const performerLeftArm = performer.children[3];
-const performerRightArm = performer.children[4];
-const performerLeftLeg = performer.children[5];
-const performerRightLeg = performer.children[6];
+const performerRig = performer.userData.rig || {};
+const performerTorso = performerRig.torso || performer.children[2];
+const performerLeftArm = performerRig.leftArm || performer.children[3];
+const performerRightArm = performerRig.rightArm || performer.children[4];
+const performerLeftLeg = performerRig.leftLeg || performer.children[5];
+const performerRightLeg = performerRig.rightLeg || performer.children[6];
 
 function triggerStageAction(type) {
+  if (performer.userData && performer.userData.playPerformanceAction) {
+    performer.userData.playPerformanceAction(type);
+  }
   stageAction = {
     type,
     startedAt: performance.now(),
