@@ -1,4 +1,5 @@
 import {createRoom,buildAvatar} from './mce_3d_room.js';
+import {saveAvatarAsset,deleteAvatarAsset} from './mce_avatar_assets.js';
 
 let state=window.MCE?window.MCE.load():{
   name:'New Artist',
@@ -98,6 +99,9 @@ function readForm(){
     outfitStyle:document.getElementById('outfitStyle').value,
     shirtColor:document.getElementById('shirtColor').value,
     pantsColor:document.getElementById('pantsColor').value,
+    modelAssetId:avatarData.modelAssetId||'',
+    modelAssetName:avatarData.modelAssetName||'',
+    modelUrl:avatarData.modelUrl||'',
     skin
   };
 }
@@ -109,8 +113,20 @@ function rebuildAvatar(data){
 function previewForm(){
   rebuildAvatar(readForm());
 }
+function updatePremiumStatus(){
+  const status=document.getElementById('premiumAvatarStatus');
+  if(!status)return;
+  if(avatarData.modelAssetId){
+    status.textContent='✓ Premium GLB loaded: '+(avatarData.modelAssetName||'saved avatar')+'. This model follows your artist on this device.';
+  }else if(avatarData.modelUrl){
+    status.textContent='✓ Premium network avatar configured.';
+  }else{
+    status.textContent='No premium GLB loaded — using Music City Realism V2.';
+  }
+}
 function openCustomizer(){
   loadForm();
+  updatePremiumStatus();
   customizer.classList.add('show');
   coach?.classList.add('hide');
   localStorage.setItem('mceAvatarCoachSeen','1');
@@ -177,7 +193,40 @@ document.getElementById('saveAvatar').onclick=()=>{
   rebuildAvatar(avatarData);
   document.getElementById('notice').textContent='✓ Realism V2 artist saved. Your upgraded face, body, hair, fit and accessories now follow you through Music City.';
 };
+document.getElementById('premiumAvatarFile').addEventListener('change',async event=>{
+  const file=event.target.files&&event.target.files[0];
+  if(!file)return;
+  const status=document.getElementById('premiumAvatarStatus');
+  try{
+    status.textContent='Importing '+file.name+'…';
+    const previousId=avatarData.modelAssetId||'';
+    const asset=await saveAvatarAsset(file);
+    avatarData={...readForm(),modelAssetId:asset.id,modelAssetName:asset.name,modelUrl:''};
+    localStorage.setItem('mceAvatar',JSON.stringify(avatarData));
+    if(previousId&&previousId!==asset.id)deleteAvatarAsset(previousId).catch(()=>{});
+    rebuildAvatar(avatarData);
+    updatePremiumStatus();
+    document.getElementById('notice').textContent='✓ Premium game-ready avatar imported. Music City will use it anywhere your saved artist appears.';
+  }catch(error){
+    status.textContent=error.message||'Could not import that premium avatar.';
+  }finally{
+    event.target.value='';
+  }
+});
+
+document.getElementById('removePremiumAvatar').onclick=async()=>{
+  const previousId=avatarData.modelAssetId||'';
+  avatarData={...readForm(),modelAssetId:'',modelAssetName:'',modelUrl:''};
+  localStorage.setItem('mceAvatar',JSON.stringify(avatarData));
+  if(previousId)deleteAvatarAsset(previousId).catch(()=>{});
+  rebuildAvatar(avatarData);
+  updatePremiumStatus();
+  document.getElementById('notice').textContent='Music City Realism V2 is active.';
+};
+
 document.getElementById('closeCustomizer').onclick=()=>customizer.classList.remove('show');
+
+updatePremiumStatus();
 
 let tapStart=null;
 const raycaster=new room.THREE.Raycaster();
