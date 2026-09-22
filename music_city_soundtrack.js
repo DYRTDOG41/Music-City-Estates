@@ -39,7 +39,8 @@ try{
   if(saved&&typeof saved==="object") state={...state,...saved};
 }catch(e){}
 if(!Number.isFinite(state.anchor)) state.anchor=Date.now();
-if(!Number.isFinite(Number(state.volume))||Number(state.volume)<.06) state.volume=.12;\nif(Number(state.volume)>.16) state.volume=.12;
+if(!Number.isFinite(Number(state.volume))||Number(state.volume)<.06) state.volume=.12;
+if(Number(state.volume)>.16) state.volume=.12;
 
 let context=null,master=null,compressor=null,noiseBuffer=null;
 let scheduler=null,nextTime=0,stepIndex=0,started=false,suppressed=false,sessionHold=false,lastError="";
@@ -68,8 +69,8 @@ function wakeWidget(){
   scheduleCollapse(4800);
 }
 function cycleVolume(){
-  const levels=[.12,.20,.28];
-  const current=Number(state.volume||.20);
+  const levels=[.08,.12,.16];
+  const current=Number(state.volume||.12);
   let next=levels.find(level=>level>current+.01);
   if(!next) next=levels[0];
   state.volume=next;
