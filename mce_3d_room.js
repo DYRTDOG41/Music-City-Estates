@@ -200,9 +200,281 @@ export function createRoom(options={}) {
 }
 
 export function buildAvatar(room,data={},pos=[0,0,0],scale=1){
-  const {THREE,scene}=room,group=new THREE.Group();group.position.fromArray(pos);group.scale.setScalar(scale);
-  const skin=data.skin||'#9a5f3c',shirt=data.shirtColor||'#7b2cff',pants=data.pantsColor||'#171b2d',hair=data.hairColor||'#171016',mat=c=>new THREE.MeshStandardMaterial({color:c,roughness:.72});
-  const part=(g,p,m)=>{const o=new THREE.Mesh(g,m);o.position.fromArray(p);o.castShadow=true;group.add(o);return o};
-  part(new THREE.CapsuleGeometry(.43,.52,6,16),[0,2.58,0],mat(skin));const h=part(new THREE.SphereGeometry(data.hairStyle==='afro'?.62:.49,18,12),[0,data.hairStyle==='afro'?3.04:2.96,-.02],mat(hair));h.scale.y=data.hairStyle==='braids'?.45:.62;
-  part(new THREE.BoxGeometry(1.05,1.15,.58),[0,1.55,0],mat(shirt));part(new THREE.CylinderGeometry(.17,.17,1.12,12),[-.72,1.55,0],mat(skin)).rotation.z=-.12;part(new THREE.CylinderGeometry(.17,.17,1.12,12),[.72,1.55,0],mat(skin)).rotation.z=.12;part(new THREE.BoxGeometry(.42,1.25,.48),[-.29,.35,0],mat(pants));part(new THREE.BoxGeometry(.42,1.25,.48),[.29,.35,0],mat(pants));scene.add(group);return group;
+  const {THREE,scene}=room;
+  const group=new THREE.Group();
+  group.position.fromArray(pos);
+  group.scale.setScalar(scale);
+  group.name=data.name?String(data.name)+' Avatar':'Music City Avatar';
+
+  const skin=data.skin||'#9a5f3c';
+  const shirt=data.shirtColor||'#171a20';
+  const pants=data.pantsColor||'#11151c';
+  const hair=data.hairColor||'#171016';
+  const bodyBuild=String(data.bodyBuild||'athletic');
+  const faceShape=String(data.faceShape||'balanced');
+  const facialHair=String(data.facialHair||'none');
+  const accessory=String(data.accessory||'chain');
+  const outfitStyle=String(data.outfitStyle||data.outfitPreset||'streetwear');
+  const bodyScale=bodyBuild==='lean'?.92:bodyBuild==='solid'?1.1:1;
+  const shoulderScale=bodyBuild==='lean'?.94:bodyBuild==='solid'?1.12:1;
+  const faceWidth=faceShape==='narrow'?.92:faceShape==='wide'?1.08:1;
+
+  const skinMat=new THREE.MeshPhysicalMaterial({
+    color:skin,
+    roughness:.56,
+    metalness:0,
+    clearcoat:.035,
+    clearcoatRoughness:.82
+  });
+  const skinSoft=new THREE.MeshPhysicalMaterial({
+    color:skin,
+    roughness:.61,
+    metalness:0,
+    clearcoat:.02,
+    clearcoatRoughness:.9
+  });
+  const hairMat=new THREE.MeshStandardMaterial({
+    color:hair,
+    roughness:.48,
+    metalness:.02
+  });
+  const clothMat=new THREE.MeshPhysicalMaterial({
+    color:shirt,
+    roughness:.78,
+    metalness:.025,
+    sheen:.18,
+    sheenRoughness:.72,
+    sheenColor:new THREE.Color(shirt).offsetHSL(0,0,.08)
+  });
+  const pantsMat=new THREE.MeshPhysicalMaterial({
+    color:pants,
+    roughness:.82,
+    metalness:.035,
+    sheen:.1,
+    sheenRoughness:.8,
+    sheenColor:new THREE.Color(pants).offsetHSL(0,0,.06)
+  });
+  const darkMat=new THREE.MeshStandardMaterial({color:0x111217,roughness:.46,metalness:.28});
+  const shoeUpper=new THREE.MeshPhysicalMaterial({
+    color:data.shoeColor||0xe6e3dc,
+    roughness:.46,
+    metalness:.02,
+    clearcoat:.08,
+    clearcoatRoughness:.5
+  });
+  const shoeSole=new THREE.MeshStandardMaterial({color:0xf4f1ea,roughness:.64,metalness:.01});
+  const eyeWhite=new THREE.MeshPhysicalMaterial({color:0xf3eee8,roughness:.32,metalness:0,clearcoat:.08});
+  const irisMat=new THREE.MeshPhysicalMaterial({color:data.eyeColor||0x2c1c12,roughness:.24,metalness:0,clearcoat:.18});
+  const lipMat=new THREE.MeshPhysicalMaterial({
+    color:new THREE.Color(skin).multiplyScalar(.68),
+    roughness:.5,
+    metalness:0,
+    clearcoat:.04
+  });
+  const metalMat=new THREE.MeshStandardMaterial({color:0xd0a64e,roughness:.24,metalness:.9});
+
+  const fallbackMeshes=[];
+  const add=(geometry,position,material,parent=group)=>{
+    const mesh=new THREE.Mesh(geometry,material);
+    mesh.position.fromArray(position);
+    mesh.castShadow=true;
+    mesh.receiveShadow=true;
+    parent.add(mesh);
+    fallbackMeshes.push(mesh);
+    return mesh;
+  };
+
+  // Preserve legacy child order: head, hair root, torso, left arm, right arm, left leg, right leg.
+  const head=add(new THREE.SphereGeometry(.49,28,22),[0,2.62,0],skinMat);
+  head.scale.set(faceWidth,1.13,.96);
+
+  const hairRoot=new THREE.Group();
+  hairRoot.name='hairRoot';
+  group.add(hairRoot);
+  const torso=add(new THREE.CapsuleGeometry(.48,.72,10,22),[0,1.55,0],clothMat);
+  torso.scale.set(shoulderScale,1,bodyScale*.94);
+  const leftArm=add(new THREE.CapsuleGeometry(.135,.83,8,16),[-.62*shoulderScale,1.52,0],skinSoft);
+  leftArm.rotation.z=-.115;
+  const rightArm=add(new THREE.CapsuleGeometry(.135,.83,8,16),[.62*shoulderScale,1.52,0],skinSoft);
+  rightArm.rotation.z=.115;
+  const leftLeg=add(new THREE.CapsuleGeometry(.185,.9,8,16),[-.255*bodyScale,.35,0],pantsMat);
+  const rightLeg=add(new THREE.CapsuleGeometry(.185,.9,8,16),[.255*bodyScale,.35,0],pantsMat);
+
+  // Neck and ears give the silhouette a human structure instead of stacked primitives.
+  const neck=add(new THREE.CylinderGeometry(.19,.22,.36,18),[0,2.08,0],skinSoft);
+  const earL=add(new THREE.SphereGeometry(.105,14,10),[-.5*faceWidth,2.65,0],skinSoft);
+  earL.scale.set(.5,.9,.5);
+  const earR=add(new THREE.SphereGeometry(.105,14,10),[.5*faceWidth,2.65,0],skinSoft);
+  earR.scale.set(.5,.9,.5);
+
+  // Eyes, brows, nose and lips. Local +Z is the avatar's forward direction.
+  for(const side of [-1,1]){
+    const eye=add(new THREE.SphereGeometry(.085,16,10),[side*.18*faceWidth,2.69,.445],eyeWhite);
+    eye.scale.set(1.1,.62,.42);
+    const iris=add(new THREE.SphereGeometry(.043,14,10),[side*.18*faceWidth,2.69,.491],irisMat);
+    iris.scale.set(1,.72,.32);
+    const pupil=add(new THREE.SphereGeometry(.019,10,8),[side*.18*faceWidth,2.69,.512],darkMat);
+    pupil.scale.z=.35;
+    const brow=add(new THREE.BoxGeometry(.19,.028,.028),[side*.18*faceWidth,2.81,.485],hairMat);
+    brow.rotation.z=side*.05;
+  }
+  const nose=add(new THREE.ConeGeometry(.065,.24,12),[0,2.56,.493],skinSoft);
+  nose.rotation.x=Math.PI/2;
+  nose.scale.set(.86,1,.88);
+  const mouth=add(new THREE.CapsuleGeometry(.035,.16,4,10),[0,2.42,.482],lipMat);
+  mouth.rotation.z=Math.PI/2;
+  mouth.scale.y=.58;
+
+  // Face structure / jaw shadow.
+  if(faceShape==='wide'){
+    const jawL=add(new THREE.SphereGeometry(.18,12,10),[-.28,2.42,.08],skinSoft);jawL.scale.set(1,.8,.72);
+    const jawR=add(new THREE.SphereGeometry(.18,12,10),[.28,2.42,.08],skinSoft);jawR.scale.set(1,.8,.72);
+  }
+
+  // Hair variants.
+  const hairStyle=String(data.hairStyle||'fade');
+  const hairPiece=(geometry,position,scaleVec=[1,1,1])=>{
+    const mesh=add(geometry,position,hairMat,hairRoot);
+    mesh.scale.set(...scaleVec);
+    return mesh;
+  };
+  if(hairStyle==='afro'){
+    const afroPositions=[[0,3.02,0],[-.26,2.98,0],[.26,2.98,0],[0,3.16,-.05],[-.2,3.12,-.12],[.2,3.12,-.12]];
+    afroPositions.forEach((p,i)=>hairPiece(new THREE.SphereGeometry(i===0?.43:.31,16,12),p,[1,1,.92]));
+  }else if(hairStyle==='braids'||hairStyle==='locs'){
+    hairPiece(new THREE.SphereGeometry(.48,18,12),[0,2.92,-.015],[faceWidth,.48,.96]);
+    const count=hairStyle==='braids'?10:8;
+    for(let i=0;i<count;i++){
+      const side=i<count/2?-1:1;
+      const row=i%(count/2);
+      const x=side*(.2+row*.07);
+      const braid=hairPiece(new THREE.CapsuleGeometry(hairStyle==='braids'?.035:.055,.48+row*.045,5,9),[x,2.42-row*.04,.02],[1,1,1]);
+      braid.rotation.z=side*(.06+.025*row);
+      braid.rotation.x=.05*(row%2);
+    }
+  }else if(hairStyle==='twists'){
+    hairPiece(new THREE.SphereGeometry(.47,18,12),[0,2.93,-.02],[faceWidth,.42,.96]);
+    for(const x of [-.32,-.16,0,.16,.32]){
+      const twist=hairPiece(new THREE.CapsuleGeometry(.055,.26,5,8),[x,3.04,.02],[1,1,1]);
+      twist.rotation.z=x*1.2;
+    }
+  }else{
+    // Fade / buzz cut.
+    hairPiece(new THREE.SphereGeometry(.49,22,14),[0,2.94,-.03],[faceWidth,.46,.96]);
+  }
+
+  // Optional facial hair.
+  if(facialHair!=='none' || /Rapper|Producer|DJ/i.test(String(data.type||''))){
+    const beardOpacity=facialHair==='none'?.34:1;
+    const beardMat=hairMat.clone();
+    beardMat.transparent=beardOpacity<1;
+    beardMat.opacity=beardOpacity;
+    const beard=add(new THREE.SphereGeometry(.405,18,12),[0,2.47,.045],beardMat);
+    beard.scale.set(faceWidth,.48,.98);
+    // Keep the beard from visually covering the upper face.
+    beard.geometry=beard.geometry.clone();
+  }
+
+  // Hoodie/jacket shell and cloth layering.
+  const shoulderL=add(new THREE.SphereGeometry(.21,14,10),[-.51*shoulderScale,1.9,0],clothMat);
+  shoulderL.scale.set(1.35,.82,1.3);
+  const shoulderR=add(new THREE.SphereGeometry(.21,14,10),[.51*shoulderScale,1.9,0],clothMat);
+  shoulderR.scale.set(1.35,.82,1.3);
+  const shirtHem=add(new THREE.CylinderGeometry(.47*bodyScale,.5*bodyScale,.18,22),[0,.94,0],clothMat);
+  shirtHem.scale.z=.78;
+  if(outfitStyle==='hoodie'||outfitStyle==='midnight'||/Rapper/i.test(String(data.type||''))){
+    const hood=add(new THREE.TorusGeometry(.31,.09,10,24,Math.PI*1.55),[0,2.08,-.22],clothMat);
+    hood.rotation.x=Math.PI/2;
+    hood.rotation.z=.7;
+  }
+  const collar=add(new THREE.TorusGeometry(.25,.035,8,20,Math.PI*1.72),[0,2.02,.15],darkMat);
+  collar.rotation.x=Math.PI/2;
+  collar.rotation.z=.63;
+
+  // Hands.
+  const leftHand=add(new THREE.SphereGeometry(.13,14,10),[-.705*shoulderScale,.9,0],skinMat);
+  leftHand.scale.set(.78,1.05,.72);
+  const rightHand=add(new THREE.SphereGeometry(.13,14,10),[.705*shoulderScale,.9,0],skinMat);
+  rightHand.scale.set(.78,1.05,.72);
+
+  // Pants waist, belt, pockets and seams.
+  const waist=add(new THREE.CylinderGeometry(.42*bodyScale,.43*bodyScale,.28,20),[0,.93,0],pantsMat);
+  waist.scale.z=.82;
+  const belt=add(new THREE.TorusGeometry(.405*bodyScale,.028,8,24),[0,1.0,0],darkMat);
+  belt.rotation.x=Math.PI/2;
+  for(const side of [-1,1]){
+    const pocket=add(new THREE.BoxGeometry(.18,.28,.055),[side*.31*bodyScale,.5,.245],pantsMat);
+    pocket.rotation.z=side*.04;
+  }
+
+  // Sneakers with upper, toe, sole and lace panel.
+  for(const side of [-1,1]){
+    const x=side*.255*bodyScale;
+    const sole=add(new THREE.BoxGeometry(.43,.12,.72),[x,-.28,.11],shoeSole);
+    sole.geometry.translate(0,0,.05);
+    const upper=add(new THREE.BoxGeometry(.39,.24,.61),[x,-.14,.08],shoeUpper);
+    upper.rotation.x=-.06;
+    const toe=add(new THREE.SphereGeometry(.2,14,10),[x,-.16,.35],shoeUpper);
+    toe.scale.set(1,.6,.82);
+    const lace=add(new THREE.BoxGeometry(.19,.018,.25),[x,-.015,.18],darkMat);
+    lace.rotation.x=-.08;
+  }
+
+  // Jewelry / accessories.
+  if(accessory!=='none'){
+    const chain=add(new THREE.TorusGeometry(.27,.025,10,30,Math.PI*1.55),[0,1.88,.315],metalMat);
+    chain.rotation.z=.78;
+    const pendant=add(new THREE.BoxGeometry(.12,.14,.035),[0,1.58,.34],metalMat);
+    pendant.rotation.z=.05;
+  }
+  if(data.hasWatch!==false){
+    const watch=add(new THREE.CylinderGeometry(.09,.09,.065,14),[.69*shoulderScale,1.08,.03],metalMat);
+    watch.rotation.z=Math.PI/2;
+  }
+
+  // Small jacket/hoodie logo panel for stronger character identity.
+  const logoCanvas=document.createElement('canvas');
+  logoCanvas.width=256;logoCanvas.height=128;
+  const logoCtx=logoCanvas.getContext('2d');
+  logoCtx.clearRect(0,0,256,128);
+  logoCtx.fillStyle='#f7f1e9';
+  logoCtx.textAlign='center';
+  logoCtx.textBaseline='middle';
+  logoCtx.font='900 34px Arial';
+  logoCtx.fillText('MUSIC CITY',128,52);
+  logoCtx.font='900 20px Arial';
+  logoCtx.fillText('♛',128,91);
+  const logoMap=new THREE.CanvasTexture(logoCanvas);
+  logoMap.colorSpace=THREE.SRGBColorSpace;
+  const logo=add(new THREE.PlaneGeometry(.66,.33),[0,1.58,.302],new THREE.MeshBasicMaterial({map:logoMap,transparent:true,toneMapped:false}));
+
+  group.userData.rig={
+    head,hairRoot,torso,leftArm,rightArm,leftLeg,rightLeg,leftHand,rightHand,neck
+  };
+  group.userData.fallbackMeshes=fallbackMeshes;
+  group.userData.avatarQuality='realistic-v2';
+  group.userData.avatarData={...data};
+
+  group.userData.playPerformanceAction=(type)=>{
+    const controller=group.userData.avatarController;
+    if(controller&&controller.playPerformanceAction)return controller.playPerformanceAction(type);
+    return false;
+  };
+
+  scene.add(group);
+
+  // Optional production GLB upgrade. The detailed V2 avatar renders immediately,
+  // then a premium skinned model can replace it without changing the game API.
+  const modelUrl=String(data.modelUrl||data.avatarModelUrl||'').trim();
+  if(modelUrl){
+    import('./mce_avatar_runtime.js')
+      .then(mod=>mod.upgradeAvatarFromGLB(group,room,data))
+      .catch(error=>{
+        group.userData.avatarModelError=String(error&&error.message||error);
+        console.warn('Music City premium avatar model failed; keeping Realism V2 fallback.',error);
+      });
+  }
+
+  return group;
 }
+
