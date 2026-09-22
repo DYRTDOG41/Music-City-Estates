@@ -311,7 +311,7 @@ async function unlock(){
   }
 }
 function suppress(on){
-  suppressed=Boolean(on);
+  suppressed=sessionHold||Boolean(on);
   if(mediaAudio) mediaAudio.volume=state.muted||suppressed?0:state.volume;
   else fadeTo(state.muted||suppressed?0:state.volume,.18);
   renderWidget();
@@ -332,12 +332,13 @@ function holdForSession(on){
     return;
   }
 
+  suppressed=anyExternalMediaPlaying();
   if(mediaAudio){
-    mediaAudio.volume=state.muted?0:state.volume;
-    if(started&&!state.muted) mediaAudio.play().catch(()=>{});
-  }else if(context&&started){
+    mediaAudio.volume=state.muted||suppressed?0:state.volume;
+    if(started&&!state.muted&&!suppressed) mediaAudio.play().catch(()=>{});
+  }else if(context&&started&&!suppressed){
     context.resume().then(()=>fadeTo(state.muted?0:state.volume,.2)).catch(()=>{});
-  }else if(started&&!state.muted){
+  }else if(started&&!state.muted&&!suppressed){
     unlock().catch(()=>{});
   }
   renderWidget();
