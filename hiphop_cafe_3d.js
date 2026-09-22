@@ -252,20 +252,37 @@ function completePerformance() {
   const fanReward = Math.min(score >= 60 ? 8 : 5, Math.max(0, 50 - state.fans));
   const cashReward = score >= 60 ? 35 : 25;
   const xpReward = score >= 60 ? 12 : 8;
-  const payout = window.MCE
-    ? window.MCE.getShowPayout(cashReward, state)
-    : { gross: cashReward, commission: 0, net: cashReward };
-  addProgress({ fans: fanReward, cash: cashReward, xp: xpReward });
+  const rewardInput = {
+    fans: fanReward,
+    cash: cashReward,
+    xp: xpReward,
+    songId: selected.id,
+    venue: 'hiphop-cafe'
+  };
+  const reward = window.MCE
+    ? window.MCE.getPerformanceReward(rewardInput, state)
+    : { mode:'new-song', fans:fanReward, xp:xpReward, grossCash:cashReward, cash:cashReward, commission:0, popularDemand:false };
+  const demand = window.MCE && reward.popularDemand
+    ? window.MCE.getPopularDemandStatus(selected.id, state)
+    : { requests:[] };
+  const requester = demand.requests && demand.requests[0] ? demand.requests[0].requesterName : '';
+  addProgress(rewardInput);
   const performances = Number(localStorage.getItem('mceCafePerformances')) || 0;
   localStorage.setItem('mceCafePerformances', String(performances + 1));
   localStorage.setItem('mceLastCafeSong', selected.title);
   energy.style.width = `${Math.min(score, 100)}%`;
-  log.innerHTML = `<b class="unlock">SET COMPLETE!</b><br>${selected.title} earned +${fanReward} Fans • +${xpReward} XP • Show pay ${payout.gross}`;
-  if (payout.commission > 0) {
-    log.innerHTML += `<br>Manager commission: -${payout.commission} • Artist net: ${payout.net}`;
+  const rewardLabel = reward.mode === 'popular-demand'
+    ? '🔥 POPULAR DEMAND — FULL REWARD RESTORED' + (requester ? ' • Requested by ' + requester : '')
+    : reward.mode === 'repeat'
+      ? '↻ REPEAT SONG — REDUCED REWARD'
+      : '✨ NEW SONG AT THIS VENUE — FULL REWARD';
+  log.innerHTML = `<b class="unlock">SET COMPLETE!</b><br><b>${rewardLabel}</b><br>${selected.title} earned +${reward.fans} Fans • +${reward.xp} XP • Show pay ${reward.grossCash}`;
+  if (reward.commission > 0) {
+    log.innerHTML += `<br>Manager commission: -${reward.commission} • Artist net: ${reward.cash}`;
   } else {
-    log.innerHTML += `<br>Artist net: ${payout.net}`;
+    log.innerHTML += `<br>Artist net: ${reward.cash}`;
   }
+  if (reward.mode === 'repeat') log.innerHTML += '<br>Bring a new song for full rewards, or have a real listener request this record through Popular Demand.';
   if (fanReward === 0) log.innerHTML += '<br>You have graduated from the café circuit. Your next performances belong on a larger stage.';
   roundText.textContent = 'The crowd applauds your final song.';
   startButton.disabled = false;
@@ -300,12 +317,21 @@ startButton.onclick = () => {
   active = true;
   songSelect.disabled = true;
   roundText.textContent = 'Part 1 of 3 • Make the first impression';
+  const performanceStatus = window.MCE
+    ? window.MCE.getSongPerformanceStatus(selected.id, 'hiphop-cafe', state)
+    : { count:0, popularDemandCount:0 };
+  const performanceNote = performanceStatus.count > 0
+    ? (performanceStatus.popularDemandCount > 0
+        ? ' 🔥 A REAL LISTENER REQUESTED THIS SONG — Popular Demand will restore full rewards.'
+        : ' You have already performed this song at the Café. Repeat rewards will be reduced; a new song earns full rewards.')
+    : ' This is your first Café performance of this song, so full rewards are available.';
   log.textContent =
     'The host says your name. The beat drops through the café speakers.' +
     (craftEnergy
       ? ' Your ' + (selected.craftTier || 'developed') +
         ' record starts with +' + craftEnergy + ' crowd energy.'
-      : '');
+      : '') +
+    performanceNote;
   energy.style.width = Math.max(8, craftEnergy) + '%';
   startButton.disabled = true;
   startButton.style.display = 'none';
