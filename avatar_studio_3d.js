@@ -105,13 +105,27 @@ function readForm(){
     skin
   };
 }
+function disposeAvatar(avatarObject){
+  if(!avatarObject)return;
+  avatarObject.userData.disposed=true;
+  const controller=avatarObject.userData.avatarController;
+  if(controller&&controller.dispose)controller.dispose();
+  const updater=avatarObject.userData.avatarMixerUpdater;
+  if(updater){
+    const index=room.animated.indexOf(updater);
+    if(index>=0)room.animated.splice(index,1);
+  }
+  room.scene.remove(avatarObject);
+}
 function rebuildAvatar(data){
-  room.scene.remove(avatar,avatarNameLabel);
+  disposeAvatar(avatar);
+  room.scene.remove(avatarNameLabel);
   avatar=buildAvatar(room,data,[0,.25,-5],1.08);
   avatarNameLabel=room.label((data.name||'NOVA').toUpperCase(),[0,3.8,-5],'#ffffff',[4,.75]);
 }
 function previewForm(){
-  rebuildAvatar(readForm());
+  const preview=readForm();
+  rebuildAvatar({...preview,modelAssetId:'',modelUrl:''});
 }
 function updatePremiumStatus(){
   const status=document.getElementById('premiumAvatarStatus');
@@ -224,7 +238,10 @@ document.getElementById('removePremiumAvatar').onclick=async()=>{
   document.getElementById('notice').textContent='Music City Realism V2 is active.';
 };
 
-document.getElementById('closeCustomizer').onclick=()=>customizer.classList.remove('show');
+document.getElementById('closeCustomizer').onclick=()=>{
+  rebuildAvatar(avatarData);
+  customizer.classList.remove('show');
+};
 
 updatePremiumStatus();
 
