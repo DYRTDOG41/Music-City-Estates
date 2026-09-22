@@ -1,6 +1,7 @@
 export function buildCafeVerticalSlice(room, options = {}) {
   const { THREE, scene, renderer, camera } = room;
   const performer = options.performer || null;
+  const mobileQuality = (window.matchMedia && window.matchMedia('(pointer:coarse)').matches) || window.innerWidth < 820;
 
   renderer.toneMappingExposure = 1.08;
   camera.fov = 62;
@@ -288,7 +289,7 @@ export function buildCafeVerticalSlice(room, options = {}) {
   // Warm wall practicals.
   const practicals = [];
   for (const side of [-1, 1]) {
-    for (const z of [-8, -2, 4, 10]) {
+    for (const z of (mobileQuality ? [-6, 6] : [-8, -2, 4, 10])) {
       const x = side * 16.35;
       const bulbMat = new THREE.MeshStandardMaterial({
         color: 0xffbb67,
@@ -454,7 +455,7 @@ export function buildCafeVerticalSlice(room, options = {}) {
   }
 
   // Dust particles inside the light volume.
-  const dustCount = 140;
+  const dustCount = mobileQuality ? 84 : 140;
   const dustPositions = new Float32Array(dustCount * 3);
   for (let i = 0; i < dustCount; i++) {
     dustPositions[i * 3] = (Math.random() - .5) * 18;
