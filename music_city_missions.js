@@ -5,6 +5,7 @@
     {
       id: "artist",
       location: "Avatar Studio",
+      focus: "CUSTOMIZE",
       title: "Create Your Artist",
       description: "Choose a stage name and save your 3D artist identity.",
       action: "CREATE ARTIST",
@@ -22,6 +23,7 @@
     {
       id: "record",
       location: "Bedroom Studio",
+      focus: "VOCAL BOOTH",
       title: "Record Your First Song",
       description: "Enter the Bedroom Studio booth, record vocals, and save a track to your catalog.",
       action: "ENTER THE BOOTH",
@@ -46,6 +48,7 @@
     {
       id: "first-show",
       location: "Hip-Hop Café",
+      focus: "PERFORM",
       title: "Perform Your First Show",
       description: "Take your released song to the Hip-Hop Cafe and work the crowd.",
       action: "PLAY THE CAFE",
@@ -58,6 +61,7 @@
     {
       id: "battle-access",
       location: "Hip-Hop Café",
+      focus: "PERFORM",
       title: "Build a 25-Fan Buzz",
       description: "Keep performing at the Cafe until Word Slaughter invites you into the battle circle.",
       action: "BUILD YOUR CROWD",
@@ -69,6 +73,7 @@
     {
       id: "battle",
       location: "Word Slaughter",
+      focus: "BATTLE CIRCLE",
       title: "Enter Word Slaughter",
       description: "Step into the 3D arena and complete your first three-round battle.",
       action: "ENTER THE ARENA",
