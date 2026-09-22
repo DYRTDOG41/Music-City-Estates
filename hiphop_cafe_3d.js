@@ -27,7 +27,7 @@ const addProgress = (delta) => {
 };
 updateStats();
 
-const room = createRoom({ spawn: [0, 1.7, 11], background: 0x050203, fog: 0x160805, fogDensity: .012, sky: 0xb65b32 });
+const room = createRoom({ spawn: [0, 1.7, 7.2], background: 0x050203, fog: 0x160805, fogDensity: .012, sky: 0xb65b32 });
 const { THREE, scene } = room;
 function texture(draw, size = 512) {
   const canvas = document.createElement('canvas');
@@ -149,9 +149,9 @@ room.animated.push((time) => crowd.forEach(({ group, seed: memberSeed }) => {
 
 // Navigation and stage interaction.
 room.interact('PERFORM AT OPEN MIC', [0, 1.7, -6.3], openPerformancePanel, 3.3, 0xd95fff);
-room.interact('RETURN TO HIP-HOP HEIGHTS', [-11.5, 1.7, 11.5], () => { location.href = 'hip_hop_heights.html'; }, 2.8, 0xff9b45);
-room.interact('VISIT BEGENIUS STUDIO', [0, 1.7, 11.5], () => { location.href = 'begenius_studio.html'; }, 2.8, 0xd8b765);
-room.interact('RECORD A SONG', [11.5, 1.7, 11.5], () => { location.href = 'record_music.html?studio=begenius'; }, 2.8, 0x69bfff);
+room.interact('RETURN TO HIP-HOP HEIGHTS', [-11.5, 1.7, 12.2], () => { location.href = 'hip_hop_heights.html'; }, 2.15, 0xff9b45);
+room.interact('VISIT BEGENIUS STUDIO', [0, 1.7, 12.45], () => { location.href = 'begenius_studio.html'; }, 1.9, 0xd8b765);
+room.interact('RECORD A SONG', [11.5, 1.7, 12.2], () => { location.href = 'record_music.html?studio=begenius'; }, 2.15, 0x69bfff);
 room.label('HIP-HOP HEIGHTS', [-11.5, 3, 13.7], '#ffad67', [4, .62]);
 room.label('BEGENIUS STUDIO', [0, 3, 13.7], '#e7c66e', [4, .62]);
 room.label('RECORD MUSIC', [11.5, 3, 13.7], '#69bfff', [3.6, .62]);
@@ -202,6 +202,7 @@ function refreshNightclubButton() {
 }
 
 function refreshPerformancePanel() {
+  startButton.style.display = '';
   const releases = releaseOptions();
   songSelect.replaceChildren(...releases.map((release, index) => {
     const option = document.createElement('option');
@@ -268,6 +269,7 @@ function completePerformance() {
   if (fanReward === 0) log.innerHTML += '<br>You have graduated from the café circuit. Your next performances belong on a larger stage.';
   roundText.textContent = 'The crowd applauds your final song.';
   startButton.disabled = false;
+  startButton.style.display = '';
   startButton.textContent = 'PERFORM ANOTHER SET';
   refreshProgressOnly();
 }
@@ -306,6 +308,7 @@ startButton.onclick = () => {
       : '');
   energy.style.width = Math.max(8, craftEnergy) + '%';
   startButton.disabled = true;
+  startButton.style.display = 'none';
   actionButtons.forEach((button) => { button.disabled = false; });
 };
 actionButtons.forEach((button) => {
@@ -329,6 +332,8 @@ actionButtons.forEach((button) => {
 function closePerformancePanel() {
   active = false;
   songSelect.disabled = false;
+  actionButtons.forEach((button) => { button.disabled = true; });
+  startButton.style.display = '';
   panel.classList.remove('show');
 }
 nightclubButton.onclick = () => {
