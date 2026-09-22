@@ -28,7 +28,7 @@ export function createRoom(options={}) {
   function label(text,pos,color='#ffffff',scale=[4,1]){const c=document.createElement('canvas');c.width=1024;c.height=256;const x=c.getContext('2d'),lines=String(text).split('\n');x.font=`900 ${lines.length>1?68:92}px Arial`;x.textAlign='center';x.textBaseline='middle';x.shadowBlur=22;x.shadowColor=color;x.fillStyle=color;lines.forEach((line,index)=>x.fillText(line,c.width/2,c.height/2+(index-(lines.length-1)/2)*(lines.length>1?76:0)));const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthTest:true}));s.position.fromArray(pos);s.scale.set(scale[0],scale[1],1);scene.add(s);return s}
   function light(color,intensity,pos,distance=22){const l=new THREE.PointLight(color,intensity,distance,2);l.position.fromArray(pos);l.castShadow=true;scene.add(l);return l}
   function marker(pos,color=0xff315b){const g=new THREE.Mesh(new THREE.TorusGeometry(.7,.055,10,38),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.9}));g.rotation.x=Math.PI/2;g.position.set(pos[0],.035,pos[2]);scene.add(g);animated.push(t=>{g.rotation.z=t*.0018;g.material.opacity=.55+Math.sin(t*.004)*.3});return g}
-  function interact(labelText,pos,action,radius=2.5,color){const item={label:labelText,pos:new THREE.Vector3(...pos),action,radius};interactions.push(item);marker(pos,color);return item}
+  function interact(labelText,pos,action,radius=2.5,color){const markerMesh=marker(pos,color);const item={label:labelText,pos:new THREE.Vector3(...pos),action,radius,marker:markerMesh,markerColor:markerMesh.material.color.getHex()};interactions.push(item);return item}
   function wallBounds(width,depth,height=5){box('floor',[width,.2,depth],[0,-.1,0],options.floorColor||0x37323d,{receive:true,roughness:.82,metalness:.05});box('back wall',[width,height,.35],[0,height/2,-depth/2],options.wallColor||0x443844,{collider:true,roughness:.86,metalness:.04});box('left wall',[.35,height,depth],[-width/2,height/2,0],options.sideWallColor||0x3b343f,{collider:true,roughness:.86,metalness:.04});box('right wall',[.35,height,depth],[width/2,height/2,0],options.sideWallColor||0x3b343f,{collider:true,roughness:.86,metalness:.04});box('front-left',[width*.38,height,.35],[-width*.31,height/2,depth/2],options.sideWallColor||0x3b343f,{collider:true,roughness:.86,metalness:.04});box('front-right',[width*.38,height,.35],[width*.31,height/2,depth/2],options.sideWallColor||0x3b343f,{collider:true,roughness:.86,metalness:.04})}
   function blocked(p){const r=.35;return colliders.some(b=>p.x>b.min.x-r&&p.x<b.max.x+r&&p.z>b.min.z-r&&p.z<b.max.z+r)}
   function activate(){if(current)current.action()}
@@ -100,6 +100,42 @@ export function createRoom(options={}) {
   renderer.domElement.addEventListener('pointermove',e=>{if(!drag)return;yaw-=(e.clientX-lastX)*.004;pitch=Math.max(-1.15,Math.min(1.15,pitch-(e.clientY-lastY)*.003));lastX=e.clientX;lastY=e.clientY});
   renderer.domElement.addEventListener('pointerup',()=>drag=false);renderer.domElement.addEventListener('pointercancel',()=>drag=false);prompt?.addEventListener('click',activate);
   document.querySelectorAll('[data-move]').forEach(b=>{const k=b.dataset.move;b.addEventListener('pointerdown',e=>{e.preventDefault();keys[k]=true});['pointerup','pointercancel','pointerleave'].forEach(n=>b.addEventListener(n,()=>keys[k]=false))});
+  addEventListener('mce:navigator:focus',event=>{
+    const mission=event&&event.detail&&event.detail.mission||{};
+    const wanted=String(mission.focus||mission.title||'').toUpperCase();
+    if(!wanted)return;
+    const target=interactions.find(item=>String(item.label||'').toUpperCase().includes(wanted));
+    if(!target)return;
+
+    const dx=target.pos.x-camera.position.x,dz=target.pos.z-camera.position.z;
+    if(Math.abs(dx)+Math.abs(dz)>.01){
+      yaw=Math.atan2(-dx,-dz);
+      pitch=0;
+    }
+
+    if(target.marker){
+      target.marker.scale.setScalar(2.15);
+      target.marker.material.color.setHex(0x59e7ff);
+      target.marker.material.opacity=1;
+      setTimeout(()=>{
+        if(!target.marker)return;
+        target.marker.scale.setScalar(1);
+        target.marker.material.color.setHex(target.markerColor);
+      },5200);
+    }
+
+    let beacon=document.getElementById('mceNavigatorBeacon');
+    if(!beacon){
+      beacon=document.createElement('div');
+      beacon.id='mceNavigatorBeacon';
+      beacon.style.cssText='position:fixed;z-index:80;left:50%;top:max(78px,calc(env(safe-area-inset-top) + 68px));transform:translateX(-50%);max-width:min(420px,86vw);padding:9px 13px;border:1px solid #66e6ff;border-radius:999px;background:#06111ddb;color:#eaffff;font:900 10px Arial,sans-serif;letter-spacing:.07em;text-align:center;box-shadow:0 0 22px #42dfff44;backdrop-filter:blur(10px);pointer-events:none;transition:opacity .25s ease';
+      document.body.appendChild(beacon);
+    }
+    beacon.textContent='🧭 NEXT MOVE → '+target.label;
+    beacon.style.opacity='1';
+    clearTimeout(beacon._hideTimer);
+    beacon._hideTimer=setTimeout(()=>{beacon.style.opacity='0'},4200);
+  });
   setupMobileJoystick();
   function loop(t){
     const dt=Math.min((t-last)/1000,.04);last=t;
