@@ -5,8 +5,7 @@ const STORAGE_KEY="mceSoundtrackStateV1";
 const BLOCKED=[
   "record_music.html",
   "advanced_recording_studio.html",
-  "live_freestyle.html",
-  "battle_room.html"
+  "live_freestyle.html"
 ];
 
 const path=(location.pathname.split("/").pop()||"index.html").toLowerCase();
@@ -337,6 +336,11 @@ document.addEventListener("visibilitychange",()=>{
 });
 window.addEventListener("pagehide",saveMediaPosition);
 window.addEventListener("beforeunload",saveMediaPosition);
+
+window.addEventListener("mce-live-arena-ui",event=>{
+  const phase=event&&event.detail&&event.detail.phase;
+  suppress(phase==="battle"||phase==="voting");
+});
 
 saveState();
 makeWidget();

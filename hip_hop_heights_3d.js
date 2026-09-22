@@ -258,8 +258,8 @@ function addStorefront(config) {
     const glassX = innerX - side * .12;
     const leftWindow = room.box(config.name + ' display window', [.12, 4.7, 5], [glassX, 3.35, z - 5.15], config.glow, { material: config.glass });
     const rightWindow = room.box(config.name + ' display window', [.12, 4.7, 5], [glassX, 3.35, z + 5.15], config.glow, { material: config.glass });
-    const door = room.box(config.name + ' entrance door', [.16, 4.9, 3.8], [glassX - side * .03, 3.25, z], config.trim, { material: new THREE.MeshStandardMaterial({ color: config.trim, emissive: config.glow, emissiveIntensity: .42, transparent: true, opacity: .78, metalness: .48, roughness: .25 }) });
-    for (const mesh of [leftWindow, rightWindow, door]) addClickable(mesh, action, config.name);
+    const door = room.box(config.name + ' entrance door', [.18, 5.15, 4.8], [glassX - side * .03, 3.25, z], config.trim, { material: new THREE.MeshStandardMaterial({ color: config.trim, emissive: config.glow, emissiveIntensity: .5, transparent: true, opacity: .82, metalness: .48, roughness: .22 }) });
+    addClickable(door, action, config.name);
 
     // Window mullions, sill blocks and an awning give every shop real storefront depth.
     for (const windowOffset of [-5.15, 5.15]) {
@@ -285,11 +285,21 @@ function addStorefront(config) {
 
     if (!config.customSign) {
       createStorefrontSign(config.name, [innerX - side * .25, 7.6, z], side, config.label, action, config.name);
-      room.label('CLICK DOOR TO ENTER', [innerX - side * .5, 6.55, z], '#ffffff', [4.5, .46]);
     }
   }
 
-  room.interact('ENTER ' + config.name.toUpperCase(), [innerX - side * 1.35, 1.7, z], action, 3.25, config.glow);
+  // Make the doorway itself the obvious mobile target instead of relying on the floor ring.
+  // The transparent hit area is intentionally larger than the visible door so a normal phone tap works.
+  const entranceHitArea = room.box(
+    config.name + ' mobile entrance hit area',
+    [.72, 6.2, 6.4],
+    [innerX - side * .42, 3.25, z],
+    config.glow,
+    { material:new THREE.MeshBasicMaterial({color:config.glow,transparent:true,opacity:.001,depthWrite:false}), cast:false, receive:false }
+  );
+  addClickable(entranceHitArea, action, config.name);
+  room.label('TAP DOOR • ENTER', [innerX - side * .72, 6.35, z], '#ffffff', [5.8, .62]);
+  room.interact('ENTER ' + config.name.toUpperCase(), [innerX - side * 1.65, 1.7, z], action, 5.25, config.glow);
   config.decorate({ xCenter, innerX, outerX, z, side });
   if (config.decorateExterior) config.decorateExterior({ xCenter, innerX, outerX, z, side, action, name: config.name });
 }
@@ -777,5 +787,5 @@ renderer.domElement.addEventListener('pointermove', (event) => {
   raycaster.setFromCamera(pointer, camera);
   const hit = raycaster.intersectObjects(clickables, false)[0];
   renderer.domElement.style.cursor = hit ? 'pointer' : 'grab';
-  document.getElementById('aimHint').textContent = hit ? 'CLICK TO ENTER ' + hit.object.userData.buildingName.toUpperCase() : 'DRAG TO LOOK • WALK TO A STOREFRONT • CLICK ITS DOOR';
+  document.getElementById('aimHint').textContent = hit ? 'TAP TO ENTER ' + hit.object.userData.buildingName.toUpperCase() : 'LEFT SIDE: DRAG TO WALK • RIGHT SIDE: DRAG TO LOOK • TAP A FRONT DOOR';
 });
