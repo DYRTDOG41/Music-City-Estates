@@ -319,6 +319,7 @@ body.custom-mode .quick-only{display:none}
 </main>
 
 <script src="player-state.js"></script>
+<script src="music_city_missions.js"></script>
 <script src="music_city_catalog.js"></script>
 <script src="music_city_ai.js"></script>
 <script src="music_city_beats.js"></script>
@@ -956,6 +957,25 @@ async function importSunoQuickResult(event){
       audioBlob:file,
       status:"unreleased-demo"
     });
+    if(window.MCE){
+      const player=window.MCE.get();
+      if(!player.releases.some(release=>String(release.id)===String(id))){
+        window.MCE.addRelease({
+          id,
+          title:title||"Suno Demo",
+          artistName:player.name,
+          source:"suno-test-handoff",
+          createdAt:new Date().toISOString(),
+          style:pending.prompt||fallbackDetails.prompt||"",
+          studio,
+          beat:pending.beat||"",
+          provider:"Suno Test Handoff",
+          audioKey:id,
+          releaseStatus:"draft",
+          radioStatus:"not-submitted"
+        });
+      }
+    }
     localStorage.setItem("musicCityChosenVersion",id);
     localStorage.removeItem(SUNO_QUICK_PENDING_KEY);
     returnStatus.innerHTML="<strong>"+escapeHtml(title||"Suno Demo")+"</strong> is back in Music City and saved to your Artist Catalog as an <strong>Unreleased Demo</strong>. The next step is the release plan—not more studio setup.";
