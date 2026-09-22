@@ -42,7 +42,7 @@ if(!Number.isFinite(state.anchor)) state.anchor=Date.now();
 if(!Number.isFinite(Number(state.volume))||Number(state.volume)<.08||Number(state.volume)>.30) state.volume=.20;
 
 let context=null,master=null,compressor=null,noiseBuffer=null;
-let scheduler=null,nextTime=0,stepIndex=0,started=false,suppressed=false,lastError="";
+let scheduler=null,nextTime=0,stepIndex=0,started=false,suppressed=false,sessionHold=false,lastError="";
 let mediaAudio=null,mediaSaveTimer=null;
 let widget=null,titleNode=null,modeNode=null,toggleNode=null,volumeNode=null,collapseTimer=null;
 
@@ -280,6 +280,11 @@ async function startRealTrack(){
 }
 async function unlock(){
   try{
+    if(sessionHold){
+      suppressed=true;
+      renderWidget();
+      return;
+    }
     if(state.muted) state.muted=false;
     if(realTracks.length){
       try{
@@ -309,6 +314,32 @@ function suppress(on){
   suppressed=Boolean(on);
   if(mediaAudio) mediaAudio.volume=state.muted||suppressed?0:state.volume;
   else fadeTo(state.muted||suppressed?0:state.volume,.18);
+  renderWidget();
+}
+function holdForSession(on){
+  sessionHold=Boolean(on);
+  suppressed=sessionHold;
+  if(sessionHold){
+    saveMediaPosition();
+    if(mediaAudio){
+      try{mediaAudio.pause()}catch(error){}
+      mediaAudio.volume=0;
+    }
+    if(context&&context.state==="running"){
+      context.suspend().catch(()=>{});
+    }
+    renderWidget();
+    return;
+  }
+
+  if(mediaAudio){
+    mediaAudio.volume=state.muted?0:state.volume;
+    if(started&&!state.muted) mediaAudio.play().catch(()=>{});
+  }else if(context&&started){
+    context.resume().then(()=>fadeTo(state.muted?0:state.volume,.2)).catch(()=>{});
+  }else if(started&&!state.muted){
+    unlock().catch(()=>{});
+  }
   renderWidget();
 }
 function anyExternalMediaPlaying(){
@@ -345,7 +376,7 @@ window.addEventListener("mce-live-arena-ui",event=>{
 
 window.addEventListener("mce-audio-session",event=>{
   const active=Boolean(event&&event.detail&&event.detail.active);
-  suppress(active);
+  holdForSession(active);
 });
 
 saveState();
@@ -365,8 +396,8 @@ root.MusicCitySoundtrack={
   start:unlock,
   mute(){state.muted=true;saveState();fadeTo(0,.15);renderWidget()},
   unmute(){state.muted=false;saveState();unlock();fadeTo(suppressed?0:state.volume,.2);renderWidget()},
-  pauseForSession(){suppress(true)},
-  resumeAfterSession(){suppress(false)},
-  getState(){return{...state,zone,title:realTracks.length?(realTracks[state.trackIndex%realTracks.length].title||"Music City Soundtrack"):cue.title,suppressed,started}}
+  pauseForSession(){holdForSession(true)},
+  resumeAfterSession(){holdForSession(false)},
+  getState(){return{...state,zone,title:realTracks.length?(realTracks[state.trackIndex%realTracks.length].title||"Music City Soundtrack"):cue.title,suppressed,sessionHold,started}}
 };
 })(window);
