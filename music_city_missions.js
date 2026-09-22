@@ -49,6 +49,18 @@
       }
     },
     {
+      id: "cafe-access",
+      location: "Artist Catalog",
+      onsite: "You need 10 XP to unlock the Hip-Hop Café. Use the Street Team invite button on one of your songs for +5 XP per completed invite, or claim the rehearsal / street-promo hustle rewards.",
+      title: "Earn 10 XP for Your First Show",
+      description: "Build enough early career XP to unlock the Hip-Hop Café without getting stuck.",
+      action: "BUILD EARLY MOMENTUM",
+      href: "artist_catalog.html",
+      reward: "Hip-Hop Café unlocks at 10 XP.",
+      progress: function (state) { return { value: Number(state.xp || 0), goal: 10, unit: "XP" }; },
+      complete: function (state) { return Number(state.xp || 0) >= 10; }
+    },
+    {
       id: "first-show",
       location: "Hip-Hop Café",
       focus: "PERFORM",
@@ -92,9 +104,10 @@
       location: "Manager Office",
       onsite: "Review the available managers, make sure you can afford the signing fee, then sign the manager you want representing your career.",
       title: "Hire Your First Manager",
-      description: "Use your show money to sign representation and unlock professional promotion.",
+      description: "Use your show money to sign representation and unlock professional promotion. If you are under $200, repeat Café shows until you can afford the starter manager.",
       action: "MEET MANAGERS",
       href: "manager.html",
+      route: function (state) { return Number(state.cash || 0) >= 200 ? "manager.html" : "hiphop_cafe.html"; },
       reward: "Managers unlock promotion, radio, and Sync Cinema.",
       progress: function (state) { return { value: Number(state.cash || 0), goal: 200, unit: "cash" }; },
       complete: function (state) { return Boolean(state.manager && state.manager.hired); }
@@ -202,6 +215,11 @@
     return pageName().toLowerCase() === String(href || "").split("?")[0].split("#")[0].toLowerCase();
   }
 
+  function missionHref(mission, state) {
+    if (!mission) return "city_map.html";
+    return typeof mission.route === "function" ? mission.route(state || {}) : mission.href;
+  }
+
   function guideAnswer(kind, mission, state, progress, result) {
     if (result.finished) {
       if (kind === "where") return "Your first career run is complete. Explore Music City, grow your catalog, and choose the next part of your career.";
@@ -209,6 +227,9 @@
       return "You put the core career loop together. Keep building your audience and catalog.";
     }
     if (kind === "where") {
+      if (mission.id === "manager" && Number(state.cash || 0) < 200) {
+        return "You need $" + Math.max(0, 200 - Number(state.cash || 0)) + " more before signing the starter manager. Go back to the Hip-Hop Café and repeat paid shows until you reach $200.";
+      }
       return "Go to " + (mission.location || "the highlighted destination") + ". Tap SHOW ME WHERE and I will take you to the correct part of Music City.";
     }
     if (kind === "why") return mission.reward || "This step moves your career forward.";
@@ -272,6 +293,7 @@
     }
 
     var mission = result.current;
+    var targetHref = missionHref(mission, state);
     var progress = progressFor(mission, state);
     var step = result.finished ? result.total : result.completedCount + 1;
     var wasCollapsed = dock.classList.contains("collapsed");
@@ -293,7 +315,7 @@
       '<div class="mce-mission-actions">' +
       (result.finished
         ? '<a class="mce-mission-action" href="city_map.html">SHOW ME THE CITY</a>'
-        : '<a class="mce-mission-action" href="' + mission.href + '" data-navigator-go="1">SHOW ME WHERE</a>') +
+        : '<a class="mce-mission-action" href="' + targetHref + '" data-navigator-go="1">SHOW ME WHERE</a>') +
       '<button class="mce-mission-ask" type="button">ASK GUIDE</button></div>' +
       '</div></div>';
 
@@ -327,7 +349,7 @@
     });
 
     var go = dock.querySelector("[data-navigator-go]");
-    if (go && mission && samePage(mission.href)) {
+    if (go && mission && samePage(targetHref)) {
       go.setAttribute("href", "#");
       go.onclick = function (event) {
         event.preventDefault();
@@ -356,6 +378,7 @@
     MISSIONS: MISSIONS,
     career: career,
     progressFor: progressFor,
+    missionHref: missionHref,
     contextFromStorage: contextFromStorage,
     render: renderDock
   };

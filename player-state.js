@@ -1003,6 +1003,98 @@
     return save(next);
   }
 
+
+  function getStreetTeamStatus(id, state) {
+    var s = state || current || load();
+    var releaseId = String(id);
+    var flags = s.flags && typeof s.flags === "object" ? s.flags : {};
+    var invites = flags.streetTeamInvites && typeof flags.streetTeamInvites === "object"
+      ? flags.streetTeamInvites
+      : {};
+    var count = clamp(toCount(invites[releaseId], 0), 0, 10);
+    return {
+      count: count,
+      max: 10,
+      remaining: Math.max(0, 10 - count),
+      xpPerInvite: 5,
+      earnedXp: count * 5
+    };
+  }
+
+  function claimStreetTeamInvite(id) {
+    if (!current) load();
+    var next = snapshot();
+    var index = findReleaseIndex(id, next);
+    if (index < 0) throw new Error("Create or save the song before inviting people.");
+
+    var releaseId = String(id);
+    var status = getStreetTeamStatus(releaseId, next);
+    if (status.remaining <= 0) {
+      throw new Error("You already earned all 10 Street Team invite rewards for this song.");
+    }
+
+    next.flags = clone(next.flags || {});
+    next.flags.streetTeamInvites = clone(next.flags.streetTeamInvites || {});
+    next.flags.streetTeamInvites[releaseId] = status.count + 1;
+    next.flags.totalStreetTeamInvites = toCount(next.flags.totalStreetTeamInvites, 0) + 1;
+    next.xp += 5;
+    return save(next);
+  }
+
+  var CAREER_HUSTLES = {
+    rehearsal: {
+      id: "rehearsal",
+      label: "Rehearsal Session",
+      xp: 2,
+      cash: 0
+    },
+    "street-promo": {
+      id: "street-promo",
+      label: "Street Promo Run",
+      xp: 2,
+      cash: 10
+    }
+  };
+
+  function getCareerHustleStatus(id, state) {
+    var s = state || current || load();
+    var releaseId = String(id);
+    var flags = s.flags && typeof s.flags === "object" ? s.flags : {};
+    var all = flags.careerHustles && typeof flags.careerHustles === "object"
+      ? flags.careerHustles
+      : {};
+    var claimed = all[releaseId] && typeof all[releaseId] === "object"
+      ? all[releaseId]
+      : {};
+    return {
+      rehearsal: Boolean(claimed.rehearsal),
+      streetPromo: Boolean(claimed["street-promo"])
+    };
+  }
+
+  function claimCareerHustle(id, hustleId) {
+    if (!current) load();
+    var next = snapshot();
+    var index = findReleaseIndex(id, next);
+    if (index < 0) throw new Error("Create or save the song before doing career hustle tasks.");
+
+    var hustle = CAREER_HUSTLES[String(hustleId)];
+    if (!hustle) throw new Error("Unknown career hustle task.");
+
+    var releaseId = String(id);
+    next.flags = clone(next.flags || {});
+    next.flags.careerHustles = clone(next.flags.careerHustles || {});
+    next.flags.careerHustles[releaseId] = clone(next.flags.careerHustles[releaseId] || {});
+    if (next.flags.careerHustles[releaseId][hustle.id]) {
+      throw new Error(hustle.label + " reward was already claimed for this song.");
+    }
+
+    next.flags.careerHustles[releaseId][hustle.id] = new Date().toISOString();
+    next.xp += hustle.xp;
+    next.cash += hustle.cash;
+    return save(next);
+  }
+
   function getManagerProfile(state) {
     var s = state || current || load();
     if (!s.manager || !s.manager.hired) return null;
@@ -1541,6 +1633,11 @@
     markReleasePassportReady: markReleasePassportReady,
     markReleaseCertified: markReleaseCertified,
     releaseSong: releaseSong,
+    getStreetTeamStatus: getStreetTeamStatus,
+    claimStreetTeamInvite: claimStreetTeamInvite,
+    CAREER_HUSTLES: CAREER_HUSTLES,
+    getCareerHustleStatus: getCareerHustleStatus,
+    claimCareerHustle: claimCareerHustle,
     promoteRelease: promoteRelease,
     submitReleaseToRadio: submitReleaseToRadio,
     submitReleaseToSync: submitReleaseToSync,
