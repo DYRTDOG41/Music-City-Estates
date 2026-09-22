@@ -6,6 +6,7 @@
       id: "artist",
       location: "Avatar Studio",
       focus: "CUSTOMIZE",
+      onsite: "Create or edit your artist identity, then save it so Music City can track your career.",
       title: "Create Your Artist",
       description: "Choose a stage name and save your 3D artist identity.",
       action: "CREATE ARTIST",
@@ -24,6 +25,7 @@
       id: "record",
       location: "Bedroom Studio",
       focus: "VOCAL BOOTH",
+      onsite: "Walk to the Vocal Booth and tap the booth interaction. The fast path is: describe the song, make it, then bring the finished audio back.",
       title: "Record Your First Song",
       description: "Enter the Bedroom Studio booth, record vocals, and save a track to your catalog.",
       action: "ENTER THE BOOTH",
@@ -34,6 +36,7 @@
     {
       id: "release",
       location: "Artist Catalog",
+      onsite: "Find the song marked UNRELEASED and use the release control. Creating the record was the easy part; this begins the career work around it.",
       title: "Release Your Record",
       description: "Open the Artist Catalog and release your saved song to Music City.",
       action: "OPEN CATALOG",
@@ -49,6 +52,7 @@
       id: "first-show",
       location: "Hip-Hop Café",
       focus: "PERFORM",
+      onsite: "Go to the performance stage, choose your released song, and complete the three-part set.",
       title: "Perform Your First Show",
       description: "Take your released song to the Hip-Hop Cafe and work the crowd.",
       action: "PLAY THE CAFE",
@@ -62,6 +66,7 @@
       id: "battle-access",
       location: "Hip-Hop Café",
       focus: "PERFORM",
+      onsite: "Keep performing at the Café and working the crowd. When you reach 25 fans, Word Slaughter unlocks.",
       title: "Build a 25-Fan Buzz",
       description: "Keep performing at the Cafe until Word Slaughter invites you into the battle circle.",
       action: "BUILD YOUR CROWD",
@@ -74,6 +79,7 @@
       id: "battle",
       location: "Word Slaughter",
       focus: "BATTLE CIRCLE",
+      onsite: "Walk into the battle circle and start your first battle. The arena is open to tour even before the battle requirement is met.",
       title: "Enter Word Slaughter",
       description: "Step into the 3D arena and complete your first three-round battle.",
       action: "ENTER THE ARENA",
@@ -84,6 +90,7 @@
     {
       id: "manager",
       location: "Manager Office",
+      onsite: "Review the available managers, make sure you can afford the signing fee, then sign the manager you want representing your career.",
       title: "Hire Your First Manager",
       description: "Use your show money to sign representation and unlock professional promotion.",
       action: "MEET MANAGERS",
@@ -95,6 +102,7 @@
     {
       id: "promotion",
       location: "Artist Catalog",
+      onsite: "Open a released record and run its first manager-led promotion campaign.",
       title: "Run Your First Campaign",
       description: "Return to the Artist Catalog and have your manager promote a released song.",
       action: "PROMOTE A RELEASE",
@@ -109,6 +117,7 @@
     {
       id: "radio-access",
       location: "Nightclub",
+      onsite: "Keep performing and building until you reach 100 fans and 150 XP. Bigger shows accelerate the path.",
       title: "Become Radio Ready",
       description: "Perform larger shows and build the 100 fans and 150 XP required for radio consideration.",
       action: "KEEP PERFORMING",
@@ -126,6 +135,7 @@
     {
       id: "radio",
       location: "Artist Catalog / Music City Radio",
+      onsite: "In the Artist Catalog, choose your strongest released record and use the radio submission control. Your manager handles the submission fee.",
       title: "Submit to Music City Radio",
       description: "Choose your strongest released record and let your manager submit it for airplay.",
       action: "SUBMIT YOUR RECORD",
@@ -243,6 +253,8 @@
     var state = root.MCE.get ? root.MCE.get() : root.MCE.load();
     var result = career(state, contextFromStorage());
     var dock = document.getElementById("mceMissionDock");
+    var savedGuideKind = dock && dock.dataset ? (dock.dataset.guideKind || "") : "";
+    var savedGuideMission = dock && dock.dataset ? (dock.dataset.guideMission || "") : "";
     var roomMode = /\/(avatar_studio|bedroom_studio|begenius_studio|hip_hop_heights|hiphop_cafe|battle_room|warehouse|nightclub)\.html$/i.test(String(root.location && root.location.pathname || ""));
     var seen = false;
     try { seen = root.localStorage && root.localStorage.getItem("mceNavigatorSeenV1") === "1"; } catch (error) {}
@@ -295,8 +307,19 @@
     function showAnswer(kind) {
       answer.textContent = guideAnswer(kind, mission, state, progress, result);
       answer.classList.add("show");
+      dock.dataset.guideKind = kind;
+      dock.dataset.guideMission = mission ? mission.id : "complete";
       dock.classList.remove("collapsed");
       toggle.textContent = "−";
+    }
+    if (savedGuideKind && savedGuideMission === (mission ? mission.id : "complete")) {
+      answer.textContent = guideAnswer(savedGuideKind, mission, state, progress, result);
+      answer.classList.add("show");
+      dock.dataset.guideKind = savedGuideKind;
+      dock.dataset.guideMission = savedGuideMission;
+    } else if (dock.dataset) {
+      dock.dataset.guideKind = "";
+      dock.dataset.guideMission = mission ? mission.id : "complete";
     }
     dock.querySelector(".mce-mission-ask").onclick = function () { showAnswer("next"); };
     dock.querySelectorAll("[data-guide]").forEach(function (button) {
@@ -309,7 +332,7 @@
       go.onclick = function (event) {
         event.preventDefault();
         showAnswer("where");
-        answer.textContent = "You are already at " + (mission.location || "the right location") + ". Look for the highlighted interaction or entrance for: " + mission.title + ".";
+        answer.textContent = mission.onsite || ("You are already at " + (mission.location || "the right location") + ". Look for the highlighted interaction or entrance for: " + mission.title + ".");
         try {
           root.dispatchEvent(new CustomEvent("mce:navigator:focus", { detail: { mission: mission } }));
         } catch (error) {}
