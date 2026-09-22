@@ -187,9 +187,9 @@ body.custom-mode .quick-only{display:none}
     <textarea id="sunoPreparedPrompt" class="suno-prompt-preview" readonly aria-label="Prepared Suno prompt"></textarea>
     <div class="suno-return">
       <strong>Finished in Suno?</strong>
-      <p class="helper">Download the finished audio from your own Suno account, return to this tab, and bring it back into Music City.</p>
+      <p class="helper">Download the finished audio from your own Suno account, return to this tab, and bring it back into Music City. On iPhone, Music City lets Files show everything, then checks the audio after you choose it so MP3/M4A/WAV downloads are not greyed out.</p>
       <div class="inline-actions">
-        <label class="file-label">⬆ BRING FINISHED SONG BACK<input id="sunoResultUpload" type="file" accept="audio/*" onchange="importSunoQuickResult(event)"></label>
+        <label class="file-label">⬆ BRING FINISHED SONG BACK<input id="sunoResultUpload" type="file" onchange="importSunoQuickResult(event)"></label>
         <a class="secondary-btn" href="artist_catalog.html" style="text-decoration:none">MY ARTIST CATALOG</a>
       </div>
       <p class="note" id="sunoReturnStatus">Imported Suno songs are saved as <strong>Unreleased Demos</strong>. Making the song is easy; officially releasing and breaking the record still requires the Music City career steps.</p>
