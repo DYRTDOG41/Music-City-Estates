@@ -78,9 +78,9 @@
       id: "battle-access",
       location: "Hip-Hop Café",
       focus: "PERFORM",
-      onsite: "Keep performing at the Café and working the crowd. When you reach 25 fans, Word Slaughter unlocks.",
+      onsite: "Keep performing at the Café and working the crowd. Fresh songs earn the strongest show rewards; repeat songs pay less unless a real listener requests them through Popular Demand. When you reach 25 fans, Word Slaughter unlocks.",
       title: "Build a 25-Fan Buzz",
-      description: "Keep performing at the Cafe until Word Slaughter invites you into the battle circle.",
+      description: "Build the crowd with performances. New songs earn full show rewards; repeats earn reduced rewards unless Popular Demand is waiting.",
       action: "BUILD YOUR CROWD",
       href: "hiphop_cafe.html",
       reward: "Word Slaughter unlocks at 25 fans.",
@@ -104,7 +104,7 @@
       location: "Manager Office",
       onsite: "Review the available managers, make sure you can afford the signing fee, then sign the manager you want representing your career.",
       title: "Hire Your First Manager",
-      description: "Use your show money to sign representation and unlock professional promotion. If you are under $200, repeat Café shows until you can afford the starter manager.",
+      description: "Use your show money to sign representation and unlock professional promotion. If you are under $200, keep playing the Café; bring fresh songs for full pay or use Popular Demand to revive an older record.",
       action: "MEET MANAGERS",
       href: "manager.html",
       route: function (state) { return Number(state.cash || 0) >= 200 ? "manager.html" : "hiphop_cafe.html"; },
@@ -228,7 +228,7 @@
     }
     if (kind === "where") {
       if (mission.id === "manager" && Number(state.cash || 0) < 200) {
-        return "You need $" + Math.max(0, 200 - Number(state.cash || 0)) + " more before signing the starter manager. Go back to the Hip-Hop Café and repeat paid shows until you reach $200.";
+        return "You need $" + Math.max(0, 200 - Number(state.cash || 0)) + " more before signing the starter manager. Go back to the Hip-Hop Café. A fresh song earns full show pay; repeating the same song earns less unless a real listener requested it through Popular Demand.";
       }
       return "Go to " + (mission.location || "the highlighted destination") + ". Tap SHOW ME WHERE and I will take you to the correct part of Music City.";
     }
