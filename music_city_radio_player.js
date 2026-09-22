@@ -1,6 +1,8 @@
 (function(root){
   'use strict';
   if(root.MusicCityRoomRadio)return;
+  var currentPath=(location.pathname.split('/').pop()||'').toLowerCase();
+  if(currentPath!=='music_city_radio.html'&&!new URLSearchParams(location.search).has('roomradio'))return;
 
   var SESSION_KEY='mce-radio-session';
   var audio=new Audio();
