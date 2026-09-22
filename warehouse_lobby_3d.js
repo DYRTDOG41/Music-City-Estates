@@ -131,6 +131,62 @@ for (const [x, text, color] of [[-18.5, 'GOOD BARS\nBETTER PEOPLE', '#ff7184'], 
   room.label(text, [x * .985, 3.25, -2], color, [4.2, 1.65]);
 }
 
+// Graphics Pass 1 — make the warehouse feel like a real converted industrial venue.
+const pipeMetal = new THREE.MeshStandardMaterial({ color:0x4f555d, metalness:.82, roughness:.32 });
+const safetyYellow = new THREE.MeshStandardMaterial({ color:0xd9a827, emissive:0x6b4304, emissiveIntensity:.18, metalness:.26, roughness:.52 });
+
+function addWallPipe(x,zStart,zEnd,height){
+  room.cylinder('industrial pipe',.11,Math.abs(zEnd-zStart),[x,height,(zStart+zEnd)/2],0x555b62,{metalness:.84,roughness:.33}).rotation.x=Math.PI/2;
+  for(const z of [zStart,zEnd]){
+    const joint=room.cylinder('pipe joint',.17,.11,[x,height,z],0x3d4248,{metalness:.88,roughness:.28});
+    joint.rotation.x=Math.PI/2;
+  }
+}
+function addRoadCase(x,z,label){
+  room.box('tour road case',[2.2,1.3,1.45],[x,.72,z],0x15191f,{metalness:.66,roughness:.35,collider:true});
+  for(const dx of [-1.04,1.04]) for(const dz of [-.66,.66]) room.box('road case edge',[.08,1.34,.08],[x+dx,.72,z+dz],0x858b91,{metalness:.92,roughness:.18});
+  room.label(label,[x,1.12,z-.75],'#dce6ee',[1.65,.35]);
+}
+function addBarrier(x,z,rotation=0){
+  const group=new THREE.Group();
+  const mat=room.material(0x777c82,.35,.82);
+  const top=new THREE.Mesh(new THREE.BoxGeometry(4,.1,.1),mat);top.position.y=1.05;group.add(top);
+  const bottom=new THREE.Mesh(new THREE.BoxGeometry(4,.1,.1),mat);bottom.position.y=.18;group.add(bottom);
+  for(let dx=-1.8;dx<=1.8;dx+=.45){const bar=new THREE.Mesh(new THREE.BoxGeometry(.05,.95,.05),mat);bar.position.set(dx,.62,0);group.add(bar)}
+  group.position.set(x,0,z);group.rotation.y=rotation;scene.add(group);
+}
+
+// Visible utilities, cable management and safety markings sell the converted-warehouse architecture.
+addWallPipe(-18.35,-11.8,11.8,6.7);
+addWallPipe(18.35,-11.8,11.8,6.1);
+for(const x of [-16.8,16.8]){
+  for(const z of [-8.5,0,8.5]){
+    room.box('electrical panel',[.24,1.65,1.35],[x,2.05,z],0x4d5359,{metalness:.58,roughness:.48});
+    room.box('electrical caution',[.255,.42,.58],[x*.999,2.22,z],0xd5a72d,{material:safetyYellow,cast:false});
+  }
+}
+
+// Touring gear and crowd-control barriers create a believable event load-in zone.
+addRoadCase(-15.2,10.6,'AUDIO');
+addRoadCase(-12.4,10.6,'LIGHTS');
+addRoadCase(12.4,10.6,'MERCH');
+addRoadCase(15.2,10.6,'STAGE');
+addBarrier(-8.2,9.8,0);
+addBarrier(8.2,9.8,0);
+
+// A compact venue check-in station reinforces that this is an operating music space.
+room.box('venue checkin desk',[5.2,1.18,1.35],[0,.62,10.6],0x11151b,{material:darkMetal,collider:true});
+room.box('checkin desk red edge',[5.28,.1,.08],[0,1.18,9.94],0xff3856,{material:redGlow,cast:false});
+room.label('TONIGHT: WORD SLAUGHTER',[0,1.65,9.9],'#ffd9de',[4.5,.46]);
+room.label('CHECK IN • FIND YOUR ROOM',[0,1.12,9.88],'#ffffff',[3.6,.3]);
+
+// Floor tape and hazard stripes add subtle industrial wear without expensive textures.
+for(const x of [-17.2,17.2]){
+  for(let z=-12;z<=10;z+=2.5){
+    room.box('warehouse hazard stripe',[.52,.025,1.2],[x,.135,z],(Math.round(z*10)%2)?0xe0aa26:0x1b1b1b,{roughness:.72,cast:false});
+  }
+}
+
 // Directional floor lights lead players from spawn to each doorway.
 for (const [x, material, color] of [[-12.2, redGlow, 0xff314e], [0, goldGlow, 0xffc23e], [12.2, blueGlow, 0x43bfff]]) {
   for (let z = -8.2; z <= 8; z += 3.2) room.box('floor guide light', [1.35, .04, .14], [x, .13, z], color, { material, cast: false });
