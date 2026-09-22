@@ -333,6 +333,7 @@ function enterStageView(title) {
   document.body.classList.add('live-performance-mode');
   panel.classList.remove('show');
   verticalSlice.setPerformanceMode(true);
+  performer.userData?.setPerformanceActive?.(true);
   room.setCameraOverride({
     position: [0, 2.15, 6.8],
     target: [0, 1.82, -10.45],
@@ -344,6 +345,7 @@ function leaveStageView(showResults) {
   liveStageHud.classList.remove('show');
   document.body.classList.remove('live-performance-mode');
   verticalSlice.setPerformanceMode(false);
+  performer.userData?.setPerformanceActive?.(false);
   room.clearCameraOverride(true);
   if (showResults) panel.classList.add('show');
 }
