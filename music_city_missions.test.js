@@ -79,6 +79,16 @@ check('battle completion advances to management', () => {
   assert.equal(result.current.id, 'manager');
 });
 
+check('underfunded manager task routes back to repeatable cafe shows', () => {
+  const result = missions.career(state({
+    name: 'Midnight Will', cash: 150, fans: 30, xp: 40, battles: 1,
+    releases: [{ id: 'one', releaseStatus: 'released' }]
+  }), { avatar: null, cafePerformances: 2 });
+  assert.equal(result.current.id, 'manager');
+  assert.equal(missions.missionHref(result.current, state({ cash: 150 })), 'hiphop_cafe.html');
+  assert.equal(missions.missionHref(result.current, state({ cash: 200 })), 'manager.html');
+});
+
 check('manager and promotion advance to radio readiness', () => {
   const result = missions.career(state({
     name: 'Midnight Will', fans: 40, xp: 80, battles: 1,
@@ -98,4 +108,4 @@ check('radio submission completes the first career run', () => {
   assert.equal(result.completedCount, missions.MISSIONS.length);
 });
 
-console.log('9 mission loop tests passed');
+console.log('10 mission loop tests passed');
