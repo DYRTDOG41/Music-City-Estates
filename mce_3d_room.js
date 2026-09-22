@@ -315,6 +315,7 @@ export function buildAvatar(room,data={},pos=[0,0,0],scale=1){
   earR.scale.set(.5,.9,.5);
 
   // Eyes, brows, nose and lips. Local -Z is the avatar's forward direction.
+  const eyeParts=[];
   for(const side of [-1,1]){
     const eye=add(new THREE.SphereGeometry(.085,16,10),[side*.18*faceWidth,2.69,-.445],eyeWhite);
     eye.scale.set(1.1,.62,.42);
@@ -324,6 +325,7 @@ export function buildAvatar(room,data={},pos=[0,0,0],scale=1){
     pupil.scale.z=.35;
     const brow=add(new THREE.BoxGeometry(.19,.028,.028),[side*.18*faceWidth,2.81,-.485],hairMat);
     brow.rotation.z=side*.05;
+    eyeParts.push({eye,iris,pupil,brow});
   }
   const nose=add(new THREE.ConeGeometry(.065,.24,12),[0,2.56,-.493],skinSoft);
   nose.rotation.x=-Math.PI/2;
@@ -455,6 +457,24 @@ export function buildAvatar(room,data={},pos=[0,0,0],scale=1){
   logoMap.colorSpace=THREE.SRGBColorSpace;
   const logo=add(new THREE.PlaneGeometry(.66,.33),[0,1.58,-.458],new THREE.MeshBasicMaterial({map:logoMap,transparent:true,toneMapped:false}));
 
+  const idleSeed=Math.random()*10;
+  room.animated.push((time)=>{
+    if(group.userData.disposed)return;
+    const t=time*.001+idleSeed;
+    const performance=Boolean(group.userData.performanceActive);
+    torso.scale.y=1+Math.sin(t*1.65)*.007;
+    head.rotation.y=Math.sin(t*.42)*.012+(performance?Math.sin(t*2.1)*.018:0);
+    head.rotation.z=Math.sin(t*.31)*.006;
+    const blinkCycle=t%4.6;
+    const blink=blinkCycle>4.42?Math.sin(((blinkCycle-4.42)/.18)*Math.PI):0;
+    eyeParts.forEach(({eye,iris,pupil})=>{
+      eye.scale.y=.62*(1-blink*.9);
+      iris.scale.y=.72*(1-blink*.9);
+      pupil.scale.y=1-blink*.9;
+    });
+    mouth.scale.y=.58*(performance?1+Math.abs(Math.sin(t*8.4))*.32:1);
+  });
+
   group.userData.rig={
     head,hairRoot,torso,leftArm,rightArm,leftLeg,rightLeg,leftHand,rightHand,neck
   };
@@ -468,6 +488,7 @@ export function buildAvatar(room,data={},pos=[0,0,0],scale=1){
     return false;
   };
   group.userData.setPerformanceActive=(on)=>{
+    group.userData.performanceActive=Boolean(on);
     const controller=group.userData.avatarController;
     if(controller&&controller.setPerformanceActive)controller.setPerformanceActive(on);
   };
