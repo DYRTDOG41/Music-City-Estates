@@ -255,7 +255,7 @@ function refreshPerformancePanel() {
     roundText.textContent = 'The café host says you are ready for the next stage.';
     log.innerHTML = 'You can keep performing here, or move up to the <b>Music City Nightclub</b>.';
     startButton.disabled = false;
-    startButton.textContent = 'START THREE-PART SET';
+    startButton.textContent = 'START FULL LIVE SET';
   } else {
     progress.innerHTML = remaining
       ? `<b>${state.fans}/50 fans</b> • Earn ${remaining} more to graduate from the café circuit.`
@@ -263,7 +263,7 @@ function refreshPerformancePanel() {
     roundText.textContent = 'The host is ready to introduce you.';
     log.textContent = 'Choose a released song or freestyle, then step onto the starter stage.';
     startButton.disabled = false;
-    startButton.textContent = 'START THREE-PART SET';
+    startButton.textContent = 'START FULL LIVE SET';
   }
   energy.style.width = '0%';
   actionButtons.forEach((button) => {
@@ -300,4 +300,7 @@ for (const modal of document.querySelectorAll('.modal')) modal.addEventListener(
   if (event.target !== modal) return;
   if (modal === panel) closePerformancePanel();
   else modal.classList.remove('show');
+});
+addEventListener('pagehide', () => {
+  if (window.MusicCityLivePerformance) window.MusicCityLivePerformance.stop('pagehide');
 });
