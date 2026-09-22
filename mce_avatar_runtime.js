@@ -103,6 +103,48 @@ function prepareModel(root){
   return stats;
 }
 
+function normalizedBoneName(name){
+  return String(name||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+}
+
+function findAttachmentBone(model,target){
+  const wanted=String(target||'').toLowerCase();
+  const candidates=[];
+  model.traverse(object=>{
+    if(object.isBone)candidates.push(object);
+  });
+
+  const patterns=wanted==='leftHand'
+    ? ['lefthand','handl','lhand','mixamoriglefthand']
+    : wanted==='head'
+      ? ['head','mixamorighead']
+      : ['righthand','handr','rhand','mixamorigrighthand'];
+
+  for(const pattern of patterns){
+    const match=candidates.find(bone=>normalizedBoneName(bone.name).includes(pattern));
+    if(match)return match;
+  }
+  return null;
+}
+
+function migrateAttachments(host,model){
+  const attachments=host.userData&&Array.isArray(host.userData.avatarAttachments)
+    ?host.userData.avatarAttachments
+    :[];
+
+  for(const attachment of attachments){
+    const object=attachment&&attachment.object;
+    if(!object)continue;
+    const bone=findAttachmentBone(model,attachment.target);
+    if(!bone)continue;
+    try{
+      bone.attach(object);
+    }catch(error){
+      bone.add(object);
+    }
+  }
+}
+
 function normalizeModel(root,targetHeight=3.18){
   const box=new THREE.Box3().setFromObject(root);
   const size=new THREE.Vector3();
@@ -344,6 +386,7 @@ export async function upgradeAvatarFromGLB(host,room,data={}){
 
   model.name='Music City Premium Avatar';
   host.add(model);
+  migrateAttachments(host,model);
   host.userData.premiumModel=model;
   host.userData.avatarQuality='premium-glb';
   host.userData.avatarStats=stats;
