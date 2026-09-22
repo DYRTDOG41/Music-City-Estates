@@ -392,9 +392,9 @@ export function buildAvatar(room,data={},pos=[0,0,0],scale=1){
   collar.rotation.z=.63;
 
   // Hands.
-  const leftHand=add(new THREE.SphereGeometry(.13,14,10),[-.705*shoulderScale,.9,0],skinMat);
+  const leftHand=add(new THREE.SphereGeometry(.13,14,10),[0,-.58,0],skinMat,leftArm);
   leftHand.scale.set(.78,1.05,.72);
-  const rightHand=add(new THREE.SphereGeometry(.13,14,10),[.705*shoulderScale,.9,0],skinMat);
+  const rightHand=add(new THREE.SphereGeometry(.13,14,10),[0,-.58,0],skinMat,rightArm);
   rightHand.scale.set(.78,1.05,.72);
 
   // Pants waist, belt, pockets and seams.
@@ -409,22 +409,22 @@ export function buildAvatar(room,data={},pos=[0,0,0],scale=1){
 
   // Sneakers with upper, toe, sole and lace panel.
   for(const side of [-1,1]){
-    const x=side*.255*bodyScale;
-    const sole=add(new THREE.BoxGeometry(.43,.12,.72),[x,-.28,.11],shoeSole);
+    const leg=side<0?leftLeg:rightLeg;
+    const sole=add(new THREE.BoxGeometry(.43,.12,.72),[0,-.63,.11],shoeSole,leg);
     sole.geometry.translate(0,0,.05);
-    const upper=add(new THREE.BoxGeometry(.39,.24,.61),[x,-.14,.08],shoeUpper);
+    const upper=add(new THREE.BoxGeometry(.39,.24,.61),[0,-.49,.08],shoeUpper,leg);
     upper.rotation.x=-.06;
-    const toe=add(new THREE.SphereGeometry(.2,14,10),[x,-.16,.35],shoeUpper);
+    const toe=add(new THREE.SphereGeometry(.2,14,10),[0,-.51,.35],shoeUpper,leg);
     toe.scale.set(1,.6,.82);
-    const lace=add(new THREE.BoxGeometry(.19,.018,.25),[x,-.015,.18],darkMat);
+    const lace=add(new THREE.BoxGeometry(.19,.018,.25),[0,-.365,.18],darkMat,leg);
     lace.rotation.x=-.08;
   }
 
   // Jewelry / accessories.
   if(accessory!=='none'){
-    const chain=add(new THREE.TorusGeometry(.27,.025,10,30,Math.PI*1.55),[0,1.88,.315],metalMat);
+    const chain=add(new THREE.TorusGeometry(.27,.025,10,30,Math.PI*1.55),[0,1.88,.47],metalMat);
     chain.rotation.z=.78;
-    const pendant=add(new THREE.BoxGeometry(.12,.14,.035),[0,1.58,.34],metalMat);
+    const pendant=add(new THREE.BoxGeometry(.12,.14,.035),[0,1.58,.49],metalMat);
     pendant.rotation.z=.05;
   }
   if(data.hasWatch!==false){
@@ -446,7 +446,7 @@ export function buildAvatar(room,data={},pos=[0,0,0],scale=1){
   logoCtx.fillText('♛',128,91);
   const logoMap=new THREE.CanvasTexture(logoCanvas);
   logoMap.colorSpace=THREE.SRGBColorSpace;
-  const logo=add(new THREE.PlaneGeometry(.66,.33),[0,1.58,.302],new THREE.MeshBasicMaterial({map:logoMap,transparent:true,toneMapped:false}));
+  const logo=add(new THREE.PlaneGeometry(.66,.33),[0,1.58,.458],new THREE.MeshBasicMaterial({map:logoMap,transparent:true,toneMapped:false}));
 
   group.userData.rig={
     head,hairRoot,torso,leftArm,rightArm,leftLeg,rightLeg,leftHand,rightHand,neck
