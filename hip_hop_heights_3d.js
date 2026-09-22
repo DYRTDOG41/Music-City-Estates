@@ -738,6 +738,80 @@ room.label('MUSIC • CULTURE • LEGACY', [0, 7.9, -54.9], '#ffffff', [8, .65])
 room.light(0x8d55ff, 16, [0, 9, -30], 32).castShadow = false;
 room.light(0xffa14f, 14, [0, 8, 20], 32).castShadow = false;
 
+// Graphics Pass 1 — street-level realism without heavy external models.
+function makeStreetGraphic(lines, accent='#ffcf68', background='#11151bd9') {
+  const canvas=document.createElement('canvas');
+  canvas.width=1024;canvas.height=768;
+  const context=canvas.getContext('2d');
+  context.fillStyle=background;context.fillRect(0,0,canvas.width,canvas.height);
+  context.fillStyle='#ffffff10';
+  for(let i=0;i<42;i++) context.fillRect((i*173)%canvas.width,(i*97)%canvas.height,40+(i%5)*18,3);
+  context.strokeStyle=accent;context.lineWidth=18;context.strokeRect(28,28,canvas.width-56,canvas.height-56);
+  context.fillStyle=accent;context.fillRect(55,70,160,12);
+  context.textAlign='left';context.textBaseline='middle';
+  context.font='900 76px Arial Black, Arial, sans-serif';
+  lines.forEach((line,index)=>{
+    context.fillStyle=index===0?'#ffffff':accent;
+    context.fillText(line,72,250+index*108);
+  });
+  context.font='800 25px Arial, sans-serif';
+  context.fillStyle='#c9d1da';
+  context.fillText('MUSIC CITY ESTATES • HIP-HOP HEIGHTS',72,650);
+  const texture=new THREE.CanvasTexture(canvas);
+  texture.colorSpace=THREE.SRGBColorSpace;
+  texture.anisotropy=renderer.capabilities.getMaxAnisotropy();
+  return texture;
+}
+function addWallGraphic(x,y,z,rotationY,lines,accent,width=5.6,height=4.2){
+  const panel=new THREE.Mesh(
+    new THREE.PlaneGeometry(width,height),
+    new THREE.MeshStandardMaterial({map:makeStreetGraphic(lines,accent),roughness:.72,metalness:.03,side:THREE.DoubleSide})
+  );
+  panel.position.set(x,y,z);panel.rotation.y=rotationY;panel.castShadow=false;scene.add(panel);return panel;
+}
+function addBollard(x,z,color=0x31373d){
+  room.cylinder('street bollard',.13,.92,[x,.48,z],color,{metalness:.72,roughness:.42});
+  room.cylinder('bollard cap',.17,.06,[x,.97,z],0x777d82,{metalness:.82,roughness:.28});
+}
+function addUtilityCabinet(x,z,side){
+  room.box('utility cabinet',[1.35,1.75,.7],[x,.92,z],0x4b555a,{metalness:.48,roughness:.62});
+  room.box('utility cabinet door',[1.12,1.5,.04],[x-side*.37,.92,z],0x5b656a,{metalness:.48,roughness:.58});
+  room.box('utility warning label',[.46,.34,.055],[x-side*.395,1.25,z],0xd3a84d,{roughness:.62,cast:false});
+}
+function addNewsBox(x,z,side,color){
+  room.box('music news box',[.82,1.12,.72],[x,.61,z],color,{metalness:.25,roughness:.6});
+  room.box('music news window',[.6,.38,.04],[x-side*.38,.78,z],0x17222b,{metalness:.35,roughness:.25});
+  room.box('music news slot',[.46,.06,.035],[x-side*.39,.48,z],0x0b0f12,{metalness:.62,roughness:.35});
+}
+
+// Posters/murals are intentionally in-world originals so the district feels authored rather than generic.
+addWallGraphic(-18.12,4.15,4.4,Math.PI/2,['NEW MUSIC','EVERY BLOCK'], '#59d7ff',5.1,3.9);
+addWallGraphic(18.12,4.25,-5.5,-Math.PI/2,['LOCAL VOICES','GLOBAL SOUND'], '#ff9b55',5.2,4.0);
+addWallGraphic(-18.12,4.2,-40.5,Math.PI/2,['CREATE','PERFORM','BUILD'], '#d478ff',5.1,4.0);
+
+// More believable sidewalk clutter and protection around busy storefront approaches.
+for(const [x,z] of [[-15.9,25.5],[-15.9,17],[15.9,25.5],[15.9,17],[-15.9,-17],[-15.9,-25.5],[15.9,-17],[15.9,-25.5]]) addBollard(x,z);
+addUtilityCabinet(-16.25,-2,-1);
+addUtilityCabinet(16.25,30,1);
+addNewsBox(-15.4,37,-1,0x235a78);
+addNewsBox(15.4,-31,1,0x8a3d2f);
+
+// Storefront canopies and recessed pools of light increase facade depth at eye level.
+for(const slot of scene.userData.buildingSlots){
+  const side=slot.side;
+  const canopyX=slot.facadeX-side*.92;
+  room.box(slot.name+' entry canopy',[1.75,.24,6.7],[canopyX,5.72,slot.position[2]],0x202832,{metalness:.46,roughness:.36});
+  const glowColor=slot.name.includes('BeGenius')?0x57cfff:slot.name.includes('Café')?0xff8c4f:slot.name.includes('Warehouse')?0xc867ff:0x63e0ff;
+  const entryLight=room.light(glowColor,5.2,[slot.facadeX-side*.7,4.4,slot.position[2]],8);
+  entryLight.castShadow=false;
+}
+
+// Small curbside loading details stop the long block from reading like a pristine demo scene.
+for(const [x,z] of [[-15.2,-44],[15.2,-43],[-15.1,43],[15.1,42]]){
+  room.box('delivery crate',[1.05,.78,1.05],[x,.42,z],0x765235,{roughness:.86,metalness:.02});
+  room.box('crate band',[1.08,.12,1.08],[x,.5,z],0x3a2a20,{roughness:.75,metalness:.08});
+}
+
 const atmospherePresets = [
   { name: 'DAYLIGHT', icon: '☀', background: 0x8ecdf4, fog: 0xb8d8e8, exposure: 1.16, sun: 0xffefd2, sunIntensity: 3.15, ambient: 0xbcd7ea, ambientIntensity: .34, lampIntensity: .4 },
   { name: 'GOLDEN HOUR', icon: '◐', background: 0xf19c70, fog: 0xdca584, exposure: 1.1, sun: 0xffb56b, sunIntensity: 3.7, ambient: 0xb993aa, ambientIntensity: .28, lampIntensity: 2.1 },
