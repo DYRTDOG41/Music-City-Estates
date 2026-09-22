@@ -31,10 +31,27 @@ let avatarData=JSON.parse(localStorage.getItem('mceAvatar')||'null')||{
   name:starterName,
   type:'Rapper',
   skin:'#9a5f3c',
+  bodyBuild:'athletic',
+  faceShape:'balanced',
   hairStyle:'fade',
   hairColor:'#171016',
-  shirtColor:'#7b2cff',
-  pantsColor:'#171b2d'
+  facialHair:'none',
+  accessory:'chain',
+  outfitStyle:'hoodie',
+  shirtColor:'#171a20',
+  pantsColor:'#11151c'
+};
+avatarData={
+  bodyBuild:'athletic',
+  faceShape:'balanced',
+  hairStyle:'fade',
+  hairColor:'#171016',
+  facialHair:'none',
+  accessory:'chain',
+  outfitStyle:'streetwear',
+  shirtColor:'#171a20',
+  pantsColor:'#11151c',
+  ...avatarData
 };
 if(!avatarData.name||avatarData.name==='Rookie'||avatarData.name==='New Artist')avatarData.name=starterName;
 
@@ -47,7 +64,7 @@ let avatar=buildAvatar(room,avatarData,[0,.25,-5],1.08);
 let avatarNameLabel=room.label(avatarData.name.toUpperCase(),[0,3.8,-5],'#ffffff',[4,.75]);
 const avatarGuideLabel=room.label('WALK UP + TAP AVATAR',[0,4.55,-5],'#ffd24a',[5.2,.62]);
 
-const ids=['artistName','artistType','hairStyle','hairColor','shirtColor','pantsColor'];
+const ids=['artistName','artistType','bodyBuild','faceShape','hairStyle','hairColor','facialHair','accessory','outfitStyle','shirtColor','pantsColor'];
 const outfitPresets={
   streetBlue:{shirtColor:'#176fd1',pantsColor:'#151c2e'},
   midnight:{shirtColor:'#11151c',pantsColor:'#080b11'},
@@ -55,8 +72,8 @@ const outfitPresets={
   roseGold:{shirtColor:'#c44b87',pantsColor:'#3a2235'}
 };
 const avatarPresets={
-  female:{type:'Singer',skin:'#9a5f3c',hairStyle:'braids',hairColor:'#24130e',shirtColor:'#c44b87',pantsColor:'#3a2235'},
-  male:{type:'Rapper',skin:'#7b472b',hairStyle:'fade',hairColor:'#15100e',shirtColor:'#176fd1',pantsColor:'#151c2e'}
+  female:{type:'Singer',skin:'#9a5f3c',bodyBuild:'athletic',faceShape:'balanced',hairStyle:'braids',hairColor:'#24130e',facialHair:'none',accessory:'chain',outfitStyle:'streetwear',shirtColor:'#17151a',pantsColor:'#17171d'},
+  male:{type:'Rapper',skin:'#7b472b',bodyBuild:'athletic',faceShape:'wide',hairStyle:'fade',hairColor:'#15100e',facialHair:'beard',accessory:'chain',outfitStyle:'hoodie',shirtColor:'#11151c',pantsColor:'#0b0e14'}
 };
 
 function loadForm(){
@@ -72,8 +89,13 @@ function readForm(){
   return {
     name:document.getElementById('artistName').value.trim()||avatarData.name||'Nova',
     type:document.getElementById('artistType').value,
+    bodyBuild:document.getElementById('bodyBuild').value,
+    faceShape:document.getElementById('faceShape').value,
     hairStyle:document.getElementById('hairStyle').value,
     hairColor:document.getElementById('hairColor').value,
+    facialHair:document.getElementById('facialHair').value,
+    accessory:document.getElementById('accessory').value,
+    outfitStyle:document.getElementById('outfitStyle').value,
     shirtColor:document.getElementById('shirtColor').value,
     pantsColor:document.getElementById('pantsColor').value,
     skin
@@ -105,8 +127,13 @@ document.querySelectorAll('[data-avatar-preset]').forEach(button=>button.addEven
   const preset=avatarPresets[button.dataset.avatarPreset];
   if(!preset)return;
   document.getElementById('artistType').value=preset.type;
+  document.getElementById('bodyBuild').value=preset.bodyBuild;
+  document.getElementById('faceShape').value=preset.faceShape;
   document.getElementById('hairStyle').value=preset.hairStyle;
   document.getElementById('hairColor').value=preset.hairColor;
+  document.getElementById('facialHair').value=preset.facialHair;
+  document.getElementById('accessory').value=preset.accessory;
+  document.getElementById('outfitStyle').value=preset.outfitStyle;
   document.getElementById('shirtColor').value=preset.shirtColor;
   document.getElementById('pantsColor').value=preset.pantsColor;
   document.getElementById('outfitPreset').value='custom';
@@ -128,7 +155,7 @@ document.querySelectorAll('[data-skin]').forEach(button=>button.addEventListener
   previewForm();
 }));
 
-['artistName','artistType','hairStyle','hairColor'].forEach(id=>{
+['artistName','artistType','bodyBuild','faceShape','hairStyle','hairColor','facialHair','accessory','outfitStyle'].forEach(id=>{
   document.getElementById(id).addEventListener('input',previewForm);
   document.getElementById(id).addEventListener('change',previewForm);
 });
@@ -148,7 +175,7 @@ document.getElementById('saveAvatar').onclick=()=>{
   localStorage.setItem('mceAvatarCoachSeen','1');
   if(window.MCE)state=window.MCE.save({name:avatarData.name});
   rebuildAvatar(avatarData);
-  document.getElementById('notice').textContent='✓ 3D artist and career name saved. Your look will appear on the battle stage.';
+  document.getElementById('notice').textContent='✓ Realism V2 artist saved. Your upgraded face, body, hair, fit and accessories now follow you through Music City.';
 };
 document.getElementById('closeCustomizer').onclick=()=>customizer.classList.remove('show');
 
