@@ -342,6 +342,11 @@ window.addEventListener("mce-live-arena-ui",event=>{
   suppress(phase==="battle"||phase==="voting");
 });
 
+window.addEventListener("mce-audio-session",event=>{
+  const active=Boolean(event&&event.detail&&event.detail.active);
+  suppress(active);
+});
+
 saveState();
 makeWidget();
 const gesture=event=>{
