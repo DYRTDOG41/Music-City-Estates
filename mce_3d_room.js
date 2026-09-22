@@ -478,6 +478,11 @@ export function buildAvatar(room,data={},pos=[0,0,0],scale=1){
   group.userData.rig={
     head,hairRoot,torso,leftArm,rightArm,leftLeg,rightLeg,leftHand,rightHand,neck
   };
+  group.userData.avatarAttachments=[];
+  group.userData.registerAttachment=(object,target='rightHand')=>{
+    if(!object)return;
+    group.userData.avatarAttachments.push({object,target});
+  };
   group.userData.fallbackMeshes=fallbackMeshes;
   group.userData.avatarQuality='realistic-v2';
   group.userData.avatarData={...data};
