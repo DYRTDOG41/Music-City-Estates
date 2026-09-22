@@ -5,7 +5,8 @@ const STORAGE_KEY="mceSoundtrackStateV1";
 const BLOCKED=[
   "record_music.html",
   "advanced_recording_studio.html",
-  "live_freestyle.html"
+  "live_freestyle.html",
+  "music_city_feed.html"
 ];
 
 const path=(location.pathname.split("/").pop()||"index.html").toLowerCase();
