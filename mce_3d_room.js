@@ -20,7 +20,7 @@ export function createRoom(options={}) {
   scene.add(hemisphere,ambient,daylight);
   const keys={},colliders=[],interactions=[],animated=[];
   let yaw=options.yaw||0,pitch=0,drag=false,lastX=0,lastY=0,current=null,last=performance.now();
-  let joystickX=0,joystickY=0;
+  let joystickX=0,joystickY=0,cameraOverride=null;
   const prompt=document.getElementById('interactPrompt');
   const material=(color,rough=.78,metal=.12)=>new THREE.MeshStandardMaterial({color,roughness:rough,metalness:metal});
   function box(name,size,pos,color,opts={}){const mesh=new THREE.Mesh(new THREE.BoxGeometry(...size),opts.material||material(color,opts.roughness,opts.metalness));mesh.name=name;mesh.position.fromArray(pos);mesh.castShadow=opts.cast!==false;mesh.receiveShadow=opts.receive!==false;scene.add(mesh);if(opts.collider)colliders.push(new THREE.Box3().setFromObject(mesh));return mesh}
@@ -137,25 +137,66 @@ export function createRoom(options={}) {
     beacon._hideTimer=setTimeout(()=>{beacon.style.opacity='0'},4200);
   });
   setupMobileJoystick();
+
+  function setCameraOverride(config={}){
+    const position=Array.isArray(config.position)?new THREE.Vector3(...config.position):(config.position&&config.position.isVector3?config.position.clone():camera.position.clone());
+    const target=Array.isArray(config.target)?new THREE.Vector3(...config.target):(config.target&&config.target.isVector3?config.target.clone():new THREE.Vector3(0,1.7,-8));
+    const lerp=Number.isFinite(Number(config.lerp))?Math.max(.01,Math.min(1,Number(config.lerp))):.08;
+    if(!cameraOverride){
+      cameraOverride={
+        returnPosition:camera.position.clone(),
+        returnYaw:yaw,
+        returnPitch:pitch,
+        position,
+        target,
+        lerp
+      };
+    }else{
+      cameraOverride.position.copy(position);
+      cameraOverride.target.copy(target);
+      cameraOverride.lerp=lerp;
+    }
+    return cameraOverride;
+  }
+
+  function clearCameraOverride(restore=true){
+    if(!cameraOverride)return;
+    if(restore){
+      camera.position.copy(cameraOverride.returnPosition);
+      yaw=cameraOverride.returnYaw;
+      pitch=cameraOverride.returnPitch;
+      camera.rotation.order='YXZ';
+      camera.rotation.y=yaw;
+      camera.rotation.x=pitch;
+    }
+    cameraOverride=null;
+  }
+
   function loop(t){
     const dt=Math.min((t-last)/1000,.04);last=t;
-    const forward=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw)),right=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw)),move=new THREE.Vector3();
-    const keyboardMoving=Boolean(keys.w||keys.arrowup||keys.s||keys.arrowdown||keys.d||keys.arrowright||keys.a||keys.arrowleft);
-    if(keys.w||keys.arrowup)move.add(forward);if(keys.s||keys.arrowdown)move.sub(forward);if(keys.d||keys.arrowright)move.add(right);if(keys.a||keys.arrowleft)move.sub(right);
-    const analogMagnitude=Math.min(1,Math.hypot(joystickX,joystickY));
-    if(analogMagnitude>.04){move.addScaledVector(forward,joystickY);move.addScaledVector(right,joystickX)}
-    if(move.lengthSq()){
-      const speedScale=keyboardMoving?1:Math.max(.32,analogMagnitude);
-      move.normalize().multiplyScalar((keys.shift?7:4.2)*speedScale*dt);
-      const next=camera.position.clone().add(move);if(!blocked(next))camera.position.copy(next)
+    if(cameraOverride){
+      camera.position.lerp(cameraOverride.position,cameraOverride.lerp);
+      camera.lookAt(cameraOverride.target);
+      current=null;
+    }else{
+      const forward=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw)),right=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw)),move=new THREE.Vector3();
+      const keyboardMoving=Boolean(keys.w||keys.arrowup||keys.s||keys.arrowdown||keys.d||keys.arrowright||keys.a||keys.arrowleft);
+      if(keys.w||keys.arrowup)move.add(forward);if(keys.s||keys.arrowdown)move.sub(forward);if(keys.d||keys.arrowright)move.add(right);if(keys.a||keys.arrowleft)move.sub(right);
+      const analogMagnitude=Math.min(1,Math.hypot(joystickX,joystickY));
+      if(analogMagnitude>.04){move.addScaledVector(forward,joystickY);move.addScaledVector(right,joystickX)}
+      if(move.lengthSq()){
+        const speedScale=keyboardMoving?1:Math.max(.32,analogMagnitude);
+        move.normalize().multiplyScalar((keys.shift?7:4.2)*speedScale*dt);
+        const next=camera.position.clone().add(move);if(!blocked(next))camera.position.copy(next)
+      }
+      camera.position.y=1.7;camera.rotation.order='YXZ';camera.rotation.y=yaw;camera.rotation.x=pitch;
+      current=null;let best=99;for(const i of interactions){const d=camera.position.distanceTo(i.pos);if(d<i.radius&&d<best){best=d;current=i}}
     }
-    camera.position.y=1.7;camera.rotation.order='YXZ';camera.rotation.y=yaw;camera.rotation.x=pitch;
-    current=null;let best=99;for(const i of interactions){const d=camera.position.distanceTo(i.pos);if(d<i.radius&&d<best){best=d;current=i}}
     if(prompt){prompt.classList.toggle('show',!!current);if(current)prompt.textContent='E / TAP — '+current.label}
     animated.forEach(f=>f(t,dt));renderer.render(scene,camera)
   }
   renderer.setAnimationLoop(loop);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
-  return {THREE,scene,camera,renderer,box,cylinder,label,light,interact,wallBounds,animated,material,colliders};
+  return {THREE,scene,camera,renderer,box,cylinder,label,light,interact,wallBounds,animated,material,colliders,setCameraOverride,clearCameraOverride};
 }
 
 export function buildAvatar(room,data={},pos=[0,0,0],scale=1){

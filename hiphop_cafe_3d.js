@@ -1,4 +1,5 @@
 import { createRoom, buildAvatar } from './mce_3d_room.js';
+import { buildCafeVerticalSlice } from './hiphop_cafe_visuals.js';
 
 let state = window.MCE ? window.MCE.load() : {
   fans: Number(localStorage.getItem('mceFans')) || 0,
@@ -86,9 +87,7 @@ purple.castShadow = false;
 // Starter stage.
 room.box('café stage', [15, .42, 6.4], [0, .21, -10.4], 0x181013, { collider: true, roughness: .52, metalness: .15 });
 room.box('stage glow', [15.2, .13, .13], [0, .42, -7.17], 0xff6536, { metalness: .5 });
-room.label('HIP-HOP CAFÉ', [0, 6.25, -13.7], '#fff0db', [11, 1.55]);
-room.label('FIRST SHOW • FIRST FANS • YOUR STORY', [0, 5.15, -13.68], '#ff9b45', [9, .65]);
-room.label('OPEN MIC', [0, 3.85, -13.62], '#d95fff', [5, .92]);
+// Main brick-wall branding is supplied by the vertical-slice visual layer.
 for (const x of [-5.5, 5.5]) {
   room.box('stage speaker', [1.6, 3.3, 1.2], [x, 1.85, -12.2], 0x0c0a0d, { collider: true, metalness: .28, roughness: .5 });
   for (const y of [1, 2.1, 3.15]) {
@@ -104,6 +103,9 @@ const avatarData = JSON.parse(localStorage.getItem('mceAvatar') || 'null') || { 
 const performer = buildAvatar(room, avatarData, [0, .52, -10.7], .96);
 performer.rotation.y = Math.PI;
 room.label((avatarData.name || state.name || 'NEW ARTIST').toUpperCase(), [0, 4.1, -10.7], '#ffffff', [4.2, .58]);
+
+const verticalSlice = buildCafeVerticalSlice(room, { performer });
+
 
 // Live performance lighting rig. These stay dark until a real song is playing.
 const performanceLights = [];
@@ -169,16 +171,61 @@ const skinColors = [0x4c2a1b, 0x73462e, 0x9d6748, 0xc9916c, 0x633824];
 const shirtColors = [0x3e2030, 0x213653, 0x5e2a1f, 0x29252f, 0x6b2438];
 function audienceMember(x, z, seed) {
   const group = new THREE.Group();
-  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(.22, .55, 3, 8), room.material(shirtColors[seed % shirtColors.length], .82, .04));
-  torso.position.y = 1.05;
+  const skin = room.material(skinColors[(seed * 3) % skinColors.length], .82, .02);
+  const shirt = room.material(shirtColors[seed % shirtColors.length], .84, .04);
+
+  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(.27, .62, 4, 10), shirt);
+  torso.position.y = 1.04;
+  torso.castShadow = true;
   group.add(torso);
-  const head = new THREE.Mesh(new THREE.SphereGeometry(.21, 10, 8), room.material(skinColors[(seed * 3) % skinColors.length], .8, .02));
-  head.position.y = 1.66;
+
+  const head = new THREE.Mesh(new THREE.SphereGeometry(.23, 12, 10), skin);
+  head.position.y = 1.73;
+  head.castShadow = true;
   group.add(head);
+
+  if (seed % 2 === 0) {
+    const hair = new THREE.Mesh(
+      new THREE.SphereGeometry(.245, 10, 8),
+      room.material(seed % 4 === 0 ? 0x171216 : 0x2a1712, .9, .01)
+    );
+    hair.scale.y = seed % 4 === 0 ? .7 : .45;
+    hair.position.set(0, 1.89, -.015);
+    group.add(hair);
+  }
+
+  const leftArm = new THREE.Mesh(new THREE.CylinderGeometry(.075, .085, .68, 8), skin);
+  leftArm.position.set(-.34, 1.15, 0);
+  leftArm.rotation.z = -.18;
+  leftArm.castShadow = true;
+  group.add(leftArm);
+
+  const rightArm = new THREE.Mesh(new THREE.CylinderGeometry(.075, .085, .68, 8), skin);
+  rightArm.position.set(.34, 1.15, 0);
+  rightArm.rotation.z = seed % 4 === 0 ? -.92 : .18;
+  rightArm.castShadow = true;
+  group.add(rightArm);
+
+  if (seed % 5 === 0) {
+    const phone = new THREE.Mesh(
+      new THREE.BoxGeometry(.11, .23, .025),
+      new THREE.MeshStandardMaterial({
+        color: 0x111319,
+        emissive: 0x7cc9ff,
+        emissiveIntensity: 1.15,
+        roughness: .38,
+        metalness: .42
+      })
+    );
+    phone.position.set(.48, 1.52, .11);
+    phone.rotation.z = -.12;
+    group.add(phone);
+  }
+
   group.position.set(x, 0, z);
   group.rotation.y = Math.PI;
   scene.add(group);
-  crowd.push({ group, seed });
+  crowd.push({ group, seed, leftArm, rightArm });
 }
 let seed = 0;
 for (const z of [-3.8, .3, 4.2]) {
@@ -188,9 +235,11 @@ for (const z of [-3.8, .3, 4.2]) {
     if ((seed + 1) % 3 !== 0) audienceMember(x - .9, z + .25, seed++);
   }
 }
-room.animated.push((time) => crowd.forEach(({ group, seed: memberSeed }) => {
+room.animated.push((time) => crowd.forEach(({ group, seed: memberSeed, leftArm, rightArm }) => {
   group.position.y = Math.sin(time * .0025 + memberSeed) * .035;
   group.rotation.z = Math.sin(time * .0019 + memberSeed) * .012;
+  if (leftArm) leftArm.rotation.x = Math.sin(time * .0022 + memberSeed) * .045;
+  if (rightArm && memberSeed % 4 !== 0) rightArm.rotation.x = Math.sin(time * .0024 + memberSeed * .7) * .05;
 }));
 
 // Navigation and stage interaction.
@@ -279,11 +328,19 @@ function enterStageView(title) {
   liveStageHud.classList.add('show');
   document.body.classList.add('live-performance-mode');
   panel.classList.remove('show');
+  verticalSlice.setPerformanceMode(true);
+  room.setCameraOverride({
+    position: [0, 2.15, 6.8],
+    target: [0, 1.82, -10.45],
+    lerp: .075
+  });
 }
 
 function leaveStageView(showResults) {
   liveStageHud.classList.remove('show');
   document.body.classList.remove('live-performance-mode');
+  verticalSlice.setPerformanceMode(false);
+  room.clearCameraOverride(true);
   if (showResults) panel.classList.add('show');
 }
 
@@ -365,9 +422,16 @@ room.animated.push((time) => {
     led.scale.y = .72 + Math.abs(Math.sin(time * .006 + index)) * .55;
   });
 
-  if (applauding) {
-    crowd.forEach(({ group, seed: memberSeed }) => {
-      group.position.y += Math.abs(Math.sin(time * .018 + memberSeed)) * .025;
+  if (active || applauding) {
+    crowd.forEach(({ group, seed: memberSeed, leftArm, rightArm }) => {
+      const response = applauding ? 1 : .45;
+      group.position.y += Math.abs(Math.sin(time * .018 + memberSeed)) * .025 * response;
+      if (leftArm && memberSeed % 3 === 0) {
+        leftArm.rotation.z = -.18 - Math.abs(Math.sin(time * .01 + memberSeed)) * .72 * response;
+      }
+      if (rightArm && memberSeed % 2 === 0) {
+        rightArm.rotation.z = .18 + Math.abs(Math.sin(time * .012 + memberSeed)) * .88 * response;
+      }
     });
   }
 });
@@ -622,6 +686,14 @@ startButton.onclick = async () => {
         liveStagePhase.textContent = 'PART ' + part + '/3 • ' + phase.toUpperCase() + ' • ' + timeLabel;
         liveStageProgress.style.width = Math.max(0, Math.min(100, percent * 100)) + '%';
         liveStageScore.textContent = Math.max(0, Math.min(100, Math.round(score))) + '%';
+        const cameraX = Math.sin(percent * Math.PI * 2) * .75;
+        const cameraY = 2.12 + Math.sin(percent * Math.PI) * .16;
+        const cameraZ = 6.8 - percent * 1.55;
+        room.setCameraOverride({
+          position: [cameraX, cameraY, cameraZ],
+          target: [0, 1.82, -10.45],
+          lerp: .055
+        });
       },
       onTrackEnded: () => {
         if (!active) return;
@@ -634,6 +706,11 @@ startButton.onclick = async () => {
         liveStagePhase.textContent = 'SONG COMPLETE • ' + verdict.label;
         liveStageProgress.style.width = '100%';
         liveStageScore.textContent = verdict.vote + '%';
+        room.setCameraOverride({
+          position: [0, 2.02, 5.1],
+          target: [0, 1.76, -10.45],
+          lerp: .06
+        });
         setPerformanceButtons(false);
       },
       onComplete: (reaction) => {
