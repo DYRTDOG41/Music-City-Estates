@@ -190,28 +190,43 @@ function completeSet() {
   const fanReward = Math.min(possibleFans, Math.max(0, 100 - state.fans));
   const xpReward = strong ? 15 : 10;
   const cashReward = strong ? 75 : 50;
-
-  const payout = window.MCE.getShowPayout(cashReward, state);
-  state = window.MCE.payShow({
+  const selectedId = String(songSelect.value || "");
+  const rewardInput = {
     fans: fanReward,
     xp: xpReward,
-    cash: cashReward
-  });
+    cash: cashReward,
+    songId: selectedId,
+    venue: "nightclub"
+  };
+  const reward = window.MCE.getPerformanceReward(rewardInput, state);
+  const demand = reward.popularDemand
+    ? window.MCE.getPopularDemandStatus(selectedId, state)
+    : { requests: [] };
+  const requester = demand.requests && demand.requests[0] ? demand.requests[0].requesterName : "";
+  state = window.MCE.payShow(rewardInput);
 
   const count = Number(localStorage.getItem("mceNightclubPerformances")) || 0;
   localStorage.setItem("mceNightclubPerformances", String(count + 1));
   localStorage.setItem("mceLastNightclubSong", songSelect.options[songSelect.selectedIndex]?.text || "");
 
   energy.style.width = Math.min(score, 100) + "%";
+  const rewardLabel = reward.mode === "popular-demand"
+    ? "🔥 POPULAR DEMAND — FULL REWARD RESTORED" + (requester ? " • Requested by " + requester : "")
+    : reward.mode === "repeat"
+      ? "↻ REPEAT SONG — REDUCED REWARD"
+      : "✨ NEW SONG AT THIS VENUE — FULL REWARD";
   log.innerHTML =
-    "<b>SET COMPLETE!</b><br>+" + fanReward + " Fans • +" + xpReward +
-    " XP • Show pay $" + payout.gross;
-  if (payout.commission > 0) {
+    "<b>SET COMPLETE!</b><br><b>" + rewardLabel + "</b><br>+" +
+    reward.fans + " Fans • +" + reward.xp + " XP • Show pay $" + reward.grossCash;
+  if (reward.commission > 0) {
     log.innerHTML +=
-      "<br>Manager commission: -$" + payout.commission +
-      " • Artist net: $" + payout.net;
+      "<br>Manager commission: -$" + reward.commission +
+      " • Artist net: $" + reward.cash;
   } else {
-    log.innerHTML += "<br>Artist net: $" + payout.net;
+    log.innerHTML += "<br>Artist net: $" + reward.cash;
+  }
+  if (reward.mode === "repeat") {
+    log.innerHTML += "<br>Bring a new song for full rewards, or have a real listener request this record through Popular Demand.";
   }
   if (fanReward === 0) {
     log.innerHTML += "<br>You have reached the 100-fan Nightclub ceiling. Keep building XP toward radio eligibility.";
@@ -234,12 +249,19 @@ startSet.onclick = () => {
   active = true;
   energy.style.width = Math.max(8, craftEnergy) + "%";
   roundText.textContent = "Part 1 of 3 • Establish the room";
+  const performanceStatus = window.MCE.getSongPerformanceStatus(selectedRelease.id, "nightclub", state);
+  const performanceNote = performanceStatus.count > 0
+    ? (performanceStatus.popularDemandCount > 0
+        ? " 🔥 A REAL LISTENER REQUESTED THIS SONG — Popular Demand will restore full rewards."
+        : " You have already performed this song at the Nightclub. Repeat rewards will be reduced; a new song earns full rewards.")
+    : " This is your first Nightclub performance of this song, so full rewards are available.";
   log.textContent =
     "The DJ brings your track in. The dance floor turns toward the stage." +
     (craftEnergy
       ? " Your " + (selectedRelease.craftTier || "developed") +
         " record starts with +" + craftEnergy + " crowd energy."
-      : "");
+      : "") +
+    performanceNote;
   startSet.disabled = true;
   songSelect.disabled = true;
   setActions(true);
