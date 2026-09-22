@@ -199,10 +199,8 @@ room.animated.push((time) => {
 });
 
 function releaseOptions() {
-  const releases = (state.releases || [])
+  return (state.releases || [])
     .filter((release) => release.releaseStatus === 'released');
-  if (!releases.length) return [{ id: 'open-mic-freestyle', title: 'First City Freestyle', source: 'café house beat' }];
-  return releases;
 }
 
 function cafeUnlocked() {
@@ -239,6 +237,17 @@ function refreshPerformancePanel() {
     option.textContent = release.title;
     return option;
   }));
+  if (!releases.length) {
+    progress.innerHTML = '<b>NO RELEASED SONG READY</b>';
+    roundText.textContent = 'A real live set needs one of your released songs.';
+    log.innerHTML = 'Go to the Artist Catalog, release a song with saved audio, then return to perform the full track.';
+    startButton.disabled = true;
+    startButton.textContent = 'RELEASE A SONG FIRST';
+    actionButtons.forEach((button) => { button.disabled = true; });
+    refreshNightclubButton();
+    return;
+  }
+
   const remaining = Math.max(0, 50 - state.fans);
   const xpNeeded = Math.max(0, 10 - state.xp);
   const nightclubFans = Math.max(0, 50 - state.fans);
