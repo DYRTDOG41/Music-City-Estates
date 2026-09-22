@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { RoomEnvironment } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/environments/RoomEnvironment.js';
 
 export function createRoom(options={}) {
   const scene=new THREE.Scene();
@@ -12,6 +13,12 @@ export function createRoom(options={}) {
   renderer.toneMapping=THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure=options.exposure||1.28;
   renderer.outputColorSpace=THREE.SRGBColorSpace;
+  const pmrem=new THREE.PMREMGenerator(renderer);
+  const roomEnvironment=new RoomEnvironment();
+  scene.environment=pmrem.fromScene(roomEnvironment,.04).texture;
+  if('environmentIntensity' in scene)scene.environmentIntensity=options.environmentIntensity||.72;
+  roomEnvironment.dispose?.();
+  pmrem.dispose();
   document.body.prepend(renderer.domElement);renderer.domElement.tabIndex=0;
   const hemisphere=new THREE.HemisphereLight(options.sky||0x9bb7d2,options.ground||0x302938,options.hemisphereIntensity||1.55);
   const ambient=new THREE.AmbientLight(options.ambientColor||0xc7d5e5,options.ambientIntensity||.58);
@@ -307,21 +314,21 @@ export function buildAvatar(room,data={},pos=[0,0,0],scale=1){
   const earR=add(new THREE.SphereGeometry(.105,14,10),[.5*faceWidth,2.65,0],skinSoft);
   earR.scale.set(.5,.9,.5);
 
-  // Eyes, brows, nose and lips. Local +Z is the avatar's forward direction.
+  // Eyes, brows, nose and lips. Local -Z is the avatar's forward direction.
   for(const side of [-1,1]){
-    const eye=add(new THREE.SphereGeometry(.085,16,10),[side*.18*faceWidth,2.69,.445],eyeWhite);
+    const eye=add(new THREE.SphereGeometry(.085,16,10),[side*.18*faceWidth,2.69,-.445],eyeWhite);
     eye.scale.set(1.1,.62,.42);
-    const iris=add(new THREE.SphereGeometry(.043,14,10),[side*.18*faceWidth,2.69,.491],irisMat);
+    const iris=add(new THREE.SphereGeometry(.043,14,10),[side*.18*faceWidth,2.69,-.491],irisMat);
     iris.scale.set(1,.72,.32);
-    const pupil=add(new THREE.SphereGeometry(.019,10,8),[side*.18*faceWidth,2.69,.512],darkMat);
+    const pupil=add(new THREE.SphereGeometry(.019,10,8),[side*.18*faceWidth,2.69,-.512],darkMat);
     pupil.scale.z=.35;
-    const brow=add(new THREE.BoxGeometry(.19,.028,.028),[side*.18*faceWidth,2.81,.485],hairMat);
+    const brow=add(new THREE.BoxGeometry(.19,.028,.028),[side*.18*faceWidth,2.81,-.485],hairMat);
     brow.rotation.z=side*.05;
   }
-  const nose=add(new THREE.ConeGeometry(.065,.24,12),[0,2.56,.493],skinSoft);
-  nose.rotation.x=Math.PI/2;
+  const nose=add(new THREE.ConeGeometry(.065,.24,12),[0,2.56,-.493],skinSoft);
+  nose.rotation.x=-Math.PI/2;
   nose.scale.set(.86,1,.88);
-  const mouth=add(new THREE.CapsuleGeometry(.035,.16,4,10),[0,2.42,.482],lipMat);
+  const mouth=add(new THREE.CapsuleGeometry(.035,.16,4,10),[0,2.42,-.482],lipMat);
   mouth.rotation.z=Math.PI/2;
   mouth.scale.y=.58;
 
@@ -369,7 +376,7 @@ export function buildAvatar(room,data={},pos=[0,0,0],scale=1){
     const beardMat=hairMat.clone();
     beardMat.transparent=beardOpacity<1;
     beardMat.opacity=beardOpacity;
-    const beard=add(new THREE.SphereGeometry(.405,18,12),[0,2.47,.045],beardMat);
+    const beard=add(new THREE.SphereGeometry(.405,18,12),[0,2.47,-.045],beardMat);
     beard.scale.set(faceWidth,.48,.98);
     // Keep the beard from visually covering the upper face.
     beard.geometry=beard.geometry.clone();
@@ -387,7 +394,7 @@ export function buildAvatar(room,data={},pos=[0,0,0],scale=1){
     hood.rotation.x=Math.PI/2;
     hood.rotation.z=.7;
   }
-  const collar=add(new THREE.TorusGeometry(.25,.035,8,20,Math.PI*1.72),[0,2.02,.15],darkMat);
+  const collar=add(new THREE.TorusGeometry(.25,.035,8,20,Math.PI*1.72),[0,2.02,-.15],darkMat);
   collar.rotation.x=Math.PI/2;
   collar.rotation.z=.63;
 
@@ -403,28 +410,28 @@ export function buildAvatar(room,data={},pos=[0,0,0],scale=1){
   const belt=add(new THREE.TorusGeometry(.405*bodyScale,.028,8,24),[0,1.0,0],darkMat);
   belt.rotation.x=Math.PI/2;
   for(const side of [-1,1]){
-    const pocket=add(new THREE.BoxGeometry(.18,.28,.055),[side*.31*bodyScale,.5,.245],pantsMat);
+    const pocket=add(new THREE.BoxGeometry(.18,.28,.055),[side*.31*bodyScale,.5,-.245],pantsMat);
     pocket.rotation.z=side*.04;
   }
 
   // Sneakers with upper, toe, sole and lace panel.
   for(const side of [-1,1]){
     const leg=side<0?leftLeg:rightLeg;
-    const sole=add(new THREE.BoxGeometry(.43,.12,.72),[0,-.63,.11],shoeSole,leg);
+    const sole=add(new THREE.BoxGeometry(.43,.12,.72),[0,-.63,-.11],shoeSole,leg);
     sole.geometry.translate(0,0,.05);
-    const upper=add(new THREE.BoxGeometry(.39,.24,.61),[0,-.49,.08],shoeUpper,leg);
+    const upper=add(new THREE.BoxGeometry(.39,.24,.61),[0,-.49,-.08],shoeUpper,leg);
     upper.rotation.x=-.06;
-    const toe=add(new THREE.SphereGeometry(.2,14,10),[0,-.51,.35],shoeUpper,leg);
+    const toe=add(new THREE.SphereGeometry(.2,14,10),[0,-.51,-.35],shoeUpper,leg);
     toe.scale.set(1,.6,.82);
-    const lace=add(new THREE.BoxGeometry(.19,.018,.25),[0,-.365,.18],darkMat,leg);
+    const lace=add(new THREE.BoxGeometry(.19,.018,.25),[0,-.365,-.18],darkMat,leg);
     lace.rotation.x=-.08;
   }
 
   // Jewelry / accessories.
   if(accessory!=='none'){
-    const chain=add(new THREE.TorusGeometry(.27,.025,10,30,Math.PI*1.55),[0,1.88,.47],metalMat);
+    const chain=add(new THREE.TorusGeometry(.27,.025,10,30,Math.PI*1.55),[0,1.88,-.47],metalMat);
     chain.rotation.z=.78;
-    const pendant=add(new THREE.BoxGeometry(.12,.14,.035),[0,1.58,.49],metalMat);
+    const pendant=add(new THREE.BoxGeometry(.12,.14,.035),[0,1.58,-.49],metalMat);
     pendant.rotation.z=.05;
   }
   if(data.hasWatch!==false){
@@ -446,7 +453,7 @@ export function buildAvatar(room,data={},pos=[0,0,0],scale=1){
   logoCtx.fillText('♛',128,91);
   const logoMap=new THREE.CanvasTexture(logoCanvas);
   logoMap.colorSpace=THREE.SRGBColorSpace;
-  const logo=add(new THREE.PlaneGeometry(.66,.33),[0,1.58,.458],new THREE.MeshBasicMaterial({map:logoMap,transparent:true,toneMapped:false}));
+  const logo=add(new THREE.PlaneGeometry(.66,.33),[0,1.58,-.458],new THREE.MeshBasicMaterial({map:logoMap,transparent:true,toneMapped:false}));
 
   group.userData.rig={
     head,hairRoot,torso,leftArm,rightArm,leftLeg,rightLeg,leftHand,rightHand,neck
