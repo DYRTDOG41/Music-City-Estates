@@ -362,9 +362,10 @@ document.addEventListener("visibilitychange",()=>{
   if(document.hidden){
     saveMediaPosition();
     if(context&&context.state==="running") context.suspend().catch(()=>{});
-  }else if(started){
+    if(sessionHold&&mediaAudio){try{mediaAudio.pause()}catch(error){}}
+  }else if(started&&!sessionHold){
     if(context) context.resume().then(()=>fadeTo(state.muted||suppressed?0:state.volume,.2)).catch(()=>{});
-    if(mediaAudio) mediaAudio.play().catch(()=>{});
+    if(mediaAudio&&!suppressed) mediaAudio.play().catch(()=>{});
   }
 });
 window.addEventListener("pagehide",saveMediaPosition);
