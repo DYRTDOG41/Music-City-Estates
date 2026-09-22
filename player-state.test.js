@@ -289,6 +289,45 @@ test("releasing a song rewards fans and XP once", function () {
   assert.strictEqual(second.xp, 5);
 });
 
+
+test("Street Team invites award 5 XP each up to 10 times per song", function () {
+  start();
+  MCE.addRelease({ id: "street-team-song", title: "Bring The City" });
+  for (var i = 0; i < 10; i += 1) {
+    MCE.claimStreetTeamInvite("street-team-song");
+  }
+  var state = MCE.get();
+  var status = MCE.getStreetTeamStatus("street-team-song", state);
+  assert.strictEqual(state.xp, 50);
+  assert.strictEqual(status.count, 10);
+  assert.strictEqual(status.remaining, 0);
+  assert.strictEqual(status.earnedXp, 50);
+  assert.throws(function () {
+    MCE.claimStreetTeamInvite("street-team-song");
+  }, /all 10 Street Team invite rewards/);
+});
+
+test("career hustle rewards provide small one-time XP and cash bridges", function () {
+  start();
+  MCE.addRelease({ id: "hustle-song", title: "Keep Moving" });
+
+  var rehearsed = MCE.claimCareerHustle("hustle-song", "rehearsal");
+  assert.strictEqual(rehearsed.xp, 2);
+  assert.strictEqual(rehearsed.cash, 100);
+
+  var promoted = MCE.claimCareerHustle("hustle-song", "street-promo");
+  assert.strictEqual(promoted.xp, 4);
+  assert.strictEqual(promoted.cash, 110);
+
+  var status = MCE.getCareerHustleStatus("hustle-song", promoted);
+  assert.strictEqual(status.rehearsal, true);
+  assert.strictEqual(status.streetPromo, true);
+
+  assert.throws(function () {
+    MCE.claimCareerHustle("hustle-song", "rehearsal");
+  }, /already claimed/);
+});
+
 test("high Song Craft adds a controlled release bonus", function () {
   start();
   MCE.addRelease({
