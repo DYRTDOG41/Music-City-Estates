@@ -37,10 +37,24 @@ button:disabled{opacity:.4;cursor:not-allowed}
 .log{min-height:65px;color:#d4c9e7;line-height:1.45}
 .unlock{padding:12px;margin-top:14px;border:1px solid #315d4a;border-radius:10px;background:#0d2118;color:#91f0b9}
 .small{font-size:12px;color:#a89abf}
+.club-live-lights{display:none;position:fixed;z-index:0;inset:0;pointer-events:none;overflow:hidden;background:radial-gradient(circle at 50% 75%,#7d42ff22,transparent 34%)}
+.club-live-lights span{position:absolute;top:-18vh;width:14vw;height:118vh;filter:blur(8px);opacity:.48;transform-origin:50% 0;border-radius:50%;mix-blend-mode:screen}
+.club-live-lights span:nth-child(1){left:8%;background:linear-gradient(#55eaffbb,transparent 72%);animation:clubSweepA 3.2s ease-in-out infinite alternate}
+.club-live-lights span:nth-child(2){left:31%;background:linear-gradient(#ff4bd8bb,transparent 72%);animation:clubSweepB 2.6s ease-in-out infinite alternate}
+.club-live-lights span:nth-child(3){right:31%;background:linear-gradient(#884cffcc,transparent 72%);animation:clubSweepA 2.9s ease-in-out infinite alternate-reverse}
+.club-live-lights span:nth-child(4){right:8%;background:linear-gradient(#ffd25acc,transparent 72%);animation:clubSweepB 3.4s ease-in-out infinite alternate-reverse}
+body.club-live-performance .club-live-lights{display:block}
+body.club-live-performance header,body.club-live-performance .hero{opacity:.24;transition:opacity .35s ease}
+body.club-live-performance .stage{position:relative;z-index:2;box-shadow:0 0 60px #8a5cff55,0 0 110px #28d9ff22}
+body.club-live-performance .stage::after{content:"LIVE";position:absolute;top:10px;right:12px;padding:5px 8px;border-radius:999px;background:#ff315d;color:#fff;font-size:8px;font-weight:1000;letter-spacing:.14em;box-shadow:0 0 18px #ff315d88;animation:clubLivePulse 1.2s ease-in-out infinite}
+@keyframes clubSweepA{from{transform:rotate(-28deg) translateX(-5vw)}to{transform:rotate(22deg) translateX(8vw)}}
+@keyframes clubSweepB{from{transform:rotate(26deg) translateX(4vw)}to{transform:rotate(-20deg) translateX(-8vw)}}
+@keyframes clubLivePulse{50%{opacity:.4;transform:scale(.92)}}
 @media(max-width:700px){header{align-items:flex-start;flex-direction:column}.actions{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
+<div class="club-live-lights" id="clubLiveLights" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
 <header>
 <nav>
 <a href="hiphop_cafe.html">← HIP-HOP CAFÉ</a>
@@ -209,6 +223,7 @@ songSelect.addEventListener("change", () => {
 
 function completeSet(reaction) {
   active = false;
+  document.body.classList.remove("club-live-performance");
   setActions(false);
 
   const strong = score >= 62;
@@ -304,6 +319,7 @@ startSet.onclick = async () => {
   score = craftEnergy;
   active = true;
   usedActions = new Set();
+  document.body.classList.add("club-live-performance");
 
   const performanceStatus =
     window.MCE.getSongPerformanceStatus(selectedRelease.id, "nightclub", state);
@@ -362,6 +378,7 @@ startSet.onclick = async () => {
       },
       onStop: () => {
         active = false;
+        document.body.classList.remove("club-live-performance");
         songSelect.disabled = false;
         setActions(false);
         startSet.disabled = false;
@@ -370,6 +387,7 @@ startSet.onclick = async () => {
       },
       onError: (error) => {
         active = false;
+        document.body.classList.remove("club-live-performance");
         songSelect.disabled = false;
         setActions(false);
         startSet.disabled = false;
@@ -380,6 +398,7 @@ startSet.onclick = async () => {
     });
   } catch (error) {
     active = false;
+    document.body.classList.remove("club-live-performance");
     songSelect.disabled = false;
     setActions(false);
     startSet.disabled = false;
@@ -443,6 +462,7 @@ async function init() {
 }
 
 addEventListener("pagehide", () => {
+  document.body.classList.remove("club-live-performance");
   if (window.MusicCityLivePerformance) {
     window.MusicCityLivePerformance.stop("pagehide");
   }
