@@ -394,7 +394,7 @@ const reactions = {
   crowd: ['The café answers your call-and-response.', 'Phones rise as the crowd joins the hook.']
 };
 
-startButton.onclick = () => {
+startButton.onclick = async () => {
   if (!cafeUnlocked() || active) return;
 
   const selected = releaseOptions()[Number(songSelect.value) || 0];
