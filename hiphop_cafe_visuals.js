@@ -481,13 +481,17 @@ export function buildCafeVerticalSlice(room, options = {}) {
   if (performer) {
     const rightArm = performer.userData?.rig?.rightArm || performer.children[4];
     if (rightArm) {
+      const micGroup = new THREE.Group();
       const handMic = new THREE.Mesh(new THREE.CylinderGeometry(.055, .07, .42, 12), blackMetal);
-      handMic.position.set(0, -.72, 0);
+      handMic.position.set(0, -.18, 0);
       handMic.rotation.z = .12;
-      rightArm.add(handMic);
+      micGroup.add(handMic);
       const micHead = new THREE.Mesh(new THREE.SphereGeometry(.09, 10, 8), new THREE.MeshStandardMaterial({ color: 0x28282e, roughness: .38, metalness: .72 }));
-      micHead.position.set(0, -.93, 0);
-      rightArm.add(micHead);
+      micHead.position.set(0, -.39, 0);
+      micGroup.add(micHead);
+      micGroup.position.set(0, -.54, 0);
+      rightArm.add(micGroup);
+      performer.userData?.registerAttachment?.(micGroup,'rightHand');
     }
   }
 
