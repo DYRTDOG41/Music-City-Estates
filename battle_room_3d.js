@@ -150,6 +150,85 @@ for(const side of [-1,1]){
   for(let z=-9;z<=9;z+=2.2)crowdMember(side*18.8,z,seed++,true);
 }
 
+// Graphics Pass 1 — touring-stage detail and stronger battle venue identity.
+const edgeLED=new THREE.MeshStandardMaterial({color:0xffb3c2,emissive:0xff174d,emissiveIntensity:3.1,metalness:.28,roughness:.18});
+const amberLED=new THREE.MeshStandardMaterial({color:0xffe2a1,emissive:0xff8c24,emissiveIntensity:2.35,metalness:.24,roughness:.2});
+const stageRubber=new THREE.MeshStandardMaterial({color:0x111116,roughness:.78,metalness:.08});
+
+function addStageStep(x,z,width){
+  for(let i=0;i<3;i++) room.box('stage stair',[width,.18,.78],[x,.09+i*.18,z+i*.62],0x17151a,{material:stageRubber,collider:true});
+}
+function addMonitorWedge(x,z,rotationY){
+  const group=new THREE.Group();
+  const shell=new THREE.Mesh(new THREE.BoxGeometry(2.1,.62,1.18),new THREE.MeshStandardMaterial({color:0x0b0b0e,roughness:.58,metalness:.3}));
+  shell.rotation.x=-.22;group.add(shell);
+  const grille=new THREE.Mesh(new THREE.PlaneGeometry(1.72,.72),new THREE.MeshStandardMaterial({color:0x25272d,roughness:.82,metalness:.24,side:THREE.DoubleSide}));
+  grille.position.set(0,.16,-.57);grille.rotation.x=-.22;group.add(grille);
+  group.position.set(x,.52,z);group.rotation.y=rotationY;scene.add(group);
+}
+function addLightingTower(x){
+  const metal=room.material(0x444047,.3,.9);
+  for(const dx of [-.55,.55]) room.box('lighting tower upright',[.12,6,.12],[x+dx,3.25,-4.25],0x4e4950,{material:metal});
+  for(let y=.7;y<=6;y+=.75) room.box('lighting tower brace',[1.2,.08,.08],[x,y,-4.25],0x59545c,{material:metal});
+  room.box('lighting tower base',[1.55,.18,1.45],[x,.12,-4.25],0x29262d,{metalness:.72,roughness:.36});
+}
+function addCableRun(points){
+  const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));
+  const cable=new THREE.Mesh(new THREE.TubeGeometry(curve,28,.035,6,false),new THREE.MeshStandardMaterial({color:0x08080a,roughness:.74,metalness:.22}));
+  cable.castShadow=false;scene.add(cable);
+}
+function addBattleBanner(text,x,y,z,color,rotationY=0){
+  const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=384;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#07070ae8';ctx.fillRect(0,0,1024,384);
+  ctx.strokeStyle=color;ctx.lineWidth=16;ctx.strokeRect(18,18,988,348);
+  ctx.font='900 72px Arial Black, Arial, sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillStyle='#fff';ctx.fillText(text,512,160);
+  ctx.font='800 28px Arial';ctx.fillStyle=color;ctx.fillText('WORD SLAUGHTER • MUSIC CITY ESTATES',512,252);
+  const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;
+  const mesh=new THREE.Mesh(new THREE.PlaneGeometry(6.3,2.35),new THREE.MeshBasicMaterial({map:tex,toneMapped:false,side:THREE.DoubleSide}));
+  mesh.position.set(x,y,z);mesh.rotation.y=rotationY;scene.add(mesh);
+}
+
+// Real access steps instead of a floating slab.
+addStageStep(-8.6,-4.1,3.4);
+addStageStep(8.6,-4.1,3.4);
+
+// Foldback monitors and subs make the performance zone read as a working sound system.
+addMonitorWedge(-5.4,-5.25,.08);
+addMonitorWedge(0,-5.05,0);
+addMonitorWedge(5.4,-5.25,-.08);
+for(const x of [-11.5,11.5]){
+  room.box('stage subwoofer',[2.7,1.65,2.1],[x,.9,-6.2],0x09090b,{roughness:.55,metalness:.2});
+  for(const y of [.65,1.18]){
+    const cone=room.cylinder('subwoofer cone',.47,.08,[x,y,-5.12],0x22242a,{metalness:.34,roughness:.48});
+    cone.rotation.x=Math.PI/2;
+  }
+}
+
+// Stage lip and backline LED strips sharpen the silhouette in screenshots and video.
+room.box('stage front led',[22.2,.08,.08],[0,.52,-4.56],0xff315b,{material:edgeLED,cast:false});
+room.box('dj riser amber led',[7.3,.08,.08],[0,.98,-12.44],0xffa238,{material:amberLED,cast:false});
+addLightingTower(-12.9);
+addLightingTower(12.9);
+
+// Cable runs add grounded detail while remaining extremely cheap geometry.
+addCableRun([[-8,.08,-4.7],[-5,.08,-6.2],[-3,.08,-10],[-1.7,.08,-12.7]]);
+addCableRun([[8,.08,-4.7],[5,.08,-6.4],[3.2,.08,-9.6],[1.7,.08,-12.7]]);
+addCableRun([[0,.08,-4.7],[.4,.08,-7.1],[-.3,.08,-9.2],[0,.08,-12.4]]);
+
+// Side banners give the venue an authored event identity without external image assets.
+addBattleBanner('EARN THE CROWD',-20.42,5.6,-7.4,'#ff315b',Math.PI/2);
+addBattleBanner('BARS OVER HYPE',20.42,5.6,-7.4,'#ffb13d',-Math.PI/2);
+
+// Venue floor stanchions make the crowd line feel intentional.
+for(const side of [-1,1]){
+  for(const z of [-2,1.2,4.4,7.6]){
+    room.cylinder('crowd stanchion',.1,1.05,[side*11.4,.55,z],0x656168,{metalness:.86,roughness:.28});
+  }
+  room.box('crowd rope',[.07,.07,10.7],[side*11.4,1.03,2.8],0x8c1c35,{metalness:.18,roughness:.58});
+}
+
 const avatarData=JSON.parse(localStorage.getItem('mceAvatar')||'null')||{name:'New Artist'};
 const player=buildAvatar(room,avatarData,[-2.2,.52,-8.2],1.02);player.rotation.y=-Math.PI/2;
 const opponent=buildAvatar(room,{skin:'#6a3f28',hairStyle:'afro',hairColor:'#101010',shirtColor:'#d7193f',pantsColor:'#111111'},[2.2,.52,-8.2],1.02);opponent.rotation.y=Math.PI/2;

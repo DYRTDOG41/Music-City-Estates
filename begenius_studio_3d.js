@@ -329,6 +329,54 @@ hallwayDoors.forEach((door, index) => {
 });
 room.label('CREATE\nCOLLABORATE\nELEVATE', [8.52, 3.4, -9.6], '#ffffff', [3.25, 2.25]);
 
+// Graphics Pass 1 — premium studio architecture and material depth.
+const walnutSlat=new THREE.MeshStandardMaterial({color:0x4d3327,roughness:.68,metalness:.03});
+const smokedGlass=new THREE.MeshPhysicalMaterial({color:0x486273,transparent:true,opacity:.24,roughness:.08,metalness:.08,clearcoat:1,clearcoatRoughness:.08});
+const brass=new THREE.MeshStandardMaterial({color:0xc6a35a,metalness:.88,roughness:.2});
+
+// Acoustic ceiling clouds make the lobby read like a music facility instead of a generic luxury room.
+for(const z of [-10.5,-5.2,.1,5.4,10.7]){
+  room.box('acoustic ceiling cloud',[8.4,.22,2.15],[-3.8,7.55,z],0x1a1d25,{roughness:.84,metalness:.04});
+  room.box('ceiling cloud blue reveal',[8.05,.055,.08],[-3.8,7.39,z+1.03],0x58c9ff,{material:blueLED,cast:false});
+}
+for(const z of [-9,-5,-1,3,7]){
+  room.box('hallway acoustic cloud',[7.3,.18,1.35],[14.25,7.42,z],0x15171d,{roughness:.88,metalness:.03});
+}
+
+// Warm walnut slat wall gives the lounge a premium studio material contrast.
+for(let z=-3.6;z<=8.4;z+=.34){
+  room.box('walnut acoustic slat',[.22,5.7,.17],[-19.58,3.25,z],0x4d3327,{material:walnutSlat,cast:false});
+}
+room.label('MUSIC IS THE BUSINESS',[-19.18,6.15,2.4],'#f5dfaa',[4.8,.58]);
+
+// Glass-and-brass trophy case near reception.
+room.box('trophy case base',[6.2,.62,1.55],[5.1,.34,9.9],0x161922,{material:deskMarble,collider:true});
+for(const x of [2.15,8.05]) room.box('trophy case side',[.1,3.55,1.4],[x,2.15,9.9],0x5b7485,{material:smokedGlass});
+room.box('trophy case back',[5.8,3.45,.08],[5.1,2.15,10.58],0x4d6676,{material:smokedGlass});
+room.box('trophy case top',[6.1,.09,1.45],[5.1,3.9,9.9],0xb9d6e2,{material:smokedGlass});
+for(const x of [3.25,5.1,6.95]){
+  room.box('award pedestal',[1.15,.2,.9],[x,1.05,9.65],0x11141a,{metalness:.4,roughness:.38});
+  const award=room.cylinder('display award',.38,.08,[x,2.05,9.65],0xd1b15c,{material:brass});
+  award.rotation.x=Math.PI/2;
+  room.cylinder('award stem',.06,1.2,[x,1.48,9.65],0xc2a15b,{material:brass});
+}
+room.label('BEGENIUS LEGACY',[5.1,3.45,10.48],'#f7df9c',[4.4,.5]);
+
+// Studio diffuser blocks and a low lounge rug add texture at player eye level.
+for(let row=0;row<3;row++) for(let column=0;column<7;column++){
+  const depth=.15+((row*7+column)%4)*.07;
+  room.box('acoustic diffuser block',[.18,.72,.56+depth],[8.49,2.55+row*.78,-12.15+column*.72],0x394553,{roughness:.82,metalness:.03});
+}
+room.box('premium lounge rug',[10.8,.025,6.6],[-11.8,.035,5.6],0x1a2637,{roughness:.97,cast:false});
+room.box('rug inset',[9.8,.012,5.6],[-11.8,.052,5.6],0x293f59,{roughness:.96,cast:false});
+
+// Small practical desk lights create richer pools of light without adding shadow cost.
+for(const [x,z,color] of [[-13.7,3.7,0xffc774],[-9.6,3.7,0x7fcfff],[4.9,-8.2,0xe5b8ff]]){
+  room.cylinder('table lamp base',.18,.08,[x,.92,z],0x9b8b72,{metalness:.66,roughness:.3});
+  room.cylinder('table lamp stem',.035,.52,[x,1.2,z],0x85775f,{metalness:.72,roughness:.26});
+  room.light(color,2.8,[x,1.55,z],4.5).castShadow=false;
+}
+
 // Plants and warm sconces keep the dark luxury palette from feeling gloomy.
 for (const [x, z] of [[-17.2, 9.2], [-7.2, -11.4], [7.25, -11.4], [17.6, 8.6]]) {
   room.cylinder('black lobby planter', .48, .92, [x, .48, z], 0x171922, { metalness: .42, roughness: .38 });

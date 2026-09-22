@@ -50,6 +50,56 @@ const pop = new THREE.Mesh(new THREE.TorusGeometry(.34, .035, 12, 36), new THREE
 room.box('music stand', [1.4, .85, .08], [7.35, 2.15, -4.7], 0x121820, { metalness: .62, roughness: .32 }); room.cylinder('music stand pole', .04, 1.65, [7.35, 1.05, -4.7], 0x151a20, { metalness: .82, roughness: .2 }); room.box('booth rug', [5.9, .035, 4.9], [5.9, .03, -5.05], 0x18243a, { roughness: .92 });
 for (const x of [-7.2, -4.7, -2.2]) room.box('acoustic panel', [1.8, 2.2, .16], [x, 4.25, -8.68], 0xffffff, { material: new THREE.MeshStandardMaterial({ map: acoustic, color: x === -4.7 ? 0x6d54a7 : 0x52677e, roughness: .93 }) }); room.label('EVERY SUPERSTAR STARTS SOMEWHERE', [-4.7, 5.95, -8.48], '#bfefff', [7.6, .75]);
 
+// Graphics Pass 1 — believable starter-studio clutter and music-making detail.
+const chrome=new THREE.MeshStandardMaterial({color:0x9ba7b2,metalness:.9,roughness:.18});
+const rubberCable=new THREE.MeshStandardMaterial({color:0x101215,roughness:.72,metalness:.08});
+
+function addCable(points){
+  const curve=new THREE.CatmullRomCurve3(points.map(point=>new THREE.Vector3(...point)));
+  const cable=new THREE.Mesh(new THREE.TubeGeometry(curve,24,.022,5,false),rubberCable);
+  cable.castShadow=false;scene.add(cable);
+}
+function addWallPoster(x,y,z,text,color){
+  const canvas=document.createElement('canvas');canvas.width=768;canvas.height=1024;
+  const ctx=canvas.getContext('2d');ctx.fillStyle='#10151c';ctx.fillRect(0,0,768,1024);
+  ctx.strokeStyle=color;ctx.lineWidth=18;ctx.strokeRect(24,24,720,976);
+  ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='900 72px Arial Black, Arial';
+  const lines=text.split('\n');lines.forEach((line,index)=>{ctx.fillStyle=index===0?'#fff':color;ctx.fillText(line,384,380+index*110)});
+  ctx.font='800 25px Arial';ctx.fillStyle='#a9b6c4';ctx.fillText('MUSIC CITY ESTATES',384,840);
+  const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;
+  const mesh=new THREE.Mesh(new THREE.PlaneGeometry(2.1,2.8),new THREE.MeshStandardMaterial({map:tex,roughness:.78,side:THREE.DoubleSide}));
+  mesh.position.set(x,y,z);scene.add(mesh);
+}
+
+// Everyday objects make the room feel lived-in without adding expensive models.
+room.box('laptop base',[1.7,.08,1.12],[-4.72,1.88,-6.25],0x606770,{material:chrome});
+const laptopScreen=room.box('laptop screen',[1.7,1.08,.07],[-4.72,2.38,-6.76],0x20242a,{material:chrome});
+laptopScreen.rotation.x=-.12;
+room.box('laptop display',[1.48,.84,.02],[-4.72,2.4,-6.71],0x247ac1,{material:new THREE.MeshBasicMaterial({color:0x237cc9,toneMapped:false})});
+room.box('notebook',[1.15,.035,.82],[-2.55,1.9,-5.85],0xe3dccb,{roughness:.92});
+for(let line=-.34;line<=.34;line+=.17) room.box('notebook line',[.86,.006,.018],[-2.55,1.925,-5.85+line],0x7d8da0,{roughness:.9,cast:false});
+room.cylinder('pen',.025,.92,[-2.15,1.98,-5.78],0x173b67,{metalness:.18,roughness:.42}).rotation.z=Math.PI/2;
+
+// Headphones resting near the production desk.
+const headphoneBand=new THREE.Mesh(new THREE.TorusGeometry(.42,.055,10,28,Math.PI),new THREE.MeshStandardMaterial({color:0x171a20,roughness:.52,metalness:.38}));
+headphoneBand.position.set(-7.55,1.98,-5.75);headphoneBand.rotation.z=Math.PI;scene.add(headphoneBand);
+for(const dx of [-.43,.43]) room.box('headphone earcup',[.18,.42,.3],[-7.55+dx,1.72,-5.75],0x111419,{metalness:.42,roughness:.48});
+
+// Cable runs under the desk and into the booth give the gear physical continuity.
+addCable([[-6.2,.08,-6.1],[-5.8,.06,-5.1],[-4.2,.06,-4.2],[-2.8,.06,-3.4]]);
+addCable([[-3.2,.07,-6.2],[-2.5,.06,-5.2],[1.4,.06,-4.8],[4.9,.06,-4.9]]);
+addCable([[5.9,.07,-4.8],[5.5,.06,-3.2],[4.8,.06,-2.3]]);
+
+addWallPoster(-9.78,4.15,-2.2,'WRITE IT\nRECORD IT','#62dfff');
+addWallPoster(-9.78,4.15,-5.6,'START HERE\nGO GLOBAL','#a984ff');
+
+// Cheap acoustic treatment and a small record shelf complete the home-studio story.
+for(let y=2.1;y<=5.1;y+=1.05) for(let z=1.2;z<=5.8;z+=1.15){
+  room.box('bedroom foam tile',[.08,.84,.92],[-9.78,y,z],0x28374a,{roughness:.94,cast:false});
+}
+room.box('record shelf',[2.9,1.75,.48],[8.7,.95,4.9],0x2c221c,{roughness:.76,collider:true});
+for(let i=0;i<11;i++) room.box('record sleeve',[.08,1.18,.36],[7.55+i*.22,1.2,4.62],i%3===0?0x8b3f59:i%3===1?0x385b7d:0xc19a4b,{roughness:.75});
+
 const boothUI = document.getElementById('boothUI'), status = document.getElementById('status'), releaseButton = document.getElementById('releaseSong'), draftStatus = document.getElementById('draftStatus'); let savedDraft = null;
 const previewButton = document.getElementById('previewBeat'), micButton = document.getElementById('testMic'), micLevel = document.getElementById('micLevel'), micDb = document.getElementById('micDb'), micWave = [...document.querySelectorAll('#micWave i')];
 let boothAudioContext = null, beatMaster = null, beatTimer = null, beatStopTimer = null, beatStep = 0;
