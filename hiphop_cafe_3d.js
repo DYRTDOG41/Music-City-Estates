@@ -171,6 +171,17 @@ let score = 0;
 let active = false;
 let usedActions = new Set();
 let applauseUntil = 0;
+let performanceTrackMap = {};
+
+async function preloadPerformanceTracks() {
+  if (!window.MusicCityCatalog) return;
+  const tracks = await window.MusicCityCatalog.listTracks();
+  performanceTrackMap = {};
+  tracks.forEach((track) => {
+    performanceTrackMap[String(track.id)] = track;
+  });
+}
+
 
 function formatPerformanceTime(seconds) {
   const value = Math.max(0, Math.floor(Number(seconds) || 0));
@@ -291,6 +302,7 @@ function refreshPerformancePanel() {
 function openPerformancePanel() {
   refreshPerformancePanel();
   panel.classList.add('show');
+  preloadPerformanceTracks().catch(() => {});
 }
 
 function refreshProgressOnly() {
@@ -382,22 +394,18 @@ const reactions = {
   crowd: ['The café answers your call-and-response.', 'Phones rise as the crowd joins the hook.']
 };
 
-startButton.onclick = async () => {
+startButton.onclick = () => {
   if (!cafeUnlocked() || active) return;
 
   const selected = releaseOptions()[Number(songSelect.value) || 0];
   if (!selected) return;
 
-  const trackId = selected.audioKey || selected.id;
-  let track = null;
-  try {
-    track = window.MusicCityCatalog && trackId
-      ? await window.MusicCityCatalog.getTrack(trackId)
-      : null;
-  } catch (error) {}
+  const trackId = String(selected.audioKey || selected.id || '');
+  const track = performanceTrackMap[trackId] || null;
 
   if (!track || !track.audioBlob) {
-    log.innerHTML = '<b>FULL LIVE SET NEEDS SONG AUDIO.</b><br>Record/import the finished song and save it to the Artist Catalog before performing it on stage.';
+    preloadPerformanceTracks().catch(() => {});
+    log.innerHTML = '<b>SONG AUDIO IS STILL LOADING.</b><br>Wait a moment and tap START FULL LIVE SET again. If it stays unavailable, make sure the finished song is saved in the Artist Catalog.';
     return;
   }
 
@@ -536,6 +544,7 @@ for (const modal of document.querySelectorAll('.modal')) {
   });
 }
 
+preloadPerformanceTracks().catch(() => {});
 addEventListener('pagehide', () => {
   if (window.MusicCityLivePerformance) window.MusicCityLivePerformance.stop('pagehide');
 });
