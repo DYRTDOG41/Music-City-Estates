@@ -477,30 +477,21 @@ export function buildCafeVerticalSlice(room, options = {}) {
   );
   scene.add(dust);
 
-  // Stage performer detail pass.
+  // Stage performer detail pass. Shoes/jewelry now come from the shared Realism V2 avatar.
   if (performer) {
-    const shoeMat = new THREE.MeshStandardMaterial({ color: 0xe9e6dc, roughness: .5, metalness: .02 });
-    for (const x of [-.29, .29]) {
-      const shoe = new THREE.Mesh(new THREE.BoxGeometry(.48, .22, .75), shoeMat);
-      shoe.position.set(x, -.28, -.08);
-      shoe.castShadow = true;
-      performer.add(shoe);
-    }
-
-    const chain = new THREE.Mesh(new THREE.TorusGeometry(.29, .024, 8, 24), brass);
-    chain.scale.y = .76;
-    chain.position.set(0, 1.78, -.31);
-    performer.add(chain);
-
-    const rightArm = performer.children[4];
+    const rightArm = performer.userData?.rig?.rightArm || performer.children[4];
     if (rightArm) {
+      const micGroup = new THREE.Group();
       const handMic = new THREE.Mesh(new THREE.CylinderGeometry(.055, .07, .42, 12), blackMetal);
-      handMic.position.set(0, -.72, 0);
+      handMic.position.set(0, -.18, 0);
       handMic.rotation.z = .12;
-      rightArm.add(handMic);
+      micGroup.add(handMic);
       const micHead = new THREE.Mesh(new THREE.SphereGeometry(.09, 10, 8), new THREE.MeshStandardMaterial({ color: 0x28282e, roughness: .38, metalness: .72 }));
-      micHead.position.set(0, -.93, 0);
-      rightArm.add(micHead);
+      micHead.position.set(0, -.39, 0);
+      micGroup.add(micHead);
+      micGroup.position.set(0, -.54, 0);
+      rightArm.add(micGroup);
+      performer.userData?.registerAttachment?.(micGroup,'rightHand');
     }
   }
 
