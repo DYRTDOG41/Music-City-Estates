@@ -33,17 +33,18 @@ const cues={
 };
 const cue=cues[zone]||cues.city;
 
-let state={muted:false,volume:.42,anchor:Date.now(),trackIndex:0,trackTime:0};
+let state={muted:false,volume:.20,anchor:Date.now(),trackIndex:0,trackTime:0};
 try{
   const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
   if(saved&&typeof saved==="object") state={...state,...saved};
 }catch(e){}
 if(!Number.isFinite(state.anchor)) state.anchor=Date.now();
+if(!Number.isFinite(Number(state.volume))||Number(state.volume)<.08||Number(state.volume)>.30) state.volume=.20;
 
 let context=null,master=null,compressor=null,noiseBuffer=null;
 let scheduler=null,nextTime=0,stepIndex=0,started=false,suppressed=false,lastError="";
 let mediaAudio=null,mediaSaveTimer=null;
-let widget=null,titleNode=null,modeNode=null,toggleNode=null;
+let widget=null,titleNode=null,modeNode=null,toggleNode=null,volumeNode=null,collapseTimer=null;
 
 const catalog=Array.isArray(root.MusicCitySoundtrackCatalog)?root.MusicCitySoundtrackCatalog:[];
 const realTracks=catalog.filter(t=>{
@@ -54,26 +55,55 @@ const realTracks=catalog.filter(t=>{
 function saveState(){
   try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch(e){}
 }
+function scheduleCollapse(delay){
+  if(!widget) return;
+  if(collapseTimer) clearTimeout(collapseTimer);
+  collapseTimer=setTimeout(()=>{
+    if(widget&&!widget.matches(":hover")&&!widget.contains(document.activeElement)) widget.classList.add("mce-collapsed");
+  },Math.max(1200,delay||4800));
+}
+function wakeWidget(){
+  if(!widget) return;
+  widget.classList.remove("mce-collapsed");
+  scheduleCollapse(4800);
+}
+function cycleVolume(){
+  const levels=[.12,.20,.28];
+  const current=Number(state.volume||.20);
+  let next=levels.find(level=>level>current+.01);
+  if(!next) next=levels[0];
+  state.volume=next;
+  state.muted=false;
+  saveState();
+  if(started) fadeTo(suppressed?0:state.volume,.18);
+  renderWidget();
+  wakeWidget();
+}
 function makeWidget(){
   if(widget) return;
   widget=document.createElement("div");
   widget.id="mceSoundtrackWidget";
-  widget.innerHTML='<div class="mce-radio-icon">📻</div><div class="mce-radio-copy"><strong>MUSIC CITY RADIO</strong><span class="mce-radio-title"></span><small class="mce-radio-mode"></small></div><button type="button" class="mce-radio-toggle" aria-label="Mute soundtrack">🔊</button>';
+  widget.innerHTML='<div class="mce-radio-icon" aria-hidden="true">📻</div><div class="mce-radio-copy"><strong>MUSIC CITY RADIO</strong><span class="mce-radio-title"></span><small class="mce-radio-mode"></small></div><button type="button" class="mce-radio-volume" aria-label="Change soundtrack volume">20%</button><button type="button" class="mce-radio-toggle" aria-label="Mute soundtrack">🔊</button>';
   const style=document.createElement("style");
   style.textContent=
-    '#mceSoundtrackWidget{position:fixed;right:12px;top:86px;bottom:auto;z-index:99999;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:9px;width:min(320px,calc(100% - 24px));padding:9px 10px;border:1px solid rgba(38,211,255,.62);border-radius:13px;background:rgba(3,9,18,.91);color:#fff;font-family:Arial,sans-serif;box-shadow:0 8px 28px rgba(0,0,0,.35);backdrop-filter:blur(9px)}'+
-    '#mceSoundtrackWidget .mce-radio-icon{font-size:20px}#mceSoundtrackWidget .mce-radio-copy{min-width:0}#mceSoundtrackWidget strong,#mceSoundtrackWidget span,#mceSoundtrackWidget small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'+
-    '#mceSoundtrackWidget strong{font-size:8px;letter-spacing:.12em;color:#64ddff}#mceSoundtrackWidget span{margin-top:2px;font-size:11px;font-weight:900}#mceSoundtrackWidget small{margin-top:2px;color:#9fb4c8;font-size:8px}'+
-    '#mceSoundtrackWidget button{width:38px;height:38px;border:1px solid #315879;border-radius:10px;background:#0b1a2a;color:white;font-size:16px;cursor:pointer}'+
-    '@media(max-width:520px){#mceSoundtrackWidget{top:max(82px,calc(env(safe-area-inset-top) + 64px));right:10px;left:auto;bottom:auto;width:min(245px,calc(100% - 20px));padding:7px 8px;gap:7px}#mceSoundtrackWidget .mce-radio-icon{font-size:17px}#mceSoundtrackWidget button{width:34px;height:34px;font-size:14px}}';
+    '#mceSoundtrackWidget{position:fixed;right:8px;top:max(6px,env(safe-area-inset-top));z-index:99999;display:grid;grid-template-columns:25px minmax(0,1fr) 38px 32px;align-items:center;gap:5px;width:min(270px,calc(100% - 16px));min-height:34px;padding:4px 5px;border:1px solid rgba(70,190,230,.34);border-radius:10px;background:rgba(3,9,18,.62);color:#fff;font-family:Arial,sans-serif;box-shadow:none;backdrop-filter:blur(12px);transition:width .22s ease,opacity .22s ease,background .22s ease}'+
+    '#mceSoundtrackWidget .mce-radio-icon{font-size:15px;text-align:center}#mceSoundtrackWidget .mce-radio-copy{min-width:0}#mceSoundtrackWidget strong,#mceSoundtrackWidget span,#mceSoundtrackWidget small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'+
+    '#mceSoundtrackWidget strong{font-size:6px;letter-spacing:.12em;color:#64ddff}#mceSoundtrackWidget span{font-size:9px;font-weight:900;line-height:1.05}#mceSoundtrackWidget small{color:#a8b8c8;font-size:6px;line-height:1.05}'+
+    '#mceSoundtrackWidget button{height:26px;border:1px solid rgba(66,120,160,.65);border-radius:7px;background:rgba(7,20,34,.82);color:white;font-size:10px;font-weight:900;cursor:pointer;padding:0 4px}'+
+    '#mceSoundtrackWidget .mce-radio-toggle{width:32px;font-size:12px}#mceSoundtrackWidget .mce-radio-volume{width:38px;font-size:8px}'+
+    '#mceSoundtrackWidget.mce-collapsed{width:70px;grid-template-columns:25px 32px;opacity:.46;background:rgba(3,9,18,.38)}#mceSoundtrackWidget.mce-collapsed .mce-radio-copy,#mceSoundtrackWidget.mce-collapsed .mce-radio-volume{display:none}'+
+    '#mceSoundtrackWidget:hover,#mceSoundtrackWidget:focus-within{opacity:1!important;background:rgba(3,9,18,.82)}'+
+    '@media(max-width:520px){#mceSoundtrackWidget{right:6px;width:min(238px,calc(100% - 12px));grid-template-columns:23px minmax(0,1fr) 36px 30px;min-height:32px;padding:3px 4px}#mceSoundtrackWidget.mce-collapsed{width:66px;grid-template-columns:23px 30px}#mceSoundtrackWidget .mce-radio-icon{font-size:14px}#mceSoundtrackWidget .mce-radio-toggle{width:30px;height:25px}#mceSoundtrackWidget .mce-radio-volume{width:36px;height:25px}}';
   document.head.appendChild(style);
   document.body.appendChild(widget);
   titleNode=widget.querySelector(".mce-radio-title");
   modeNode=widget.querySelector(".mce-radio-mode");
   toggleNode=widget.querySelector(".mce-radio-toggle");
+  volumeNode=widget.querySelector(".mce-radio-volume");
   toggleNode.addEventListener("click",event=>{
     event.preventDefault();
     event.stopPropagation();
+    wakeWidget();
     if(!started){
       state.muted=false;
       saveState();
@@ -85,7 +115,17 @@ function makeWidget(){
     if(state.muted) fadeTo(0,.16); else { unlock(); fadeTo(suppressed?0:state.volume,.22); }
     renderWidget();
   });
+  volumeNode.addEventListener("click",event=>{
+    event.preventDefault();
+    event.stopPropagation();
+    cycleVolume();
+  });
+  widget.addEventListener("pointerenter",wakeWidget);
+  widget.addEventListener("pointerdown",wakeWidget);
+  widget.addEventListener("focusin",wakeWidget);
+  widget.addEventListener("pointerleave",()=>scheduleCollapse(1800));
   renderWidget();
+  scheduleCollapse(5000);
 }
 function renderWidget(){
   if(!widget) return;
@@ -94,6 +134,10 @@ function renderWidget(){
   modeNode.textContent=started?(suppressed?"Paused for other audio":(real?(real.artist||"Game Soundtrack"):cue.mood)):(lastError||"Tap ▶ to start music");
   toggleNode.textContent=!started?"▶":(state.muted?"🔇":"🔊");
   toggleNode.setAttribute("aria-label",!started?"Start soundtrack":(state.muted?"Unmute soundtrack":"Mute soundtrack"));
+  if(volumeNode){
+    volumeNode.textContent=Math.round(Number(state.volume||.20)*100)+"%";
+    volumeNode.setAttribute("aria-label","Soundtrack volume "+Math.round(Number(state.volume||.20)*100)+" percent. Tap to change.");
+  }
 }
 function fadeTo(value,seconds){
   if(mediaAudio){
@@ -294,6 +338,7 @@ document.addEventListener("visibilitychange",()=>{
 window.addEventListener("pagehide",saveMediaPosition);
 window.addEventListener("beforeunload",saveMediaPosition);
 
+saveState();
 makeWidget();
 const gesture=event=>{
   if(event && event.target && event.target.closest && event.target.closest("#mceSoundtrackWidget")) return;
