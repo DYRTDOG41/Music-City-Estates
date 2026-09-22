@@ -49,6 +49,18 @@
       }
     },
     {
+      id: "cafe-access",
+      location: "Artist Catalog",
+      onsite: "You need 10 XP to unlock the Hip-Hop Café. Use the Street Team invite button on one of your songs for +5 XP per completed invite, or claim the rehearsal / street-promo hustle rewards.",
+      title: "Earn 10 XP for Your First Show",
+      description: "Build enough early career XP to unlock the Hip-Hop Café without getting stuck.",
+      action: "BUILD EARLY MOMENTUM",
+      href: "artist_catalog.html",
+      reward: "Hip-Hop Café unlocks at 10 XP.",
+      progress: function (state) { return { value: Number(state.xp || 0), goal: 10, unit: "XP" }; },
+      complete: function (state) { return Number(state.xp || 0) >= 10; }
+    },
+    {
       id: "first-show",
       location: "Hip-Hop Café",
       focus: "PERFORM",
