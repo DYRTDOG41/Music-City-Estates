@@ -364,7 +364,7 @@ export function buildAvatar(room,data={},pos=[0,0,0],scale=1){
   }
 
   // Optional facial hair.
-  if(facialHair!=='none' || /Rapper|Producer|DJ/i.test(String(data.type||''))){
+  if(facialHair!=='none'){
     const beardOpacity=facialHair==='none'?.34:1;
     const beardMat=hairMat.clone();
     beardMat.transparent=beardOpacity<1;
