@@ -165,6 +165,7 @@ const roundText = document.getElementById('roundText');
 const energy = document.getElementById('crowdEnergy');
 const progress = document.getElementById('venueProgress');
 const nightclubButton = document.getElementById('nightclubButton');
+
 let round = 0;
 let score = 0;
 let active = false;
@@ -175,6 +176,7 @@ function formatPerformanceTime(seconds) {
   const value = Math.max(0, Math.floor(Number(seconds) || 0));
   return Math.floor(value / 60) + ':' + String(value % 60).padStart(2, '0');
 }
+
 function crowdVerdict(value) {
   const vote = Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
   return {
@@ -199,14 +201,11 @@ room.animated.push((time) => {
 });
 
 function releaseOptions() {
-  return (state.releases || [])
-    .filter((release) => release.releaseStatus === 'released');
+  return (state.releases || []).filter((release) => release.releaseStatus === 'released');
 }
 
 function cafeUnlocked() {
-  return window.MCE
-    ? window.MCE.isUnlocked('cafe', state)
-    : state.xp >= 10;
+  return window.MCE ? window.MCE.isUnlocked('cafe', state) : state.xp >= 10;
 }
 
 function nightclubUnlocked() {
@@ -214,6 +213,7 @@ function nightclubUnlocked() {
     ? window.MCE.isUnlocked('nightclub', state)
     : state.fans >= 50 && state.xp >= 75;
 }
+
 function refreshNightclubButton() {
   if (nightclubUnlocked()) {
     nightclubButton.disabled = false;
@@ -229,7 +229,10 @@ function refreshNightclubButton() {
 }
 
 function refreshPerformancePanel() {
+  if (window.MCE) state = window.MCE.get();
+  updateStats();
   startButton.style.display = '';
+
   const releases = releaseOptions();
   songSelect.replaceChildren(...releases.map((release, index) => {
     const option = document.createElement('option');
@@ -237,12 +240,14 @@ function refreshPerformancePanel() {
     option.textContent = release.title;
     return option;
   }));
+
   if (!releases.length) {
     progress.innerHTML = '<b>NO RELEASED SONG READY</b>';
     roundText.textContent = 'A real live set needs one of your released songs.';
     log.innerHTML = 'Go to the Artist Catalog, release a song with saved audio, then return to perform the full track.';
     startButton.disabled = true;
     startButton.textContent = 'RELEASE A SONG FIRST';
+    energy.style.width = '0%';
     actionButtons.forEach((button) => { button.disabled = true; });
     refreshNightclubButton();
     return;
@@ -256,7 +261,7 @@ function refreshPerformancePanel() {
   if (!cafeUnlocked()) {
     progress.innerHTML = `<b>CAFÉ PERFORMANCE LOCKED</b> • Earn ${xpNeeded} more XP to reach the 10 XP performance requirement.`;
     roundText.textContent = 'Build your career before taking the stage.';
-    log.textContent = 'Release songs, promote them, and return when you have 10 XP.';
+    log.textContent = 'Release songs, invite listeners, rehearse, or promote until you have 10 XP.';
     startButton.disabled = true;
     startButton.textContent = `LOCKED — ${xpNeeded} XP NEEDED`;
   } else if (nightclubUnlocked()) {
@@ -270,34 +275,251 @@ function refreshPerformancePanel() {
       ? `<b>${state.fans}/50 fans</b> • Earn ${remaining} more to graduate from the café circuit.`
       : `<b>CAFÉ FANS COMPLETE</b> • Nightclub still needs ${nightclubFans} fans and ${nightclubXp} XP.`;
     roundText.textContent = 'The host is ready to introduce you.';
-    log.textContent = 'Choose a released song or freestyle, then step onto the starter stage.';
+    log.textContent = 'Choose a released song, then perform the full record on the starter stage.';
     startButton.disabled = false;
     startButton.textContent = 'START FULL LIVE SET';
   }
+
   energy.style.width = '0%';
   actionButtons.forEach((button) => {
+    button.disabled = true;
+    button.style.opacity = '';
+  });
+  refreshNightclubButton();
+}
+
+function openPerformancePanel() {
+  refreshPerformancePanel();
+  panel.classList.add('show');
+}
+
+function refreshProgressOnly() {
+  refreshNightclubButton();
+  const remaining = Math.max(0, 50 - state.fans);
+  const nightclubXp = Math.max(0, 75 - state.xp);
+  if (nightclubUnlocked()) {
+    progress.innerHTML = '<span class="unlock">✓ NIGHTCLUB UNLOCKED — NEXT VENUE READY</span>';
+  } else if (remaining > 0) {
+    progress.innerHTML = `<b>${state.fans}/50 fans</b> • Earn ${remaining} more to graduate from the café circuit.`;
+  } else {
+    progress.innerHTML = `<b>50/50 fans</b> • Earn ${nightclubXp} more XP to unlock the Nightclub.`;
+  }
+}
+
+function completePerformance(reaction) {
+  active = false;
+  actionButtons.forEach((button) => { button.disabled = true; });
+
+  const selected = releaseOptions()[Number(songSelect.value) || 0];
+  if (!selected) return refreshPerformancePanel();
+
+  const fanReward = Math.min(score >= 60 ? 8 : 5, Math.max(0, 50 - state.fans));
+  const cashReward = score >= 60 ? 35 : 25;
+  const xpReward = score >= 60 ? 12 : 8;
+  const rewardInput = {
+    fans: fanReward,
+    cash: cashReward,
+    xp: xpReward,
+    songId: selected.id,
+    venue: 'hiphop-cafe'
+  };
+
+  const reward = window.MCE
+    ? window.MCE.getPerformanceReward(rewardInput, state)
+    : { mode:'new-song', fans:fanReward, xp:xpReward, grossCash:cashReward, cash:cashReward, commission:0, popularDemand:false };
+
+  const demand = window.MCE && reward.popularDemand
+    ? window.MCE.getPopularDemandStatus(selected.id, state)
+    : { requests:[] };
+  const requester = demand.requests && demand.requests[0] ? demand.requests[0].requesterName : '';
+
+  addProgress(rewardInput);
+  const performances = Number(localStorage.getItem('mceCafePerformances')) || 0;
+  localStorage.setItem('mceCafePerformances', String(performances + 1));
+  localStorage.setItem('mceLastCafeSong', selected.title);
+
+  const verdict = crowdVerdict(score);
+  const reactionLabel = reaction && reaction.label ? reaction.label : verdict.label;
+  energy.style.width = `${Math.min(score, 100)}%`;
+
+  const rewardLabel = reward.mode === 'popular-demand'
+    ? '🔥 POPULAR DEMAND — FULL REWARD RESTORED' + (requester ? ' • Requested by ' + requester : '')
+    : reward.mode === 'repeat'
+      ? '↻ REPEAT SONG — REDUCED REWARD'
+      : '✨ NEW SONG AT THIS VENUE — FULL REWARD';
+
+  log.innerHTML =
+    `<b class="unlock">SET COMPLETE!</b><br><b>🗳 CROWD VERDICT: ${verdict.vote}% • ${reactionLabel}</b><br>` +
+    `<b>${rewardLabel}</b><br>${selected.title} earned +${reward.fans} Fans • +${reward.xp} XP • Show pay $${reward.grossCash}`;
+
+  if (reward.commission > 0) {
+    log.innerHTML += `<br>Manager commission: -$${reward.commission} • Artist net: $${reward.cash}`;
+  } else {
+    log.innerHTML += `<br>Artist net: $${reward.cash}`;
+  }
+
+  if (reward.mode === 'repeat') {
+    log.innerHTML += '<br>Bring a new song for full rewards, or have a real listener request this record through Popular Demand.';
+  }
+  if (fanReward === 0) {
+    log.innerHTML += '<br>You have graduated from the café circuit. Your next performances belong on a larger stage.';
+  }
+
+  roundText.textContent = (reaction && reaction.standing)
+    ? 'The room is on its feet — standing ovation.'
+    : 'The song is over and the crowd has voted.';
+
+  startButton.disabled = false;
+  startButton.style.display = '';
+  startButton.textContent = 'PERFORM ANOTHER SET';
+  songSelect.disabled = false;
+  refreshProgressOnly();
+}
+
+const reactions = {
+  timing: ['You lock into the pocket and heads start nodding.', 'Your timing lands clean over the café system.'],
+  presence: ['You command the tiny stage like it is an arena.', 'The front tables stop talking and focus on your set.'],
+  crowd: ['The café answers your call-and-response.', 'Phones rise as the crowd joins the hook.']
+};
+
+startButton.onclick = async () => {
+  if (!cafeUnlocked() || active) return;
+
+  const selected = releaseOptions()[Number(songSelect.value) || 0];
+  if (!selected) return;
+
+  const trackId = selected.audioKey || selected.id;
+  let track = null;
+  try {
+    track = window.MusicCityCatalog && trackId
+      ? await window.MusicCityCatalog.getTrack(trackId)
+      : null;
+  } catch (error) {}
+
+  if (!track || !track.audioBlob) {
+    log.innerHTML = '<b>FULL LIVE SET NEEDS SONG AUDIO.</b><br>Record/import the finished song and save it to the Artist Catalog before performing it on stage.';
+    return;
+  }
+
+  const craftScore = Number(selected.craftScore || track.craftScore || 0);
+  const craftEnergy = Math.floor(craftScore / 10);
+  round = 1;
+  score = craftEnergy;
+  active = true;
+  usedActions = new Set();
+  songSelect.disabled = true;
+
+  const performanceStatus = window.MCE
+    ? window.MCE.getSongPerformanceStatus(selected.id, 'hiphop-cafe', state)
+    : { count:0, popularDemandCount:0 };
+  const performanceNote = performanceStatus.count > 0
+    ? (performanceStatus.popularDemandCount > 0
+        ? ' 🔥 A REAL LISTENER REQUESTED THIS SONG — Popular Demand will restore full rewards.'
+        : ' You have already performed this song at the Café. Repeat rewards will be reduced; a new song earns full rewards.')
+    : ' This is your first Café performance of this song, so full rewards are available.';
+
+  roundText.textContent = 'LIVE • Part 1 of 3 • Make the first impression';
+  log.textContent =
+    '🎤 LIVE NOW: ' + selected.title + ' is playing through the Café PA. Perform the whole song.' +
+    (craftEnergy
+      ? ' Your ' + (selected.craftTier || track.craftTier || 'developed') +
+        ' record starts with +' + craftEnergy + ' crowd energy.'
+      : '') +
+    performanceNote;
+
+  energy.style.width = Math.max(8, craftEnergy) + '%';
+  startButton.disabled = true;
+  startButton.style.display = 'none';
+  actionButtons.forEach((button) => {
+    button.disabled = false;
+    button.style.opacity = '';
+  });
+
+  try {
+    await window.MusicCityLivePerformance.play({
+      blob: track.audioBlob,
+      source: 'hiphop-cafe-live-set',
+      getScore: () => score,
+      onProgress: ({ current, duration, percent }) => {
+        if (!active) return;
+        const part = percent < .34 ? 1 : percent < .67 ? 2 : 3;
+        round = part;
+        const phase = part === 1 ? 'Make the first impression' : part === 2 ? 'Build the connection' : 'Finish strong';
+        roundText.textContent =
+          'LIVE • Part ' + part + ' of 3 • ' + phase +
+          (duration ? ' • ' + formatPerformanceTime(current) + ' / ' + formatPerformanceTime(duration) : '');
+      },
+      onTrackEnded: () => {
+        if (!active) return;
+        applauseUntil = Date.now() + 4600;
+        const verdict = crowdVerdict(score);
+        roundText.textContent = 'SONG COMPLETE • CROWD VOTE ' + verdict.vote + '%';
+        log.textContent = verdict.vote >= 82
+          ? 'The final note lands. The room jumps to its feet.'
+          : 'The final note lands. The room breaks into applause.';
+        actionButtons.forEach((button) => { button.disabled = true; });
+      },
+      onComplete: (reaction) => {
+        if (!active) return;
+        completePerformance(reaction);
+      },
+      onStop: () => {
+        active = false;
+        songSelect.disabled = false;
+        actionButtons.forEach((button) => { button.disabled = true; });
+        startButton.disabled = false;
+        startButton.style.display = '';
+      },
+      onError: (error) => {
+        active = false;
+        songSelect.disabled = false;
+        actionButtons.forEach((button) => { button.disabled = true; });
+        startButton.disabled = false;
+        startButton.style.display = '';
+        log.textContent = error.message || 'The song could not play.';
+      }
+    });
+  } catch (error) {
+    active = false;
+    songSelect.disabled = false;
+    actionButtons.forEach((button) => { button.disabled = true; });
+    startButton.disabled = false;
+    startButton.style.display = '';
+    log.textContent = error.message || 'The song could not play.';
+  }
+};
+
+actionButtons.forEach((button) => {
   button.onclick = () => {
-    if (!active || usedActions.has(button.dataset.performance)) return;
     const type = button.dataset.performance;
+    if (!active || usedActions.has(type)) return;
+
     usedActions.add(type);
     const gain = 18 + Math.floor(Math.random() * 15);
     score += gain;
     energy.style.width = `${Math.min(score, 100)}%`;
+
     const lines = reactions[type];
     log.textContent =
       `${lines[Math.floor(Math.random() * lines.length)]} +${gain} crowd energy. The song keeps playing.`;
+
     button.disabled = true;
     button.style.opacity = '.55';
   };
 });
+
 function closePerformancePanel() {
-  if (active && window.MusicCityLivePerformance) window.MusicCityLivePerformance.stop('closed');
+  if (active && window.MusicCityLivePerformance) {
+    window.MusicCityLivePerformance.stop('closed');
+  }
   active = false;
   songSelect.disabled = false;
   actionButtons.forEach((button) => { button.disabled = true; });
+  startButton.disabled = false;
   startButton.style.display = '';
   panel.classList.remove('show');
 }
+
 nightclubButton.onclick = () => {
   if (!nightclubUnlocked()) return;
   location.href = 'nightclub.html';
@@ -305,11 +527,15 @@ nightclubButton.onclick = () => {
 
 document.getElementById('closePerformance').onclick = closePerformancePanel;
 document.getElementById('closeCounter').onclick = () => document.getElementById('counterPanel').classList.remove('show');
-for (const modal of document.querySelectorAll('.modal')) modal.addEventListener('click', (event) => {
-  if (event.target !== modal) return;
-  if (modal === panel) closePerformancePanel();
-  else modal.classList.remove('show');
-});
+
+for (const modal of document.querySelectorAll('.modal')) {
+  modal.addEventListener('click', (event) => {
+    if (event.target !== modal) return;
+    if (modal === panel) closePerformancePanel();
+    else modal.classList.remove('show');
+  });
+}
+
 addEventListener('pagehide', () => {
   if (window.MusicCityLivePerformance) window.MusicCityLivePerformance.stop('pagehide');
 });
