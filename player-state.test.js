@@ -461,6 +461,138 @@ test("manager commission is deducted from paid shows", function () {
   assert.strictEqual(paid.manager.totalCommission, 10);
 });
 
+
+test("new songs earn full show rewards and same-venue repeats are reduced", function () {
+  start();
+  MCE.addRelease({ id: "performance-song", title: "Fresh Record" });
+
+  var firstPlan = MCE.getPerformanceReward({
+    songId: "performance-song",
+    venue: "hiphop-cafe",
+    cash: 35,
+    fans: 8,
+    xp: 12
+  });
+  assert.strictEqual(firstPlan.mode, "new-song");
+  assert.strictEqual(firstPlan.grossCash, 35);
+  assert.strictEqual(firstPlan.fans, 8);
+  assert.strictEqual(firstPlan.xp, 12);
+
+  var first = MCE.payShow({
+    songId: "performance-song",
+    venue: "hiphop-cafe",
+    cash: 35,
+    fans: 8,
+    xp: 12
+  });
+  assert.strictEqual(first.cash, 135);
+  assert.strictEqual(first.fans, 8);
+  assert.strictEqual(first.xp, 12);
+
+  var repeatPlan = MCE.getPerformanceReward({
+    songId: "performance-song",
+    venue: "hiphop-cafe",
+    cash: 35,
+    fans: 8,
+    xp: 12
+  });
+  assert.strictEqual(repeatPlan.mode, "repeat");
+  assert.strictEqual(repeatPlan.grossCash, 12);
+  assert.strictEqual(repeatPlan.fans, 2);
+  assert.strictEqual(repeatPlan.xp, 3);
+
+  var repeated = MCE.payShow({
+    songId: "performance-song",
+    venue: "hiphop-cafe",
+    cash: 35,
+    fans: 8,
+    xp: 12
+  });
+  assert.strictEqual(repeated.cash, 147);
+  assert.strictEqual(repeated.fans, 10);
+  assert.strictEqual(repeated.xp, 15);
+
+  var newVenue = MCE.getPerformanceReward({
+    songId: "performance-song",
+    venue: "nightclub",
+    cash: 75,
+    fans: 12,
+    xp: 15
+  });
+  assert.strictEqual(newVenue.mode, "new-song");
+  assert.strictEqual(newVenue.grossCash, 75);
+  assert.strictEqual(newVenue.fans, 12);
+  assert.strictEqual(newVenue.xp, 15);
+});
+
+test("Popular Demand must come from another human request identity and restores full repeat rewards", function () {
+  start();
+  MCE.addRelease({ id: "demand-song", title: "Run It Back" });
+  MCE.payShow({
+    songId: "demand-song",
+    venue: "hiphop-cafe",
+    cash: 35,
+    fans: 8,
+    xp: 12
+  });
+
+  var offer = MCE.createPopularDemandOffer("demand-song");
+  assert.ok(offer.token);
+  assert.strictEqual(offer.artistId, MCE.getPlayerId());
+
+  assert.throws(function () {
+    MCE.acceptPopularDemandRequest({
+      requestId: "self-request",
+      songId: "demand-song",
+      artistId: offer.artistId,
+      offerToken: offer.token,
+      requesterId: offer.artistId,
+      requesterName: "Self"
+    });
+  }, /another real player or invited person/);
+
+  MCE.acceptPopularDemandRequest({
+    requestId: "human-request-1",
+    songId: "demand-song",
+    artistId: offer.artistId,
+    offerToken: offer.token,
+    requesterId: "different-human-device",
+    requesterName: "Real Listener",
+    requestedAt: "2026-09-22T15:00:00.000Z"
+  });
+
+  assert.strictEqual(MCE.getPopularDemandStatus("demand-song").count, 1);
+  var plan = MCE.getPerformanceReward({
+    songId: "demand-song",
+    venue: "hiphop-cafe",
+    cash: 35,
+    fans: 8,
+    xp: 12
+  });
+  assert.strictEqual(plan.mode, "popular-demand");
+  assert.strictEqual(plan.grossCash, 35);
+  assert.strictEqual(plan.fans, 8);
+  assert.strictEqual(plan.xp, 12);
+
+  MCE.payShow({
+    songId: "demand-song",
+    venue: "hiphop-cafe",
+    cash: 35,
+    fans: 8,
+    xp: 12
+  });
+  assert.strictEqual(MCE.getPopularDemandStatus("demand-song").count, 0);
+
+  var after = MCE.getPerformanceReward({
+    songId: "demand-song",
+    venue: "hiphop-cafe",
+    cash: 35,
+    fans: 8,
+    xp: 12
+  });
+  assert.strictEqual(after.mode, "repeat");
+});
+
 test("manager profiles create distinct career strategies", function () {
   start();
   assert.strictEqual(MCE.MANAGER_PROFILES.hustler.commissionPct, 10);

@@ -1,5 +1,6 @@
 (function (root) {
   var CAREER_KEY = "mce-save";
+  var PLAYER_ID_KEY = "mce-player-id";
   var WORLD_KEYS = {
     fans: "mceFans",
     cash: "mceCash",
@@ -515,6 +516,24 @@
 
   function clone(value) {
     return JSON.parse(JSON.stringify(value));
+  }
+
+  function randomToken(prefix) {
+    var raw = "";
+    try {
+      if (root.crypto && typeof root.crypto.randomUUID === "function") raw = root.crypto.randomUUID();
+    } catch (error) {}
+    if (!raw) raw = Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 12);
+    return String(prefix || "mce") + "-" + raw;
+  }
+
+  function getPlayerId() {
+    var store = storage();
+    var existing = store.getItem(PLAYER_ID_KEY);
+    if (existing) return String(existing);
+    var id = randomToken("player");
+    store.setItem(PLAYER_ID_KEY, id);
+    return id;
   }
 
   function readCareer() {
@@ -1381,6 +1400,193 @@
     return Boolean(s.manager && s.manager.hired);
   }
 
+  function performanceKey(songId, venue) {
+    return String(venue || "show").toLowerCase() + "::" + String(songId || "unknown");
+  }
+
+  function demandData(state) {
+    var s = state || current || load();
+    var flags = s.flags && typeof s.flags === "object" ? s.flags : {};
+    return {
+      offers: flags.popularDemandOffers && typeof flags.popularDemandOffers === "object" ? flags.popularDemandOffers : {},
+      pending: flags.popularDemandPending && typeof flags.popularDemandPending === "object" ? flags.popularDemandPending : {},
+      seen: flags.popularDemandSeen && typeof flags.popularDemandSeen === "object" ? flags.popularDemandSeen : {},
+      requesters: flags.popularDemandRequesters && typeof flags.popularDemandRequesters === "object" ? flags.popularDemandRequesters : {}
+    };
+  }
+
+  function getPopularDemandStatus(songId, state) {
+    var data = demandData(state);
+    var list = Array.isArray(data.pending[String(songId)]) ? data.pending[String(songId)] : [];
+    return {
+      count: list.length,
+      requests: clone(list)
+    };
+  }
+
+  function createPopularDemandOffer(songId) {
+    if (!current) load();
+    var next = snapshot();
+    var index = findReleaseIndex(songId, next);
+    if (index < 0) throw new Error("Song not found in Music City releases.");
+
+    next.flags = clone(next.flags || {});
+    next.flags.popularDemandOffers = clone(next.flags.popularDemandOffers || {});
+    var offer = {
+      songId: String(songId),
+      title: next.releases[index].title,
+      artistName: next.name,
+      artistId: getPlayerId(),
+      token: randomToken("demand"),
+      createdAt: new Date().toISOString()
+    };
+    next.flags.popularDemandOffers[String(songId)] = offer;
+    save(next);
+    return clone(offer);
+  }
+
+  function getPopularDemandOffer(songId, state) {
+    var data = demandData(state);
+    var offer = data.offers[String(songId)];
+    return offer ? clone(offer) : null;
+  }
+
+  function acceptPopularDemandRequest(payload) {
+    if (!current) load();
+    var request = payload && typeof payload === "object" ? payload : {};
+    var songId = String(request.songId || "");
+    var artistId = String(request.artistId || "");
+    var requesterId = String(request.requesterId || "");
+    var requestId = String(request.requestId || "");
+    var offerToken = String(request.offerToken || "");
+
+    if (!songId || !artistId || !requesterId || !requestId || !offerToken) {
+      throw new Error("This Popular Demand request is incomplete.");
+    }
+    if (artistId !== getPlayerId()) throw new Error("This request belongs to a different artist.");
+    if (requesterId === artistId) throw new Error("Popular Demand must come from another real player or invited person.");
+
+    var next = snapshot();
+    var index = findReleaseIndex(songId, next);
+    if (index < 0) throw new Error("Requested song is not in your Music City catalog.");
+
+    next.flags = clone(next.flags || {});
+    next.flags.popularDemandOffers = clone(next.flags.popularDemandOffers || {});
+    var offer = next.flags.popularDemandOffers[songId];
+    if (!offer || String(offer.token || "") !== offerToken) {
+      throw new Error("This Popular Demand request does not match an active song-request link.");
+    }
+
+    next.flags.popularDemandSeen = clone(next.flags.popularDemandSeen || {});
+    if (next.flags.popularDemandSeen[requestId]) return save(next);
+
+    next.flags.popularDemandRequesters = clone(next.flags.popularDemandRequesters || {});
+    var requesterKey = songId + "::" + requesterId;
+    if (next.flags.popularDemandRequesters[requesterKey]) {
+      throw new Error("This person already requested this song.");
+    }
+
+    next.flags.popularDemandPending = clone(next.flags.popularDemandPending || {});
+    var pending = Array.isArray(next.flags.popularDemandPending[songId])
+      ? next.flags.popularDemandPending[songId].slice()
+      : [];
+    pending.push({
+      requestId: requestId,
+      requesterId: requesterId,
+      requesterName: String(request.requesterName || "Music City listener").slice(0, 40),
+      requestedAt: request.requestedAt || new Date().toISOString(),
+      source: "human-request-link"
+    });
+    next.flags.popularDemandPending[songId] = pending.slice(-20);
+    next.flags.popularDemandSeen[requestId] = true;
+    next.flags.popularDemandRequesters[requesterKey] = true;
+    return save(next);
+  }
+
+  function consumePopularDemand(songId, state) {
+    var next = state;
+    next.flags = clone(next.flags || {});
+    next.flags.popularDemandPending = clone(next.flags.popularDemandPending || {});
+    var list = Array.isArray(next.flags.popularDemandPending[String(songId)])
+      ? next.flags.popularDemandPending[String(songId)].slice()
+      : [];
+    var request = list.shift() || null;
+    next.flags.popularDemandPending[String(songId)] = list;
+    return request;
+  }
+
+  function getSongPerformanceStatus(songId, venue, state) {
+    var s = state || current || load();
+    var flags = s.flags && typeof s.flags === "object" ? s.flags : {};
+    var history = flags.performanceHistory && typeof flags.performanceHistory === "object"
+      ? flags.performanceHistory
+      : {};
+    var key = performanceKey(songId, venue);
+    var item = history[key] && typeof history[key] === "object" ? history[key] : {};
+    var demand = getPopularDemandStatus(songId, s);
+    return {
+      key: key,
+      count: toCount(item.count, 0),
+      lastPerformedAt: item.lastPerformedAt || null,
+      popularDemandCount: demand.count
+    };
+  }
+
+  function getPerformanceReward(input, state) {
+    var s = state || current || load();
+    var data = input && typeof input === "object" ? input : {};
+    var songId = data.songId == null ? "" : String(data.songId);
+    var venue = data.venue == null ? "" : String(data.venue);
+    var tracked = Boolean(songId && venue);
+    var status = tracked ? getSongPerformanceStatus(songId, venue, s) : {
+      count: 0,
+      popularDemandCount: 0
+    };
+    var repeat = tracked && status.count > 0;
+    var popularDemand = repeat && status.popularDemandCount > 0;
+    var multiplier = repeat && !popularDemand ? {
+      cash: 0.35,
+      xp: 0.25,
+      fans: 0.25
+    } : {
+      cash: 1,
+      xp: 1,
+      fans: 1
+    };
+
+    function scaled(value, factor, minimum) {
+      var original = Math.max(0, toCount(value, 0));
+      if (!original) return 0;
+      return Math.max(minimum, Math.floor(original * factor));
+    }
+
+    var baseCash = scaled(data.cash, multiplier.cash, repeat && !popularDemand ? 5 : 0);
+    var baseXp = scaled(data.xp, multiplier.xp, repeat && !popularDemand ? 1 : 0);
+    var baseFans = scaled(data.fans, multiplier.fans, repeat && !popularDemand ? 1 : 0);
+    var payout = getShowPayout(baseCash, s);
+    var effects = s.business && s.business.effects ? s.business.effects : {};
+
+    return {
+      songId: songId,
+      venue: venue,
+      repeat: repeat,
+      popularDemand: popularDemand,
+      mode: popularDemand ? "popular-demand" : (repeat ? "repeat" : "new-song"),
+      previousPerformances: status.count,
+      pendingDemand: status.popularDemandCount,
+      cash: payout.net,
+      grossCash: payout.gross,
+      commission: payout.commission,
+      fans: Math.max(0, baseFans + Math.floor(toNumber(effects.showFanBonus, 0))),
+      xp: Math.max(0, baseXp + Math.floor(toNumber(effects.showXpBonus, 0))),
+      base: {
+        cash: Math.max(0, toCount(data.cash, 0)),
+        fans: Math.max(0, toCount(data.fans, 0)),
+        xp: Math.max(0, toCount(data.xp, 0))
+      }
+    };
+  }
+
   function getShowPayout(grossCash, state) {
     var s = state || current || load();
     var gross = Math.max(
@@ -1404,24 +1610,53 @@
     if (!current) load();
     var next = snapshot();
     var input = delta && typeof delta === "object" ? delta : {};
-    var payout = getShowPayout(input.cash, next);
+    var reward = getPerformanceReward(input, next);
 
-    next.cash += payout.net;
-    next.fans += Math.max(
-      0,
-      toCount(input.fans, 0) + next.business.effects.showFanBonus
-    );
-    next.xp += Math.max(
-      0,
-      toCount(input.xp, 0) + next.business.effects.showXpBonus
-    );
+    next.cash += reward.cash;
+    next.fans += reward.fans;
+    next.xp += reward.xp;
+
+    if (reward.songId && reward.venue) {
+      next.flags = clone(next.flags || {});
+      next.flags.performanceHistory = clone(next.flags.performanceHistory || {});
+      var key = performanceKey(reward.songId, reward.venue);
+      var previous = next.flags.performanceHistory[key] && typeof next.flags.performanceHistory[key] === "object"
+        ? next.flags.performanceHistory[key]
+        : {};
+      next.flags.performanceHistory[key] = {
+        count: toCount(previous.count, 0) + 1,
+        lastPerformedAt: new Date().toISOString(),
+        songId: reward.songId,
+        venue: reward.venue,
+        lastMode: reward.mode
+      };
+      if (reward.popularDemand) {
+        var consumed = consumePopularDemand(reward.songId, next);
+        next.flags.lastPopularDemandPerformance = consumed ? {
+          songId: reward.songId,
+          venue: reward.venue,
+          requesterName: consumed.requesterName,
+          requestId: consumed.requestId,
+          performedAt: new Date().toISOString()
+        } : null;
+      }
+      next.flags.lastShowReward = {
+        songId: reward.songId,
+        venue: reward.venue,
+        mode: reward.mode,
+        cash: reward.cash,
+        fans: reward.fans,
+        xp: reward.xp,
+        performedAt: new Date().toISOString()
+      };
+    }
 
     next.business.effects.showCashBonus = 0;
     next.business.effects.showFanBonus = 0;
     next.business.effects.showXpBonus = 0;
 
     if (next.manager.hired) {
-      next.manager.totalCommission += payout.commission;
+      next.manager.totalCommission += reward.commission;
     }
 
     advanceBusinessAction(next, "show");
@@ -1648,6 +1883,13 @@
     managerRequirementMet: managerRequirementMet,
     getSongCraftImpact: getSongCraftImpact,
     getShowPayout: getShowPayout,
+    getPlayerId: getPlayerId,
+    createPopularDemandOffer: createPopularDemandOffer,
+    getPopularDemandOffer: getPopularDemandOffer,
+    acceptPopularDemandRequest: acceptPopularDemandRequest,
+    getPopularDemandStatus: getPopularDemandStatus,
+    getSongPerformanceStatus: getSongPerformanceStatus,
+    getPerformanceReward: getPerformanceReward,
     payShow: payShow,
     getPendingBusinessEvent: getPendingBusinessEvent,
     drawBusinessEvent: drawBusinessEvent,

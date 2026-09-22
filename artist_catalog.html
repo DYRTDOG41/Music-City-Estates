@@ -224,6 +224,82 @@ function claimHustleById(id, hustleId) {
   }
 }
 
+async function sharePopularDemandLink(id, title) {
+  try {
+    const offer = window.MCE.createPopularDemandOffer(id);
+    const requestUrl = new URL("song_request.html", window.location.href);
+    requestUrl.searchParams.set("song", String(id));
+    requestUrl.searchParams.set("title", title || offer.title || "Music City song");
+    requestUrl.searchParams.set("artist", offer.artistName || window.MCE.get().name || "Music City Artist");
+    requestUrl.searchParams.set("artistId", offer.artistId);
+    requestUrl.searchParams.set("offer", offer.token);
+
+    const text =
+      'Want to hear "' + (title || offer.title) +
+      '" again at my next Music City show? Request it here. Only real listener requests count as Popular Demand: ' +
+      requestUrl.href;
+
+    let completed = false;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Request My Song • Music City Estates",
+          text,
+          url: requestUrl.href
+        });
+        completed = true;
+      } catch (error) {
+        if (error && error.name === "AbortError") {
+          showNotice("Popular Demand link is ready, but sharing was canceled.");
+          return;
+        }
+      }
+    }
+    if (!completed) {
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+          completed = true;
+        }
+      } catch (error) {}
+    }
+    if (!completed) completed = fallbackCopyInvite(text);
+    showNotice(
+      completed
+        ? "Popular Demand request link shared/copied. A real listener must open it, request the song, and send the confirmation back to you."
+        : "Could not share the request link automatically."
+    );
+  } catch (error) {
+    showNotice(error.message || "Could not create the Popular Demand request link.");
+  }
+}
+
+function acceptIncomingPopularDemand() {
+  const params = new URLSearchParams(window.location.search);
+  const raw = params.get("popularDemand");
+  if (!raw) return;
+  try {
+    const payload = JSON.parse(raw);
+    const before = window.MCE.getPopularDemandStatus(payload.songId);
+    window.MCE.acceptPopularDemandRequest(payload);
+    const after = window.MCE.getPopularDemandStatus(payload.songId);
+    const added = after.count > before.count;
+    showNotice(
+      added
+        ? "🔥 POPULAR DEMAND RECEIVED: " + (payload.requesterName || "A real listener") +
+          ' requested "' + (payload.title || "your song") +
+          '". The next repeat performance can earn full show rewards.'
+        : "That Popular Demand request was already counted."
+    );
+  } catch (error) {
+    showNotice(error.message || "Could not verify that Popular Demand request.");
+  } finally {
+    params.delete("popularDemand");
+    const clean = window.location.pathname + (params.toString() ? "?" + params.toString() : "") + window.location.hash;
+    history.replaceState(null, "", clean);
+  }
+}
+
 async function renderCatalog() {
   objectUrls.forEach(url => URL.revokeObjectURL(url));
   objectUrls = [];
@@ -379,13 +455,16 @@ async function renderCatalog() {
     const hustles = release.id
       ? window.MCE.getCareerHustleStatus(track.id, state)
       : { rehearsal:false, streetPromo:false };
+    const demand = release.id
+      ? window.MCE.getPopularDemandStatus(track.id, state)
+      : { count:0, requests:[] };
 
     const growth = document.createElement("section");
     growth.className = "growth";
     growth.innerHTML =
       '<div class="growth-head"><strong>📣 STREET TEAM + CAREER HUSTLES</strong><span>' +
-      streetTeam.count + '/10 INVITES • +' + streetTeam.earnedXp + ' XP EARNED</span></div>' +
-      '<p>Invite people into Music City after making your song. Each completed share/copy earns +5 XP, up to 10 rewarded invites per song. Your friend does not have to accept or join for the invite XP to count.</p>';
+      streetTeam.count + '/10 INVITES • +' + streetTeam.earnedXp + ' XP • 🔥 ' + demand.count + ' DEMAND</span></div>' +
+      '<p>Invite people into Music City after making your song. Each completed share/copy earns +5 XP, up to 10 rewarded invites per song. Real listeners can also request this song for Popular Demand; NPC requests never count.</p>';
 
     const growthActions = document.createElement("div");
     growthActions.className = "growth-actions";
@@ -409,6 +488,14 @@ async function renderCatalog() {
     streetPromoButton.disabled = !release.id || hustles.streetPromo;
     streetPromoButton.onclick = () => claimHustleById(track.id, "street-promo");
     growthActions.appendChild(streetPromoButton);
+
+    const demandButton = document.createElement("button");
+    demandButton.textContent = isReleased
+      ? "🔥 SHARE POPULAR DEMAND LINK" + (demand.count ? " (" + demand.count + " WAITING)" : "")
+      : "🔒 RELEASE BEFORE REQUESTS";
+    demandButton.disabled = !isReleased || !release.id;
+    demandButton.onclick = () => sharePopularDemandLink(track.id, track.title);
+    growthActions.appendChild(demandButton);
 
     growth.appendChild(growthActions);
     card.appendChild(growth);
@@ -518,6 +605,7 @@ async function renderCatalog() {
   });
 }
 
+acceptIncomingPopularDemand();
 renderCatalog().catch(error => {
   document.getElementById("catalog").innerHTML =
     '<div class="empty">' + (error.message || "Could not load catalog.") + '</div>';
