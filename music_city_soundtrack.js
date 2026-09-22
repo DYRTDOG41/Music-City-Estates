@@ -33,13 +33,13 @@ const cues={
 };
 const cue=cues[zone]||cues.city;
 
-let state={muted:false,volume:.20,anchor:Date.now(),trackIndex:0,trackTime:0};
+let state={muted:false,volume:.12,anchor:Date.now(),trackIndex:0,trackTime:0};
 try{
   const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
   if(saved&&typeof saved==="object") state={...state,...saved};
 }catch(e){}
 if(!Number.isFinite(state.anchor)) state.anchor=Date.now();
-if(!Number.isFinite(Number(state.volume))||Number(state.volume)<.08||Number(state.volume)>.30) state.volume=.20;
+if(!Number.isFinite(Number(state.volume))||Number(state.volume)<.06) state.volume=.12;\nif(Number(state.volume)>.16) state.volume=.12;
 
 let context=null,master=null,compressor=null,noiseBuffer=null;
 let scheduler=null,nextTime=0,stepIndex=0,started=false,suppressed=false,sessionHold=false,lastError="";
@@ -83,7 +83,7 @@ function makeWidget(){
   if(widget) return;
   widget=document.createElement("div");
   widget.id="mceSoundtrackWidget";
-  widget.innerHTML='<div class="mce-radio-icon" aria-hidden="true">📻</div><div class="mce-radio-copy"><strong>MUSIC CITY RADIO</strong><span class="mce-radio-title"></span><small class="mce-radio-mode"></small></div><button type="button" class="mce-radio-volume" aria-label="Change soundtrack volume">20%</button><button type="button" class="mce-radio-toggle" aria-label="Mute soundtrack">🔊</button>';
+  widget.innerHTML='<div class="mce-radio-icon" aria-hidden="true">📻</div><div class="mce-radio-copy"><strong>MUSIC CITY RADIO</strong><span class="mce-radio-title"></span><small class="mce-radio-mode"></small></div><button type="button" class="mce-radio-volume" aria-label="Change soundtrack volume">12%</button><button type="button" class="mce-radio-toggle" aria-label="Mute soundtrack">🔊</button>';
   const style=document.createElement("style");
   style.textContent=
     '#mceSoundtrackWidget{position:fixed;right:8px;top:max(6px,env(safe-area-inset-top));z-index:99999;display:grid;grid-template-columns:25px minmax(0,1fr) 38px 32px;align-items:center;gap:5px;width:min(270px,calc(100% - 16px));min-height:34px;padding:4px 5px;border:1px solid rgba(70,190,230,.34);border-radius:10px;background:rgba(3,9,18,.62);color:#fff;font-family:Arial,sans-serif;box-shadow:none;backdrop-filter:blur(12px);transition:width .22s ease,opacity .22s ease,background .22s ease}'+
