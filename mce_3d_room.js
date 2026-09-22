@@ -466,6 +466,7 @@ export function buildAvatar(room,data={},pos=[0,0,0],scale=1){
   // Optional production GLB upgrade. The detailed V2 avatar renders immediately,
   // then a premium skinned model can replace it without changing the game API.
   const modelUrl=String(data.modelUrl||data.avatarModelUrl||'').trim();
+  const modelAssetId=String(data.modelAssetId||'').trim();
   if(modelUrl){
     import('./mce_avatar_runtime.js')
       .then(mod=>mod.upgradeAvatarFromGLB(group,room,data))
@@ -473,6 +474,23 @@ export function buildAvatar(room,data={},pos=[0,0,0],scale=1){
         group.userData.avatarModelError=String(error&&error.message||error);
         console.warn('Music City premium avatar model failed; keeping Realism V2 fallback.',error);
       });
+  }else if(modelAssetId){
+    Promise.all([
+      import('./mce_avatar_assets.js'),
+      import('./mce_avatar_runtime.js')
+    ]).then(async([assets,runtime])=>{
+      const asset=await assets.getAvatarAssetUrl(modelAssetId);
+      if(!asset)throw new Error('Saved premium avatar asset was not found on this device.');
+      group.userData.avatarAssetName=asset.name;
+      try{
+        await runtime.upgradeAvatarFromGLB(group,room,{...data,modelUrl:asset.url});
+      }finally{
+        setTimeout(()=>URL.revokeObjectURL(asset.url),1000);
+      }
+    }).catch(error=>{
+      group.userData.avatarModelError=String(error&&error.message||error);
+      console.warn('Music City premium avatar asset failed; keeping Realism V2 fallback.',error);
+    });
   }
 
   return group;
