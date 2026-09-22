@@ -467,6 +467,10 @@ export function buildAvatar(room,data={},pos=[0,0,0],scale=1){
     if(controller&&controller.playPerformanceAction)return controller.playPerformanceAction(type);
     return false;
   };
+  group.userData.setPerformanceActive=(on)=>{
+    const controller=group.userData.avatarController;
+    if(controller&&controller.setPerformanceActive)controller.setPerformanceActive(on);
+  };
 
   scene.add(group);
 
