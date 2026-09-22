@@ -177,7 +177,7 @@ function addCableRun(points){
   const cable=new THREE.Mesh(new THREE.TubeGeometry(curve,28,.035,6,false),new THREE.MeshStandardMaterial({color:0x08080a,roughness:.74,metalness:.22}));
   cable.castShadow=false;scene.add(cable);
 }
-function addBattleBanner(text,x,y,z,color){
+function addBattleBanner(text,x,y,z,color,rotationY=0){
   const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=384;
   const ctx=canvas.getContext('2d');
   ctx.fillStyle='#07070ae8';ctx.fillRect(0,0,1024,384);
@@ -187,7 +187,7 @@ function addBattleBanner(text,x,y,z,color){
   ctx.font='800 28px Arial';ctx.fillStyle=color;ctx.fillText('WORD SLAUGHTER • MUSIC CITY ESTATES',512,252);
   const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;
   const mesh=new THREE.Mesh(new THREE.PlaneGeometry(6.3,2.35),new THREE.MeshBasicMaterial({map:tex,toneMapped:false,side:THREE.DoubleSide}));
-  mesh.position.set(x,y,z);scene.add(mesh);
+  mesh.position.set(x,y,z);mesh.rotation.y=rotationY;scene.add(mesh);
 }
 
 // Real access steps instead of a floating slab.
@@ -218,11 +218,8 @@ addCableRun([[8,.08,-4.7],[5,.08,-6.4],[3.2,.08,-9.6],[1.7,.08,-12.7]]);
 addCableRun([[0,.08,-4.7],[.4,.08,-7.1],[-.3,.08,-9.2],[0,.08,-12.4]]);
 
 // Side banners give the venue an authored event identity without external image assets.
-addBattleBanner('EARN THE CROWD',-20.42,5.6,-7.4,'#ff315b');
-addBattleBanner('BARS OVER HYPE',20.42,5.6,-7.4,'#ffb13d');
-scene.children.slice(-1)[0].rotation.y=-Math.PI/2;
-const leftBanner=scene.children.findLast?.(obj=>obj.isMesh&&obj.geometry&&obj.geometry.type==='PlaneGeometry'&&Math.abs(obj.position.x+20.42)<.1);
-if(leftBanner)leftBanner.rotation.y=Math.PI/2;
+addBattleBanner('EARN THE CROWD',-20.42,5.6,-7.4,'#ff315b',Math.PI/2);
+addBattleBanner('BARS OVER HYPE',20.42,5.6,-7.4,'#ffb13d',-Math.PI/2);
 
 // Venue floor stanchions make the crowd line feel intentional.
 for(const side of [-1,1]){
