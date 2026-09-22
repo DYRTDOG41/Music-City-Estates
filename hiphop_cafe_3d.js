@@ -165,6 +165,11 @@ const roundText = document.getElementById('roundText');
 const energy = document.getElementById('crowdEnergy');
 const progress = document.getElementById('venueProgress');
 const nightclubButton = document.getElementById('nightclubButton');
+const liveStageHud = document.getElementById('liveStageHud');
+const liveStageTitle = document.getElementById('liveStageTitle');
+const liveStagePhase = document.getElementById('liveStagePhase');
+const liveStageScore = document.getElementById('liveStageScore');
+const liveStageProgress = document.getElementById('liveStageProgress');
 
 let round = 0;
 let score = 0;
@@ -194,6 +199,30 @@ function crowdVerdict(value) {
     vote,
     label: vote >= 82 ? 'STANDING OVATION' : vote >= 62 ? 'BIG APPLAUSE' : 'AUDIENCE APPLAUSE'
   };
+}
+
+function setPerformanceButtons(enabled) {
+  actionButtons.forEach((button) => {
+    const alreadyUsed = usedActions.has(button.dataset.performance);
+    button.disabled = !enabled || alreadyUsed;
+    button.style.opacity = alreadyUsed ? '.55' : '';
+  });
+}
+
+function enterStageView(title) {
+  liveStageTitle.textContent = title || 'LIVE PERFORMANCE';
+  liveStagePhase.textContent = 'LIVE • SONG IN PROGRESS';
+  liveStageScore.textContent = Math.max(0, Math.min(100, Math.round(score))) + '%';
+  liveStageProgress.style.width = '0%';
+  liveStageHud.classList.add('show');
+  document.body.classList.add('live-performance-mode');
+  panel.classList.remove('show');
+}
+
+function leaveStageView(showResults) {
+  liveStageHud.classList.remove('show');
+  document.body.classList.remove('live-performance-mode');
+  if (showResults) panel.classList.add('show');
 }
 
 room.animated.push((time) => {
@@ -320,7 +349,8 @@ function refreshProgressOnly() {
 
 function completePerformance(reaction) {
   active = false;
-  actionButtons.forEach((button) => { button.disabled = true; });
+  setPerformanceButtons(false);
+  leaveStageView(true);
 
   const selected = releaseOptions()[Number(songSelect.value) || 0];
   if (!selected) return refreshPerformancePanel();
@@ -438,24 +468,28 @@ startButton.onclick = async () => {
   energy.style.width = Math.max(8, craftEnergy) + '%';
   startButton.disabled = true;
   startButton.style.display = 'none';
-  actionButtons.forEach((button) => {
-    button.disabled = false;
-    button.style.opacity = '';
-  });
+  setPerformanceButtons(true);
 
   try {
     await window.MusicCityLivePerformance.play({
       blob: track.audioBlob,
       source: 'hiphop-cafe-live-set',
       getScore: () => score,
+      onStart: () => {
+        enterStageView(selected.title);
+      },
       onProgress: ({ current, duration, percent }) => {
         if (!active) return;
         const part = percent < .34 ? 1 : percent < .67 ? 2 : 3;
         round = part;
         const phase = part === 1 ? 'Make the first impression' : part === 2 ? 'Build the connection' : 'Finish strong';
+        const timeLabel = duration ? formatPerformanceTime(current) + ' / ' + formatPerformanceTime(duration) : 'LIVE';
         roundText.textContent =
           'LIVE • Part ' + part + ' of 3 • ' + phase +
-          (duration ? ' • ' + formatPerformanceTime(current) + ' / ' + formatPerformanceTime(duration) : '');
+          (duration ? ' • ' + timeLabel : '');
+        liveStagePhase.textContent = 'PART ' + part + '/3 • ' + phase.toUpperCase() + ' • ' + timeLabel;
+        liveStageProgress.style.width = Math.max(0, Math.min(100, percent * 100)) + '%';
+        liveStageScore.textContent = Math.max(0, Math.min(100, Math.round(score))) + '%';
       },
       onTrackEnded: () => {
         if (!active) return;
@@ -465,7 +499,10 @@ startButton.onclick = async () => {
         log.textContent = verdict.vote >= 82
           ? 'The final note lands. The room jumps to its feet.'
           : 'The final note lands. The room breaks into applause.';
-        actionButtons.forEach((button) => { button.disabled = true; });
+        liveStagePhase.textContent = 'SONG COMPLETE • ' + verdict.label;
+        liveStageProgress.style.width = '100%';
+        liveStageScore.textContent = verdict.vote + '%';
+        setPerformanceButtons(false);
       },
       onComplete: (reaction) => {
         if (!active) return;
@@ -474,14 +511,16 @@ startButton.onclick = async () => {
       onStop: () => {
         active = false;
         songSelect.disabled = false;
-        actionButtons.forEach((button) => { button.disabled = true; });
+        setPerformanceButtons(false);
+        leaveStageView(true);
         startButton.disabled = false;
         startButton.style.display = '';
       },
       onError: (error) => {
         active = false;
         songSelect.disabled = false;
-        actionButtons.forEach((button) => { button.disabled = true; });
+        setPerformanceButtons(false);
+        leaveStageView(true);
         startButton.disabled = false;
         startButton.style.display = '';
         log.textContent = error.message || 'The song could not play.';
@@ -490,7 +529,8 @@ startButton.onclick = async () => {
   } catch (error) {
     active = false;
     songSelect.disabled = false;
-    actionButtons.forEach((button) => { button.disabled = true; });
+    setPerformanceButtons(false);
+    leaveStageView(true);
     startButton.disabled = false;
     startButton.style.display = '';
     log.textContent = error.message || 'The song could not play.';
@@ -511,8 +551,13 @@ actionButtons.forEach((button) => {
     log.textContent =
       `${lines[Math.floor(Math.random() * lines.length)]} +${gain} crowd energy. The song keeps playing.`;
 
-    button.disabled = true;
-    button.style.opacity = '.55';
+    actionButtons
+      .filter((item) => item.dataset.performance === type)
+      .forEach((item) => {
+        item.disabled = true;
+        item.style.opacity = '.55';
+      });
+    liveStageScore.textContent = Math.max(0, Math.min(100, Math.round(score))) + '%';
   };
 });
 
@@ -522,7 +567,8 @@ function closePerformancePanel() {
   }
   active = false;
   songSelect.disabled = false;
-  actionButtons.forEach((button) => { button.disabled = true; });
+  setPerformanceButtons(false);
+  leaveStageView(false);
   startButton.disabled = false;
   startButton.style.display = '';
   panel.classList.remove('show');
