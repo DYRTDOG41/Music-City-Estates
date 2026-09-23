@@ -520,7 +520,14 @@ export function buildAvatar(room,data={},pos=[0,0,0],scale=1){
       if(!asset)throw new Error('Saved premium avatar asset was not found on this device.');
       group.userData.avatarAssetName=asset.name;
       try{
-        await runtime.upgradeAvatarFromGLB(group,room,{...data,modelUrl:asset.url});
+        await runtime.upgradeAvatarFromGLB(group,room,{
+          ...data,
+          modelUrl:asset.url,
+          modelAssetName:data.modelAssetName||asset.name||'',
+          avatarAssetMetadata:asset.metadata||{},
+          avatarSource:data.avatarSource||asset.metadata?.source||data.source||'',
+          avaturnAvatarId:data.avaturnAvatarId||asset.metadata?.avatarId||''
+        });
       }finally{
         setTimeout(()=>URL.revokeObjectURL(asset.url),1000);
       }
