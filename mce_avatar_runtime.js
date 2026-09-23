@@ -897,15 +897,21 @@ export async function upgradeAvatarFromGLB(host,room,data={}){
 
   let runtimeClips=Array.isArray(gltf.animations)?[...gltf.animations]:[];
   let animationRoot=model;
-  if(runtimeClips.length===0&&isAvaturn){
-    const donor=await retargetHumanIdle(model,room&&room.renderer);
-    if(donor.clips.length){
-      runtimeClips=donor.clips;
-      animationRoot=donor.animationRoot||model;
-      host.userData.avatarAnimationSource='human-cc0-retargeted';
-    }else{
-      host.userData.avatarAnimationSource='procedural-fallback';
-    }
+
+  // Avaturn baseline policy:
+  // Do not guess, auto-select, or retarget a donor idle at load time.
+  // Some low-motion donor clips are seated/crouched poses, which can leave the
+  // avatar floating as if an invisible chair is under it. Start every Avaturn
+  // avatar from its own standing bind/rest pose and use the deterministic
+  // humanoid bone controller for the neutral idle. Explicit walk/run/stage
+  // clips can be mapped later once their names and rigs are known.
+  if(isAvaturn){
+    runtimeClips=[];
+    animationRoot=model;
+    host.userData.avatarAnimationSource='avaturn-procedural-neutral';
+    host.userData.avatarAutoRetargetDisabled=true;
+  }else if(runtimeClips.length===0){
+    host.userData.avatarAnimationSource='procedural-fallback';
   }
 
   const controller=createController(model,runtimeClips,animationRoot);
