@@ -187,6 +187,128 @@ function pickClip(clips,kind){
   return best;
 }
 
+function normalizedRigName(name){
+  return String(name||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+}
+
+function collectHumanoidRig(model){
+  const bones=[];
+  model.traverse(object=>{
+    if(object.isBone)bones.push(object);
+  });
+
+  function find(patterns){
+    for(const pattern of patterns){
+      const hit=bones.find(bone=>normalizedRigName(bone.name).includes(pattern));
+      if(hit)return hit;
+    }
+    return null;
+  }
+
+  return {
+    hips:find(['hips','pelvis']),
+    spine:find(['spine2','spine1','spine']),
+    chest:find(['upperchest','chest']),
+    neck:find(['neck']),
+    head:find(['head']),
+    leftUpperArm:find(['leftupperarm','upperarml','lupperarm','leftarm','armleft','mixamorigleftarm']),
+    rightUpperArm:find(['rightupperarm','upperarmr','rupperarm','rightarm','armright','mixamorigrigh tarm'.replace(' ','')]),
+    leftForeArm:find(['leftforearm','forearml','lforearm','leftlowerarm','mixamorigleftforearm']),
+    rightForeArm:find(['rightforearm','forearmr','rforearm','rightlowerarm','mixamorigr ightforearm'.replace(' ','')]),
+    leftHand:find(['lefthand','handl','lhand','mixamoriglefthand']),
+    rightHand:find(['righthand','handr','rhand','mixamorigrighthand']),
+    leftUpperLeg:find(['leftupleg','leftupperleg','thighl','lthigh','mixamorigleftupleg']),
+    rightUpperLeg:find(['rightupleg','rightupperleg','thighr','rthigh','mixamorigrightupleg']),
+    leftLowerLeg:find(['leftleg','leftlowerleg','calfl','lcalf','mixamorigleftleg']),
+    rightLowerLeg:find(['rightleg','rightlowerleg','calfr','rcalf','mixamorigrightleg'])
+  };
+}
+
+function createBonePoseRig(model){
+  const rig=collectHumanoidRig(model);
+  const rest=new Map();
+
+  for(const bone of Object.values(rig)){
+    if(bone&&bone.quaternion)rest.set(bone,bone.quaternion.clone());
+  }
+
+  const tempEuler=new THREE.Euler();
+  const tempQuat=new THREE.Quaternion();
+
+  function compose(bone,x=0,y=0,z=0){
+    if(!bone)return;
+    const base=rest.get(bone);
+    if(!base)return;
+    tempEuler.set(x,y,z,'XYZ');
+    tempQuat.setFromEuler(tempEuler);
+    bone.quaternion.copy(base).multiply(tempQuat);
+  }
+
+  function relaxed(elapsed=0,performance=false){
+    const breathe=Math.sin(elapsed*1.8);
+    const sway=Math.sin(elapsed*.72);
+    const nod=Math.sin(elapsed*.48);
+
+    // Bring a raw T-pose down into a natural standing pose.
+    compose(rig.leftUpperArm,.03,0,1.08+sway*.02);
+    compose(rig.rightUpperArm,.03,0,-1.08-sway*.02);
+    compose(rig.leftForeArm,0,.02,.08+Math.sin(elapsed*1.2)*.025);
+    compose(rig.rightForeArm,0,-.02,-.08-Math.sin(elapsed*1.2)*.025);
+    compose(rig.leftHand,0,0,.025);
+    compose(rig.rightHand,0,0,-.025);
+
+    compose(rig.spine,breathe*.008,sway*.01,0);
+    compose(rig.chest,breathe*.012,sway*.012,0);
+    compose(rig.neck,nod*.008,sway*.012,0);
+    compose(rig.head,nod*.012,sway*.018,0);
+
+    if(performance){
+      compose(rig.leftUpperLeg,Math.sin(elapsed*2.2)*.018,0,0);
+      compose(rig.rightUpperLeg,-Math.sin(elapsed*2.2)*.018,0,0);
+    }else{
+      compose(rig.leftUpperLeg,0,0,0);
+      compose(rig.rightUpperLeg,0,0,0);
+    }
+  }
+
+  function perform(type,t,elapsed){
+    const wave=Math.sin(t*Math.PI);
+    const beat=Math.sin(elapsed*8);
+
+    if(type==='timing'){
+      compose(rig.leftUpperArm,.08,0,1.0+beat*.16*wave);
+      compose(rig.rightUpperArm,.08,0,-1.0-beat*.16*wave);
+      compose(rig.leftForeArm,.06,0,.12+beat*.08*wave);
+      compose(rig.rightForeArm,.06,0,-.12-beat*.08*wave);
+      compose(rig.chest,.03,beat*.025*wave,0);
+      compose(rig.head,0,beat*.035*wave,0);
+    }else if(type==='presence'){
+      compose(rig.leftUpperArm,-.08,0,.48*wave+.92*(1-wave));
+      compose(rig.rightUpperArm,-.08,0,-.48*wave-.92*(1-wave));
+      compose(rig.leftForeArm,-.15,0,-.18*wave);
+      compose(rig.rightForeArm,-.15,0,.18*wave);
+      compose(rig.chest,-.035,0,0);
+      compose(rig.head,-.03,0,0);
+    }else if(type==='crowd'){
+      compose(rig.leftUpperArm,-.2,0,.68);
+      compose(rig.rightUpperArm,-.55,0,-.28-Math.sin(t*Math.PI*2)*.28);
+      compose(rig.rightForeArm,-.35,0,-.3);
+      compose(rig.chest,0,Math.sin(t*Math.PI*2)*.12,0);
+      compose(rig.head,0,Math.sin(t*Math.PI*2)*.18,0);
+    }
+  }
+
+  return {
+    rig,
+    hasArms:Boolean(rig.leftUpperArm&&rig.rightUpperArm),
+    relaxed,
+    perform,
+    restore(){
+      for(const [bone,q] of rest)bone.quaternion.copy(q);
+    }
+  };
+}
+
 function collectMorphBindings(model){
   const bindings={blinkLeft:[],blinkRight:[],blinkBoth:[],jaw:[]};
 
@@ -219,6 +341,7 @@ function createController(model,clips){
   const mixer=new THREE.AnimationMixer(model);
   const actions=new Map();
   const morphs=collectMorphBindings(model);
+  const bonePose=createBonePoseRig(model);
 
   let current=null;
   let oneShotTimer=null;
@@ -279,7 +402,7 @@ function createController(model,clips){
       model.rotation.copy(baseRotation);
       model.scale.copy(baseScale);
       procedural=null;
-      play('idle',{loop:true,fade:.22});
+      if(!play('idle',{loop:true,fade:.22}))bonePose.relaxed(elapsed,false);
     }
   }
 
@@ -288,20 +411,26 @@ function createController(model,clips){
     elapsed+=dt;
     mixer.update(dt);
 
-    // Natural eye blinks for premium models with compatible facial morph targets.
+    const usingAnimation=Boolean(current&&current.isRunning&&current.isRunning());
+
+    // When the imported GLB has no animation clips, drive its humanoid bones directly.
+    if(!usingAnimation&&bonePose.hasArms){
+      bonePose.relaxed(elapsed,performanceActive);
+    }
+
     const blinkCycle=elapsed%4.7;
     const blink=blinkCycle>4.52?Math.sin(((blinkCycle-4.52)/.18)*Math.PI):0;
     setMorph(morphs.blinkBoth,blink);
     setMorph(morphs.blinkLeft,blink);
     setMorph(morphs.blinkRight,blink);
 
-    // Subtle mouth articulation during a show. This is intentionally restrained;
-    // true audio-driven visemes can be connected later without changing the avatar API.
     const jaw=performanceActive?(.035+Math.abs(Math.sin(elapsed*8.2))*.12):0;
     setMorph(morphs.jaw,jaw);
 
     if(performanceActive){
       model.position.y=basePosition.y+Math.sin(elapsed*5.4)*.012;
+    }else if(!procedural){
+      model.position.y=basePosition.y;
     }
 
     if(procedural){
@@ -309,15 +438,19 @@ function createController(model,clips){
       const t=Math.min(1,procedural.elapsed/procedural.duration);
       const ease=Math.sin(Math.PI*t);
 
+      if(!usingAnimation&&bonePose.hasArms){
+        bonePose.perform(procedural.type,t,elapsed);
+      }
+
       if(procedural.type==='timing'){
-        model.position.y=basePosition.y+Math.abs(Math.sin(elapsed*11))* .055*ease;
+        model.position.y=basePosition.y+Math.abs(Math.sin(elapsed*11))*.055*ease;
         model.rotation.z=baseRotation.z+Math.sin(elapsed*8.5)*.045*ease;
       }else if(procedural.type==='presence'){
-        const lift=1+.028*ease;
+        const lift=1+.018*ease;
         model.scale.set(baseScale.x*lift,baseScale.y*lift,baseScale.z*lift);
-        model.rotation.x=baseRotation.x-.035*ease;
+        model.rotation.x=baseRotation.x-.025*ease;
       }else if(procedural.type==='crowd'){
-        model.rotation.y=baseRotation.y+Math.sin(t*Math.PI*2)*.42*ease;
+        model.rotation.y=baseRotation.y+Math.sin(t*Math.PI*2)*.16*ease;
       }
 
       if(t>=1){
@@ -325,11 +458,14 @@ function createController(model,clips){
         model.position.copy(basePosition);
         model.rotation.copy(baseRotation);
         model.scale.copy(baseScale);
+        if(!usingAnimation&&bonePose.hasArms)bonePose.relaxed(elapsed,performanceActive);
       }
     }
   }
 
-  play('idle',{loop:true,fade:0});
+  if(!play('idle',{loop:true,fade:0})){
+    bonePose.relaxed(0,false);
+  }
 
   return {
     mixer,
@@ -337,10 +473,12 @@ function createController(model,clips){
     playPerformanceAction,
     setPerformanceActive,
     update,
+    rig:bonePose.rig,
     dispose(){
       clearTimeout(oneShotTimer);
       mixer.stopAllAction();
       actions.clear();
+      bonePose.restore();
       setMorph(morphs.blinkBoth,0);
       setMorph(morphs.blinkLeft,0);
       setMorph(morphs.blinkRight,0);
@@ -376,6 +514,14 @@ export async function upgradeAvatarFromGLB(host,room,data={}){
   const model=SkeletonUtils.clone(gltf.scene);
   const stats=prepareModel(model);
   normalizeModel(model,Number(data.modelHeight)||3.18);
+
+  // Avaturn's exported avatar faces the opposite local forward axis from Music City.
+  // Rotate only Avaturn-generated models so generic imported GLBs keep their authored orientation.
+  const isAvaturn=Boolean(data.avaturnAvatarId)||(data.avatarSource==='avaturn')||(data.source==='avaturn');
+  if(isAvaturn){
+    model.rotation.y+=Math.PI;
+    model.userData.musicCityForwardCorrected=true;
+  }
 
   if(host.userData&&host.userData.disposed)return null;
 
