@@ -1,5 +1,6 @@
 import {createRoom,buildAvatar} from './mce_3d_room.js';
-import {saveAvatarAsset,deleteAvatarAsset} from './mce_avatar_assets.js';
+import {saveAvatarAsset,saveAvatarBlob,deleteAvatarAsset} from './mce_avatar_assets.js';
+import {openMusicCityAvaturn,closeMusicCityAvaturn} from './mce_avaturn.js';
 
 let state=window.MCE?window.MCE.load():{
   name:'New Artist',
@@ -107,6 +108,11 @@ function readForm(){
     modelAssetId:avatarData.modelAssetId||'',
     modelAssetName:avatarData.modelAssetName||'',
     modelUrl:avatarData.modelUrl||'',
+    avaturnAvatarId:avatarData.avaturnAvatarId||'',
+    avaturnBodyId:avatarData.avaturnBodyId||'',
+    avaturnGender:avatarData.avaturnGender||'',
+    avaturnSupportsFaceAnimations:Boolean(avatarData.avaturnSupportsFaceAnimations),
+    avaturnUrlType:avatarData.avaturnUrlType||'',
     skin
   };
 }
@@ -135,7 +141,9 @@ function previewForm(){
 function updatePremiumStatus(){
   const status=document.getElementById('premiumAvatarStatus');
   if(!status)return;
-  if(avatarData.modelAssetId){
+  if(avatarData.avaturnAvatarId&&(avatarData.modelAssetId||avatarData.modelUrl)){
+    status.textContent='✓ Avaturn realistic avatar active'+(avatarData.avaturnSupportsFaceAnimations?' • facial animation supported':'')+'.';
+  }else if(avatarData.modelAssetId){
     status.textContent='✓ Premium GLB loaded: '+(avatarData.modelAssetName||'saved avatar')+'. This model follows your artist on this device.';
   }else if(avatarData.modelUrl){
     status.textContent='✓ Premium network avatar configured.';
@@ -222,7 +230,17 @@ document.getElementById('premiumAvatarFile').addEventListener('change',async eve
     status.textContent='Importing '+file.name+'…';
     const previousId=avatarData.modelAssetId||'';
     const asset=await saveAvatarAsset(file);
-    avatarData={...readForm(),modelAssetId:asset.id,modelAssetName:asset.name,modelUrl:''};
+    avatarData={
+      ...readForm(),
+      modelAssetId:asset.id,
+      modelAssetName:asset.name,
+      modelUrl:'',
+      avaturnAvatarId:'',
+      avaturnBodyId:'',
+      avaturnGender:'',
+      avaturnSupportsFaceAnimations:false,
+      avaturnUrlType:''
+    };
     localStorage.setItem('mceAvatar',JSON.stringify(avatarData));
     if(previousId&&previousId!==asset.id)deleteAvatarAsset(previousId).catch(()=>{});
     rebuildAvatar(avatarData);
@@ -237,13 +255,155 @@ document.getElementById('premiumAvatarFile').addEventListener('change',async eve
 
 document.getElementById('removePremiumAvatar').onclick=async()=>{
   const previousId=avatarData.modelAssetId||'';
-  avatarData={...readForm(),modelAssetId:'',modelAssetName:'',modelUrl:''};
+  avatarData={
+    ...readForm(),
+    modelAssetId:'',
+    modelAssetName:'',
+    modelUrl:'',
+    avaturnAvatarId:'',
+    avaturnBodyId:'',
+    avaturnGender:'',
+    avaturnSupportsFaceAnimations:false,
+    avaturnUrlType:''
+  };
   localStorage.setItem('mceAvatar',JSON.stringify(avatarData));
   if(previousId)deleteAvatarAsset(previousId).catch(()=>{});
   rebuildAvatar(avatarData);
   updatePremiumStatus();
   document.getElementById('notice').textContent='Music City Realism V2 is active.';
 };
+
+
+const avaturnOverlay=document.getElementById('avaturnOverlay');
+const avaturnContainer=document.getElementById('avaturn-sdk-container');
+const avaturnSaving=document.getElementById('avaturnSaving');
+const avaturnSavingTitle=document.getElementById('avaturnSavingTitle');
+const avaturnSavingText=document.getElementById('avaturnSavingText');
+const createAvaturnAvatar=document.getElementById('createAvaturnAvatar');
+let avaturnBusy=false;
+
+function setAvaturnAudioHold(active){
+  window.dispatchEvent(new CustomEvent('mce-audio-session',{
+    detail:{active:Boolean(active),source:'avaturn-avatar-creator'}
+  }));
+}
+
+function closeAvaturnEditor(){
+  closeMusicCityAvaturn();
+  avaturnOverlay.classList.remove('show');
+  avaturnOverlay.setAttribute('aria-hidden','true');
+  avaturnSaving.classList.remove('show');
+  if(avaturnContainer)avaturnContainer.replaceChildren();
+  avaturnBusy=false;
+  createAvaturnAvatar.disabled=false;
+  setAvaturnAudioHold(false);
+}
+
+function avaturnMetadata(data){
+  return {
+    source:'avaturn',
+    avatarId:data.avatarId||'',
+    bodyId:data.bodyId||'',
+    gender:data.gender||'',
+    supportsFaceAnimations:Boolean(data.avatarSupportsFaceAnimations),
+    urlType:data.urlType||''
+  };
+}
+
+async function handleAvaturnExport(data){
+  if(avaturnBusy)return;
+  avaturnBusy=true;
+  avaturnSavingTitle.textContent='BRINGING YOUR ARTIST INTO MUSIC CITY…';
+  avaturnSavingText.textContent='Saving the finished GLB and connecting it to your career.';
+  avaturnSaving.classList.add('show');
+
+  const previousId=avatarData.modelAssetId||'';
+  const exportName='avaturn-'+(data.avatarId||Date.now().toString(36))+'.glb';
+  const metadata=avaturnMetadata(data);
+
+  try{
+    let storedAsset=null;
+    let fallbackUrl='';
+
+    try{
+      const response=await fetch(data.url);
+      if(!response.ok)throw new Error('Avatar download returned '+response.status+'.');
+      const blob=await response.blob();
+      if(!blob.size)throw new Error('Avaturn returned an empty avatar file.');
+      storedAsset=await saveAvatarBlob(blob,exportName,metadata);
+    }catch(downloadError){
+      if(data.urlType==='httpURL'){
+        fallbackUrl=data.url;
+      }else{
+        throw downloadError;
+      }
+    }
+
+    avatarData={
+      ...readForm(),
+      modelAssetId:storedAsset?storedAsset.id:'',
+      modelAssetName:storedAsset?storedAsset.name:'Avaturn realistic avatar',
+      modelUrl:storedAsset?'':fallbackUrl,
+      avaturnAvatarId:data.avatarId||'',
+      avaturnBodyId:data.bodyId||'',
+      avaturnGender:data.gender||'',
+      avaturnSupportsFaceAnimations:Boolean(data.avatarSupportsFaceAnimations),
+      avaturnUrlType:data.urlType||''
+    };
+
+    localStorage.setItem('mceAvatar',JSON.stringify(avatarData));
+    localStorage.setItem('mceAvatarCoachSeen','1');
+    if(window.MCE)state=window.MCE.save({name:avatarData.name});
+
+    if(previousId&&(!storedAsset||previousId!==storedAsset.id)){
+      deleteAvatarAsset(previousId).catch(()=>{});
+    }
+
+    rebuildAvatar(avatarData);
+    updatePremiumStatus();
+
+    avaturnSavingTitle.textContent='✓ YOUR REALISTIC ARTIST IS READY';
+    avaturnSavingText.textContent=avatarData.avaturnSupportsFaceAnimations
+      ?'Avatar saved with facial-animation support. Returning to Music City…'
+      :'Avatar saved. Returning to Music City…';
+    document.getElementById('notice').textContent='✓ Avaturn artist imported automatically. Your realistic avatar now follows you through Music City.';
+
+    setTimeout(closeAvaturnEditor,850);
+  }catch(error){
+    console.error('Avaturn export import failed',error);
+    avaturnBusy=false;
+    avaturnSavingTitle.textContent='COULD NOT IMPORT THE AVATAR';
+    avaturnSavingText.textContent=(error&&error.message)||'Avaturn finished, but Music City could not save the GLB. Close this screen and try again.';
+  }
+}
+
+createAvaturnAvatar.addEventListener('click',async()=>{
+  if(avaturnBusy)return;
+  avaturnBusy=true;
+  createAvaturnAvatar.disabled=true;
+  avaturnOverlay.classList.add('show');
+  avaturnOverlay.setAttribute('aria-hidden','false');
+  avaturnSaving.classList.remove('show');
+  setAvaturnAudioHold(true);
+
+  try{
+    await openMusicCityAvaturn(avaturnContainer,{
+      onExport:handleAvaturnExport,
+      onError:error=>{
+        console.error('Avaturn creator error',error);
+      }
+    });
+    avaturnBusy=false;
+  }catch(error){
+    avaturnBusy=false;
+    createAvaturnAvatar.disabled=false;
+    avaturnSavingTitle.textContent='AVATURN COULD NOT OPEN';
+    avaturnSavingText.textContent=(error&&error.message)||'Close this screen and try again.';
+    avaturnSaving.classList.add('show');
+  }
+});
+
+document.getElementById('closeAvaturn').addEventListener('click',closeAvaturnEditor);
 
 document.getElementById('closeCustomizer').onclick=()=>{
   rebuildAvatar(avatarData);
