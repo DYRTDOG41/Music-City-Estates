@@ -234,6 +234,12 @@ function createBonePoseRig(model){
 
   const tempEuler=new THREE.Euler();
   const tempQuat=new THREE.Quaternion();
+  const modelWorldQ=new THREE.Quaternion();
+  const parentWorldQ=new THREE.Quaternion();
+  const desiredWorld=new THREE.Vector3();
+  const desiredParent=new THREE.Vector3();
+  const restDirParent=new THREE.Vector3();
+  const deltaQuat=new THREE.Quaternion();
 
   function compose(bone,x=0,y=0,z=0){
     if(!bone)return;
@@ -244,31 +250,88 @@ function createBonePoseRig(model){
     bone.quaternion.copy(base).multiply(tempQuat);
   }
 
+  function aimBone(bone,child,desiredModelDirection){
+    if(!bone||!child||!bone.parent)return false;
+    const base=rest.get(bone);
+    if(!base)return false;
+
+    model.updateMatrixWorld(true);
+
+    restDirParent.copy(child.position);
+    if(restDirParent.lengthSq()<1e-8)return false;
+    restDirParent.normalize().applyQuaternion(base).normalize();
+
+    model.getWorldQuaternion(modelWorldQ);
+    desiredWorld.copy(desiredModelDirection).normalize().applyQuaternion(modelWorldQ);
+
+    bone.parent.getWorldQuaternion(parentWorldQ);
+    desiredParent.copy(desiredWorld).applyQuaternion(parentWorldQ.clone().invert()).normalize();
+
+    deltaQuat.setFromUnitVectors(restDirParent,desiredParent);
+    bone.quaternion.copy(deltaQuat).multiply(base);
+    return true;
+  }
+
+  function poseArm(side,upperTarget,foreTarget){
+    const upper=side==='left'?rig.leftUpperArm:rig.rightUpperArm;
+    const fore=side==='left'?rig.leftForeArm:rig.rightForeArm;
+    const hand=side==='left'?rig.leftHand:rig.rightHand;
+
+    if(!aimBone(upper,fore,upperTarget))return;
+    model.updateMatrixWorld(true);
+    if(hand)aimBone(fore,hand,foreTarget);
+  }
+
+  function naturalArmTargets(elapsed=0,performance=false){
+    const slow=Math.sin(elapsed*.82);
+    const handSwing=Math.sin(elapsed*1.35);
+    const performanceSwing=performance?Math.sin(elapsed*2.3)*.025:0;
+
+    return {
+      leftUpper:new THREE.Vector3(
+        -.11-slow*.012,
+        -.992,
+        handSwing*.018+performanceSwing
+      ),
+      rightUpper:new THREE.Vector3(
+        .11+slow*.012,
+        -.992,
+        -handSwing*.018-performanceSwing
+      ),
+      leftFore:new THREE.Vector3(
+        .018,
+        -.999,
+        handSwing*.012
+      ),
+      rightFore:new THREE.Vector3(
+        -.018,
+        -.999,
+        -handSwing*.012
+      )
+    };
+  }
+
   function relaxed(elapsed=0,performance=false){
     const breathe=Math.sin(elapsed*1.8);
     const sway=Math.sin(elapsed*.72);
     const nod=Math.sin(elapsed*.48);
+    const targets=naturalArmTargets(elapsed,performance);
 
-    // Bring a raw T-pose down into a natural standing pose.
-    compose(rig.leftUpperArm,.03,0,1.08+sway*.02);
-    compose(rig.rightUpperArm,.03,0,-1.08-sway*.02);
-    compose(rig.leftForeArm,0,.02,.08+Math.sin(elapsed*1.2)*.025);
-    compose(rig.rightForeArm,0,-.02,-.08-Math.sin(elapsed*1.2)*.025);
-    compose(rig.leftHand,0,0,.025);
-    compose(rig.rightHand,0,0,-.025);
+    // Solve shoulder→elbow and elbow→hand directions instead of assuming bone-local axes.
+    // This reliably converts Avaturn's T-pose into arms-at-sides across different body rigs.
+    poseArm('left',targets.leftUpper,targets.leftFore);
+    poseArm('right',targets.rightUpper,targets.rightFore);
 
-    compose(rig.spine,breathe*.008,sway*.01,0);
-    compose(rig.chest,breathe*.012,sway*.012,0);
-    compose(rig.neck,nod*.008,sway*.012,0);
-    compose(rig.head,nod*.012,sway*.018,0);
+    compose(rig.leftHand,0,0,.018);
+    compose(rig.rightHand,0,0,-.018);
 
-    if(performance){
-      compose(rig.leftUpperLeg,Math.sin(elapsed*2.2)*.018,0,0);
-      compose(rig.rightUpperLeg,-Math.sin(elapsed*2.2)*.018,0,0);
-    }else{
-      compose(rig.leftUpperLeg,0,0,0);
-      compose(rig.rightUpperLeg,0,0,0);
-    }
+    compose(rig.spine,breathe*.006,sway*.007,0);
+    compose(rig.chest,breathe*.009,sway*.009,0);
+    compose(rig.neck,nod*.006,sway*.008,0);
+    compose(rig.head,nod*.01,sway*.012,0);
+
+    compose(rig.leftUpperLeg,performance?Math.sin(elapsed*2.2)*.014:0,0,0);
+    compose(rig.rightUpperLeg,performance?-Math.sin(elapsed*2.2)*.014:0,0,0);
   }
 
   function perform(type,t,elapsed){
@@ -276,31 +339,50 @@ function createBonePoseRig(model){
     const beat=Math.sin(elapsed*8);
 
     if(type==='timing'){
-      compose(rig.leftUpperArm,.08,0,1.0+beat*.16*wave);
-      compose(rig.rightUpperArm,.08,0,-1.0-beat*.16*wave);
-      compose(rig.leftForeArm,.06,0,.12+beat*.08*wave);
-      compose(rig.rightForeArm,.06,0,-.12-beat*.08*wave);
-      compose(rig.chest,.03,beat*.025*wave,0);
-      compose(rig.head,0,beat*.035*wave,0);
+      poseArm(
+        'left',
+        new THREE.Vector3(-.18-beat*.08*wave,-.97,beat*.05*wave),
+        new THREE.Vector3(.02,-.995,beat*.05*wave)
+      );
+      poseArm(
+        'right',
+        new THREE.Vector3(.18+beat*.08*wave,-.97,-beat*.05*wave),
+        new THREE.Vector3(-.02,-.995,-beat*.05*wave)
+      );
+      compose(rig.chest,.018,beat*.018*wave,0);
+      compose(rig.head,0,beat*.028*wave,0);
     }else if(type==='presence'){
-      compose(rig.leftUpperArm,-.08,0,.48*wave+.92*(1-wave));
-      compose(rig.rightUpperArm,-.08,0,-.48*wave-.92*(1-wave));
-      compose(rig.leftForeArm,-.15,0,-.18*wave);
-      compose(rig.rightForeArm,-.15,0,.18*wave);
-      compose(rig.chest,-.035,0,0);
-      compose(rig.head,-.03,0,0);
+      poseArm(
+        'left',
+        new THREE.Vector3(-.62*wave-.12*(1-wave),-.78-.2*(1-wave),0),
+        new THREE.Vector3(-.42*wave+.02*(1-wave),-.9,0)
+      );
+      poseArm(
+        'right',
+        new THREE.Vector3(.62*wave+.12*(1-wave),-.78-.2*(1-wave),0),
+        new THREE.Vector3(.42*wave-.02*(1-wave),-.9,0)
+      );
+      compose(rig.chest,-.025,0,0);
+      compose(rig.head,-.018,0,0);
     }else if(type==='crowd'){
-      compose(rig.leftUpperArm,-.2,0,.68);
-      compose(rig.rightUpperArm,-.55,0,-.28-Math.sin(t*Math.PI*2)*.28);
-      compose(rig.rightForeArm,-.35,0,-.3);
-      compose(rig.chest,0,Math.sin(t*Math.PI*2)*.12,0);
-      compose(rig.head,0,Math.sin(t*Math.PI*2)*.18,0);
+      poseArm(
+        'left',
+        new THREE.Vector3(-.14,-.985,0),
+        new THREE.Vector3(.02,-.995,0)
+      );
+      poseArm(
+        'right',
+        new THREE.Vector3(.72,-.52,Math.sin(t*Math.PI*2)*.18),
+        new THREE.Vector3(.5,-.72,Math.sin(t*Math.PI*2)*.18)
+      );
+      compose(rig.chest,0,Math.sin(t*Math.PI*2)*.08,0);
+      compose(rig.head,0,Math.sin(t*Math.PI*2)*.12,0);
     }
   }
 
   return {
     rig,
-    hasArms:Boolean(rig.leftUpperArm&&rig.rightUpperArm),
+    hasArms:Boolean(rig.leftUpperArm&&rig.rightUpperArm&&rig.leftForeArm&&rig.rightForeArm),
     relaxed,
     perform,
     restore(){
