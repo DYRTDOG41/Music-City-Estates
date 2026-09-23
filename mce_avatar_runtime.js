@@ -482,7 +482,7 @@ async function loadAnimationDonor(renderer){
 async function retargetFallbackAnimations(model,renderer){
   try{
     const targetSkin=findPrimarySkinnedMesh(model);
-    if(!targetSkin)return [];
+    if(!targetSkin)return {clips:[],animationRoot:null};
 
     const {gltf,skin:sourceSkin}=await loadAnimationDonor(renderer);
     const sourceLookup=buildBoneLookupFromSkeleton(sourceSkin.skeleton);
@@ -497,7 +497,7 @@ async function retargetFallbackAnimations(model,renderer){
     const matched=Object.keys(names).length;
     if(matched<10){
       console.warn('Music City animation retarget skipped: low bone coverage',matched,names);
-      return [];
+      return {clips:[],animationRoot:null};
     }
 
     const hipName=sourceLookup.get('hips')||'mixamorigHips';
@@ -530,15 +530,15 @@ async function retargetFallbackAnimations(model,renderer){
 
     model.userData.animationRetargetCoverage=matched;
     model.userData.animationRetargetSource='RobotExpressive CC0';
-    return clips;
+    return {clips,animationRoot:targetSkin};
   }catch(error){
     console.warn('Music City CC0 animation donor unavailable; using procedural fallback.',error);
-    return [];
+    return {clips:[],animationRoot:null};
   }
 }
 
-function createController(model,clips){
-  const mixer=new THREE.AnimationMixer(model);
+function createController(model,clips,animationRoot=model){
+  const mixer=new THREE.AnimationMixer(animationRoot||model);
   const actions=new Map();
   const morphs=collectMorphBindings(model);
   const bonePose=createBonePoseRig(model);
@@ -744,17 +744,19 @@ export async function upgradeAvatarFromGLB(host,room,data={}){
   host.userData.avatarStats=stats;
 
   let runtimeClips=Array.isArray(gltf.animations)?[...gltf.animations]:[];
+  let animationRoot=model;
   if(runtimeClips.length===0&&isAvaturn){
-    const donorClips=await retargetFallbackAnimations(model,room&&room.renderer);
-    if(donorClips.length){
-      runtimeClips=donorClips;
+    const donor=await retargetFallbackAnimations(model,room&&room.renderer);
+    if(donor.clips.length){
+      runtimeClips=donor.clips;
+      animationRoot=donor.animationRoot||model;
       host.userData.avatarAnimationSource='cc0-retargeted';
     }else{
       host.userData.avatarAnimationSource='procedural-fallback';
     }
   }
 
-  const controller=createController(model,runtimeClips);
+  const controller=createController(model,runtimeClips,animationRoot);
   host.userData.avatarController=controller;
   host.userData.avatarRigBones=Object.fromEntries(
     Object.entries(controller.rig||{}).map(([key,bone])=>[key,bone?.name||''])
