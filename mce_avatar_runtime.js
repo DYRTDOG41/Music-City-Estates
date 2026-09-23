@@ -6,6 +6,8 @@ import { MeshoptDecoder } from 'https://cdn.jsdelivr.net/npm/three@0.186.0/examp
 import * as SkeletonUtils from 'https://cdn.jsdelivr.net/npm/three@0.186.0/examples/jsm/utils/SkeletonUtils.js';
 
 const MODEL_CACHE=new Map();
+const ANIMATION_DONOR_URL='https://threejs.org/examples/models/gltf/RobotExpressive/RobotExpressive.glb';
+let animationDonorPromise=null;
 let loaderBundle=null;
 
 function createLoader(renderer){
@@ -165,12 +167,12 @@ function normalizeModel(root,targetHeight=3.18){
 function clipScore(name,kind){
   const text=String(name||'').toLowerCase();
   const rules={
-    idle:['idle','stand','breath'],
+    idle:['idle','standing','stand','breath'],
     timing:['dance','groove','bounce','hiphop','rap'],
-    presence:['perform','stage','gesture','talk','rap'],
+    presence:['thumbsup','yes','perform','stage','gesture','talk','rap'],
     crowd:['wave','point','cheer','crowd','gesture'],
-    walk:['walk','locomotion'],
-    run:['run','jog']
+    walk:['walking','walk','locomotion'],
+    run:['running','run','jog']
   };
   return (rules[kind]||[]).reduce((score,key)=>score+(text.includes(key)?1:0),0);
 }
@@ -413,6 +415,128 @@ function setMorph(bindings,value){
   }
 }
 
+function canonicalBoneKey(name){
+  const n=normalizedRigName(name);
+  const tests=[
+    ['hips',['hips','pelvis']],
+    ['spine2',['spine2','upperchest','chest2']],
+    ['spine1',['spine1','chest1']],
+    ['spine',['spine']],
+    ['neck',['neck']],
+    ['head',['head']],
+    ['leftShoulder',['leftshoulder','shoulderl']],
+    ['rightShoulder',['rightshoulder','shoulderr']],
+    ['leftForeArm',['leftforearm','leftlowerarm','forearml']],
+    ['rightForeArm',['rightforearm','rightlowerarm','forearmr']],
+    ['leftUpperArm',['leftupperarm','leftarm','upperarml']],
+    ['rightUpperArm',['rightupperarm','rightarm','upperarmr']],
+    ['leftHand',['lefthand','handl']],
+    ['rightHand',['righthand','handr']],
+    ['leftUpperLeg',['leftupleg','leftupperleg','leftthigh','thighl']],
+    ['rightUpperLeg',['rightupleg','rightupperleg','rightthigh','thighr']],
+    ['leftLowerLeg',['leftleg','leftlowerleg','leftcalf','calfl']],
+    ['rightLowerLeg',['rightleg','rightlowerleg','rightcalf','calfr']],
+    ['leftFoot',['leftfoot','footl']],
+    ['rightFoot',['rightfoot','footr']],
+    ['leftToe',['lefttoebase','lefttoe','toel']],
+    ['rightToe',['righttoebase','righttoe','toer']]
+  ];
+  for(const [key,patterns] of tests){
+    if(patterns.some(pattern=>n.includes(pattern)))return key;
+  }
+  return '';
+}
+
+function findPrimarySkinnedMesh(root){
+  let result=null;
+  root.traverse(object=>{
+    if(!result&&object.isSkinnedMesh&&object.skeleton)result=object;
+  });
+  return result;
+}
+
+function buildBoneLookupFromSkeleton(skeleton){
+  const map=new Map();
+  for(const bone of skeleton?.bones||[]){
+    const key=canonicalBoneKey(bone.name);
+    if(key&&!map.has(key))map.set(key,bone.name);
+  }
+  return map;
+}
+
+async function loadAnimationDonor(renderer){
+  if(animationDonorPromise)return animationDonorPromise;
+  animationDonorPromise=(async()=>{
+    const loader=createLoader(renderer).gltf;
+    const gltf=await loader.loadAsync(ANIMATION_DONOR_URL);
+    const skin=findPrimarySkinnedMesh(gltf.scene);
+    if(!skin)throw new Error('Animation donor did not contain a skinned humanoid.');
+    return {gltf,skin};
+  })().catch(error=>{
+    animationDonorPromise=null;
+    throw error;
+  });
+  return animationDonorPromise;
+}
+
+async function retargetFallbackAnimations(model,renderer){
+  try{
+    const targetSkin=findPrimarySkinnedMesh(model);
+    if(!targetSkin)return [];
+
+    const {gltf,skin:sourceSkin}=await loadAnimationDonor(renderer);
+    const sourceLookup=buildBoneLookupFromSkeleton(sourceSkin.skeleton);
+    const names={};
+
+    for(const targetBone of targetSkin.skeleton.bones){
+      const key=canonicalBoneKey(targetBone.name);
+      const sourceName=key?sourceLookup.get(key):'';
+      if(sourceName)names[targetBone.name]=sourceName;
+    }
+
+    const matched=Object.keys(names).length;
+    if(matched<10){
+      console.warn('Music City animation retarget skipped: low bone coverage',matched,names);
+      return [];
+    }
+
+    const hipName=sourceLookup.get('hips')||'mixamorigHips';
+    const wanted=new Set(['Idle','Walking','Running','Dance','Wave','ThumbsUp','Yes']);
+    const clips=[];
+
+    for(const clip of gltf.animations||[]){
+      if(!wanted.has(clip.name))continue;
+      try{
+        const retargeted=SkeletonUtils.retargetClip(
+          targetSkin,
+          sourceSkin.skeleton,
+          clip,
+          {
+            hip:hipName,
+            names,
+            preserveBoneMatrix:true,
+            preserveBonePositions:true,
+            useFirstFramePosition:false,
+            hipInfluence:new THREE.Vector3(0,1,0),
+            scale:1
+          }
+        );
+        retargeted.name=clip.name;
+        clips.push(retargeted);
+      }catch(error){
+        console.warn('Music City could not retarget animation',clip.name,error);
+      }
+    }
+
+    model.userData.animationRetargetCoverage=matched;
+    model.userData.animationRetargetSource='RobotExpressive CC0';
+    return clips;
+  }catch(error){
+    console.warn('Music City CC0 animation donor unavailable; using procedural fallback.',error);
+    return [];
+  }
+}
+
 function createController(model,clips){
   const mixer=new THREE.AnimationMixer(model);
   const actions=new Map();
@@ -466,6 +590,10 @@ function createController(model,clips){
     const duration=type==='crowd'?2200:1800;
     if(play(kind,{loop:false,fade:.12,duration}))return true;
 
+    if(current){
+      current.fadeOut(.12);
+      current=null;
+    }
     procedural={type,elapsed:0,duration:duration/1000};
     return true;
   }
@@ -534,7 +662,9 @@ function createController(model,clips){
         model.position.copy(basePosition);
         model.rotation.copy(baseRotation);
         model.scale.copy(baseScale);
-        if(!usingAnimation&&bonePose.hasArms)bonePose.relaxed(elapsed,performanceActive);
+        if(!play('idle',{loop:true,fade:.18})&&!usingAnimation&&bonePose.hasArms){
+          bonePose.relaxed(elapsed,performanceActive);
+        }
       }
     }
   }
@@ -613,7 +743,18 @@ export async function upgradeAvatarFromGLB(host,room,data={}){
   host.userData.avatarQuality='premium-glb';
   host.userData.avatarStats=stats;
 
-  const controller=createController(model,gltf.animations||[]);
+  let runtimeClips=Array.isArray(gltf.animations)?[...gltf.animations]:[];
+  if(runtimeClips.length===0&&isAvaturn){
+    const donorClips=await retargetFallbackAnimations(model,room&&room.renderer);
+    if(donorClips.length){
+      runtimeClips=donorClips;
+      host.userData.avatarAnimationSource='cc0-retargeted';
+    }else{
+      host.userData.avatarAnimationSource='procedural-fallback';
+    }
+  }
+
+  const controller=createController(model,runtimeClips);
   host.userData.avatarController=controller;
   host.userData.avatarRigBones=Object.fromEntries(
     Object.entries(controller.rig||{}).map(([key,bone])=>[key,bone?.name||''])
