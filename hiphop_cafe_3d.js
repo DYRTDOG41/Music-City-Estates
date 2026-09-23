@@ -95,9 +95,10 @@ for (const x of [-5.5, 5.5]) {
     cone.rotation.x = Math.PI / 2;
   }
 }
-const micStand = room.cylinder('microphone stand', .055, 2.8, [0, 1.4, -9.7], 0x1b1b1e, { metalness: .9, roughness: .2 });
+// Keep the spare stand off-center. The live performer uses a hand-tracked microphone.
+const micStand = room.cylinder('microphone stand', .055, 2.8, [-3.35, 1.4, -10.05], 0x1b1b1e, { metalness: .9, roughness: .2 });
 micStand.position.y = 1.4;
-const mic = room.cylinder('microphone', .09, .48, [0, 2.9, -9.7], 0x29292e, { metalness: .92, roughness: .18 });
+const mic = room.cylinder('microphone', .09, .48, [-3.35, 2.9, -10.05], 0x29292e, { metalness: .92, roughness: .18 });
 mic.rotation.z = .25;
 const avatarData = JSON.parse(localStorage.getItem('mceAvatar') || 'null') || { name: state.name || 'New Artist' };
 const performer = buildAvatar(room, avatarData, [0, .52, -10.7], .96);

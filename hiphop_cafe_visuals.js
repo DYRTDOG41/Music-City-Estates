@@ -477,22 +477,58 @@ export function buildCafeVerticalSlice(room, options = {}) {
   );
   scene.add(dust);
 
-  // Stage performer detail pass. Shoes/jewelry now come from the shared Realism V2 avatar.
-  if (performer) {
-    const rightArm = performer.userData?.rig?.rightArm || performer.children[4];
-    if (rightArm) {
-      const micGroup = new THREE.Group();
-      const handMic = new THREE.Mesh(new THREE.CylinderGeometry(.055, .07, .42, 12), blackMetal);
-      handMic.position.set(0, -.18, 0);
-      handMic.rotation.z = .12;
-      micGroup.add(handMic);
-      const micHead = new THREE.Mesh(new THREE.SphereGeometry(.09, 10, 8), new THREE.MeshStandardMaterial({ color: 0x28282e, roughness: .38, metalness: .72 }));
-      micHead.position.set(0, -.39, 0);
-      micGroup.add(micHead);
-      micGroup.position.set(0, -.54, 0);
-      rightArm.add(micGroup);
-      performer.userData?.registerAttachment?.(micGroup,'rightHand');
+  // Hand-tracked stage microphone. It follows the real premium skeleton in world space,
+  // avoiding bone-axis assumptions that can leave imported-avatar props floating.
+  const performanceMic = new THREE.Group();
+  performanceMic.visible = false;
+  const handMic = new THREE.Mesh(new THREE.CylinderGeometry(.05, .065, .38, 12), blackMetal);
+  handMic.position.y = .19;
+  performanceMic.add(handMic);
+  const micHead = new THREE.Mesh(
+    new THREE.SphereGeometry(.085, 12, 9),
+    new THREE.MeshStandardMaterial({ color: 0x28282e, roughness: .38, metalness: .72 })
+  );
+  micHead.position.y = .41;
+  performanceMic.add(micHead);
+  scene.add(performanceMic);
+
+  const micHandWorld = new THREE.Vector3();
+  const micHeadWorld = new THREE.Vector3();
+  const micDirection = new THREE.Vector3();
+  const micUp = new THREE.Vector3(0, 1, 0);
+
+  function performerRigNode(key) {
+    const premiumRig = performer?.userData?.avatarController?.rig;
+    if (premiumRig && premiumRig[key]) return premiumRig[key];
+    const fallbackRig = performer?.userData?.rig;
+    return fallbackRig && fallbackRig[key] ? fallbackRig[key] : null;
+  }
+
+  function updatePerformanceMic() {
+    if (!performer || !live) {
+      performanceMic.visible = false;
+      return;
     }
+
+    const hand = performerRigNode('rightHand') || performerRigNode('rightArm');
+    const head = performerRigNode('head');
+    if (!hand || !head) {
+      performanceMic.visible = false;
+      return;
+    }
+
+    hand.getWorldPosition(micHandWorld);
+    head.getWorldPosition(micHeadWorld);
+    micDirection.subVectors(micHeadWorld, micHandWorld);
+    if (micDirection.lengthSq() < .02) {
+      performanceMic.visible = false;
+      return;
+    }
+
+    micDirection.normalize();
+    performanceMic.position.copy(micHandWorld).addScaledVector(micDirection, .035);
+    performanceMic.quaternion.setFromUnitVectors(micUp, micDirection);
+    performanceMic.visible = true;
   }
 
   let live = false;
@@ -518,6 +554,7 @@ export function buildCafeVerticalSlice(room, options = {}) {
 
     dj.rotation.z = Math.sin(time * .0032) * .018 * (live ? 1 : .25);
     djHead.rotation.y = Math.sin(time * .0024) * .22;
+    updatePerformanceMic();
   });
 
   return { setPerformanceMode, materials: { brickMat, woodMat, stageMat } };
