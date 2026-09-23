@@ -886,8 +886,18 @@ export async function upgradeAvatarFromGLB(host,room,data={}){
   normalizeModel(model,Number(data.modelHeight)||3.18);
 
   // Avaturn's exported avatar faces the opposite local forward axis from Music City.
-  // Rotate only Avaturn-generated models so generic imported GLBs keep their authored orientation.
-  const isAvaturn=Boolean(data.avaturnAvatarId)||(data.avatarSource==='avaturn')||(data.source==='avaturn');
+  // Detect it from explicit data, persisted asset metadata, or an Avaturn-named GLB.
+  const assetMetadata=data.avatarAssetMetadata&&typeof data.avatarAssetMetadata==='object'
+    ?data.avatarAssetMetadata:{};
+  const assetName=String(data.modelAssetName||'').toLowerCase();
+  const isAvaturn=Boolean(
+    data.avaturnAvatarId||
+    assetMetadata.avatarId||
+    data.avatarSource==='avaturn'||
+    data.source==='avaturn'||
+    assetMetadata.source==='avaturn'||
+    assetName.includes('avaturn')
+  );
   if(isAvaturn){
     model.rotation.y+=Math.PI;
     model.userData.musicCityForwardCorrected=true;
@@ -907,24 +917,18 @@ export async function upgradeAvatarFromGLB(host,room,data={}){
   host.userData.avatarQuality='premium-glb';
   host.userData.avatarStats=stats;
 
-  let runtimeClips=Array.isArray(gltf.animations)?[...gltf.animations]:[];
+  // Safe baseline policy for every imported premium avatar:
+  // do not auto-play or auto-select embedded/donor clips on room load.
+  // A bad "idle" classification can be a sitting/crouched pose. Start from the
+  // model's own standing rest skeleton and let the deterministic bone controller
+  // handle neutral breathing/arms until named locomotion clips are mapped explicitly.
+  let runtimeClips=[];
   let animationRoot=model;
-
-  // Avaturn baseline policy:
-  // Do not guess, auto-select, or retarget a donor idle at load time.
-  // Some low-motion donor clips are seated/crouched poses, which can leave the
-  // avatar floating as if an invisible chair is under it. Start every Avaturn
-  // avatar from its own standing bind/rest pose and use the deterministic
-  // humanoid bone controller for the neutral idle. Explicit walk/run/stage
-  // clips can be mapped later once their names and rigs are known.
-  if(isAvaturn){
-    runtimeClips=[];
-    animationRoot=model;
-    host.userData.avatarAnimationSource='avaturn-procedural-neutral';
-    host.userData.avatarAutoRetargetDisabled=true;
-  }else if(runtimeClips.length===0){
-    host.userData.avatarAnimationSource='procedural-fallback';
-  }
+  host.userData.avatarAnimationSource=isAvaturn
+    ?'avaturn-procedural-neutral'
+    :'premium-procedural-neutral';
+  host.userData.avatarEmbeddedClipsSuppressed=true;
+  host.userData.avatarAutoRetargetDisabled=true;
 
   const controller=createController(model,runtimeClips,animationRoot);
   host.userData.avatarController=controller;
