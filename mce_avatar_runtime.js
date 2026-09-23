@@ -297,11 +297,14 @@ function createBonePoseRig(model){
     const handSwing=Math.sin(elapsed*1.35);
     const performanceSwing=performance?Math.sin(elapsed*2.3)*.025:0;
 
-    // Relaxed asymmetry: elbows stay slightly bent and the hands do not hang on a ruler-straight line.
-    leftUpperTarget.set(-.16-slow*.018,-.972,.08+handSwing*.025+performanceSwing);
-    rightUpperTarget.set(.14+slow*.016,-.978,-.055-handSwing*.022-performanceSwing);
-    leftForeTarget.set(.045,-.955,.292+handSwing*.025);
-    rightForeTarget.set(-.035,-.968,.238-handSwing*.022);
+    // Neutral standing pose for Avaturn/Music City.
+    // Music City local forward is -Z. Keep elbows slightly away from the torso
+    // and bring both forearms/hands a little forward so they do not disappear
+    // behind the hips or look pinned to the character's back.
+    leftUpperTarget.set(-.205-slow*.014,-.976,-.045+handSwing*.018+performanceSwing);
+    rightUpperTarget.set(.205+slow*.014,-.976,-.045-handSwing*.018-performanceSwing);
+    leftForeTarget.set(.075,-.964,-.245+handSwing*.018);
+    rightForeTarget.set(-.075,-.964,-.245-handSwing*.018);
     return {
       leftUpper:leftUpperTarget,
       rightUpper:rightUpperTarget,
