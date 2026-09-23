@@ -279,6 +279,10 @@ const avaturnContainer=document.getElementById('avaturn-sdk-container');
 const avaturnSaving=document.getElementById('avaturnSaving');
 const avaturnSavingTitle=document.getElementById('avaturnSavingTitle');
 const avaturnSavingText=document.getElementById('avaturnSavingText');
+const avaturnConnectionStatus=document.getElementById('avaturnConnectionStatus');
+const avaturnErrorActions=document.getElementById('avaturnErrorActions');
+const retryAvaturn=document.getElementById('retryAvaturn');
+const openAvaturnDirect=document.getElementById('openAvaturnDirect');
 const createAvaturnAvatar=document.getElementById('createAvaturnAvatar');
 let avaturnBusy=false;
 
@@ -288,14 +292,36 @@ function setAvaturnAudioHold(active){
   }));
 }
 
+function setAvaturnStatus(message){
+  if(avaturnConnectionStatus)avaturnConnectionStatus.textContent=message||'';
+}
+
+function resetAvaturnError(){
+  avaturnErrorActions?.classList.remove('show');
+  avaturnSaving?.classList.remove('show');
+}
+
+function showAvaturnError(error,title='AVATURN COULD NOT OPEN'){
+  const message=(error&&error.message)||String(error||'Avaturn could not open.');
+  console.error(title,error);
+  avaturnBusy=false;
+  createAvaturnAvatar.disabled=false;
+  avaturnSavingTitle.textContent=title;
+  avaturnSavingText.textContent=message;
+  avaturnErrorActions?.classList.add('show');
+  avaturnSaving.classList.add('show');
+  setAvaturnStatus('Connection problem');
+}
+
 function closeAvaturnEditor(){
   closeMusicCityAvaturn();
   avaturnOverlay.classList.remove('show');
   avaturnOverlay.setAttribute('aria-hidden','true');
-  avaturnSaving.classList.remove('show');
+  resetAvaturnError();
   if(avaturnContainer)avaturnContainer.replaceChildren();
   avaturnBusy=false;
   createAvaturnAvatar.disabled=false;
+  setAvaturnStatus('Ready to connect');
   setAvaturnAudioHold(false);
 }
 
@@ -313,9 +339,11 @@ function avaturnMetadata(data){
 async function handleAvaturnExport(data){
   if(avaturnBusy)return;
   avaturnBusy=true;
+  avaturnErrorActions?.classList.remove('show');
   avaturnSavingTitle.textContent='BRINGING YOUR ARTIST INTO MUSIC CITY…';
   avaturnSavingText.textContent='Saving the finished GLB and connecting it to your career.';
   avaturnSaving.classList.add('show');
+  setAvaturnStatus('Importing your avatar…');
 
   const previousId=avatarData.modelAssetId||'';
   const exportName='avaturn-'+(data.avatarId||Date.now().toString(36))+'.glb';
@@ -367,42 +395,53 @@ async function handleAvaturnExport(data){
       ?'Avatar saved with facial-animation support. Returning to Music City…'
       :'Avatar saved. Returning to Music City…';
     document.getElementById('notice').textContent='✓ Avaturn artist imported automatically. Your realistic avatar now follows you through Music City.';
+    setAvaturnStatus('Avatar imported');
 
     setTimeout(closeAvaturnEditor,850);
   }catch(error){
-    console.error('Avaturn export import failed',error);
-    avaturnBusy=false;
-    avaturnSavingTitle.textContent='COULD NOT IMPORT THE AVATAR';
-    avaturnSavingText.textContent=(error&&error.message)||'Avaturn finished, but Music City could not save the GLB. Close this screen and try again.';
+    showAvaturnError(error,'COULD NOT IMPORT THE AVATAR');
   }
 }
 
-createAvaturnAvatar.addEventListener('click',async()=>{
+async function launchAvaturn(){
   if(avaturnBusy)return;
   avaturnBusy=true;
   createAvaturnAvatar.disabled=true;
   avaturnOverlay.classList.add('show');
   avaturnOverlay.setAttribute('aria-hidden','false');
-  avaturnSaving.classList.remove('show');
+  resetAvaturnError();
+  setAvaturnStatus('Loading Avaturn…');
   setAvaturnAudioHold(true);
 
   try{
     await openMusicCityAvaturn(avaturnContainer,{
       onExport:handleAvaturnExport,
+      onStatus:(phase,message)=>{
+        setAvaturnStatus(message||phase);
+      },
       onError:error=>{
         console.error('Avaturn creator error',error);
       }
     });
     avaturnBusy=false;
-  }catch(error){
-    avaturnBusy=false;
     createAvaturnAvatar.disabled=false;
-    avaturnSavingTitle.textContent='AVATURN COULD NOT OPEN';
-    avaturnSavingText.textContent=(error&&error.message)||'Close this screen and try again.';
-    avaturnSaving.classList.add('show');
+    setAvaturnStatus('Avaturn ready');
+  }catch(error){
+    showAvaturnError(error);
   }
-});
+}
 
+createAvaturnAvatar.addEventListener('click',launchAvaturn);
+retryAvaturn?.addEventListener('click',()=>{
+  closeMusicCityAvaturn();
+  avaturnBusy=false;
+  if(avaturnContainer)avaturnContainer.replaceChildren();
+  resetAvaturnError();
+  launchAvaturn();
+});
+openAvaturnDirect?.addEventListener('click',()=>{
+  window.open('https://musiccityestates.avaturn.dev','_blank','noopener,noreferrer');
+});
 document.getElementById('closeAvaturn').addEventListener('click',closeAvaturnEditor);
 
 document.getElementById('closeCustomizer').onclick=()=>{
