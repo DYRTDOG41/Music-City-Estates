@@ -297,10 +297,11 @@ function createBonePoseRig(model){
     const handSwing=Math.sin(elapsed*1.35);
     const performanceSwing=performance?Math.sin(elapsed*2.3)*.025:0;
 
-    leftUpperTarget.set(-.11-slow*.012,-.992,handSwing*.018+performanceSwing);
-    rightUpperTarget.set(.11+slow*.012,-.992,-handSwing*.018-performanceSwing);
-    leftForeTarget.set(.018,-.999,handSwing*.012);
-    rightForeTarget.set(-.018,-.999,-handSwing*.012);
+    // Relaxed asymmetry: elbows stay slightly bent and the hands do not hang on a ruler-straight line.
+    leftUpperTarget.set(-.16-slow*.018,-.972,.08+handSwing*.025+performanceSwing);
+    rightUpperTarget.set(.14+slow*.016,-.978,-.055-handSwing*.022-performanceSwing);
+    leftForeTarget.set(.045,-.955,.292+handSwing*.025);
+    rightForeTarget.set(-.035,-.968,.238-handSwing*.022);
     return {
       leftUpper:leftUpperTarget,
       rightUpper:rightUpperTarget,
@@ -323,10 +324,10 @@ function createBonePoseRig(model){
     compose(rig.leftHand,0,0,.018);
     compose(rig.rightHand,0,0,-.018);
 
-    compose(rig.spine,breathe*.006,sway*.007,0);
-    compose(rig.chest,breathe*.009,sway*.009,0);
-    compose(rig.neck,nod*.006,sway*.008,0);
-    compose(rig.head,nod*.01,sway*.012,0);
+    compose(rig.spine,breathe*.01,sway*.012,sway*.004);
+    compose(rig.chest,breathe*.014,sway*.016,-sway*.006);
+    compose(rig.neck,nod*.009,sway*.012,0);
+    compose(rig.head,nod*.015,sway*.021,Math.sin(elapsed*.37)*.006);
 
     compose(rig.leftUpperLeg,performance?Math.sin(elapsed*2.2)*.014:0,0,0);
     compose(rig.rightUpperLeg,performance?-Math.sin(elapsed*2.2)*.014:0,0,0);
