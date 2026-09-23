@@ -212,9 +212,9 @@ function collectHumanoidRig(model){
     neck:find(['neck']),
     head:find(['head']),
     leftUpperArm:find(['leftupperarm','upperarml','lupperarm','leftarm','armleft','mixamorigleftarm']),
-    rightUpperArm:find(['rightupperarm','upperarmr','rupperarm','rightarm','armright','mixamorigrigh tarm'.replace(' ','')]),
+    rightUpperArm:find(['rightupperarm','upperarmr','rupperarm','rightarm','armright','mixamorigrightarm']),
     leftForeArm:find(['leftforearm','forearml','lforearm','leftlowerarm','mixamorigleftforearm']),
-    rightForeArm:find(['rightforearm','forearmr','rforearm','rightlowerarm','mixamorigr ightforearm'.replace(' ','')]),
+    rightForeArm:find(['rightforearm','forearmr','rforearm','rightlowerarm','mixamorigrightforearm']),
     leftHand:find(['lefthand','handl','lhand','mixamoriglefthand']),
     rightHand:find(['righthand','handr','rhand','mixamorigrighthand']),
     leftUpperLeg:find(['leftupleg','leftupperleg','thighl','lthigh','mixamorigleftupleg']),
@@ -240,6 +240,11 @@ function createBonePoseRig(model){
   const desiredParent=new THREE.Vector3();
   const restDirParent=new THREE.Vector3();
   const deltaQuat=new THREE.Quaternion();
+  const inverseParentQ=new THREE.Quaternion();
+  const leftUpperTarget=new THREE.Vector3();
+  const rightUpperTarget=new THREE.Vector3();
+  const leftForeTarget=new THREE.Vector3();
+  const rightForeTarget=new THREE.Vector3();
 
   function compose(bone,x=0,y=0,z=0){
     if(!bone)return;
@@ -265,7 +270,8 @@ function createBonePoseRig(model){
     desiredWorld.copy(desiredModelDirection).normalize().applyQuaternion(modelWorldQ);
 
     bone.parent.getWorldQuaternion(parentWorldQ);
-    desiredParent.copy(desiredWorld).applyQuaternion(parentWorldQ.clone().invert()).normalize();
+    inverseParentQ.copy(parentWorldQ).invert();
+    desiredParent.copy(desiredWorld).applyQuaternion(inverseParentQ).normalize();
 
     deltaQuat.setFromUnitVectors(restDirParent,desiredParent);
     bone.quaternion.copy(deltaQuat).multiply(base);
@@ -287,27 +293,15 @@ function createBonePoseRig(model){
     const handSwing=Math.sin(elapsed*1.35);
     const performanceSwing=performance?Math.sin(elapsed*2.3)*.025:0;
 
+    leftUpperTarget.set(-.11-slow*.012,-.992,handSwing*.018+performanceSwing);
+    rightUpperTarget.set(.11+slow*.012,-.992,-handSwing*.018-performanceSwing);
+    leftForeTarget.set(.018,-.999,handSwing*.012);
+    rightForeTarget.set(-.018,-.999,-handSwing*.012);
     return {
-      leftUpper:new THREE.Vector3(
-        -.11-slow*.012,
-        -.992,
-        handSwing*.018+performanceSwing
-      ),
-      rightUpper:new THREE.Vector3(
-        .11+slow*.012,
-        -.992,
-        -handSwing*.018-performanceSwing
-      ),
-      leftFore:new THREE.Vector3(
-        .018,
-        -.999,
-        handSwing*.012
-      ),
-      rightFore:new THREE.Vector3(
-        -.018,
-        -.999,
-        -handSwing*.012
-      )
+      leftUpper:leftUpperTarget,
+      rightUpper:rightUpperTarget,
+      leftFore:leftForeTarget,
+      rightFore:rightForeTarget
     };
   }
 
@@ -341,39 +335,39 @@ function createBonePoseRig(model){
     if(type==='timing'){
       poseArm(
         'left',
-        new THREE.Vector3(-.18-beat*.08*wave,-.97,beat*.05*wave),
-        new THREE.Vector3(.02,-.995,beat*.05*wave)
+        leftUpperTarget.set(-.18-beat*.08*wave,-.97,beat*.05*wave),
+        leftForeTarget.set(.02,-.995,beat*.05*wave)
       );
       poseArm(
         'right',
-        new THREE.Vector3(.18+beat*.08*wave,-.97,-beat*.05*wave),
-        new THREE.Vector3(-.02,-.995,-beat*.05*wave)
+        rightUpperTarget.set(.18+beat*.08*wave,-.97,-beat*.05*wave),
+        rightForeTarget.set(-.02,-.995,-beat*.05*wave)
       );
       compose(rig.chest,.018,beat*.018*wave,0);
       compose(rig.head,0,beat*.028*wave,0);
     }else if(type==='presence'){
       poseArm(
         'left',
-        new THREE.Vector3(-.62*wave-.12*(1-wave),-.78-.2*(1-wave),0),
-        new THREE.Vector3(-.42*wave+.02*(1-wave),-.9,0)
+        leftUpperTarget.set(-.62*wave-.12*(1-wave),-.78-.2*(1-wave),0),
+        leftForeTarget.set(-.42*wave+.02*(1-wave),-.9,0)
       );
       poseArm(
         'right',
-        new THREE.Vector3(.62*wave+.12*(1-wave),-.78-.2*(1-wave),0),
-        new THREE.Vector3(.42*wave-.02*(1-wave),-.9,0)
+        rightUpperTarget.set(.62*wave+.12*(1-wave),-.78-.2*(1-wave),0),
+        rightForeTarget.set(.42*wave-.02*(1-wave),-.9,0)
       );
       compose(rig.chest,-.025,0,0);
       compose(rig.head,-.018,0,0);
     }else if(type==='crowd'){
       poseArm(
         'left',
-        new THREE.Vector3(-.14,-.985,0),
-        new THREE.Vector3(.02,-.995,0)
+        leftUpperTarget.set(-.14,-.985,0),
+        leftForeTarget.set(.02,-.995,0)
       );
       poseArm(
         'right',
-        new THREE.Vector3(.72,-.52,Math.sin(t*Math.PI*2)*.18),
-        new THREE.Vector3(.5,-.72,Math.sin(t*Math.PI*2)*.18)
+        rightUpperTarget.set(.72,-.52,Math.sin(t*Math.PI*2)*.18),
+        rightForeTarget.set(.5,-.72,Math.sin(t*Math.PI*2)*.18)
       );
       compose(rig.chest,0,Math.sin(t*Math.PI*2)*.08,0);
       compose(rig.head,0,Math.sin(t*Math.PI*2)*.12,0);
@@ -621,6 +615,9 @@ export async function upgradeAvatarFromGLB(host,room,data={}){
 
   const controller=createController(model,gltf.animations||[]);
   host.userData.avatarController=controller;
+  host.userData.avatarRigBones=Object.fromEntries(
+    Object.entries(controller.rig||{}).map(([key,bone])=>[key,bone?.name||''])
+  );
 
   if(room&&Array.isArray(room.animated)){
     const updater=(time,dt)=>controller.update(dt);
