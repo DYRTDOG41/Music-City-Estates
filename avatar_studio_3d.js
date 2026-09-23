@@ -310,11 +310,13 @@ function showAvaturnError(error,title='AVATURN COULD NOT OPEN'){
   avaturnSavingText.textContent=message;
   avaturnErrorActions?.classList.add('show');
   avaturnSaving.classList.add('show');
+  document.body.classList.add('avaturn-open');
   setAvaturnStatus('Connection problem');
 }
 
 function closeAvaturnEditor(){
   closeMusicCityAvaturn();
+  document.body.classList.remove('avaturn-open');
   avaturnOverlay.classList.remove('show');
   avaturnOverlay.setAttribute('aria-hidden','true');
   resetAvaturnError();
@@ -407,6 +409,7 @@ async function launchAvaturn(){
   if(avaturnBusy)return;
   avaturnBusy=true;
   createAvaturnAvatar.disabled=true;
+  document.body.classList.add('avaturn-open');
   avaturnOverlay.classList.add('show');
   avaturnOverlay.setAttribute('aria-hidden','false');
   resetAvaturnError();
