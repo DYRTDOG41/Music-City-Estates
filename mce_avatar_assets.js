@@ -21,19 +21,20 @@ function requestResult(request){
   });
 }
 
-export async function saveAvatarAsset(file){
-  if(!file)throw new Error('Choose a .glb avatar file first.');
-  const name=String(file.name||'premium-avatar.glb');
-  if(!/\.glb$/i.test(name))throw new Error('Music City premium avatar import currently accepts .glb files.');
+export async function saveAvatarBlob(blob,name='premium-avatar.glb',metadata={}){
+  if(!blob)throw new Error('Avatar data is missing.');
+  const safeName=String(name||'premium-avatar.glb');
+  if(!/\.glb$/i.test(safeName))throw new Error('Music City premium avatar storage currently accepts .glb files.');
   const id='avatar-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,9);
   const db=await openDb();
   const tx=db.transaction(STORE,'readwrite');
   tx.objectStore(STORE).put({
     id,
-    name,
-    type:file.type||'model/gltf-binary',
-    size:Number(file.size)||0,
-    blob:file,
+    name:safeName,
+    type:blob.type||'model/gltf-binary',
+    size:Number(blob.size)||0,
+    blob,
+    metadata:{...metadata},
     savedAt:new Date().toISOString()
   });
   await new Promise((resolve,reject)=>{
@@ -42,7 +43,13 @@ export async function saveAvatarAsset(file){
     tx.onabort=()=>reject(tx.error||new Error('Premium avatar save was canceled.'));
   });
   db.close();
-  return {id,name,size:Number(file.size)||0};
+  return {id,name:safeName,size:Number(blob.size)||0,metadata:{...metadata}};
+}
+
+export async function saveAvatarAsset(file){
+  if(!file)throw new Error('Choose a .glb avatar file first.');
+  const name=String(file.name||'premium-avatar.glb');
+  return saveAvatarBlob(file,name,{source:'file-import'});
 }
 
 export async function getAvatarAsset(id){
@@ -62,6 +69,7 @@ export async function getAvatarAssetUrl(id){
     id:item.id,
     name:item.name,
     size:item.size,
+    metadata:item.metadata||{},
     url:URL.createObjectURL(item.blob)
   };
 }
