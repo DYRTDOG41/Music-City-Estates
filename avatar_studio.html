@@ -26,7 +26,11 @@
 .avaturn-saving.show{display:flex}
 .avaturn-saving-card{width:min(420px,92%);padding:22px;border:1px solid #72ffd044;border-radius:18px;background:#091017;box-shadow:0 20px 60px #000a}
 .avaturn-saving-card strong{display:block;color:#8fffd9;margin-bottom:8px}
-.avaturn-saving-card small{color:#a9bac7;line-height:1.5}
+.avaturn-saving-card small{display:block;color:#a9bac7;line-height:1.5}
+.avaturn-error-actions{display:none;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.avaturn-error-actions.show{display:grid}
+.avaturn-error-actions button{min-height:40px;border:1px solid #5f7d93;border-radius:9px;background:#10202c;color:#f2fbff;font-size:10px;font-weight:900;letter-spacing:.04em}
+#avaturnConnectionStatus{max-width:46vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 @media(max-width:720px){.premium-buttons{grid-template-columns:1fr}}@media(max-width:720px){.hint{display:none}.touch{display:grid}.stats{font-size:10px;gap:6px}.grid{grid-template-columns:1fr}.hud{font-size:12px}.coach{top:78px;font-size:11px}.quick-start{grid-template-columns:1fr}.preset-card{min-height:78px}}
 </style>
@@ -54,13 +58,17 @@
   <div class="avaturn-topbar">
     <button class="avaturn-close" id="closeAvaturn" type="button" aria-label="Close Avaturn">×</button>
     <strong>MUSIC CITY × AVATURN</strong>
-    <span>Create your realistic artist • Finish in Avaturn to return automatically</span>
+    <span id="avaturnConnectionStatus">Ready to connect</span>
   </div>
   <div id="avaturn-sdk-container"></div>
   <div class="avaturn-saving" id="avaturnSaving">
     <div class="avaturn-saving-card">
       <strong id="avaturnSavingTitle">BRINGING YOUR ARTIST INTO MUSIC CITY…</strong>
       <small id="avaturnSavingText">Saving the finished GLB and connecting it to your career.</small>
+      <div class="avaturn-error-actions" id="avaturnErrorActions">
+        <button id="retryAvaturn" type="button">TRY AGAIN</button>
+        <button id="openAvaturnDirect" type="button">OPEN AVATURN DIRECTLY</button>
+      </div>
     </div>
   </div>
 </div>
