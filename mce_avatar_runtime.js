@@ -6,8 +6,10 @@ import { MeshoptDecoder } from 'https://cdn.jsdelivr.net/npm/three@0.186.0/examp
 import * as SkeletonUtils from 'https://cdn.jsdelivr.net/npm/three@0.186.0/examples/jsm/utils/SkeletonUtils.js';
 
 const MODEL_CACHE=new Map();
-const ANIMATION_DONOR_URL='https://threejs.org/examples/models/gltf/RobotExpressive/RobotExpressive.glb';
+const ANIMATION_DONOR_URL='https://cdn.jsdelivr.net/gh/J-Ponzo/gltf-universal-animation-library@e24c23cf2a1323488a3faa226ea7ea21f644b73e/glTF/AnimationLibrary_Godot_Standard.gltf';
+const RETARGETER_URL='https://cdn.jsdelivr.net/gh/upf-gti/retargeting-threejs@82f1b8218813547224dd96df1638c950d241824d/retargeting.js';
 let animationDonorPromise=null;
+let retargeterModulePromise=null;
 let loaderBundle=null;
 
 function createLoader(renderer){
@@ -167,7 +169,7 @@ function normalizeModel(root,targetHeight=3.18){
 function clipScore(name,kind){
   const text=String(name||'').toLowerCase();
   const rules={
-    idle:['idle','standing','stand','breath'],
+    idle:['musiccityhumanidle','idle','standing','stand','breath'],
     timing:['dance','groove','bounce','hiphop','rap'],
     presence:['thumbsup','yes','perform','stage','gesture','talk','rap'],
     crowd:['wave','point','cheer','crowd','gesture'],
@@ -419,9 +421,9 @@ function canonicalBoneKey(name){
   const n=normalizedRigName(name);
   const tests=[
     ['hips',['hips','pelvis']],
-    ['spine2',['spine2','upperchest','chest2']],
-    ['spine1',['spine1','chest1']],
-    ['spine',['spine']],
+    ['spine2',['spine003','spine3','spine2','upperchest','chest2']],
+    ['spine1',['spine002','spine2','spine1','chest1']],
+    ['spine',['spine001','spine1','spine']],
     ['neck',['neck']],
     ['head',['head']],
     ['leftShoulder',['leftshoulder','shoulderl']],
@@ -434,8 +436,8 @@ function canonicalBoneKey(name){
     ['rightHand',['righthand','handr']],
     ['leftUpperLeg',['leftupleg','leftupperleg','leftthigh','thighl']],
     ['rightUpperLeg',['rightupleg','rightupperleg','rightthigh','thighr']],
-    ['leftLowerLeg',['leftleg','leftlowerleg','leftcalf','calfl']],
-    ['rightLowerLeg',['rightleg','rightlowerleg','rightcalf','calfr']],
+    ['leftLowerLeg',['leftleg','leftlowerleg','leftcalf','calfl','shinl']],
+    ['rightLowerLeg',['rightleg','rightlowerleg','rightcalf','calfr','shinr']],
     ['leftFoot',['leftfoot','footl']],
     ['rightFoot',['rightfoot','footr']],
     ['leftToe',['lefttoebase','lefttoe','toel']],
@@ -470,7 +472,7 @@ async function loadAnimationDonor(renderer){
     const loader=createLoader(renderer).gltf;
     const gltf=await loader.loadAsync(ANIMATION_DONOR_URL);
     const skin=findPrimarySkinnedMesh(gltf.scene);
-    if(!skin)throw new Error('Animation donor did not contain a skinned humanoid.');
+    if(!skin)throw new Error('Human animation donor did not contain a skinned humanoid.');
     return {gltf,skin};
   })().catch(error=>{
     animationDonorPromise=null;
@@ -479,63 +481,212 @@ async function loadAnimationDonor(renderer){
   return animationDonorPromise;
 }
 
-async function retargetFallbackAnimations(model,renderer){
+async function loadRetargeter(){
+  if(retargeterModulePromise)return retargeterModulePromise;
+  retargeterModulePromise=import(RETARGETER_URL)
+    .then(mod=>{
+      if(typeof mod.AnimationRetargeting!=='function'){
+        throw new Error('AnimationRetargeting module did not expose its retargeter.');
+      }
+      return mod.AnimationRetargeting;
+    })
+    .catch(error=>{
+      retargeterModulePromise=null;
+      throw error;
+    });
+  return retargeterModulePromise;
+}
+
+function clipTrackBoneKey(trackName){
+  const raw=String(trackName||'').split('.')[0];
+  return canonicalBoneKey(raw);
+}
+
+function quaternionTrackRange(track){
+  const values=track?.values;
+  if(!values||values.length<8)return 0;
+  const base=new THREE.Quaternion(values[0],values[1],values[2],values[3]).normalize();
+  let maxAngle=0;
+  for(let i=4;i+3<values.length;i+=4){
+    const q=new THREE.Quaternion(values[i],values[i+1],values[i+2],values[i+3]).normalize();
+    maxAngle=Math.max(maxAngle,base.angleTo(q));
+  }
+  return maxAngle;
+}
+
+function positionTrackRange(track){
+  const values=track?.values;
+  if(!values||values.length<6)return {horizontal:0,vertical:0};
+  let minX=values[0],maxX=values[0],minY=values[1],maxY=values[1],minZ=values[2],maxZ=values[2];
+  for(let i=3;i+2<values.length;i+=3){
+    minX=Math.min(minX,values[i]);maxX=Math.max(maxX,values[i]);
+    minY=Math.min(minY,values[i+1]);maxY=Math.max(maxY,values[i+1]);
+    minZ=Math.min(minZ,values[i+2]);maxZ=Math.max(maxZ,values[i+2]);
+  }
+  return {
+    horizontal:Math.hypot(maxX-minX,maxZ-minZ),
+    vertical:maxY-minY
+  };
+}
+
+function humanMotionStats(clip){
+  const stats={
+    clip,
+    duration:Number(clip?.duration)||0,
+    rootHorizontal:0,
+    rootVertical:0,
+    arm:0,
+    leg:0,
+    torso:0,
+    head:0,
+    total:0
+  };
+
+  for(const track of clip?.tracks||[]){
+    const key=clipTrackBoneKey(track.name);
+    const lower=String(track.name||'').toLowerCase();
+
+    if(track.ValueTypeName==='quaternion'||lower.endsWith('.quaternion')){
+      const range=quaternionTrackRange(track);
+      stats.total+=range;
+      if(/upperarm|forearm|hand|shoulder/i.test(key))stats.arm+=range;
+      else if(/upperleg|lowerleg|foot|toe/i.test(key))stats.leg+=range;
+      else if(/spine|hips|chest/i.test(key))stats.torso+=range;
+      else if(/head|neck/i.test(key))stats.head+=range;
+    }else if((track.ValueTypeName==='vector'||lower.endsWith('.position'))&&(key==='hips'||lower.includes('root'))){
+      const range=positionTrackRange(track);
+      stats.rootHorizontal=Math.max(stats.rootHorizontal,range.horizontal);
+      stats.rootVertical=Math.max(stats.rootVertical,range.vertical);
+    }
+  }
+
+  return stats;
+}
+
+function selectHumanIdleClip(clips){
+  const scored=(clips||[])
+    .map(humanMotionStats)
+    .filter(s=>s.duration>=.7&&s.duration<=12&&s.total>.025)
+    .map(s=>{
+      let score=100;
+      score-=Math.min(80,s.rootHorizontal*90);
+      score-=Math.min(60,s.rootVertical*70);
+      score-=Math.max(0,s.leg-1.1)*14;
+      score-=Math.max(0,s.arm-2.1)*5;
+      score-=Math.max(0,s.torso-1.1)*10;
+      score-=Math.max(0,s.total-5.5)*3;
+      score-=Math.abs(s.duration-3.2)*.45;
+
+      // A believable idle should move, but not be completely frozen or wildly active.
+      if(s.total<.12)score-=18;
+      if(s.leg<.02&&s.arm<.02&&s.torso<.02)score-=30;
+      if(s.rootHorizontal>.22||s.rootVertical>.38)score-=80;
+
+      return {...s,score};
+    })
+    .sort((a,b)=>b.score-a.score);
+
+  return scored[0]||null;
+}
+
+function buildSourceToTargetBoneMap(sourceSkeleton,targetSkeleton){
+  const source=buildBoneLookupFromSkeleton(sourceSkeleton);
+  const target=buildBoneLookupFromSkeleton(targetSkeleton);
+  const map={};
+  for(const [key,sourceName] of source){
+    const targetName=target.get(key);
+    if(sourceName&&targetName)map[sourceName]=targetName;
+  }
+  return map;
+}
+
+function buildTargetToSourceBoneMap(sourceSkeleton,targetSkeleton){
+  const source=buildBoneLookupFromSkeleton(sourceSkeleton);
+  const target=buildBoneLookupFromSkeleton(targetSkeleton);
+  const map={};
+  for(const [key,targetName] of target){
+    const sourceName=source.get(key);
+    if(sourceName&&targetName)map[targetName]=sourceName;
+  }
+  return map;
+}
+
+async function retargetHumanIdle(model,renderer){
   try{
     const targetSkin=findPrimarySkinnedMesh(model);
     if(!targetSkin)return {clips:[],animationRoot:null};
 
     const {gltf,skin:sourceSkin}=await loadAnimationDonor(renderer);
-    const sourceLookup=buildBoneLookupFromSkeleton(sourceSkin.skeleton);
-    const names={};
-
-    for(const targetBone of targetSkin.skeleton.bones){
-      const key=canonicalBoneKey(targetBone.name);
-      const sourceName=key?sourceLookup.get(key):'';
-      if(sourceName)names[targetBone.name]=sourceName;
-    }
-
-    const matched=Object.keys(names).length;
-    if(matched<10){
-      console.warn('Music City animation retarget skipped: low bone coverage',matched,names);
+    const selected=selectHumanIdleClip(gltf.animations||[]);
+    if(!selected){
+      console.warn('Music City could not identify a safe human idle clip.');
       return {clips:[],animationRoot:null};
     }
 
-    const hipName=sourceLookup.get('hips')||'mixamorigHips';
-    const wanted=new Set(['Idle','Walking','Running','Dance','Wave','ThumbsUp','Yes']);
-    const clips=[];
+    let retargeted=null;
 
-    for(const clip of gltf.animations||[]){
-      if(!wanted.has(clip.name))continue;
-      try{
-        const retargeted=SkeletonUtils.retargetClip(
-          targetSkin,
+    // Preferred path: bind-pose-aware retargeting designed for dissimilar humanoid rigs.
+    try{
+      const AnimationRetargeting=await loadRetargeter();
+      const boneNameMap=buildSourceToTargetBoneMap(sourceSkin.skeleton,targetSkin.skeleton);
+      if(Object.keys(boneNameMap).length>=10){
+        const retargeter=new AnimationRetargeting(
           sourceSkin.skeleton,
-          clip,
+          targetSkin.skeleton,
           {
-            hip:hipName,
-            names,
-            preserveBoneMatrix:true,
-            preserveBonePositions:true,
-            useFirstFramePosition:false,
-            hipInfluence:new THREE.Vector3(0,1,0),
-            scale:1
+            boneNameMap,
+            srcEmbedWorldTransforms:true,
+            trgEmbedWorldTransforms:true
           }
         );
-        retargeted.name=clip.name;
-        clips.push(retargeted);
-      }catch(error){
-        console.warn('Music City could not retarget animation',clip.name,error);
+        retargeted=retargeter.retargetAnimation(selected.clip);
       }
+    }catch(error){
+      console.warn('Bind-pose-aware human retargeter unavailable; trying Three.js fallback.',error);
     }
 
-    model.userData.animationRetargetCoverage=matched;
-    model.userData.animationRetargetSource='RobotExpressive CC0';
-    return {clips,animationRoot:targetSkin};
+    // Fallback path stays inside Three.js if the helper module is unavailable.
+    if(!retargeted||!retargeted.tracks?.length){
+      const targetToSource=buildTargetToSourceBoneMap(sourceSkin.skeleton,targetSkin.skeleton);
+      const sourceLookup=buildBoneLookupFromSkeleton(sourceSkin.skeleton);
+      const matched=Object.keys(targetToSource).length;
+      if(matched<10)return {clips:[],animationRoot:null};
+
+      retargeted=SkeletonUtils.retargetClip(
+        targetSkin,
+        sourceSkin.skeleton,
+        selected.clip,
+        {
+          hip:sourceLookup.get('hips')||'DEF-hips',
+          names:targetToSource,
+          preserveBoneMatrix:true,
+          preserveBonePositions:true,
+          useFirstFramePosition:false,
+          hipInfluence:new THREE.Vector3(0,1,0),
+          scale:1
+        }
+      );
+    }
+
+    retargeted.name='MusicCityHumanIdle';
+    model.userData.animationRetargetSource='Quaternius Universal Animation Library CC0';
+    model.userData.animationIdleScore=Number(selected.score.toFixed(2));
+    model.userData.animationIdleStats={
+      duration:Number(selected.duration.toFixed(2)),
+      rootHorizontal:Number(selected.rootHorizontal.toFixed(3)),
+      rootVertical:Number(selected.rootVertical.toFixed(3)),
+      arm:Number(selected.arm.toFixed(3)),
+      leg:Number(selected.leg.toFixed(3)),
+      torso:Number(selected.torso.toFixed(3))
+    };
+
+    return {clips:[retargeted],animationRoot:targetSkin};
   }catch(error){
-    console.warn('Music City CC0 animation donor unavailable; using procedural fallback.',error);
+    console.warn('Music City human animation donor unavailable; using procedural fallback.',error);
     return {clips:[],animationRoot:null};
   }
 }
+
 
 function createController(model,clips,animationRoot=model){
   const mixer=new THREE.AnimationMixer(animationRoot||model);
@@ -746,11 +897,11 @@ export async function upgradeAvatarFromGLB(host,room,data={}){
   let runtimeClips=Array.isArray(gltf.animations)?[...gltf.animations]:[];
   let animationRoot=model;
   if(runtimeClips.length===0&&isAvaturn){
-    const donor=await retargetFallbackAnimations(model,room&&room.renderer);
+    const donor=await retargetHumanIdle(model,room&&room.renderer);
     if(donor.clips.length){
       runtimeClips=donor.clips;
       animationRoot=donor.animationRoot||model;
-      host.userData.avatarAnimationSource='cc0-retargeted';
+      host.userData.avatarAnimationSource='human-cc0-retargeted';
     }else{
       host.userData.avatarAnimationSource='procedural-fallback';
     }
