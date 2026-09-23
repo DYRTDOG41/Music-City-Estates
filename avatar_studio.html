@@ -13,6 +13,21 @@
 .premium-buttons label,.premium-buttons button{display:flex;align-items:center;justify-content:center;min-height:42px;padding:10px;border-radius:9px;border:1px solid #55768f;background:#0a1823;color:#e9fbff;font-size:10px;font-weight:900;letter-spacing:.05em;text-align:center;cursor:pointer}
 .premium-buttons input{display:none}
 #premiumAvatarStatus{display:block;margin-top:8px;color:#9fb0c2;font-size:10px;line-height:1.4}
+.avaturn-primary{grid-column:1/-1;border-color:#87f6c9!important;background:linear-gradient(135deg,#0e4b40,#0b2630)!important;color:#eafff8!important;box-shadow:0 0 24px #4dffca20}
+.avaturn-overlay{display:none;position:fixed;z-index:260;inset:0;background:#050509;color:#fff}
+.avaturn-overlay.show{display:flex;flex-direction:column}
+.avaturn-topbar{display:flex;align-items:center;gap:10px;padding:max(10px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) 10px max(12px,env(safe-area-inset-left));min-height:58px;background:linear-gradient(180deg,#0d0a13,#07080d);border-bottom:1px solid #ffffff18}
+.avaturn-topbar strong{font-size:13px;letter-spacing:.06em}
+.avaturn-topbar span{margin-left:auto;color:#9bb3c4;font-size:9px;text-align:right}
+.avaturn-close{min-width:42px;min-height:38px;border:1px solid #ffffff30;border-radius:10px;background:#17131d;color:#fff;font-size:18px;font-weight:900;cursor:pointer}
+#avaturn-sdk-container{position:relative;flex:1;min-height:0;background:#0b0c10}
+.mce-avaturn-frame{display:block;width:100%;height:100%;border:0;background:#0b0c10}
+.avaturn-saving{display:none;position:absolute;z-index:4;inset:0;align-items:center;justify-content:center;padding:24px;background:#05070ae8;text-align:center}
+.avaturn-saving.show{display:flex}
+.avaturn-saving-card{width:min(420px,92%);padding:22px;border:1px solid #72ffd044;border-radius:18px;background:#091017;box-shadow:0 20px 60px #000a}
+.avaturn-saving-card strong{display:block;color:#8fffd9;margin-bottom:8px}
+.avaturn-saving-card small{color:#a9bac7;line-height:1.5}
+
 @media(max-width:720px){.premium-buttons{grid-template-columns:1fr}}@media(max-width:720px){.hint{display:none}.touch{display:grid}.stats{font-size:10px;gap:6px}.grid{grid-template-columns:1fr}.hud{font-size:12px}.coach{top:78px;font-size:11px}.quick-start{grid-template-columns:1fr}.preset-card{min-height:78px}}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js"}}</script>
@@ -28,12 +43,27 @@
   <h3>🎮 PREMIUM GAME-READY AVATAR</h3>
   <p>Optional: import a professional <b>.glb</b> character. Music City will use the detailed Realism V2 avatar until the premium model finishes loading, then swap to the skinned model automatically.</p>
   <div class="premium-buttons">
+    <button class="avaturn-primary" id="createAvaturnAvatar" type="button">📸 CREATE REALISTIC AVATAR WITH AVATURN</button>
     <label>IMPORT PREMIUM .GLB<input id="premiumAvatarFile" type="file" accept=".glb,model/gltf-binary"></label>
     <button id="removePremiumAvatar" type="button">USE MUSIC CITY REALISM V2</button>
   </div>
   <small id="premiumAvatarStatus">No premium GLB loaded — using Music City Realism V2.</small>
 </div>
 <p>Skin tone</p><div class="swatches"><button class="swatch" data-skin="#5a341f" style="background:#5a341f"></button><button class="swatch" data-skin="#7b472b" style="background:#7b472b"></button><button class="swatch" data-skin="#9a5f3c" style="background:#9a5f3c"></button><button class="swatch" data-skin="#c78962" style="background:#c78962"></button><button class="swatch" data-skin="#e0b08b" style="background:#e0b08b"></button></div><div class="actions"><button class="save" id="saveAvatar">SAVE 3D ARTIST</button><button class="close" id="closeCustomizer">RETURN TO ROOM</button></div><p id="notice"></p></div></div>
+<div class="avaturn-overlay" id="avaturnOverlay" aria-hidden="true">
+  <div class="avaturn-topbar">
+    <button class="avaturn-close" id="closeAvaturn" type="button" aria-label="Close Avaturn">×</button>
+    <strong>MUSIC CITY × AVATURN</strong>
+    <span>Create your realistic artist • Finish in Avaturn to return automatically</span>
+  </div>
+  <div id="avaturn-sdk-container"></div>
+  <div class="avaturn-saving" id="avaturnSaving">
+    <div class="avaturn-saving-card">
+      <strong id="avaturnSavingTitle">BRINGING YOUR ARTIST INTO MUSIC CITY…</strong>
+      <small id="avaturnSavingText">Saving the finished GLB and connecting it to your career.</small>
+    </div>
+  </div>
+</div>
 <script src="player-state.js"></script>
 <script src="music_city_missions.js"></script>
 <script src="music_city_catalog.js"></script><script src="music_city_radio_player.js"></script>
