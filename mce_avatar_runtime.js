@@ -750,14 +750,25 @@ function createController(model,clips,animationRoot=model){
     return true;
   }
 
+  function forceNeutralPose(){
+    clearTimeout(oneShotTimer);
+    mixer.stopAllAction();
+    actions.clear();
+    current=null;
+    procedural=null;
+    performanceActive=false;
+    setMorph(morphs.jaw,0);
+    model.position.copy(basePosition);
+    model.rotation.copy(baseRotation);
+    model.scale.copy(baseScale);
+    bonePose.restore();
+    bonePose.relaxed(elapsed,false);
+  }
+
   function setPerformanceActive(on){
     performanceActive=Boolean(on);
     if(!performanceActive){
-      setMorph(morphs.jaw,0);
-      model.position.copy(basePosition);
-      model.rotation.copy(baseRotation);
-      model.scale.copy(baseScale);
-      procedural=null;
+      forceNeutralPose();
       if(!play('idle',{loop:true,fade:.22}))bonePose.relaxed(elapsed,false);
     }
   }
@@ -822,7 +833,7 @@ function createController(model,clips,animationRoot=model){
   }
 
   if(!play('idle',{loop:true,fade:0})){
-    bonePose.relaxed(0,false);
+    forceNeutralPose();
   }
 
   return {
@@ -830,6 +841,7 @@ function createController(model,clips,animationRoot=model){
     play,
     playPerformanceAction,
     setPerformanceActive,
+    forceNeutralPose,
     update,
     rig:bonePose.rig,
     dispose(){
