@@ -498,7 +498,7 @@ async function loadRetargeter(){
 }
 
 function clipTrackBoneKey(trackName){
-  const raw=String(trackName||'').split('.')[0];
+  const raw=String(trackName||'').replace(/\.(position|quaternion|scale)$/i,'');
   return canonicalBoneKey(raw);
 }
 
