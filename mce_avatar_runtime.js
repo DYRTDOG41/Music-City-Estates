@@ -170,11 +170,11 @@ function clipScore(name,kind){
   const text=String(name||'').toLowerCase();
   const rules={
     idle:['musiccityhumanidle','idle','standing','stand','breath'],
-    timing:['dance','groove','bounce','hiphop','rap'],
-    presence:['thumbsup','yes','perform','stage','gesture','talk','rap'],
-    crowd:['wave','point','cheer','crowd','gesture'],
-    walk:['walking','walk','locomotion'],
-    run:['running','run','jog']
+    timing:['musiccityhumantiming','dance','groove','bounce','hiphop','rap'],
+    presence:['musiccityhumanpresence','thumbsup','yes','perform','stage','gesture','talk','rap'],
+    crowd:['musiccityhumancrowd','wave','point','cheer','crowd','gesture'],
+    walk:['musiccityhumanwalk','walking','walk','locomotion'],
+    run:['musiccityhumanrun','running','run','jog']
   };
   return (rules[kind]||[]).reduce((score,key)=>score+(text.includes(key)?1:0),0);
 }
@@ -530,14 +530,19 @@ function positionTrackRange(track){
   };
 }
 
-function humanMotionStats(clip){
+function humanMotionStats(clip,index=0){
   const stats={
     clip,
+    index,
     duration:Number(clip?.duration)||0,
     rootHorizontal:0,
     rootVertical:0,
     arm:0,
+    leftArm:0,
+    rightArm:0,
     leg:0,
+    leftLeg:0,
+    rightLeg:0,
     torso:0,
     head:0,
     total:0
@@ -549,11 +554,22 @@ function humanMotionStats(clip){
 
     if(track.ValueTypeName==='quaternion'||lower.endsWith('.quaternion')){
       const range=quaternionTrackRange(track);
+      if(!key)continue;
+
       stats.total+=range;
-      if(/upperarm|forearm|hand|shoulder/i.test(key))stats.arm+=range;
-      else if(/upperleg|lowerleg|foot|toe/i.test(key))stats.leg+=range;
-      else if(/spine|hips|chest/i.test(key))stats.torso+=range;
-      else if(/head|neck/i.test(key))stats.head+=range;
+      if(/upperarm|forearm|hand|shoulder/i.test(key)){
+        stats.arm+=range;
+        if(/^left/i.test(key))stats.leftArm+=range;
+        else if(/^right/i.test(key))stats.rightArm+=range;
+      }else if(/upperleg|lowerleg|foot|toe/i.test(key)){
+        stats.leg+=range;
+        if(/^left/i.test(key))stats.leftLeg+=range;
+        else if(/^right/i.test(key))stats.rightLeg+=range;
+      }else if(/spine|hips|chest/i.test(key)){
+        stats.torso+=range;
+      }else if(/head|neck/i.test(key)){
+        stats.head+=range;
+      }
     }else if((track.ValueTypeName==='vector'||lower.endsWith('.position'))&&(key==='hips'||lower.includes('root'))){
       const range=positionTrackRange(track);
       stats.rootHorizontal=Math.max(stats.rootHorizontal,range.horizontal);
@@ -561,33 +577,112 @@ function humanMotionStats(clip){
     }
   }
 
+  stats.armAsymmetry=Math.abs(stats.leftArm-stats.rightArm);
+  stats.legAsymmetry=Math.abs(stats.leftLeg-stats.rightLeg);
   return stats;
 }
 
-function selectHumanIdleClip(clips){
-  const scored=(clips||[])
-    .map(humanMotionStats)
-    .filter(s=>s.duration>=.7&&s.duration<=12&&s.total>.025)
-    .map(s=>{
-      let score=100;
-      score-=Math.min(80,s.rootHorizontal*90);
-      score-=Math.min(60,s.rootVertical*70);
-      score-=Math.max(0,s.leg-1.1)*14;
-      score-=Math.max(0,s.arm-2.1)*5;
-      score-=Math.max(0,s.torso-1.1)*10;
-      score-=Math.max(0,s.total-5.5)*3;
-      score-=Math.abs(s.duration-3.2)*.45;
+function scoreHumanMotion(stats,kind){
+  const s=stats;
+  const rootPenalty=s.rootHorizontal*130+s.rootVertical*85;
+  const durationPenalty=Math.abs(s.duration-(kind==='idle'?3.2:2.4))*.6;
 
-      // A believable idle should move, but not be completely frozen or wildly active.
-      if(s.total<.12)score-=18;
-      if(s.leg<.02&&s.arm<.02&&s.torso<.02)score-=30;
-      if(s.rootHorizontal>.22||s.rootVertical>.38)score-=80;
+  if(kind==='idle'){
+    let score=120-rootPenalty-durationPenalty;
+    score+=Math.min(s.head,.65)*20;
+    score+=Math.min(s.torso,.8)*16;
+    score+=Math.min(s.arm,1.5)*7;
+    score-=Math.max(0,s.leg-.85)*24;
+    score-=Math.max(0,s.arm-2.8)*8;
+    score-=Math.max(0,s.torso-1.5)*14;
+    if(s.total<.18)score-=55;
+    if(s.total>.15&&s.total<3.7)score+=12;
+    if(s.rootHorizontal>.16||s.rootVertical>.32)score-=100;
+    return score;
+  }
 
-      return {...s,score};
-    })
-    .sort((a,b)=>b.score-a.score);
+  if(kind==='timing'){
+    let score=70-rootPenalty*.55-durationPenalty;
+    score+=Math.min(s.arm,4.5)*12;
+    score+=Math.min(s.leg,3.5)*9;
+    score+=Math.min(s.torso,2.2)*14;
+    score+=Math.min(s.head,.9)*5;
+    score-=Math.max(0,s.total-11)*4;
+    if(s.arm<.7||s.torso<.18)score-=50;
+    if(s.rootHorizontal>.7||s.rootVertical>.8)score-=70;
+    return score;
+  }
 
-  return scored[0]||null;
+  if(kind==='presence'){
+    let score=82-rootPenalty*.75-durationPenalty;
+    score+=Math.min(s.arm,4.2)*15;
+    score+=Math.min(s.torso,1.8)*12;
+    score+=Math.min(s.head,1.1)*8;
+    score-=Math.max(0,s.leg-1.8)*12;
+    score-=Math.max(0,s.total-9)*5;
+    if(s.arm<.8)score-=45;
+    if(s.rootHorizontal>.4||s.rootVertical>.55)score-=80;
+    return score;
+  }
+
+  if(kind==='crowd'){
+    let score=78-rootPenalty*.8-durationPenalty;
+    score+=Math.min(s.arm,4.2)*11;
+    score+=Math.min(s.armAsymmetry,2.3)*18;
+    score+=Math.min(s.head,1.2)*10;
+    score+=Math.min(s.torso,1.6)*8;
+    score-=Math.max(0,s.leg-1.5)*13;
+    if(s.arm<.65)score-=50;
+    if(s.rootHorizontal>.45||s.rootVertical>.6)score-=80;
+    return score;
+  }
+
+  if(kind==='walk'){
+    let score=40-durationPenalty;
+    score+=Math.min(s.leg,5)*16;
+    score+=Math.min(s.legAsymmetry,2)*5;
+    score+=Math.min(s.arm,3)*5;
+    score+=Math.min(s.rootHorizontal,1.5)*18;
+    score-=Math.max(0,s.rootVertical-.55)*40;
+    if(s.leg<1.0)score-=70;
+    return score;
+  }
+
+  if(kind==='run'){
+    let score=34-durationPenalty;
+    score+=Math.min(s.leg,7)*17;
+    score+=Math.min(s.arm,4)*6;
+    score+=Math.min(s.rootHorizontal,2.5)*20;
+    score+=Math.min(s.rootVertical,1.0)*4;
+    if(s.leg<1.8)score-=80;
+    return score;
+  }
+
+  return 0;
+}
+
+function selectHumanMotionSet(clips){
+  const all=(clips||[])
+    .map((clip,index)=>humanMotionStats(clip,index))
+    .filter(s=>s.duration>=.55&&s.duration<=14&&s.total>.02);
+
+  const used=new Set();
+  const selected={};
+
+  for(const kind of ['idle','timing','presence','crowd','walk','run']){
+    const ranked=all
+      .filter(s=>!used.has(s.index))
+      .map(s=>({...s,score:scoreHumanMotion(s,kind)}))
+      .sort((a,b)=>b.score-a.score);
+
+    const best=ranked[0]||null;
+    if(best&&best.score>-20){
+      selected[kind]=best;
+      used.add(best.index);
+    }
+  }
+
+  return selected;
 }
 
 function buildSourceToTargetBoneMap(sourceSkeleton,targetSkeleton){
@@ -612,76 +707,122 @@ function buildTargetToSourceBoneMap(sourceSkeleton,targetSkeleton){
   return map;
 }
 
-async function retargetHumanIdle(model,renderer){
+function makeClipInPlace(clip){
+  if(!clip)return clip;
+  const tracks=(clip.tracks||[]).map(track=>{
+    const cloned=track.clone();
+    const key=clipTrackBoneKey(cloned.name);
+    const lower=String(cloned.name||'').toLowerCase();
+    if(key==='hips'&&lower.endsWith('.position')&&cloned.values?.length>=3){
+      const values=cloned.values;
+      const baseX=values[0],baseZ=values[2];
+      for(let i=0;i+2<values.length;i+=3){
+        values[i]=baseX;
+        values[i+2]=baseZ;
+      }
+    }
+    return cloned;
+  });
+  return new THREE.AnimationClip(clip.name,clip.duration,tracks,clip.blendMode);
+}
+
+async function retargetHumanMotionSet(model,renderer){
   try{
     const targetSkin=findPrimarySkinnedMesh(model);
     if(!targetSkin)return {clips:[],animationRoot:null};
 
     const {gltf,skin:sourceSkin}=await loadAnimationDonor(renderer);
-    const selected=selectHumanIdleClip(gltf.animations||[]);
-    if(!selected){
+    const selected=selectHumanMotionSet(gltf.animations||[]);
+    if(!selected.idle){
       console.warn('Music City could not identify a safe human idle clip.');
       return {clips:[],animationRoot:null};
     }
 
-    let retargeted=null;
+    const sourceToTarget=buildSourceToTargetBoneMap(sourceSkin.skeleton,targetSkin.skeleton);
+    const targetToSource=buildTargetToSourceBoneMap(sourceSkin.skeleton,targetSkin.skeleton);
+    const sourceLookup=buildBoneLookupFromSkeleton(sourceSkin.skeleton);
 
-    // Preferred path: bind-pose-aware retargeting designed for dissimilar humanoid rigs.
+    if(Object.keys(sourceToTarget).length<10||Object.keys(targetToSource).length<10){
+      console.warn('Music City human animation retarget skipped: low humanoid bone coverage.');
+      return {clips:[],animationRoot:null};
+    }
+
+    let bindPoseRetargeter=null;
     try{
       const AnimationRetargeting=await loadRetargeter();
-      const boneNameMap=buildSourceToTargetBoneMap(sourceSkin.skeleton,targetSkin.skeleton);
-      if(Object.keys(boneNameMap).length>=10){
-        const retargeter=new AnimationRetargeting(
-          sourceSkin.skeleton,
-          targetSkin.skeleton,
-          {
-            boneNameMap,
-            srcEmbedWorldTransforms:true,
-            trgEmbedWorldTransforms:true
-          }
-        );
-        retargeted=retargeter.retargetAnimation(selected.clip);
-      }
-    }catch(error){
-      console.warn('Bind-pose-aware human retargeter unavailable; trying Three.js fallback.',error);
-    }
-
-    // Fallback path stays inside Three.js if the helper module is unavailable.
-    if(!retargeted||!retargeted.tracks?.length){
-      const targetToSource=buildTargetToSourceBoneMap(sourceSkin.skeleton,targetSkin.skeleton);
-      const sourceLookup=buildBoneLookupFromSkeleton(sourceSkin.skeleton);
-      const matched=Object.keys(targetToSource).length;
-      if(matched<10)return {clips:[],animationRoot:null};
-
-      retargeted=SkeletonUtils.retargetClip(
-        targetSkin,
+      bindPoseRetargeter=new AnimationRetargeting(
         sourceSkin.skeleton,
-        selected.clip,
+        targetSkin.skeleton,
         {
-          hip:sourceLookup.get('hips')||'DEF-hips',
-          names:targetToSource,
-          preserveBoneMatrix:true,
-          preserveBonePositions:true,
-          useFirstFramePosition:false,
-          hipInfluence:new THREE.Vector3(0,1,0),
-          scale:1
+          boneNameMap:sourceToTarget,
+          srcEmbedWorldTransforms:true,
+          trgEmbedWorldTransforms:true
         }
       );
+    }catch(error){
+      console.warn('Bind-pose-aware human retargeter unavailable; using Three.js fallback.',error);
     }
 
-    retargeted.name='MusicCityHumanIdle';
-    model.userData.animationRetargetSource='Quaternius Universal Animation Library CC0';
-    model.userData.animationIdleScore=Number(selected.score.toFixed(2));
-    model.userData.animationIdleStats={
-      duration:Number(selected.duration.toFixed(2)),
-      rootHorizontal:Number(selected.rootHorizontal.toFixed(3)),
-      rootVertical:Number(selected.rootVertical.toFixed(3)),
-      arm:Number(selected.arm.toFixed(3)),
-      leg:Number(selected.leg.toFixed(3)),
-      torso:Number(selected.torso.toFixed(3))
-    };
+    const output=[];
+    const report={};
 
-    return {clips:[retargeted],animationRoot:targetSkin};
+    for(const [kind,candidate] of Object.entries(selected)){
+      if(!candidate)continue;
+      let retargeted=null;
+
+      if(bindPoseRetargeter){
+        try{
+          retargeted=bindPoseRetargeter.retargetAnimation(candidate.clip);
+        }catch(error){
+          console.warn('Bind-pose retarget failed for',kind,error);
+        }
+      }
+
+      if(!retargeted||!retargeted.tracks?.length){
+        try{
+          retargeted=SkeletonUtils.retargetClip(
+            targetSkin,
+            sourceSkin.skeleton,
+            candidate.clip,
+            {
+              hip:sourceLookup.get('hips')||'DEF-hips',
+              names:targetToSource,
+              preserveBoneMatrix:true,
+              preserveBonePositions:true,
+              useFirstFramePosition:false,
+              hipInfluence:new THREE.Vector3(0,1,0),
+              scale:1
+            }
+          );
+        }catch(error){
+          console.warn('Three.js retarget failed for',kind,error);
+          continue;
+        }
+      }
+
+      if(!retargeted?.tracks?.length)continue;
+
+      retargeted=makeClipInPlace(retargeted);
+      const display=kind.charAt(0).toUpperCase()+kind.slice(1);
+      retargeted.name='MusicCityHuman'+display;
+      output.push(retargeted);
+      report[kind]={
+        sourceIndex:candidate.index,
+        score:Number(candidate.score.toFixed(2)),
+        duration:Number(candidate.duration.toFixed(2)),
+        rootHorizontal:Number(candidate.rootHorizontal.toFixed(3)),
+        rootVertical:Number(candidate.rootVertical.toFixed(3)),
+        arm:Number(candidate.arm.toFixed(3)),
+        leg:Number(candidate.leg.toFixed(3)),
+        torso:Number(candidate.torso.toFixed(3)),
+        head:Number(candidate.head.toFixed(3))
+      };
+    }
+
+    model.userData.animationRetargetSource='Quaternius Universal Animation Library CC0';
+    model.userData.animationMotionReport=report;
+
+    return {clips:output,animationRoot:targetSkin};
   }catch(error){
     console.warn('Music City human animation donor unavailable; using procedural fallback.',error);
     return {clips:[],animationRoot:null};
@@ -725,8 +866,12 @@ function createController(model,clips,animationRoot=model){
     next.reset();
     next.enabled=true;
     next.setEffectiveWeight(1);
+    next.setEffectiveTimeScale(kind==='idle'?.88:1);
     next.setLoop(loop?THREE.LoopRepeat:THREE.LoopOnce,loop?Infinity:1);
     next.clampWhenFinished=!loop;
+    if(!loop&&duration>0){
+      next.setDuration(Math.max(.45,duration/1000));
+    }
     next.fadeIn(fade).play();
     current=next;
 
@@ -898,7 +1043,7 @@ export async function upgradeAvatarFromGLB(host,room,data={}){
   let runtimeClips=Array.isArray(gltf.animations)?[...gltf.animations]:[];
   let animationRoot=model;
   if(runtimeClips.length===0&&isAvaturn){
-    const donor=await retargetHumanIdle(model,room&&room.renderer);
+    const donor=await retargetHumanMotionSet(model,room&&room.renderer);
     if(donor.clips.length){
       runtimeClips=donor.clips;
       animationRoot=donor.animationRoot||model;
