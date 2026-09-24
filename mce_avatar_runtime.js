@@ -170,11 +170,11 @@ function clipScore(name,kind){
   const text=String(name||'').toLowerCase();
   const rules={
     idle:['musiccityhumanidle','idle','standing','stand','breath'],
-    timing:['dance','groove','bounce','hiphop','rap'],
-    presence:['thumbsup','yes','perform','stage','gesture','talk','rap'],
-    crowd:['wave','point','cheer','crowd','gesture'],
-    walk:['walking','walk','locomotion'],
-    run:['running','run','jog']
+    timing:['musiccityhumantiming','dance','groove','bounce','hiphop','rap'],
+    presence:['musiccityhumanpresence','thumbsup','yes','perform','stage','gesture','talk','rap'],
+    crowd:['musiccityhumancrowd','wave','point','cheer','crowd','gesture'],
+    walk:['musiccityhumanwalk','walking','walk','locomotion'],
+    run:['musiccityhumanrun','running','run','jog']
   };
   return (rules[kind]||[]).reduce((score,key)=>score+(text.includes(key)?1:0),0);
 }
@@ -866,8 +866,12 @@ function createController(model,clips,animationRoot=model){
     next.reset();
     next.enabled=true;
     next.setEffectiveWeight(1);
+    next.setEffectiveTimeScale(kind==='idle'?.88:1);
     next.setLoop(loop?THREE.LoopRepeat:THREE.LoopOnce,loop?Infinity:1);
     next.clampWhenFinished=!loop;
+    if(!loop&&duration>0){
+      next.setDuration(Math.max(.45,duration/1000));
+    }
     next.fadeIn(fade).play();
     current=next;
 
