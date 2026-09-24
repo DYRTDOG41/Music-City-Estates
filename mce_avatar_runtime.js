@@ -707,13 +707,31 @@ function buildTargetToSourceBoneMap(sourceSkeleton,targetSkeleton){
   return map;
 }
 
-function makeClipInPlace(clip){
+const STANDING_UPPER_BODY_KEYS=new Set([
+  'spine','spine1','spine2','neck','head',
+  'leftShoulder','rightShoulder',
+  'leftUpperArm','rightUpperArm',
+  'leftForeArm','rightForeArm',
+  'leftHand','rightHand'
+]);
+
+function makeClipInPlace(clip,{upperBodyOnly=false}={}){
   if(!clip)return clip;
-  const tracks=(clip.tracks||[]).map(track=>{
+
+  const tracks=[];
+  for(const track of clip.tracks||[]){
     const cloned=track.clone();
     const key=clipTrackBoneKey(cloned.name);
     const lower=String(cloned.name||'').toLowerCase();
-    if(key==='hips'&&lower.endsWith('.position')&&cloned.values?.length>=3){
+
+    if(upperBodyOnly){
+      // Avaturn and the donor have different hip/leg proportions. Letting donor
+      // hips, thighs, knees, feet or root positions drive the avatar creates a
+      // visible squat/sitting pose. Keep Avaturn's lower body in its own bind
+      // stance and animate only torso/head/arms for standing and stage actions.
+      if(!STANDING_UPPER_BODY_KEYS.has(key))continue;
+      if(lower.endsWith('.position'))continue;
+    }else if(key==='hips'&&lower.endsWith('.position')&&cloned.values?.length>=3){
       const values=cloned.values;
       const baseX=values[0],baseZ=values[2];
       for(let i=0;i+2<values.length;i+=3){
@@ -721,8 +739,10 @@ function makeClipInPlace(clip){
         values[i+2]=baseZ;
       }
     }
-    return cloned;
-  });
+
+    tracks.push(cloned);
+  }
+
   return new THREE.AnimationClip(clip.name,clip.duration,tracks,clip.blendMode);
 }
 
@@ -802,7 +822,12 @@ async function retargetHumanMotionSet(model,renderer){
 
       if(!retargeted?.tracks?.length)continue;
 
-      retargeted=makeClipInPlace(retargeted);
+      const upperBodyOnly=['idle','timing','presence','crowd'].includes(kind);
+      retargeted=makeClipInPlace(retargeted,{upperBodyOnly});
+      if(!retargeted.tracks?.length){
+        console.warn('Music City retargeted clip had no safe tracks after standing-pose filtering:',kind);
+        continue;
+      }
       const display=kind.charAt(0).toUpperCase()+kind.slice(1);
       retargeted.name='MusicCityHuman'+display;
       output.push(retargeted);
@@ -815,7 +840,8 @@ async function retargetHumanMotionSet(model,renderer){
         arm:Number(candidate.arm.toFixed(3)),
         leg:Number(candidate.leg.toFixed(3)),
         torso:Number(candidate.torso.toFixed(3)),
-        head:Number(candidate.head.toFixed(3))
+        head:Number(candidate.head.toFixed(3)),
+        upperBodyOnly
       };
     }
 
