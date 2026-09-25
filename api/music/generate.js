@@ -14,14 +14,23 @@ function allowedOrigins() {
   ];
 }
 
-function originAllowed(origin) {
-  return !origin || allowedOrigins().includes(origin);
+function originAllowed(req) {
+  const origin = req.headers.origin || "";
+  if (!origin) return true;
+  try {
+    const url = new URL(origin);
+    const forwardedHost = String(req.headers["x-forwarded-host"] || "")
+      .split(",")[0].trim();
+    const requestHost = forwardedHost || String(req.headers.host || "").trim();
+    if (requestHost && url.host === requestHost) return true;
+  } catch (error) {}
+  return allowedOrigins().includes(origin);
 }
 
 function setCors(req, res) {
   const origin = req.headers.origin || "";
 
-  if (origin && originAllowed(origin)) {
+  if (origin && originAllowed(req)) {
     res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Vary", "Origin");
   }
@@ -88,7 +97,7 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed." });
   }
 
-  if (!originAllowed(req.headers.origin || "")) {
+  if (!originAllowed(req)) {
     return res.status(403).json({ error: "Origin is not allowed." });
   }
 
