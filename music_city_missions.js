@@ -117,10 +117,10 @@
       location: "Collaboration Network",
       onsite: "Have your manager make an introduction outside your home scene. Choose Latin Quarter, Velvet Grove, Country Crossings, or Global Sound and complete the session.",
       title: "Complete Your First Collaboration",
-      description: "Use your manager to connect with an artist from another district and share audiences.",
+      description: "Have your manager book a cross-district feature, record the song, and save the finished collaboration.",
       action: "ARRANGE A COLLAB",
       href: "collaboration.html",
-      reward: "Cross-district collaborations build fans, XP, reputation, and relationship capital for both artists.",
+      reward: "Finishing the collaboration shares audiences and builds fans, XP, reputation, and relationship capital for both artists.",
       complete: function (state, context) {
         return Number(context && context.collaborations || 0) > 0;
       }
@@ -187,7 +187,7 @@
       cafePerformances: Math.max(0, Number(source.getItem("mceCafePerformances")) || 0),
       collaborations: (function () {
         var collabs = safeParse(source.getItem("mceCollaborationsV1"));
-        return Array.isArray(collabs) ? collabs.length : 0;
+        return Array.isArray(collabs) ? collabs.filter(function (item) { return !item.status || item.status === 'completed'; }).length : 0;
       })()
     };
   }
