@@ -1003,6 +1003,48 @@ function renderResults(){
   document.getElementById("resultsSection").classList.add("show");
   document.getElementById("resultsSection").scrollIntoView({behavior:"smooth",block:"start"});
 }
+function pendingCollaboration(){
+  try{return JSON.parse(localStorage.getItem("mcePendingCollab")||"null")}catch(error){return null}
+}
+function renderCollabSession(){
+  const pending=pendingCollaboration();if(!pending)return;
+  const main=document.querySelector("main");if(!main||document.getElementById("collabSessionBanner"))return;
+  const card=document.createElement("section");card.id="collabSessionBanner";card.className="card";
+  card.style.borderColor="#68e5ff";card.style.boxShadow="0 0 22px rgba(68,205,255,.18)";
+  card.innerHTML='<div style="font-size:10px;font-weight:1000;letter-spacing:.14em;color:#6de7ff">🤝 MANAGER-ARRANGED COLLAB SESSION</div><h2 style="margin-top:7px">'+escapeHtml(pending.artist||"Featured Artist")+' • '+escapeHtml(pending.district||"Music City")+'</h2><p class="helper">Record this song normally. When you save your chosen mix, the collaboration completes and the audience-crossover rewards are applied.</p>';
+  main.insertBefore(card,main.firstChild);
+}
+function completePendingCollab(version){
+  const pending=pendingCollaboration();if(!pending||!window.MCE)return null;
+  let log=[];try{log=JSON.parse(localStorage.getItem("mceCollaborationsV1")||"[]");if(!Array.isArray(log))log=[]}catch(error){log=[]}
+  const row=log.find(item=>String(item.id)===String(pending.id));
+  if(!row||row.status==="completed"){localStorage.removeItem("mcePendingCollab");return null}
+
+  const state=window.MCE.get();
+  const rewardFans=Math.max(0,Number(row.playerFans||pending.playerFans||0));
+  const rewardXp=Math.max(0,Number(row.playerXp||pending.playerXp||0));
+  const rewardRep=Math.max(0,Number(row.reputation||pending.reputation||0));
+  state.fans=Number(state.fans||0)+rewardFans;
+  state.xp=Number(state.xp||0)+rewardXp;
+  state.reputation=Number(state.reputation||50)+rewardRep;
+  const release=(state.releases||[]).find(item=>String(item.id)===String(version.id));
+  if(release)release.collaboration={artist:row.artist,district:row.district,genre:row.genre||"",manager:row.manager||"",collabId:row.id};
+  window.MCE.save(state);
+
+  row.status="completed";row.completedAt=new Date().toISOString();row.songId=version.id;row.songTitle=version.title;
+  localStorage.setItem("mceCollaborationsV1",JSON.stringify(log));
+  localStorage.removeItem("mcePendingCollab");
+
+  const completed=log.filter(item=>!item.status||item.status==="completed");
+  const unique=Array.from(new Set(completed.map(item=>item.districtId).filter(Boolean)));
+  let bonus="";
+  if(unique.length>=4&&localStorage.getItem("mceCollabNetworkBonusV1")!=="1"){
+    const next=window.MCE.get();next.fans=Number(next.fans||0)+25;next.xp=Number(next.xp||0)+20;next.reputation=Number(next.reputation||50)+5;window.MCE.save(next);localStorage.setItem("mceCollabNetworkBonusV1","1");bonus=" City Connector bonus: +25 fans, +20 XP, +5 reputation.";
+  }
+  return {artist:row.artist,fans:rewardFans,xp:rewardXp,rep:rewardRep,bonus:bonus};
+}
+renderCollabSession();
+
 async function saveVersion(index){
   const version=resultVersions[index];if(!version)return;
   try{
@@ -1017,7 +1059,7 @@ async function saveVersion(index){
           createdAt:version.createdAt,style:version.style,studio,beat:version.source,provider:version.provider,audioKey:version.id,radioStatus:"not-submitted"});
       }
     }
-    status(version.label+" saved to your Artist Catalog.","ok");
+    const collab=completePendingCollab(version);status(version.label+" saved to your Artist Catalog."+(collab?" Collaboration with "+collab.artist+" complete: +"+collab.fans+" fans, +"+collab.xp+" XP, +"+collab.rep+" reputation."+collab.bonus:""),"ok");
   }catch(error){status(error.message||"Could not save that version.","error")}
 }
 async function chooseVersion(index){
