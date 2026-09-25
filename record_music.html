@@ -122,14 +122,6 @@ body.custom-mode .quick-only{display:none}
   font-size:12px;line-height:1.5
 }
 .footer-link{display:block;text-align:center;color:#82a5c0;margin-top:16px;text-decoration:none;font-size:12px;font-weight:800}
-.suno-card{border-color:#5d4fc9;background:linear-gradient(145deg,rgba(17,17,38,.98),rgba(8,18,29,.98));box-shadow:0 14px 42px rgba(74,58,180,.16)}
-.suno-kicker{display:inline-block;margin-bottom:8px;padding:4px 8px;border:1px solid #8f7dff66;border-radius:999px;color:#c8bdff;background:#201b48;font-size:9px;font-weight:1000;letter-spacing:.09em}
-.suno-card .create-btn{background:linear-gradient(135deg,#8a70ff,#36d7c4);color:#050613}
-.suno-return{margin-top:14px;padding:13px;border:1px solid #2e4f6d;border-radius:13px;background:#07111d}
-.suno-return strong{display:block;margin-bottom:5px}
-.suno-return .inline-actions{margin-top:8px}
-.suno-prompt-preview{display:none;margin-top:10px;min-height:100px;font-size:12px;color:#b9c7d6}
-.suno-prompt-preview.show{display:block}
 .native-create-card{display:block}
 .elevenlabs-card{border-color:#356073;background:linear-gradient(145deg,rgba(7,24,31,.98),rgba(8,16,27,.98));box-shadow:0 14px 42px rgba(35,213,255,.12)}
 .eleven-kicker{display:inline-block;margin-bottom:8px;padding:4px 8px;border:1px solid #4cc9f066;border-radius:999px;color:#bfefff;background:#0b2631;font-size:9px;font-weight:1000;letter-spacing:.09em}
@@ -138,7 +130,7 @@ body.custom-mode .quick-only{display:none}
 .eleven-status.warn{border-color:#66572a;color:#ffe6a5}
 .eleven-status.error{border-color:#6c3942;color:#ffc1c8}
 .transcript-box{margin-top:10px;min-height:74px;padding:11px;border:1px solid #29465d;border-radius:10px;background:#050b12;color:#e8f7ff;font-size:12px;line-height:1.5;white-space:pre-wrap}
-.suno-flow{grid-template-columns:repeat(3,1fr)}
+.eleven-flow{grid-template-columns:repeat(3,1fr)}
 @media(max-width:760px){
   .custom-grid,.source-grid,.version-grid,.advanced-grid,.workflow{grid-template-columns:1fr}
   .inline-actions,.inline-actions.three,.choice-row{grid-template-columns:1fr 1fr}
@@ -172,7 +164,7 @@ body.custom-mode .quick-only{display:none}
   <section class="card">
     <h2>Fast song flow</h2>
     <p class="helper">The studio is simple on purpose. Create first. The work required to properly release and push the record happens afterward in Music City.</p>
-    <div class="workflow suno-flow">
+    <div class="workflow eleven-flow">
       <div class="workflow-step"><strong>1 • DESCRIBE IT</strong><span>Give Music City one sentence about the sound you want.</span></div>
       <div class="workflow-step"><strong>2 • RECORD IT</strong><span>Add your own vocal or beat. ElevenLabs Scribe can turn a take into editable lyrics.</span></div>
       <div class="workflow-step"><strong>3 • CREATE IT</strong><span>Eleven Music v2.5 generates through the secure Music City server, then the record continues into your Artist Catalog.</span></div>
@@ -186,9 +178,9 @@ body.custom-mode .quick-only{display:none}
   </section>
 
   <section class="card elevenlabs-card">
-    <span class="eleven-kicker">ELEVENLABS API • REVIEW BUILD</span>
+    <span class="eleven-kicker">ELEVENLABS • ONLY AI ENGINE</span>
     <h2>AI Studio Engineer</h2>
-    <p class="helper">The studio now talks to ElevenLabs through the secure Music City backend. The API key never appears in this page or in GitHub.</p>
+    <p class="helper">ElevenLabs powers music generation, vocal cleanup, transcription, and the studio engineer voice through the secure Music City backend. The API key never appears in this page or in GitHub.</p>
     <div class="inline-actions three">
       <button type="button" class="secondary-btn" onclick="checkElevenLabsConnection()">CHECK API</button>
       <button type="button" class="secondary-btn" id="engineerVoiceButton" onclick="playEngineerVoice()">▶ HEAR ENGINEER</button>
@@ -197,24 +189,6 @@ body.custom-mode .quick-only{display:none}
     <div class="eleven-status" id="elevenStatus">Ready to verify the server-side connection.</div>
     <button type="button" class="secondary-btn" style="width:100%;margin-top:9px" onclick="transcribeCurrentTake()">✎ TRANSCRIBE CURRENT VOCAL TAKE</button>
     <div class="transcript-box" id="elevenTranscript">Record or upload a vocal, then transcribe it with ElevenLabs Scribe.</div>
-  </section>
-
-  <section class="card suno-card" style="display:none">
-    <span class="suno-kicker">TEMPORARY TEST MODE • OFFICIAL SUNO WEBSITE</span>
-    <h2>Make my song</h2>
-    <p class="helper">Tap once. Music City will save your idea, copy the prepared prompt when your browser allows it, download a reference audio file if you added your own beat or voice, and open Suno. Make the song there, download it, then come back here.</p>
-    <button type="button" class="create-btn" id="sunoQuickButton" onclick="startSunoQuickHandoff()">🎵 OPEN SUNO &amp; MAKE MY SONG</button>
-    <button type="button" class="secondary-btn" style="width:100%;margin-top:8px" onclick="toggleSunoPromptPreview()">SEE / COPY PREPARED PROMPT</button>
-    <textarea id="sunoPreparedPrompt" class="suno-prompt-preview" readonly aria-label="Prepared Suno prompt"></textarea>
-    <div class="suno-return">
-      <strong>Finished in Suno?</strong>
-      <p class="helper">Download the finished audio from your own Suno account, return to this tab, and bring it back into Music City. On iPhone, Music City lets Files show everything, then checks the audio after you choose it so MP3/M4A/WAV downloads are not greyed out.</p>
-      <div class="inline-actions">
-        <label class="file-label">⬆ BRING FINISHED SONG BACK<input id="sunoResultUpload" type="file" onchange="importSunoQuickResult(event)"></label>
-        <a class="secondary-btn" href="artist_catalog.html" style="text-decoration:none">MY ARTIST CATALOG</a>
-      </div>
-      <p class="note" id="sunoReturnStatus">Imported Suno songs are saved as <strong>Unreleased Demos</strong>. Making the song is easy; officially releasing and breaking the record still requires the Music City career steps.</p>
-    </div>
   </section>
 
   <section class="card custom-only">
@@ -237,11 +211,9 @@ body.custom-mode .quick-only{display:none}
           <textarea id="style" style="min-height:100px" placeholder="Southern hip-hop, soulful piano, deep bass, 92 BPM, cinematic"></textarea>
         </div>
         <div class="field">
-          <label for="provider">MODEL</label>
-          <select id="provider">
-            <option value="elevenlabs">ElevenLabs Music v2.5 — Secure API</option>
-            <option value="music-city-native">Music City Native — Offline Fallback</option>
-          </select>
+          <label for="provider">AI ENGINE</label>
+          <input id="provider" type="hidden" value="elevenlabs">
+          <div class="eleven-status ok">ElevenLabs Music v2.5 — the only studio AI engine</div>
         </div>
       </div>
     </div>
@@ -354,6 +326,8 @@ let songType = "voice";
 let beatRecords = [];
 let selectedBeat = null;
 let voiceBlob = null;
+let cleanedVoiceBlob = null;
+let cleanedVoiceSource = null;
 let voiceUrl = "";
 let mediaRecorder = null;
 let mediaStream = null;
@@ -611,6 +585,8 @@ async function sendToProStudio(){
 function setVoiceBlob(blob,label){
   if(voiceUrl)URL.revokeObjectURL(voiceUrl);
   voiceBlob=blob;
+  cleanedVoiceBlob=null;
+  cleanedVoiceSource=null;
   voiceUrl=URL.createObjectURL(blob);
   const player=document.getElementById("voicePreview");
   player.src=voiceUrl;player.style.display="block";
@@ -756,11 +732,21 @@ async function createTwoVersions(){
   generationRound+=1;
   try{
     const built=[];
-    status("Generating one secure AI base track...");
+    let mixVoice=songType==="voice"?voiceBlob:null;
+    if(mixVoice){
+      status("Cleaning your vocal with ElevenLabs Voice Isolator...");
+      try{
+        mixVoice=await cleanVoiceWithElevenLabs();
+      }catch(error){
+        setElevenStatus((error.message||"Voice Isolator was unavailable.")+" Using your original take for this mix.","warn");
+        mixVoice=voiceBlob;
+      }
+    }
+    status("Generating one secure ElevenLabs Music v2.5 base track...");
     const base=await makeBaseBeat(0,details);
     for(let i=0;i<2;i++){
       status("Mixing Version "+(i===0?"A":"B")+"...");
-      const master=await renderVersion(base.blob,songType==="voice"?voiceBlob:null,i===0?"A":"B");
+      const master=await renderVersion(base.blob,mixVoice,i===0?"A":"B");
       built.push({
         id:"creation-"+Date.now().toString(36)+"-"+i+"-"+Math.random().toString(36).slice(2,6),
         label:i===0?"Version A":"Version B",blob:master,title:details.title,style:details.prompt,
@@ -769,7 +755,7 @@ async function createTwoVersions(){
       });
     }
     resultVersions=built;renderResults();
-    status("Two local mix versions are ready from one AI generation. Listen and choose the one you like.","ok");
+    status("Two mixes are ready from one ElevenLabs generation. Your vocal cleanup used ElevenLabs Voice Isolator when available.","ok");
   }catch(error){
     status(error.message||"Music City could not create the versions.","error");
   }finally{
@@ -819,193 +805,6 @@ async function chooseVersion(index){
   await saveVersion(index);
   localStorage.setItem("musicCityChosenVersion",resultVersions[index].id);
   status(resultVersions[index].label+" selected and saved. You can keep creating or open Advanced Studio.","ok");
-}
-
-const SUNO_QUICK_PENDING_KEY="musicCitySunoQuickPendingV1";
-
-function preparedSunoPrompt(){
-  const details=getPromptAndTitle();
-  const adv=advancedValues();
-  const parts=[];
-  if(details.prompt) parts.push(details.prompt);
-  if(createMode==="custom"&&details.lyrics) parts.push("Lyrics:\n"+details.lyrics);
-  if(adv.bpm) parts.push("Tempo: "+adv.bpm+" BPM");
-  if(adv.key&&adv.key!=="Auto") parts.push("Key: "+adv.key);
-  if(songType==="instrumental") parts.push("Instrumental only");
-  return parts.join("\n\n").trim();
-}
-
-function toggleSunoPromptPreview(){
-  const box=document.getElementById("sunoPreparedPrompt");
-  box.value=preparedSunoPrompt()||"Describe the song above first.";
-  box.classList.toggle("show");
-  if(box.classList.contains("show")) box.focus();
-}
-
-function downloadTemporaryAudio(blob,filename){
-  const url=URL.createObjectURL(blob);
-  const link=document.createElement("a");
-  link.href=url;
-  link.download=filename;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),1500);
-}
-
-function audioExtension(blob){
-  const type=String(blob&&blob.type||"").toLowerCase();
-  if(type.includes("wav"))return"wav";
-  if(type.includes("mpeg")||type.includes("mp3"))return"mp3";
-  if(type.includes("mp4")||type.includes("m4a"))return"m4a";
-  if(type.includes("ogg"))return"ogg";
-  if(type.includes("webm"))return"webm";
-  return"audio";
-}
-
-async function startSunoQuickHandoff(){
-  const button=document.getElementById("sunoQuickButton");
-  const returnStatus=document.getElementById("sunoReturnStatus");
-  if(mediaRecorder&&mediaRecorder.state==="recording"){
-    returnStatus.textContent="Stop your recording first, then open Suno.";
-    return;
-  }
-  const details=getPromptAndTitle();
-  const prompt=preparedSunoPrompt();
-  if(!prompt&&!selectedBeat&&!voiceBlob){
-    status("Describe the song in one sentence first, or add an optional beat/voice reference.","error");
-    document.getElementById("quickPrompt").focus();
-    return;
-  }
-
-  const sunoWindow=window.open("about:blank","musicCitySunoQuick");
-  if(sunoWindow){
-    try{sunoWindow.document.write("<title>Opening Suno</title><p style='font-family:Arial,sans-serif;padding:24px'>Music City is preparing your song idea…</p>")}catch(error){}
-  }
-
-  button.disabled=true;
-  button.textContent="PREPARING SUNO...";
-  try{
-    let copied=false;
-    if(prompt&&navigator.clipboard&&navigator.clipboard.writeText){
-      try{await navigator.clipboard.writeText(prompt);copied=true}catch(error){}
-    }
-
-    let referenceBlob=null;
-    let referenceLabel="";
-    const beatBlob=selectedBeat?await selectedBeatBlob():null;
-    if(beatBlob&&voiceBlob){
-      try{
-        referenceBlob=await renderVersion(beatBlob,voiceBlob,"A");
-        referenceLabel="rough beat + vocal reference";
-      }catch(error){
-        referenceBlob=voiceBlob;
-        referenceLabel="vocal reference";
-      }
-    }else if(voiceBlob){
-      referenceBlob=voiceBlob;
-      referenceLabel="vocal reference";
-    }else if(beatBlob){
-      referenceBlob=beatBlob;
-      referenceLabel="beat reference";
-    }
-
-    if(referenceBlob){
-      downloadTemporaryAudio(referenceBlob,"music-city-suno-reference."+audioExtension(referenceBlob));
-    }
-
-    const pending={
-      title:details.title||"Music City Creation",
-      prompt:details.prompt||prompt||"",
-      lyrics:details.lyrics||"",
-      beat:selectedBeat?selectedBeat.title:"",
-      studio,
-      createdAt:new Date().toISOString(),
-      hadReference:Boolean(referenceBlob)
-    };
-    try{localStorage.setItem(SUNO_QUICK_PENDING_KEY,JSON.stringify(pending))}catch(error){}
-
-    document.getElementById("sunoPreparedPrompt").value=prompt;
-    returnStatus.innerHTML=(copied?"Your prompt was copied. ":"Your prompt is saved in Music City. ")+
-      (referenceBlob?"A "+referenceLabel+" was also downloaded for optional upload in Suno. ":"")+
-      "Make the song in Suno, download the finished audio, return here, then tap <strong>Bring Finished Song Back</strong>.";
-
-    if(sunoWindow){
-      sunoWindow.location.href="https://suno.com/create";
-    }else{
-      status("Your browser blocked the new tab. Opening Suno here; use Back to return to Music City.","ok");
-      setTimeout(()=>{location.href="https://suno.com/create"},700);
-      return;
-    }
-    status("Suno opened. Make your song there, download it, then return and import it here.","ok");
-  }catch(error){
-    if(sunoWindow) try{sunoWindow.close()}catch(ignore){}
-    status(error.message||"Music City could not prepare the Suno handoff.","error");
-  }finally{
-    button.disabled=false;
-    button.textContent="🎵 OPEN SUNO & MAKE MY SONG";
-  }
-}
-
-async function importSunoQuickResult(event){
-  const input=event.target;
-  const file=input.files&&input.files[0];
-  input.value="";
-  if(!file)return;
-  const returnStatus=document.getElementById("sunoReturnStatus");
-  if(!supportedAudio(file)){
-    returnStatus.textContent="Choose the audio file you downloaded from Suno.";
-    return;
-  }
-  if(file.size>120*1024*1024){
-    returnStatus.textContent="That file is too large for this browser test. Use an audio file under 120 MB.";
-    return;
-  }
-
-  let pending={};
-  try{pending=JSON.parse(localStorage.getItem(SUNO_QUICK_PENDING_KEY)||"{}")||{}}catch(error){}
-  const fallbackDetails=getPromptAndTitle();
-  const genericTitle=String(pending.title||fallbackDetails.title||"").trim();
-  const title=genericTitle&&genericTitle!=="Music City Creation"?genericTitle:cleanTitle(file.name);
-  const id="suno-demo-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,7);
-  try{
-    await window.MusicCityCatalog.saveTrack({
-      id,
-      title:title||"Suno Demo",
-      style:pending.prompt||fallbackDetails.prompt||"",
-      studio,
-      beat:pending.beat||"",
-      provider:"Suno Test Handoff",
-      createdAt:new Date().toISOString(),
-      audioBlob:file,
-      status:"unreleased-demo"
-    });
-    if(window.MCE){
-      const player=window.MCE.get();
-      if(!player.releases.some(release=>String(release.id)===String(id))){
-        window.MCE.addRelease({
-          id,
-          title:title||"Suno Demo",
-          artistName:player.name,
-          source:"suno-test-handoff",
-          createdAt:new Date().toISOString(),
-          style:pending.prompt||fallbackDetails.prompt||"",
-          studio,
-          beat:pending.beat||"",
-          provider:"Suno Test Handoff",
-          audioKey:id,
-          releaseStatus:"draft",
-          radioStatus:"not-submitted"
-        });
-      }
-    }
-    localStorage.setItem("musicCityChosenVersion",id);
-    localStorage.removeItem(SUNO_QUICK_PENDING_KEY);
-    returnStatus.innerHTML="<strong>"+escapeHtml(title||"Suno Demo")+"</strong> is back in Music City and saved to your Artist Catalog as an <strong>Unreleased Demo</strong>. The next step is the release plan—not more studio setup.";
-    status("Finished Suno song imported successfully.","ok");
-  }catch(error){
-    returnStatus.textContent=error.message||"Music City could not save the returned Suno song.";
-  }
 }
 
 function elevenBackendBase(){
@@ -1085,6 +884,28 @@ function blobToElevenBase64(blob){
   });
 }
 
+async function cleanVoiceWithElevenLabs(){
+  if(!voiceBlob)throw new Error("Record or upload a vocal first.");
+  if(cleanedVoiceBlob&&cleanedVoiceSource===voiceBlob)return cleanedVoiceBlob;
+  const audioBase64=await blobToElevenBase64(voiceBlob);
+  const response=await fetch(elevenBackendBase()+"/api/elevenlabs/isolate",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      audioBase64,
+      mimeType:voiceBlob.type||"audio/webm",
+      filename:"music-city-vocal-clean."+audioExtension(voiceBlob)
+    })
+  });
+  if(!response.ok)throw new Error(await readElevenError(response));
+  const blob=await response.blob();
+  if(!blob.size)throw new Error("ElevenLabs returned an empty cleaned vocal.");
+  cleanedVoiceBlob=blob;
+  cleanedVoiceSource=voiceBlob;
+  setElevenStatus("ElevenLabs Voice Isolator cleaned the current vocal take.","ok");
+  return blob;
+}
+
 async function transcribeCurrentTake(){
   const box=document.getElementById("elevenTranscript");
   if(!voiceBlob){
@@ -1139,10 +960,7 @@ document.getElementById("voiceUpload").addEventListener("change",e=>{
 async function init(){
   try{await loadBeatLocker()}catch(error){}
   setCreateMode("quick");setSongType("voice");updateSourceBoxes();
-  const requestedProvider=new URLSearchParams(location.search).get("provider");
-  if(requestedProvider&&document.getElementById("provider")){
-    document.getElementById("provider").value=requestedProvider==="music-city-native"?"music-city-native":"elevenlabs";
-  }
+  if(document.getElementById("provider"))document.getElementById("provider").value="elevenlabs";
   checkElevenLabsConnection();
 }
 window.addEventListener("beforeunload",()=>{
