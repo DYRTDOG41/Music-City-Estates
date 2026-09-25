@@ -14,4 +14,15 @@
       zones:["all"]
     }
   ];
+
+  // Load the shared Music City realtime layer once on every game page that
+  // already uses the global soundtrack catalog. The realtime UI stays
+  // collapsed until the player opens LIVE, so it does not cover gameplay.
+  if (root.document && !document.querySelector('script[data-mce-realtime-loader]')) {
+    var script = document.createElement('script');
+    script.src = 'music_city_realtime.js?v=realtime-1';
+    script.async = true;
+    script.dataset.mceRealtimeLoader = '1';
+    document.head.appendChild(script);
+  }
 })(window);
