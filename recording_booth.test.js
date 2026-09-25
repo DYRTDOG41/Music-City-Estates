@@ -8,63 +8,60 @@ function check(name, fn) {
 
 const booth = fs.readFileSync('record_music.html', 'utf8');
 
-check('booth explains the three-step creative flow', () => {
-  assert.match(booth, /Pick a beat/);
-  assert.match(booth, /Preview &amp; write/);
-  assert.match(booth, /Record with beat/);
+check('studio explains the three-step ElevenLabs creative flow', () => {
+  assert.match(booth, /1 • DESCRIBE IT/);
+  assert.match(booth, /2 • RECORD IT/);
+  assert.match(booth, /3 • CREATE IT/);
+  assert.match(booth, /Eleven Music v2\.5 generates through the secure Music City server/);
 });
 
-check('instrumental has a writing mode independent of recording', () => {
-  assert.match(booth, /PLAY INSTRUMENTAL/);
-  assert.match(booth, /mode:"writing"/);
-  assert.match(booth, /Your microphone is off/);
+check('ElevenLabs is the only studio AI engine', () => {
+  assert.match(booth, /value="elevenlabs"/);
+  assert.match(booth, /ElevenLabs Music v2\.5 — the only studio AI engine/);
+  assert.doesNotMatch(booth, /Suno/i);
+  assert.doesNotMatch(booth, /music-city-native/i);
 });
 
-check('selected beat starts before the vocal recorder', () => {
-  const recordingFunction = booth.slice(booth.indexOf('async function toggleRecording'), booth.indexOf('function loadUploadedAudio'));
-  assert.ok(recordingFunction.indexOf('await startBeatPlayback({ mode:"recording" })') >= 0);
-  assert.ok(recordingFunction.indexOf('await startBeatPlayback({ mode:"recording" })') < recordingFunction.indexOf('mediaRecorder.start()'));
+check('studio API key is never embedded in the browser page', () => {
+  assert.doesNotMatch(booth, /ELEVENLABS_API_KEY/);
+  assert.match(booth, /API key never appears in this page or in GitHub/);
 });
 
-check('engineering session exposes one beat and four vocal lanes', () => {
-  ['beat', 'lead', 'double', 'adlibs', 'harmony'].forEach(trackName => {
-    assert.match(booth, new RegExp('data-track="' + trackName + '"'));
-  });
-  assert.match(booth, /recordingTrack = armedTrack/);
-  assert.match(booth, /renderRecordedTrack\(recordingTrack\)/);
+check('music generation routes through the shared ElevenLabs engine', () => {
+  assert.match(booth, /window\.MusicCityAI\.generate/);
+  assert.match(booth, /provider,title:details\.title/);
+  assert.match(booth, /Generating one secure ElevenLabs Music v2\.5 base track/);
 });
 
-check('AI Mix Assist applies and teaches a starter balance', () => {
-  assert.match(booth, /function applyAIMix/);
-  assert.match(booth, /starterMix = \{ beat:72, lead:100, double:64, adlibs:56, harmony:52 \}/);
-  assert.match(booth, /Lead stays centered and loud for clarity/);
+check('recorded vocals can be cleaned with ElevenLabs Voice Isolator', () => {
+  assert.match(booth, /async function cleanVoiceWithElevenLabs/);
+  assert.match(booth, /\/api\/elevenlabs\/isolate/);
+  assert.match(booth, /Cleaning your vocal with ElevenLabs Voice Isolator/);
 });
 
-check('mixdown renders one compressed WAV master in the browser', () => {
-  assert.match(booth, /async function renderSessionMix/);
-  assert.match(booth, /new OfflineContext\(2,/);
-  assert.match(booth, /createDynamicsCompressor\(\)/);
-  assert.match(booth, /audioBufferToWave/);
-  assert.match(booth, /This mix works inside Music City and does not require ElevenLabs/);
+check('recorded vocals can be transcribed with ElevenLabs Scribe', () => {
+  assert.match(booth, /async function transcribeCurrentTake/);
+  assert.match(booth, /\/api\/elevenlabs\/transcribe/);
+  assert.match(booth, /ElevenLabs Scribe returned the vocal transcript/);
 });
 
-check('Suno handoff exports the rough mix and returns through master import', () => {
-  assert.match(booth, /async function finishInSuno/);
-  assert.match(booth, /https:\/\/suno\.com\/create/);
-  assert.match(booth, /IMPORT SUNO MASTER/);
-  assert.match(booth, /function importSunoMaster/);
+check('studio engineer voice uses ElevenLabs TTS', () => {
+  assert.match(booth, /async function playEngineerVoice/);
+  assert.match(booth, /\/api\/elevenlabs\/tts/);
+  assert.match(booth, /Live ElevenLabs studio-engineer audio returned successfully/);
 });
 
-check('recording booth persists tracks and masters before external handoff', () => {
-  assert.match(booth, /indexedDB\.open\("music-city-recording-booth", 1\)/);
-  assert.match(booth, /async function saveBoothSession/);
-  assert.match(booth, /async function restoreBoothSession/);
-  assert.match(booth, /await saveBoothSession\(false\)/);
+check('recording over a selected beat remains available', () => {
+  assert.match(booth, /async function toggleVoiceRecording/);
+  assert.match(booth, /recordingBeatAudio=new Audio/);
+  assert.match(booth, /RECORD OVER BEAT/);
 });
 
-check('demo reference workflow no longer falsely requires ElevenLabs', () => {
-  assert.match(booth, /provider !== "elevenlabs" && provider !== "demo"/);
-  assert.match(booth, /Demo reference attached/);
+check('one ElevenLabs generation can produce two local mix choices', () => {
+  assert.match(booth, /async function createTwoVersions/);
+  assert.match(booth, /Version A/);
+  assert.match(booth, /Version B/);
+  assert.match(booth, /Two mixes are ready from one ElevenLabs generation/);
 });
 
-console.log('9 recording booth tests passed');
+console.log('9 ElevenLabs recording studio tests passed');
