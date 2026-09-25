@@ -6,6 +6,15 @@
     },
     "api/music/reference.js": {
       "maxDuration": 60
+    },
+    "api/elevenlabs/tts.js": {
+      "maxDuration": 30
+    },
+    "api/elevenlabs/transcribe.js": {
+      "maxDuration": 60
+    },
+    "api/elevenlabs/status.js": {
+      "maxDuration": 20
     }
   }
 }

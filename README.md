@@ -50,3 +50,28 @@ The Live Freestyle feature is an MVP test path. It uses PeerJS public signaling 
 3. Add battle opponents, fan voting, rewards, and branching outcomes.
 4. Add contact relationships, quests, and producer/DJ/A&R storylines.
 5. Add authentication and cloud saves once the core loop is validated.
+
+## ElevenLabs review integration
+
+The review build includes a secure ElevenLabs provider layer:
+
+- `elevenlabs_demo.html` — reviewer-facing live API demo.
+- `api/elevenlabs/tts.js` — studio engineer Text to Speech.
+- `api/elevenlabs/transcribe.js` — Scribe v2 vocal/freestyle transcription.
+- `api/elevenlabs/status.js` — server-side credential validation without exposing the key.
+- `api/music/generate.js` — Eleven Music v2.5 generation adapter.
+- `api/music/reference.js` — Eleven Music audio-reference upload adapter.
+- `record_music.html` — ElevenLabs-first studio workflow with Music City Native kept as an offline fallback.
+
+Required server environment variables:
+
+```text
+ELEVENLABS_API_KEY=your_server_side_key
+ELEVENLABS_MUSIC_MODEL=music_v2_5
+ELEVENLABS_TTS_MODEL=eleven_flash_v2_5
+ELEVENLABS_STT_MODEL=scribe_v2
+ELEVENLABS_VOICE_ID=optional_voice_id
+```
+
+Never place the ElevenLabs API key in GitHub, HTML, client JavaScript, or a query string. The Music API itself is subject to the ElevenLabs account's API entitlement.
+

@@ -130,7 +130,14 @@ body.custom-mode .quick-only{display:none}
 .suno-return .inline-actions{margin-top:8px}
 .suno-prompt-preview{display:none;margin-top:10px;min-height:100px;font-size:12px;color:#b9c7d6}
 .suno-prompt-preview.show{display:block}
-.native-create-card{display:none}
+.native-create-card{display:block}
+.elevenlabs-card{border-color:#356073;background:linear-gradient(145deg,rgba(7,24,31,.98),rgba(8,16,27,.98));box-shadow:0 14px 42px rgba(35,213,255,.12)}
+.eleven-kicker{display:inline-block;margin-bottom:8px;padding:4px 8px;border:1px solid #4cc9f066;border-radius:999px;color:#bfefff;background:#0b2631;font-size:9px;font-weight:1000;letter-spacing:.09em}
+.eleven-status{margin-top:10px;padding:10px 12px;border:1px solid #29465d;border-radius:10px;background:#06101a;color:#a9bfd2;font-size:12px;line-height:1.5}
+.eleven-status.ok{border-color:#2f6b53;color:#c4f7d7}
+.eleven-status.warn{border-color:#66572a;color:#ffe6a5}
+.eleven-status.error{border-color:#6c3942;color:#ffc1c8}
+.transcript-box{margin-top:10px;min-height:74px;padding:11px;border:1px solid #29465d;border-radius:10px;background:#050b12;color:#e8f7ff;font-size:12px;line-height:1.5;white-space:pre-wrap}
 .suno-flow{grid-template-columns:repeat(3,1fr)}
 @media(max-width:760px){
   .custom-grid,.source-grid,.version-grid,.advanced-grid,.workflow{grid-template-columns:1fr}
@@ -154,7 +161,7 @@ body.custom-mode .quick-only{display:none}
 <main class="shell">
   <section class="hero">
     <h1>Make the song. Build the career.</h1>
-    <p>Getting a finished song should be fast. Describe what you want, jump to Suno, make it, then bring the finished song back to Music City as an unreleased demo.</p>
+    <p>Record your idea, let the studio understand your take, generate with ElevenLabs, and carry the finished record into the Music City career loop.</p>
   </section>
 
   <nav class="mode-tabs" aria-label="Create mode">
@@ -167,8 +174,8 @@ body.custom-mode .quick-only{display:none}
     <p class="helper">The studio is simple on purpose. Create first. The work required to properly release and push the record happens afterward in Music City.</p>
     <div class="workflow suno-flow">
       <div class="workflow-step"><strong>1 • DESCRIBE IT</strong><span>Give Music City one sentence about the sound you want.</span></div>
-      <div class="workflow-step"><strong>2 • MAKE IT IN SUNO</strong><span>Music City prepares your idea and opens Suno. Add a reference vocal or beat only if you want to.</span></div>
-      <div class="workflow-step"><strong>3 • BRING IT BACK</strong><span>Upload the finished Suno song here. It enters your catalog as an Unreleased Demo.</span></div>
+      <div class="workflow-step"><strong>2 • RECORD IT</strong><span>Add your own vocal or beat. ElevenLabs Scribe can turn a take into editable lyrics.</span></div>
+      <div class="workflow-step"><strong>3 • CREATE IT</strong><span>Eleven Music v2.5 generates through the secure Music City server, then the record continues into your Artist Catalog.</span></div>
     </div>
   </section>
 
@@ -178,7 +185,21 @@ body.custom-mode .quick-only{display:none}
     <textarea id="quickPrompt" class="quick-prompt" placeholder="Example: dark melodic trap with emotional piano, heavy 808s and a late-night feel"></textarea>
   </section>
 
-  <section class="card suno-card">
+  <section class="card elevenlabs-card">
+    <span class="eleven-kicker">ELEVENLABS API • REVIEW BUILD</span>
+    <h2>AI Studio Engineer</h2>
+    <p class="helper">The studio now talks to ElevenLabs through the secure Music City backend. The API key never appears in this page or in GitHub.</p>
+    <div class="inline-actions three">
+      <button type="button" class="secondary-btn" onclick="checkElevenLabsConnection()">CHECK API</button>
+      <button type="button" class="secondary-btn" id="engineerVoiceButton" onclick="playEngineerVoice()">▶ HEAR ENGINEER</button>
+      <a class="secondary-btn" href="elevenlabs_demo.html" style="text-decoration:none">REVIEW DEMO</a>
+    </div>
+    <div class="eleven-status" id="elevenStatus">Ready to verify the server-side connection.</div>
+    <button type="button" class="secondary-btn" style="width:100%;margin-top:9px" onclick="transcribeCurrentTake()">✎ TRANSCRIBE CURRENT VOCAL TAKE</button>
+    <div class="transcript-box" id="elevenTranscript">Record or upload a vocal, then transcribe it with ElevenLabs Scribe.</div>
+  </section>
+
+  <section class="card suno-card" style="display:none">
     <span class="suno-kicker">TEMPORARY TEST MODE • OFFICIAL SUNO WEBSITE</span>
     <h2>Make my song</h2>
     <p class="helper">Tap once. Music City will save your idea, copy the prepared prompt when your browser allows it, download a reference audio file if you added your own beat or voice, and open Suno. Make the song there, download it, then come back here.</p>
@@ -218,8 +239,8 @@ body.custom-mode .quick-only{display:none}
         <div class="field">
           <label for="provider">MODEL</label>
           <select id="provider">
-            <option value="music-city-native">Music City Native — Prototype</option>
-            <option value="suno" disabled>Suno Premium — API Access Pending</option>
+            <option value="elevenlabs">ElevenLabs Music v2.5 — Secure API</option>
+            <option value="music-city-native">Music City Native — Offline Fallback</option>
           </select>
         </div>
       </div>
@@ -228,7 +249,7 @@ body.custom-mode .quick-only{display:none}
 
   <section class="card">
     <h2>Optional: add your own performance</h2>
-    <p class="helper">You can skip this. Use it only when you want to take your own voice or instrumental with you as a Suno reference.</p>
+    <p class="helper">You can skip this. Use it when you want your own vocal or instrumental inside the Music City session. Your vocal can also be transcribed with ElevenLabs Scribe.</p>
     <div class="choice-row">
       <button type="button" id="voiceChoice" class="choice active" onclick="setSongType('voice')">🎙️ MY VOICE</button>
       <button type="button" id="instrumentalChoice" class="choice" onclick="setSongType('instrumental')">🎹 INSTRUMENTAL</button>
@@ -237,7 +258,7 @@ body.custom-mode .quick-only{display:none}
 
   <section class="card">
     <h2>Optional: your beat or voice</h2>
-    <p class="helper">Add a beat, record a vocal, or upload a vocal only if you want a reference file to take into Suno. Otherwise, skip this section completely.</p>
+    <p class="helper">Add a beat, record a vocal, or upload a vocal. Music City can mix the take locally and use ElevenLabs services around the session without exposing your API key.</p>
 
     <div class="source-grid">
       <div class="source-box" id="beatSourceBox">
@@ -300,7 +321,7 @@ body.custom-mode .quick-only{display:none}
   </section>
 
   <section class="card native-create-card">
-    <button type="button" id="createButton" class="create-btn" onclick="createTwoVersions()">✨ CREATE 2 VERSIONS</button>
+    <button type="button" id="createButton" class="create-btn" onclick="createTwoVersions()">✨ CREATE A/B VERSIONS WITH ELEVENLABS</button>
     <p class="create-status" id="createStatus">Ready when you are.</p>
   </section>
 
@@ -710,14 +731,15 @@ async function makeBaseBeat(versionIndex,details){
   const existing=await selectedBeatBlob();
   if(existing)return{blob:existing,source:selectedBeat.title,providerName:"My Beat Locker"};
   const adv=advancedValues();
+  const provider=(document.getElementById("provider")&&document.getElementById("provider").value)||"elevenlabs";
   const result=await window.MusicCityAI.generate({
-    provider:"music-city-native",title:details.title,style:details.prompt||"Original Style",lyrics:details.lyrics,
-    mode:"Generate Instrumental",vocalStyle:"Instrumental Only",musicLengthMs:15000,
+    provider,title:details.title,style:details.prompt||"Original Style",lyrics:details.lyrics,
+    mode:"Generate Instrumental",vocalStyle:"Instrumental Only",musicLengthMs:12000,
     bpm:adv.bpm,key:adv.key,creativity:adv.creativity,influence:adv.influence,
     variationSeed:generationRound*10+versionIndex+1,studio
   });
-  if(!result.audioBlob)throw new Error("Music City Native did not return audio.");
-  return{blob:result.audioBlob,source:"Music City Native",providerName:result.providerName||"Music City Native"};
+  if(!result.audioBlob)throw new Error((result.providerName||"AI provider")+" did not return audio.");
+  return{blob:result.audioBlob,source:result.providerName||provider,providerName:result.providerName||provider};
 }
 async function createTwoVersions(){
   const details=getPromptAndTitle();
@@ -734,9 +756,10 @@ async function createTwoVersions(){
   generationRound+=1;
   try{
     const built=[];
+    status("Generating one secure AI base track...");
+    const base=await makeBaseBeat(0,details);
     for(let i=0;i<2;i++){
-      status("Creating Version "+(i===0?"A":"B")+"...");
-      const base=await makeBaseBeat(i,details);
+      status("Mixing Version "+(i===0?"A":"B")+"...");
       const master=await renderVersion(base.blob,songType==="voice"?voiceBlob:null,i===0?"A":"B");
       built.push({
         id:"creation-"+Date.now().toString(36)+"-"+i+"-"+Math.random().toString(36).slice(2,6),
@@ -746,11 +769,11 @@ async function createTwoVersions(){
       });
     }
     resultVersions=built;renderResults();
-    status("Two versions are ready. Listen and choose the one you like.","ok");
+    status("Two local mix versions are ready from one AI generation. Listen and choose the one you like.","ok");
   }catch(error){
     status(error.message||"Music City could not create the versions.","error");
   }finally{
-    button.disabled=false;button.textContent="✨ CREATE 2 VERSIONS";
+    button.disabled=false;button.textContent="✨ CREATE A/B VERSIONS WITH ELEVENLABS";
   }
 }
 function clearResults(){
@@ -985,6 +1008,114 @@ async function importSunoQuickResult(event){
   }
 }
 
+function elevenBackendBase(){
+  const configured=window.MusicCityAI&&window.MusicCityAI.getStatus?window.MusicCityAI.getStatus().backendEndpoint:"";
+  const endpoint=configured||"https://music-city-estates-api-willwill3515-5514s-projects.vercel.app/api/music/generate";
+  return endpoint.replace(/\/api\/music\/generate\/?$/i,"");
+}
+
+function setElevenStatus(message,state){
+  const el=document.getElementById("elevenStatus");
+  if(!el)return;
+  el.textContent=message;
+  el.className="eleven-status"+(state?" "+state:"");
+}
+
+async function readElevenError(response){
+  try{
+    const payload=await response.json();
+    return payload&&payload.error?payload.error:"ElevenLabs request failed.";
+  }catch(error){
+    return "ElevenLabs request failed.";
+  }
+}
+
+async function checkElevenLabsConnection(){
+  setElevenStatus("Checking the secure ElevenLabs connection...");
+  try{
+    const response=await fetch(elevenBackendBase()+"/api/elevenlabs/status");
+    if(!response.ok)throw new Error("Music City API status endpoint is unavailable.");
+    const data=await response.json();
+    if(data.connected){
+      setElevenStatus("Connected. ElevenLabs credentials are validated on the server; the browser never receives the key.","ok");
+    }else if(data.configured){
+      setElevenStatus(data.message||"The key is configured but could not be validated.","warn");
+    }else{
+      setElevenStatus(data.message||"The server is waiting for ELEVENLABS_API_KEY.","warn");
+    }
+  }catch(error){
+    setElevenStatus(error.message||"Could not verify the ElevenLabs connection.","error");
+  }
+}
+
+async function playEngineerVoice(){
+  const button=document.getElementById("engineerVoiceButton");
+  if(button){button.disabled=true;button.textContent="GENERATING...";}
+  setElevenStatus("Generating the BeGenius Studio engineer voice...");
+  try{
+    const response=await fetch(elevenBackendBase()+"/api/elevenlabs/tts",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({text:"Welcome to BeGenius Studio. Pick your beat, record your take, and I will help turn the session into your next Music City release."})
+    });
+    if(!response.ok)throw new Error(await readElevenError(response));
+    const blob=await response.blob();
+    const url=URL.createObjectURL(blob);
+    const audio=new Audio(url);
+    audio.onended=()=>URL.revokeObjectURL(url);
+    await audio.play();
+    setElevenStatus("Live ElevenLabs studio-engineer audio returned successfully.","ok");
+  }catch(error){
+    setElevenStatus(error.message||"Could not generate the studio engineer voice.","error");
+  }finally{
+    if(button){button.disabled=false;button.textContent="▶ HEAR ENGINEER";}
+  }
+}
+
+function blobToElevenBase64(blob){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>{
+      const value=String(reader.result||"");
+      const comma=value.indexOf(",");
+      resolve(comma>=0?value.slice(comma+1):value);
+    };
+    reader.onerror=()=>reject(new Error("Music City could not read the vocal take."));
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function transcribeCurrentTake(){
+  const box=document.getElementById("elevenTranscript");
+  if(!voiceBlob){
+    box.textContent="Record or upload a vocal first, then tap Transcribe Current Vocal Take.";
+    return;
+  }
+  box.textContent="Sending the current take to ElevenLabs Scribe...";
+  try{
+    const audioBase64=await blobToElevenBase64(voiceBlob);
+    const response=await fetch(elevenBackendBase()+"/api/elevenlabs/transcribe",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        audioBase64,
+        mimeType:voiceBlob.type||"audio/webm",
+        filename:"music-city-vocal-take."+audioExtension(voiceBlob)
+      })
+    });
+    if(!response.ok)throw new Error(await readElevenError(response));
+    const data=await response.json();
+    box.textContent=data.text||"No speech was detected.";
+    if(data.text&&createMode==="custom"&&!document.getElementById("lyrics").value.trim()){
+      document.getElementById("lyrics").value=data.text;
+    }
+    setElevenStatus("ElevenLabs Scribe returned the vocal transcript.","ok");
+  }catch(error){
+    box.textContent=error.message||"Could not transcribe the vocal take.";
+    setElevenStatus(box.textContent,"error");
+  }
+}
+
 function escapeHtml(value){
   return String(value==null?"":value).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 }
@@ -1008,6 +1139,11 @@ document.getElementById("voiceUpload").addEventListener("change",e=>{
 async function init(){
   try{await loadBeatLocker()}catch(error){}
   setCreateMode("quick");setSongType("voice");updateSourceBoxes();
+  const requestedProvider=new URLSearchParams(location.search).get("provider");
+  if(requestedProvider&&document.getElementById("provider")){
+    document.getElementById("provider").value=requestedProvider==="music-city-native"?"music-city-native":"elevenlabs";
+  }
+  checkElevenLabsConnection();
 }
 window.addEventListener("beforeunload",()=>{
   stopWritingMode(true);
