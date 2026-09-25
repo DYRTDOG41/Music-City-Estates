@@ -28,6 +28,7 @@
   let masterBlob = null;
   let masterUrl = "";
   let generatedBeatUrl = "";
+  let previewAudio = null;
   let masterDirty = true;
 
   function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[ch])}
@@ -193,7 +194,7 @@
   function playLayer(trackId){
     const t=trackState[trackId];if(!t.blob)return;
     stopSession();dispatchAudio(true);
-    const a=new Audio(t.url);a.volume=clamp(t.level/100,0,1);a.onended=()=>dispatchAudio(false);a.play().catch(()=>dispatchAudio(false));
+    const a=new Audio(t.url);previewAudio=a;a.volume=clamp(t.level/100,0,1);a.onended=()=>{previewAudio=null;dispatchAudio(false)};a.play().catch(()=>{previewAudio=null;dispatchAudio(false)});
     setStatus("Playing "+TRACKS.find(x=>x.id===trackId).label+" by itself.");
   }
 
@@ -220,6 +221,7 @@
   }
 
   function stopSession(){
+    if(previewAudio){try{previewAudio.pause();previewAudio.currentTime=0}catch(error){}previewAudio=null}
     sessionSources.forEach(s=>{try{s.stop()}catch(error){}});
     sessionSources=[];sessionNodes.clear();
     if(sessionContext){sessionContext.close().catch(()=>{});sessionContext=null}
@@ -314,8 +316,8 @@
       const decoded={beat:await blobBuffer(decodeCtx,beat.blob)};
       for(const def of TRACKS){
         const state=trackState[def.id];if(!state.blob||state.muted)continue;
-        $("engineDetail").textContent="AI cleanup: "+def.label;
-        const sourceBlob=await cleanVocal(def,state);
+        const sourceBlob=def.id==="lead" ? await cleanVocal(def,state) : state.blob;
+        if(def.id==="lead")$("engineDetail").textContent="ElevenLabs cleanup: Lead Vocal";
         decoded[def.id]=await blobBuffer(decodeCtx,sourceBlob);
       }
       let duration=decoded.beat.duration;
