@@ -51,6 +51,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <nav>
 <a href="artist_catalog.html">← ARTIST CATALOG</a>
 <a href="music_city_feed.html">📱 CITY FEED</a>
+<a href="collaboration.html">🤝 COLLABORATIONS</a>
 <a href="music_city_radio.html">📻 RADIO</a>
 <a href="sync_cinema.html">🎬 SYNC CINEMA</a>
 <a href="business_events.html" id="deckNav">🎴 BUSINESS DECK</a>
@@ -61,7 +62,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <div class="wrap">
 <section class="hero">
 <h1>🧑‍💼 Choose Your Representation</h1>
-<p>Managers are not cosmetic. They change how much money you keep from shows, how powerful promotion is, what radio submissions cost, and unlock professional film and TV sync solicitations.</p>
+<p>Managers are not cosmetic. They arrange collaborations, change how much money you keep from shows, strengthen promotion, change radio costs, and unlock professional film and TV sync solicitations.</p>
 <div class="stats">
 <div class="pill">Cash: $<b id="cash">0</b></div>
 <div class="pill">Fans: <b id="fans">0</b></div>
@@ -145,7 +146,7 @@ function contractButton(profile, state, currentProfile) {
       try {
         window.MCE.hireManager(profile.id);
         message.textContent =
-          profile.name + " is now representing you. Your show commission, promotion power, and radio terms have changed.";
+          profile.name + " is now representing you. Collaboration introductions are open, and your show commission, promotion power, and radio terms have changed.";
         render();
       } catch (error) {
         message.textContent = error.message || "Could not sign manager.";
@@ -191,7 +192,7 @@ function render() {
       currentProfile.radioInfluence;
   } else {
     currentContract.innerHTML =
-      "<strong>Independent Artist</strong><br>You keep 100% of show pay, but professional promotion and radio submission are unavailable until you sign management.";
+      "<strong>Independent Artist</strong><br>You keep 100% of show pay, but manager-arranged collaborations, professional promotion, and radio submission are unavailable until you sign management.";
   }
 
   managerGrid.innerHTML = "";
