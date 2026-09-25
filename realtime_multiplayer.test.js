@@ -10,6 +10,7 @@ const realtime = fs.readFileSync('./music_city_realtime.js', 'utf8');
 const social = fs.readFileSync('./social_hub.html', 'utf8');
 const collaboration = fs.readFileSync('./collaboration.html', 'utf8');
 const recording = fs.readFileSync('./record_music.html', 'utf8');
+const room3d = fs.readFileSync('./mce_3d_room.js', 'utf8');
 
 check('realtime maps studios and lobbies into shared rooms', () => {
   ['bedroom-studio','begenius-studio','studio-booth','hiphop-heights','hiphop-cafe','warehouse-lobby','battle-room','manager-office','radio']
@@ -25,6 +26,14 @@ check('realtime persists room chat through Supabase', () => {
 check('realtime voice yields to recording audio sessions', () => {
   assert.ok(realtime.includes('mce-audio-session'));
   assert.ok(realtime.includes('source !== "realtime-voice"'));
+});
+
+check('remote player movement is broadcast and rendered in 3D rooms', () => {
+  assert.ok(realtime.includes('event: "pose"'));
+  assert.ok(realtime.includes('mce:remote-pose'));
+  assert.ok(room3d.includes('mce:player-pose'));
+  assert.ok(room3d.includes('createRemoteActor'));
+  assert.ok(room3d.includes('remoteActors'));
 });
 
 check('social wall stores posts and reactions', () => {
@@ -46,4 +55,4 @@ check('manager collaboration becomes a real studio session', () => {
   assert.ok(recording.includes('mceCollaborationsV1'));
 });
 
-console.log('6 realtime multiplayer tests passed');
+console.log('7 realtime multiplayer tests passed');
