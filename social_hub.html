@@ -3,35 +3,132 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="Music City Estates Social World multiplayer preview.">
+<meta name="description" content="Music City Estates Social World — live rooms, artist wall posts, voice and chat.">
 <title>Social World | Music City Estates</title>
 <style>
-:root{--cyan:#5bdfff;--blue:#178dff;--ink:#020712;--panel:#061529e8;--line:#236da7;--muted:#94aec7}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 50% 0,#12355d,#020712 65%);color:#fff;font-family:Arial,sans-serif}.app{width:min(1180px,100%);min-height:100vh;margin:auto;padding:14px;display:grid;grid-template-rows:auto auto 1fr;gap:12px}.topbar,.notice,.card{border:1px solid #2b83c477;border-radius:17px;background:linear-gradient(145deg,#07182ce8,#030a17ee);box-shadow:0 15px 45px #0008}.topbar{padding:12px 15px;display:flex;align-items:center;justify-content:space-between;gap:12px}.brand b{display:block;letter-spacing:.13em}.brand small{display:block;margin-top:4px;color:#7fbde3;font-size:9px;letter-spacing:.17em}.back{padding:9px 13px;border:1px solid #54dfff70;border-radius:20px;color:#fff;text-decoration:none;font-size:10px;font-weight:900}.notice{padding:10px 14px;color:#d9c990;font-size:10px;line-height:1.5;border-color:#a88b4070}.grid{min-height:0;display:grid;grid-template-columns:230px minmax(0,1fr) 240px;gap:12px}.card{padding:14px;min-height:0}.card h2{margin:0 0 12px;font-size:11px;letter-spacing:.16em;color:#8fdcff}.profile input,.profile select,.composer input{width:100%;min-height:43px;padding:9px 11px;margin-bottom:9px;border:1px solid #275b86;border-radius:9px;background:#05101f;color:#fff}.primary{width:100%;min-height:44px;border:1px solid #65e5ff;border-radius:9px;background:linear-gradient(135deg,#087fe9,#00a5cf);color:#fff;font-weight:900;cursor:pointer}.rooms{display:grid;gap:7px;margin-top:18px}.room{padding:10px;border:1px solid #224b70;border-radius:9px;background:#061426;color:#dbeeff;text-align:left;font-size:10px;font-weight:900;cursor:pointer}.room.active{border-color:#58ddff;background:#0a3152;box-shadow:0 0 14px #23bfff42}.chat-card{display:grid;grid-template-rows:auto 1fr auto}.chat-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.chat-head b{letter-spacing:.12em}.mode{padding:5px 8px;border:1px solid #dfb94e6e;border-radius:15px;color:#e8d28d;font-size:8px;font-weight:900}.messages{min-height:300px;overflow:auto;padding:8px;border:1px solid #173a5c;border-radius:11px;background:#020a16}.empty{height:100%;display:grid;place-items:center;color:#66839f;text-align:center;font-size:11px;line-height:1.6}.message{display:grid;grid-template-columns:34px 1fr;gap:9px;margin:10px 0}.avatar{width:34px;height:34px;border:2px solid var(--player-color,#58ddff);border-radius:50%;display:grid;place-items:center;background:#091b30;font-size:12px;font-weight:900}.bubble{padding:8px 10px;border-radius:5px 12px 12px;background:#0a1b30}.meta{font-size:9px;font-weight:900;color:#87cceb}.meta span{color:#69839c;font-weight:400}.body{margin-top:5px;color:#dfeaf6;font-size:12px;line-height:1.45;overflow-wrap:anywhere}.composer{display:grid;grid-template-columns:1fr 90px;gap:8px;margin-top:9px}.composer input{margin:0}.online-list{display:grid;gap:8px}.player{display:flex;align-items:center;gap:9px;padding:9px;border:1px solid #173e62;border-radius:10px;background:#061426}.dot{width:10px;height:10px;border-radius:50%;background:var(--player-color,#58ddff);box-shadow:0 0 10px var(--player-color,#58ddff)}.player b{display:block;font-size:11px}.player small{display:block;color:#7693ad;font-size:9px;margin-top:2px}.online-count{color:#75ddff;font-size:10px;margin-bottom:12px}.help{margin-top:16px;padding:11px;border-left:2px solid #5bdfff;background:#071b2f;color:#9cb7cf;font-size:10px;line-height:1.5}
-.identity-link{margin:-3px 0 11px;color:#8ec5e7;font-size:9px;line-height:1.4}
-@media(max-width:850px){.grid{grid-template-columns:1fr}.profile{order:1}.chat-card{order:2;min-height:480px}.online{order:3}.rooms{grid-template-columns:repeat(2,1fr)}}@media(max-width:480px){.app{padding:8px}.topbar{align-items:flex-start}.grid{gap:8px}.card{padding:11px}.composer{grid-template-columns:1fr 72px}.rooms{grid-template-columns:1fr 1fr}.messages{min-height:330px}}
+:root{--cyan:#67e4ff;--blue:#178dff;--ink:#020712;--panel:#061529e8;--line:#286a9b;--muted:#93abc2;--gold:#f0ce76;--green:#79e5a4}*{box-sizing:border-box}html{background:var(--ink)}body{margin:0;min-height:100vh;background:radial-gradient(circle at 50% 0,#12355d,#020712 66%);color:#fff;font-family:Arial,Helvetica,sans-serif}.app{width:min(1240px,100%);margin:auto;padding:12px}.topbar,.card{border:1px solid #2b83c477;border-radius:16px;background:linear-gradient(145deg,#07182ce8,#030a17ee);box-shadow:0 15px 45px #0008}.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px}.brand b{display:block;letter-spacing:.12em}.brand small{display:block;margin-top:4px;color:#82badf;font-size:9px;letter-spacing:.15em}.top-actions{display:flex;gap:7px;flex-wrap:wrap}.top-actions a{padding:8px 11px;border:1px solid #4edcff66;border-radius:999px;color:#fff;text-decoration:none;font-size:9px;font-weight:900}.stats{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.stat{padding:6px 9px;border:1px solid #254d70;border-radius:999px;background:#061426;font-size:9px}.stat b{color:#8eeaff}.layout{display:grid;grid-template-columns:220px minmax(0,1fr) 240px;gap:10px;margin-top:10px}.card{padding:13px}.card h2{margin:0 0 10px;color:#8fe5ff;font-size:11px;letter-spacing:.15em}.worlds{display:grid;gap:7px}.world{display:block;padding:11px;border:1px solid #27577e;border-radius:10px;background:#07182a;color:#fff;text-decoration:none;font-size:10px;font-weight:900}.world small{display:block;margin-top:3px;color:#829cb6;font-size:8px;font-weight:500}.world:hover{border-color:#67e4ff;background:#0b2943}.wall-head{display:flex;justify-content:space-between;gap:10px;align-items:end}.wall-head p{margin:0;color:#95acc4;font-size:10px}.composer{margin-top:11px;padding:11px;border:1px solid #214e72;border-radius:12px;background:#05101e}.identity{display:grid;grid-template-columns:1fr 140px;gap:7px}.identity input,.identity select,.composer textarea{width:100%;border:1px solid #285a82;border-radius:9px;background:#020b17;color:#fff;padding:9px 10px;font:inherit}.identity input,.identity select{min-height:40px}.composer textarea{min-height:88px;margin-top:7px;resize:vertical;font-size:16px}.compose-row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:7px}.reward{color:#e4d39a;font-size:9px;line-height:1.4}.post-button,.live-button{border:1px solid #67e4ff;border-radius:9px;background:linear-gradient(135deg,#087fe9,#00a5cf);color:#fff;font-weight:900;cursor:pointer}.post-button{min-width:120px;padding:10px 13px}.post-button:disabled{opacity:.45;cursor:not-allowed}.notice{min-height:20px;margin-top:7px;color:#91c9df;font-size:9px}.feed{display:grid;gap:8px;margin-top:10px}.post{padding:11px;border:1px solid #1f4669;border-radius:12px;background:#05111f}.post-meta{display:flex;justify-content:space-between;gap:8px;color:#7fcce9;font-size:9px}.post-meta span{color:#69849d}.post-body{margin-top:7px;color:#e5edf6;font-size:12px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}.empty{padding:28px 10px;text-align:center;color:#69849d;font-size:11px}.live-card{position:sticky;top:10px;height:max-content}.live-state{padding:12px;border:1px solid #25516e;border-radius:11px;background:#061522}.online{font-size:26px;font-weight:1000;color:#7eeaff}.online small{font-size:9px;color:#91a9bf;letter-spacing:.12em}.live-button{width:100%;min-height:43px;margin-top:9px}.voice-note,.anti-spam{margin-top:10px;padding:10px;border-left:2px solid var(--cyan);background:#071a2d;color:#9fb7cb;font-size:9px;line-height:1.5}.anti-spam{border-left-color:var(--gold)}.status-good{color:var(--green)}@media(max-width:900px){.layout{grid-template-columns:180px minmax(0,1fr)}.live-card{grid-column:1/-1;position:static}.worlds{grid-template-columns:1fr}}@media(max-width:650px){.app{padding:7px}.topbar{align-items:flex-start;flex-direction:column}.layout{grid-template-columns:1fr}.identity{grid-template-columns:1fr}.worlds{grid-template-columns:repeat(2,1fr)}.compose-row{align-items:stretch;flex-direction:column}.post-button{width:100%}}@media(max-width:430px){.worlds{grid-template-columns:1fr}.card{padding:10px}}
 </style>
 </head>
 <body>
 <main class="app">
-  <header class="topbar"><div class="brand"><b>🎙️ MUSIC CITY SOCIAL WORLD</b><small>MEET • LISTEN • COLLABORATE • BUILD</small></div><a class="back" href="city_map.html">← CITY MAP</a></header>
-  <div class="notice"><b>MULTIPLAYER PREVIEW:</b> This version demonstrates live presence and chat between Music City tabs on the same device. Cross-device online play is the next backend connection—not yet public multiplayer.</div>
-  <section class="grid">
-    <aside class="card profile"><h2>PLAYER PROFILE</h2><div class="identity-link">✓ Linked to your Music City career and 3D artist.</div><label><input id="playerName" maxlength="24" placeholder="Choose your display name"></label><label><select id="playerRole"><option>Artist</option><option>Rapper</option><option>Singer</option><option>Producer</option><option>DJ</option><option>Songwriter</option><option>Fan</option><option>Manager</option><option>A&amp;R</option></select></label><label><input id="playerColor" type="color" value="#59dfff" aria-label="Avatar color"></label><button class="primary" id="saveProfile">ENTER SOCIAL WORLD</button><div class="rooms"><button class="room active" data-room="city-lobby">🏙️ CITY LOBBY</button><button class="room" data-room="hiphop-heights">🎤 HIP-HOP HEIGHTS</button><button class="room" data-room="studio-lounge">🎛️ STUDIO LOUNGE</button><button class="room" data-room="warehouse">⚔️ DA WAREHOUSE</button></div><div class="help">Open this page in a second tab to test another live player joining the same room. Each browser tab acts as a separate session.</div></aside>
-    <section class="card chat-card"><div class="chat-head"><b id="roomTitle">CITY LOBBY</b><span class="mode">LOCAL REALTIME PREVIEW</span></div><div class="messages" id="messages"><div class="empty">Create your profile to enter the room.<br>Real player messages will appear here.</div></div><form class="composer" id="chatForm"><input id="chatInput" maxlength="280" placeholder="Say something to the room…" autocomplete="off" disabled><button class="primary" type="submit" disabled id="sendButton">SEND</button></form></section>
-    <aside class="card online"><h2>PLAYERS IN THIS ROOM</h2><div class="online-count" id="onlineCount">0 ONLINE</div><div class="online-list" id="onlineList"><div class="empty">No active players yet.</div></div></aside>
-  </section>
+<header class="topbar">
+  <div class="brand"><b>🎙 MUSIC CITY SOCIAL WORLD</b><small>POST • MEET • CHAT • VOICE • COLLABORATE</small><div class="stats"><span class="stat">👥 FANS <b id="fans">0</b></span><span class="stat">⭐ XP <b id="xp">0</b></span><span class="stat">REP <b id="rep">50</b></span></div></div>
+  <div class="top-actions"><a href="city_map.html">← CITY MAP</a><a href="collaboration.html">🤝 COLLABS</a></div>
+</header>
+
+<section class="layout">
+<aside class="card">
+  <h2>ENTER A WORLD</h2>
+  <div class="worlds">
+    <a class="world" href="hip_hop_heights.html">🎤 HIP-HOP HEIGHTS<small>Street district + studios</small></a>
+    <a class="world" href="begenius_studio.html">🎛 BEGENIUS STUDIO<small>Lobby + studio sessions</small></a>
+    <a class="world" href="hiphop_cafe.html">☕ HIP-HOP CAFÉ<small>Shows + crowd building</small></a>
+    <a class="world" href="warehouse.html">⚔ DA WAREHOUSE<small>Battle lobby + arena</small></a>
+    <a class="world" href="bedroom_studio.html">🏠 BEDROOM STUDIO<small>Your starting studio</small></a>
+    <a class="world" href="music_city_radio.html">📻 MUSIC CITY RADIO<small>Airplay + discovery</small></a>
+  </div>
+</aside>
+
+<section class="card">
+  <div class="wall-head"><div><h2>SOCIAL WORLD WALL</h2><p>Real posts from artists in the city.</p></div><p id="wallStatus">CONNECTING…</p></div>
+  <form class="composer" id="postForm">
+    <div class="identity"><input id="postName" maxlength="24" placeholder="Artist name" aria-label="Artist name"><select id="postRole" aria-label="Role"><option>Artist</option><option>Rapper</option><option>Singer</option><option>Producer</option><option>DJ</option><option>Songwriter</option><option>Fan</option><option>Manager</option><option>A&amp;R</option></select></div>
+    <textarea id="postBody" maxlength="280" placeholder="Post something to Music City… new song, show announcement, collaboration request, studio session…" required></textarea>
+    <div class="compose-row"><div class="reward" id="rewardCopy">Rewarded wall posts earn +2 fans and +1 XP. First 3 per day.</div><button class="post-button" id="postButton" type="submit">POST TO WALL</button></div>
+    <div class="notice" id="postNotice"></div>
+  </form>
+  <div class="feed" id="feed"><div class="empty">Loading the Social World wall…</div></div>
+</section>
+
+<aside class="card live-card">
+  <h2>LIVE GROUP ROOM</h2>
+  <div class="live-state"><div class="online"><span id="liveCount">0</span> <small>ONLINE HERE</small></div><div id="liveRoomName" style="margin-top:5px;color:#91c9df;font-size:10px">SOCIAL WORLD</div></div>
+  <button class="live-button" id="openLive" type="button">OPEN GROUP CHAT</button>
+  <button class="live-button" id="openVoice" type="button">🎙 JOIN LIVE VOICE</button>
+  <div class="voice-note">The LIVE control follows you around Music City. When you enter a studio, lobby, café, warehouse or other supported space, you automatically join that room’s presence and chat.</div>
+  <div class="anti-spam"><b>GAME ECONOMY:</b> Social actions reward participation, not spam. Wall-post rewards stop after three rewarded posts each day.</div>
+</aside>
+</section>
 </main>
+
 <script src="player-state.js"></script>
 <script src="music_city_missions.js"></script>
-<script src="music_city_social.js?v=career-identity-1"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const roomNames={'city-lobby':'CITY LOBBY','hiphop-heights':'HIP-HOP HEIGHTS','studio-lounge':'STUDIO LOUNGE','warehouse':'DA WAREHOUSE'};let activeRoom='city-lobby';let connection=null;let latestMessages=[];const profile=window.MCESocial.loadProfile();document.getElementById('playerName').value=profile.name||'';document.getElementById('playerRole').value=profile.role||'Artist';document.getElementById('playerColor').value=profile.color||'#59dfff';
-function initials(name){return String(name||'?').split(/\s+/).map((part)=>part[0]).join('').slice(0,2).toUpperCase()}
-function render(snapshot){latestMessages=snapshot.messages;const list=document.getElementById('onlineList');list.innerHTML='';snapshot.players.sort((a,b)=>a.name.localeCompare(b.name)).forEach((player)=>{const item=document.createElement('div');item.className='player';item.style.setProperty('--player-color',player.color);const dot=document.createElement('div');dot.className='dot';const text=document.createElement('div');const name=document.createElement('b');name.textContent=player.name;const role=document.createElement('small');role.textContent=player.role;text.append(name,role);item.append(dot,text);list.append(item)});if(!snapshot.players.length)list.innerHTML='<div class="empty">No active players yet.</div>';document.getElementById('onlineCount').textContent=snapshot.players.length+' ONLINE';const messages=document.getElementById('messages');messages.innerHTML='';snapshot.messages.forEach((message)=>{const row=document.createElement('div');row.className='message';row.style.setProperty('--player-color',message.color);const avatar=document.createElement('div');avatar.className='avatar';avatar.textContent=initials(message.name);const bubble=document.createElement('div');bubble.className='bubble';const meta=document.createElement('div');meta.className='meta';meta.textContent=message.name+' • '+message.role;const time=document.createElement('span');time.textContent='  '+new Date(message.sentAt).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});meta.append(time);const body=document.createElement('div');body.className='body';body.textContent=message.text;bubble.append(meta,body);row.append(avatar,bubble);messages.append(row)});if(!snapshot.messages.length)messages.innerHTML='<div class="empty">The room is quiet. Start the conversation.</div>';messages.scrollTop=messages.scrollHeight}
-function connect(){const saved=window.MCESocial.loadProfile();if(!saved.name)return;if(connection)connection.close();connection=window.MCESocial.createRoom(activeRoom,render);document.getElementById('chatInput').disabled=false;document.getElementById('sendButton').disabled=false}
-document.getElementById('saveProfile').onclick=()=>{const saved=window.MCESocial.saveProfile({name:document.getElementById('playerName').value,role:document.getElementById('playerRole').value,color:document.getElementById('playerColor').value});if(!saved.name){document.getElementById('playerName').focus();return}connect()};document.querySelectorAll('[data-room]').forEach((button)=>button.onclick=()=>{activeRoom=button.dataset.room;document.querySelectorAll('[data-room]').forEach((item)=>item.classList.toggle('active',item===button));document.getElementById('roomTitle').textContent=roomNames[activeRoom];connect()});document.getElementById('chatForm').onsubmit=(event)=>{event.preventDefault();const input=document.getElementById('chatInput');if(connection)connection.send(input.value);input.value='';input.focus()};addEventListener('beforeunload',()=>connection&&connection.close());if(profile.name)connect();
+(function(){
+  const SUPABASE_URL="https://zjjuvexrufpigzknkmyo.supabase.co";
+  const SUPABASE_KEY="sb_publishable_CtwasWrnVk_01ztx0xPL-w_L1ALHLGt";
+  const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
+  const $=id=>document.getElementById(id);
+  let postChannel=null;
+
+  function localDateKey(){
+    const d=new Date(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0");
+    return d.getFullYear()+"-"+m+"-"+day;
+  }
+  function playerId(){
+    let id=localStorage.getItem("mce-social-player-id");
+    if(!id){id=(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2));localStorage.setItem("mce-social-player-id",id)}
+    return id;
+  }
+  function identity(){
+    let saved={};try{saved=JSON.parse(localStorage.getItem("mce-social-profile")||"{}")||{}}catch(e){}
+    let state={};try{state=window.MCE.get()}catch(e){}
+    let avatar={};try{avatar=JSON.parse(localStorage.getItem("mceAvatar")||"{}")||{}}catch(e){}
+    const name=String(saved.name||((state.name&&state.name!=="Rookie")?state.name:"")||((avatar.name&&avatar.name!=="New Artist")?avatar.name:"")||"Artist").slice(0,24);
+    const role=String(saved.role||avatar.type||"Artist").slice(0,20);
+    return {name,role};
+  }
+  function saveIdentity(){
+    const clean={name:String($("postName").value||"Artist").trim().slice(0,24),role:String($("postRole").value||"Artist").slice(0,20),color:"#59dfff"};
+    localStorage.setItem("mce-social-profile",JSON.stringify(clean));
+    try{const state=window.MCE.get();if(clean.name&&clean.name!=="Artist"){state.name=clean.name;window.MCE.save(state)}}catch(e){}
+    return clean;
+  }
+  function refreshStats(){
+    try{const s=window.MCE.get();$("fans").textContent=Number(s.fans||0).toLocaleString();$("xp").textContent=Number(s.xp||0).toLocaleString();$("rep").textContent=Number(s.reputation||50).toLocaleString()}catch(e){}
+    const key="mce-social-post-reward:"+localDateKey();const count=Math.max(0,Number(localStorage.getItem(key)||0));
+    $("rewardCopy").textContent=count<3?"Rewarded wall posts earn +2 fans and +1 XP. "+count+"/3 rewarded today.":"Daily wall reward complete. Keep posting to connect with people.";
+  }
+  function rewardPost(){
+    const key="mce-social-post-reward:"+localDateKey();let count=Math.max(0,Number(localStorage.getItem(key)||0));
+    if(count>=3)return null;
+    const state=window.MCE.get();state.fans=Number(state.fans||0)+2;state.xp=Number(state.xp||0)+1;window.MCE.save(state);count++;localStorage.setItem(key,String(count));refreshStats();return {fans:2,xp:1};
+  }
+  function renderPosts(rows){
+    const feed=$("feed");feed.innerHTML="";
+    if(!rows||!rows.length){feed.innerHTML='<div class="empty">Nobody has posted yet. Be the first artist on the wall.</div>';return}
+    rows.forEach(p=>{const card=document.createElement("article");card.className="post";const meta=document.createElement("div");meta.className="post-meta";const who=document.createElement("b");who.textContent=(p.name||"Artist")+" • "+(p.role||"Artist");const when=document.createElement("span");when.textContent=new Date(p.created_at).toLocaleString([],{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});meta.append(who,when);const body=document.createElement("div");body.className="post-body";body.textContent=p.body||"";card.append(meta,body);feed.appendChild(card)});
+  }
+  async function loadPosts(){
+    const {data,error}=await sb.from("social_posts").select("id,name,role,body,room,created_at").eq("room","social-world").order("created_at",{ascending:false}).limit(40);
+    if(error){$("wallStatus").textContent="WALL RETRYING";$("postNotice").textContent="Could not reach the wall yet.";return}
+    $("wallStatus").textContent="● LIVE WALL";$("wallStatus").classList.add("status-good");renderPosts(data);
+  }
+  $("postForm").addEventListener("submit",async e=>{
+    e.preventDefault();const body=String($("postBody").value||"").trim();if(!body)return;
+    const profile=saveIdentity();$("postButton").disabled=true;$("postNotice").textContent="Posting…";
+    const {error}=await sb.from("social_posts").insert({player_id:playerId(),name:profile.name||"Artist",role:profile.role||"Artist",body:body,room:"social-world"});
+    $("postButton").disabled=false;
+    if(error){$("postNotice").textContent="Post did not send. Try again.";return}
+    $("postBody").value="";const reward=rewardPost();$("postNotice").textContent=reward?"Posted. +2 fans • +1 XP":"Posted. Daily social reward already completed.";loadPosts();
+  });
+
+  const p=identity();$("postName").value=p.name;$("postRole").value=Array.from($("postRole").options).some(o=>o.value===p.role)?p.role:"Artist";
+  window.MCE.load();refreshStats();loadPosts();
+  postChannel=sb.channel("mce-social-wall-feed").on("postgres_changes",{event:"INSERT",schema:"public",table:"social_posts",filter:"room=eq.social-world"},()=>loadPosts()).subscribe();
+
+  function openRealtime(voice){
+    if(window.MCERealtime){window.MCERealtime.open();if(voice)window.MCERealtime.toggleVoice();return}
+    $("postNotice").textContent="Live room is still connecting. Try again in a second.";
+    setTimeout(()=>{if(window.MCERealtime){window.MCERealtime.open();if(voice)window.MCERealtime.toggleVoice()}},900);
+  }
+  $("openLive").onclick=()=>openRealtime(false);$("openVoice").onclick=()=>openRealtime(true);
+  window.addEventListener("mce:realtime:update",e=>{const d=e.detail||{};$("liveCount").textContent=(d.players||[]).length;$("liveRoomName").textContent=String(d.roomId||"social-world").replace(/-/g," ").toUpperCase()});
+  addEventListener("beforeunload",()=>{try{if(postChannel)sb.removeChannel(postChannel)}catch(e){}});
+})();
 </script>
-<script src="music_city_soundtrack_catalog.js?v=organ-donor-global-1"></script>
+<script src="music_city_soundtrack_catalog.js?v=realtime-social-wall-1"></script>
 <script src="music_city_soundtrack.js?v=organ-donor-global-1"></script>
 </body>
 </html>
