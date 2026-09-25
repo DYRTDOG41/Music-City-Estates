@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Manager-arranged cross-district collaboration network for Music City Estates.">
+<title>Collaboration Network | Music City Estates</title>
+<style>
+:root{--bg:#040610;--panel:#0a1220;--line:#2b526f;--cyan:#69e6ff;--gold:#f3ce72;--text:#f6f9ff;--muted:#a8b7ca;--green:#77e6a0}
+*{box-sizing:border-box}html{background:var(--bg)}body{margin:0;min-height:100vh;background:radial-gradient(circle at 50% 0,#182a4a 0,#07101e 38%,#040610 76%);color:var(--text);font-family:Arial,Helvetica,sans-serif}a{color:inherit}
+header{position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px clamp(12px,3vw,28px);border-bottom:1px solid #2f91bd70;background:#040711e8;backdrop-filter:blur(14px)}
+nav{display:flex;gap:7px;flex-wrap:wrap}nav a{padding:8px 11px;border:1px solid #337798;border-radius:9px;background:#091522;text-decoration:none;font-size:10px;font-weight:900;letter-spacing:.05em}.brand{font-size:11px;font-weight:1000;letter-spacing:.15em;color:#87ebff}
+.wrap{width:min(1180px,94%);margin:22px auto 52px}.hero,.network,.ledger{border:1px solid var(--line);border-radius:20px;background:linear-gradient(150deg,#0c1727eb,#070b14f2);box-shadow:0 18px 50px #0008}.hero{padding:22px}.eyebrow{color:var(--cyan);font-size:9px;font-weight:1000;letter-spacing:.2em}.hero h1{margin:9px 0 8px;font-size:clamp(30px,6vw,58px);line-height:.93}.hero p{max-width:760px;color:#cad6e5;line-height:1.55}.manager-line{margin-top:15px;padding:12px;border:1px solid #2d5570;border-radius:12px;background:#081522;color:#caeafa}.manager-line strong{color:var(--green)}
+.stats{display:grid;grid-template-columns:repeat(5,minmax(90px,1fr));gap:8px;margin-top:15px}.stat{padding:10px;border:1px solid #263b54;border-radius:10px;background:#09121e}.stat span{display:block;color:#8396ac;font-size:8px;font-weight:900;letter-spacing:.1em}.stat b{display:block;margin-top:4px;font-size:16px}.network{margin-top:16px;padding:18px}.network-head{display:flex;justify-content:space-between;gap:12px;align-items:end}.network h2,.ledger h2{margin:0}.network-head p{margin:0;color:#9fb2c7;font-size:11px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:15px}.offer{position:relative;overflow:hidden;padding:17px;border:1px solid #30465f;border-radius:16px;background:#0a1321}.offer.done{border-color:#4e9f75}.district{color:#7ddff8;font-size:9px;font-weight:1000;letter-spacing:.14em}.offer h3{margin:8px 0 4px;font-size:20px}.genre{color:#d6c28e;font-size:11px;font-weight:900}.pitch{min-height:66px;color:#aebdce;font-size:12px;line-height:1.5}.metric{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-top:1px solid #1f3144;font-size:11px}.metric b{color:#fff}.offer button{width:100%;margin-top:11px;padding:11px;border:1px solid #62dfff;border-radius:9px;background:linear-gradient(135deg,#168ee7,#12afc6);color:#fff;font-weight:1000;letter-spacing:.06em;cursor:pointer}.offer button:disabled{opacity:.42;cursor:not-allowed}.repeat-note{margin-top:7px;color:#8ca0b7;font-size:9px;line-height:1.4}.done-tag{display:none;position:absolute;right:10px;top:10px;padding:5px 7px;border-radius:999px;background:#153c2b;color:#9af4b9;font-size:8px;font-weight:1000}.offer.done .done-tag{display:block}.locked{margin-top:15px;padding:18px;border:1px solid #8b5b47;border-radius:14px;background:#24140e;color:#ffd5c1;line-height:1.5}.locked a{font-weight:1000;color:#fff}.result{display:none;margin-top:15px;padding:14px;border:1px solid #4f9d74;border-radius:13px;background:#0b251b;color:#c7f7d7;line-height:1.5}.result.show{display:block}.ledger{margin-top:16px;padding:18px}.connection-bar{margin-top:12px;height:11px;border-radius:99px;background:#172130;overflow:hidden}.connection-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#4edfff,#8a77ff);box-shadow:0 0 12px #5bdfff}.connection-copy{margin-top:7px;color:#aebdce;font-size:10px}.history{margin-top:14px;display:grid;gap:7px}.history-row{display:grid;grid-template-columns:1fr auto auto;gap:12px;padding:10px;border:1px solid #26384d;border-radius:10px;background:#08111c;font-size:11px}.history-row small{color:#8ba0b7}.empty{color:#8496aa;font-size:12px}.bonus{margin-top:13px;padding:11px;border-left:3px solid var(--gold);background:#1c190d;color:#e8d9aa;font-size:11px;line-height:1.5}
+@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}.stats{grid-template-columns:repeat(3,1fr)}}@media(max-width:560px){header{align-items:flex-start;flex-direction:column}.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.history-row{grid-template-columns:1fr}.hero,.network,.ledger{border-radius:14px}.wrap{width:min(96%,1180px)}}
+</style>
+</head>
+<body>
+<header><nav><a href="manager.html">← MANAGER</a><a href="city_map.html">🗺 CITY MAP</a><a href="artist_catalog.html">💿 CATALOG</a></nav><div class="brand">MUSIC CITY • COLLAB NETWORK</div></header>
+<main class="wrap">
+<section class="hero">
+<div class="eyebrow">CAREER LOOP • MANAGER REQUIRED</div>
+<h1>BUILD CONNECTIONS.<br>SHARE AUDIENCES.</h1>
+<p>Your manager makes the introduction. You bring the record. A successful collaboration lets both artists cross into each other's audience and opens relationships beyond your home genre.</p>
+<div class="manager-line" id="managerLine"></div>
+<div class="stats"><div class="stat"><span>CASH</span><b id="cash">$0</b></div><div class="stat"><span>FANS</span><b id="fans">0</b></div><div class="stat"><span>XP</span><b id="xp">0</b></div><div class="stat"><span>REPUTATION</span><b id="rep">50</b></div><div class="stat"><span>UNIQUE DISTRICTS</span><b id="networkCount">0 / 4</b></div></div>
+<div class="locked" id="locked" hidden>You need representation before these introductions open. <a href="manager.html">Hire a manager first.</a></div>
+<div class="result" id="result"></div>
+</section>
+<section class="network">
+<div class="network-head"><div><div class="eyebrow">MANAGER INTRODUCTIONS</div><h2>Choose a collaboration</h2></div><p>New districts pay full crossover. Repeats pay reduced rewards.</p></div>
+<div class="grid" id="offers"></div>
+</section>
+<section class="ledger">
+<div class="eyebrow">RELATIONSHIP CAPITAL</div><h2>Your Connection Network</h2>
+<div class="connection-bar"><i id="networkBar"></i></div><div class="connection-copy" id="networkCopy"></div>
+<div class="bonus">Complete all four district relationships to earn the one-time <b>City Connector</b> bonus: +25 fans, +20 XP and +5 reputation.</div>
+<div class="history" id="history"></div>
+</section>
+</main>
+<script src="player-state.js"></script>
+<script>
+(function(){
+  const STORE='mceCollaborationsV1';
+  const BONUS='mceCollabNetworkBonusV1';
+  const offers=[
+    {id:'latin',district:'LATIN QUARTER',artist:'Sol Marquez',genre:'Latin / Urban',pitch:'A bilingual rhythm-driven record that puts your hip-hop audience next to a high-energy Latin fanbase.',fee:40,fans:18,xp:12,rep:3,partnerFans:16},
+    {id:'rnb',district:'VELVET GROVE',artist:'Maya Vale',genre:'R&B / Soul',pitch:'A melodic crossover built around hooks, harmonies and a feature that can travel into late-night R&B playlists.',fee:35,fans:15,xp:15,rep:4,partnerFans:14},
+    {id:'country',district:'COUNTRY CROSSINGS',artist:'Cole Rivers',genre:'Country / Hip-Hop',pitch:'A storytelling crossover that mixes drums, guitar and verses to reach listeners neither artist normally sees.',fee:45,fans:20,xp:11,rep:4,partnerFans:18},
+    {id:'global',district:'GLOBAL SOUND',artist:'Amara K',genre:'Global / Afrofusion',pitch:'A worldwide fusion session designed around rhythm, hooks and audience exchange across Music City.',fee:45,fans:22,xp:13,rep:5,partnerFans:20}
+  ];
+  const $=id=>document.getElementById(id);
+  function loadLog(){try{const v=JSON.parse(localStorage.getItem(STORE)||'[]');return Array.isArray(v)?v:[]}catch(e){return[]}}
+  function saveLog(v){localStorage.setItem(STORE,JSON.stringify(v))}
+  function uniqueDistricts(log){return Array.from(new Set(log.map(x=>x.districtId).filter(Boolean)))}
+  function managerProfile(state){return window.MCE&&window.MCE.getManagerProfile?window.MCE.getManagerProfile(state):null}
+  function adjustedFee(base,profile){if(!profile)return base; if(profile.rank>=3)return Math.max(20,base-15); if(profile.rank>=2)return Math.max(25,base-8); return base}
+  function rewardFor(offer,log){const repeats=log.filter(x=>x.districtId===offer.id).length;const scale=repeats?0.55:1;return{fans:Math.max(1,Math.round(offer.fans*scale)),xp:Math.max(1,Math.round(offer.xp*scale)),rep:repeats?1:offer.rep,partnerFans:Math.max(1,Math.round(offer.partnerFans*scale)),repeat:repeats>0}}
+  function render(){
+    const state=window.MCE.get(); const profile=managerProfile(state); const log=loadLog(); const unique=uniqueDistricts(log);
+    $('cash').textContent='$'+Number(state.cash||0).toLocaleString();$('fans').textContent=Number(state.fans||0).toLocaleString();$('xp').textContent=Number(state.xp||0).toLocaleString();$('rep').textContent=Number(state.reputation||50).toLocaleString();$('networkCount').textContent=unique.length+' / 4';
+    $('networkBar').style.width=(unique.length/4*100)+'%';$('networkCopy').textContent=unique.length?unique.length+' of 4 district relationships established.':'No cross-district relationships yet. Your first collaboration starts the network.';
+    $('managerLine').innerHTML=profile?'<strong>'+profile.name+'</strong> is representing you. Manager leverage lowers session coordination costs as your team gets stronger.':'<strong>Independent Artist</strong> — collaboration introductions are locked until you hire representation.';
+    $('locked').hidden=!!profile;
+    const holder=$('offers');holder.innerHTML='';
+    offers.forEach(o=>{const fee=adjustedFee(o.fee,profile);const r=rewardFor(o,log);const done=unique.includes(o.id);const card=document.createElement('article');card.className='offer'+(done?' done':'');card.innerHTML='<div class="done-tag">CONNECTED</div><div class="district">'+o.district+'</div><h3>'+o.artist+'</h3><div class="genre">'+o.genre+'</div><p class="pitch">'+o.pitch+'</p><div class="metric"><span>Session / coordination</span><b>$'+fee+'</b></div><div class="metric"><span>Your crossover</span><b>+'+r.fans+' fans / +'+r.xp+' XP</b></div><div class="metric"><span>Partner crossover</span><b>+'+r.partnerFans+' fans</b></div><div class="metric"><span>Reputation</span><b>+'+r.rep+'</b></div><div class="repeat-note">'+(r.repeat?'You already know this scene. Repeat reward is reduced to encourage new connections.':'First connection with this district earns full crossover rewards.')+'</div>';const btn=document.createElement('button');btn.textContent=profile?'ARRANGE COLLAB — $'+fee:'MANAGER REQUIRED';btn.disabled=!profile||Number(state.cash||0)<fee;if(profile&&Number(state.cash||0)<fee)btn.textContent='NEED $'+(fee-Number(state.cash||0))+' MORE';btn.onclick=()=>complete(o,fee);card.appendChild(btn);holder.appendChild(card)});
+    const hist=$('history');hist.innerHTML='';if(!log.length){hist.innerHTML='<div class="empty">No collaborations completed yet.</div>'}else{log.slice().reverse().slice(0,8).forEach(x=>{const row=document.createElement('div');row.className='history-row';row.innerHTML='<div><b>'+x.artist+'</b><br><small>'+x.district+' • arranged by '+x.manager+'</small></div><div>+'+x.playerFans+' fans</div><div>+'+x.partnerFans+' partner fans</div>';hist.appendChild(row)})}
+  }
+  function complete(offer,fee){
+    const state=window.MCE.get();const profile=managerProfile(state);if(!profile){$('result').textContent='Hire a manager before arranging a collaboration.';$('result').classList.add('show');return}if(Number(state.cash||0)<fee)return;
+    const log=loadLog();const beforeUnique=uniqueDistricts(log);const reward=rewardFor(offer,log);state.cash=Math.max(0,Number(state.cash||0)-fee);state.fans=Number(state.fans||0)+reward.fans;state.xp=Number(state.xp||0)+reward.xp;state.reputation=Number(state.reputation||50)+reward.rep;window.MCE.save(state);
+    log.push({id:'collab-'+Date.now(),districtId:offer.id,district:offer.district,artist:offer.artist,manager:profile.name,fee:fee,playerFans:reward.fans,playerXp:reward.xp,partnerFans:reward.partnerFans,reputation:reward.rep,createdAt:new Date().toISOString()});saveLog(log);
+    const afterUnique=uniqueDistricts(log);let bonusText='';if(beforeUnique.length<4&&afterUnique.length===4&&localStorage.getItem(BONUS)!=='1'){const next=window.MCE.get();next.fans=Number(next.fans||0)+25;next.xp=Number(next.xp||0)+20;next.reputation=Number(next.reputation||50)+5;window.MCE.save(next);localStorage.setItem(BONUS,'1');bonusText=' City Connector bonus unlocked: +25 fans, +20 XP, +5 reputation.'}
+    $('result').textContent=profile.name+' connected you with '+offer.artist+'. You gained '+reward.fans+' fans, '+reward.xp+' XP and '+reward.rep+' reputation. '+offer.artist+' gained '+reward.partnerFans+' crossover fans.'+bonusText;$('result').classList.add('show');render();window.scrollTo({top:0,behavior:'smooth'});
+  }
+  window.MCE.load();render();
+})();
+</script>
+<script src="music_city_soundtrack_catalog.js?v=organ-donor-global-1"></script>
+<script src="music_city_soundtrack.js?v=organ-donor-global-1"></script>
+</body>
+</html>
