@@ -1,4 +1,15 @@
 const ELEVENLABS_TTS_URL = "https://api.elevenlabs.io/v1/text-to-speech";
+function getElevenLabsApiKey() {
+  return String(
+    process.env.ELEVENLABS_API_KEY ||
+    process.env.ELEVEN_LABS_API_KEY ||
+    process.env.ElevenLabsApiKey ||
+    process.env.ELEVENLABS_KEY ||
+    process.env.ELEVEN_LABS_KEY ||
+    ""
+  ).trim();
+}
+
 
 function allowedOrigins() {
   return [
@@ -53,7 +64,7 @@ module.exports = async function handler(req, res) {
     return res.status(403).json({ error: "Origin is not allowed." });
   }
 
-  const apiKey = process.env.ELEVENLABS_API_KEY;
+  const apiKey = getElevenLabsApiKey();
   if (!apiKey) {
     return res.status(503).json({ error: "ELEVENLABS_API_KEY is not configured on the Music City server." });
   }
