@@ -147,9 +147,23 @@
     ui.voice.onclick = toggleVoice;
   }
 
+  function emitUpdate() {
+    try {
+      root.dispatchEvent(new CustomEvent("mce:realtime:update", {
+        detail: {
+          roomId: roomForPage(),
+          players: Array.from(players.values()),
+          messages: messages.slice(-40),
+          voiceEnabled: voiceEnabled
+        }
+      }));
+    } catch (error) {}
+  }
+
   function renderPresence() {
     if (!ui.players) return;
     ui.count.textContent = players.size;
+    emitUpdate();
     ui.players.innerHTML = "";
     if (!players.size) {
       ui.players.innerHTML = '<span class="mce-live-person">No one else here yet</span>';
@@ -174,6 +188,7 @@
       ui.messages.appendChild(row);
     });
     ui.messages.scrollTop = ui.messages.scrollHeight;
+    emitUpdate();
   }
 
   function sendChat(text) {
@@ -274,6 +289,8 @@
       ui.voice.classList.remove("on");
       ui.voice.textContent = "🎙️ JOIN VOICE";
       ui.status.textContent = "Voice off. Chat and presence stay live.";
+      try { root.dispatchEvent(new CustomEvent("mce-audio-session", { detail: { active: false, source: "realtime-voice" } })); } catch (error) {}
+      emitUpdate();
       await channel.track(profile());
       channel.send({ type: "broadcast", event: "voice-ready", payload: { id: sessionId, enabled: false } });
       return;
@@ -284,10 +301,13 @@
       ui.voice.classList.add("on");
       ui.voice.textContent = "🔊 LEAVE VOICE";
       ui.status.textContent = "Voice on. People in this room can hear you.";
+      try { root.dispatchEvent(new CustomEvent("mce-audio-session", { detail: { active: true, source: "realtime-voice" } })); } catch (error) {}
+      emitUpdate();
       await channel.track(profile());
       channel.send({ type: "broadcast", event: "voice-ready", payload: { id: sessionId, enabled: true } });
       Array.from(players.keys()).filter(function (id) { return id !== sessionId && sessionId < id; }).forEach(function (id) { offerTo(id); });
     } catch (error) {
+      try { root.dispatchEvent(new CustomEvent("mce-audio-session", { detail: { active: false, source: "realtime-voice" } })); } catch (dispatchError) {}
       ui.status.textContent = "Microphone permission was not granted.";
     }
   }
@@ -333,12 +353,24 @@
     }
   }
 
-  root.MCERealtime = { start: start, roomForPage: roomForPage, sessionId: sessionId };
+  root.MCERealtime = {
+    start: start,
+    roomForPage: roomForPage,
+    sessionId: sessionId,
+    open: function () { if (ui.panel) ui.panel.classList.add("open"); },
+    close: function () { if (ui.panel) ui.panel.classList.remove("open"); },
+    send: sendChat,
+    toggleVoice: toggleVoice,
+    getSnapshot: function () {
+      return { roomId: roomForPage(), players: Array.from(players.values()), messages: messages.slice(-40), voiceEnabled: voiceEnabled };
+    }
+  };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
   else start();
   root.addEventListener("beforeunload", function () {
     try { if (channel) channel.untrack(); } catch (error) {}
     try { if (client && channel) client.removeChannel(channel); } catch (error) {}
     if (localStream) localStream.getTracks().forEach(function (track) { track.stop(); });
+    try { root.dispatchEvent(new CustomEvent("mce-audio-session", { detail: { active: false, source: "realtime-voice" } })); } catch (error) {}
   });
 })(typeof window !== "undefined" ? window : globalThis);
