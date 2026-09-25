@@ -14,6 +14,8 @@
   var seenMessages = new Set();
   var voiceEnabled = false;
   var started = false;
+  var lastPoseSentAt = 0;
+  var lastPose = null;
   var ui = {};
 
   var ROOM_LABELS = {
@@ -168,7 +170,8 @@
           roomId: roomForPage(),
           players: Array.from(players.values()),
           messages: messages.slice(-40),
-          voiceEnabled: voiceEnabled
+          voiceEnabled: voiceEnabled,
+          sessionId: sessionId
         }
       }));
     } catch (error) {}
@@ -282,6 +285,48 @@
     }
   }
 
+  function sendPose(pose) {
+    if (!channel || !pose) return;
+    var now = Date.now();
+    var clean = {
+      x: Number(pose.x) || 0,
+      y: Number(pose.y) || 0,
+      z: Number(pose.z) || 0,
+      yaw: Number(pose.yaw) || 0,
+      pitch: Number(pose.pitch) || 0
+    };
+    var changed = !lastPose ||
+      Math.abs(clean.x-lastPose.x) > .035 ||
+      Math.abs(clean.z-lastPose.z) > .035 ||
+      Math.abs(clean.yaw-lastPose.yaw) > .025;
+    if (!changed && now-lastPoseSentAt < 900) return;
+    if (now-lastPoseSentAt < 85) return;
+    lastPoseSentAt = now;
+    lastPose = clean;
+    var p = profile();
+    channel.send({
+      type: "broadcast",
+      event: "pose",
+      payload: {
+        sessionId: sessionId,
+        playerId: p.playerId,
+        name: p.name,
+        role: p.role,
+        color: p.color,
+        pose: clean,
+        sentAt: now
+      }
+    });
+  }
+
+  function dispatchRoster() {
+    try {
+      root.dispatchEvent(new CustomEvent("mce:remote-roster", {
+        detail: { sessionIds: Array.from(players.keys()).filter(function (id) { return id !== sessionId; }) }
+      }));
+    } catch (error) {}
+  }
+
   function rebuildPresence() {
     if (!channel) return;
     players.clear();
@@ -291,6 +336,7 @@
       entries.forEach(function (entry) { if (entry && entry.id) players.set(entry.id, entry); });
     });
     renderPresence();
+    dispatchRoster();
   }
 
   function remoteAudio(peerId) {
@@ -417,6 +463,13 @@
         sentAt: new Date(row.created_at).getTime()
       });
     });
+    channel.on("broadcast", { event: "pose" }, function (packet) {
+      var data = packet && packet.payload;
+      if (!data || data.sessionId === sessionId || !data.pose) return;
+      try {
+        root.dispatchEvent(new CustomEvent("mce:remote-pose", { detail: data }));
+      } catch (error) {}
+    });
     channel.on("broadcast", { event: "voice-ready" }, function (packet) {
       var data = packet && packet.payload;
       if (!data || data.id === sessionId) return;
@@ -454,6 +507,7 @@
     open: function () { if (ui.panel) ui.panel.classList.add("open"); },
     close: function () { if (ui.panel) ui.panel.classList.remove("open"); },
     send: sendChat,
+    sendPose: sendPose,
     toggleVoice: toggleVoice,
     getSnapshot: function () {
       return { roomId: roomForPage(), players: Array.from(players.values()), messages: messages.slice(-40), voiceEnabled: voiceEnabled };
@@ -461,6 +515,10 @@
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
   else start();
+  root.addEventListener("mce:player-pose", function (event) {
+    sendPose(event && event.detail);
+  });
+
   root.addEventListener("mce-audio-session", function (event) {
     var detail = event && event.detail || {};
     if (detail.active && detail.source !== "realtime-voice" && voiceEnabled) {
