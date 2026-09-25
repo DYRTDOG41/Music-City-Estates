@@ -15,6 +15,9 @@
     },
     "api/elevenlabs/status.js": {
       "maxDuration": 20
+    },
+    "api/elevenlabs/isolate.js": {
+      "maxDuration": 60
     }
   }
 }
