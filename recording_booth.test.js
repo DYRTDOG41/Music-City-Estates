@@ -29,11 +29,21 @@ check('five vocal performance layers stay separate', () => {
   ['lead','double','adlibs','harmony','background'].forEach(id => assert.match(engine, new RegExp('id:"'+id+'"')));
 });
 
-check('each layer has record play mute and volume controls', () => {
+check('each layer has record play mute discard and volume controls', () => {
   assert.match(engine, /record-layer/);
   assert.match(engine, /play-layer/);
   assert.match(engine, /mute-layer/);
+  assert.match(engine, /discard-layer/);
+  assert.match(engine, /discardTake/);
   assert.match(engine, /level-slider/);
+});
+
+check('new overdubs hear the beat and earlier finished layers in sync', () => {
+  assert.match(engine, /startRecordMonitor/);
+  assert.match(engine, /RECORD_PREROLL_MS/);
+  assert.match(engine, /recordingSyncTrimMs/);
+  assert.match(engine, /syncTrimMs/);
+  assert.match(engine, /recordMonitorSources/);
 });
 
 check('artist can play all raw layers together and rebalance live', () => {
@@ -41,6 +51,12 @@ check('artist can play all raw layers together and rebalance live', () => {
   assert.match(engine, /async function playAll/);
   assert.match(engine, /updateLiveGain/);
   assert.match(engine, /sessionNodes/);
+});
+
+check('session-clock timing alignment is applied before the final mix', () => {
+  assert.match(studio, /AUTO TIMING ALIGN/);
+  assert.match(engine, /state\.syncTrimMs/);
+  assert.match(engine, /source\.start\(0,Math\.min\(trim/);
 });
 
 check('AI Engineer produces one automatic master', () => {
@@ -82,4 +98,4 @@ check('recording tells realtime voice and soundtrack to yield the microphone', (
   assert.match(engine, /source:"recording-studio"/);
 });
 
-console.log('11 unified guided studio tests passed');
+console.log('13 unified guided studio tests passed');
