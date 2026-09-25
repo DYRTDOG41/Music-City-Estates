@@ -17,8 +17,8 @@
     }
   };
 
-  const DEFAULT_BACKEND_ENDPOINT =
-    "https://music-city-estates-api-willwill3515-5514s-projects.vercel.app/api/music/generate";
+  // Same-origin by default: Vercel preview, production, and `vercel dev` each use their own secure API routes.
+  const DEFAULT_BACKEND_ENDPOINT = "/api/music/generate";
 
   const storedEndpoint = (() => {
     try {
