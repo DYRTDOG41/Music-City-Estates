@@ -1482,7 +1482,7 @@ function elevenBackendBase() {
 const configured = window.MusicCityAI && window.MusicCityAI.getStatus
 ? window.MusicCityAI.getStatus().backendEndpoint
 : "";
-const endpoint = configured || "https://music-city-estates-api-willwill3515-5514s-projects.vercel.app/api/music/generate";
+const endpoint = configured || "/api/music/generate";
 return endpoint.replace(/\/api\/music\/generate\/?$/i, "");
 }
 
