@@ -22,8 +22,9 @@ check('ElevenLabs is the only studio AI engine', () => {
   assert.doesNotMatch(booth, /music-city-native/i);
 });
 
-check('studio API key is never embedded in the browser page', () => {
-  assert.doesNotMatch(booth, /ELEVENLABS_API_KEY/);
+check('studio API secret is never embedded in the browser page', () => {
+  assert.doesNotMatch(booth, /xi-api-key/i);
+  assert.doesNotMatch(booth, /process\.env/);
   assert.match(booth, /API key never appears in this page or in GitHub/);
 });
 
