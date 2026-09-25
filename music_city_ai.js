@@ -1,10 +1,8 @@
-/* Music City Estates - Hybrid AI Studio Engine
+/* Music City Estates - ElevenLabs Studio Engine
  *
- * Provider architecture:
- *   1. ElevenLabs Music: primary secure-backend provider for the review build.
- *      The browser sends only session inputs; ELEVENLABS_API_KEY stays on the server.
- *   2. Music City Native: self-contained browser fallback for offline/demo continuity.
- *   3. Additional providers remain optional adapters and do not receive credentials here.
+ * ElevenLabs is the studio's only AI provider.
+ * The browser sends session inputs to Music City's secure backend;
+ * ELEVENLABS_API_KEY never appears in client code.
  *
  * NEVER place provider API keys in this file.
  */
@@ -12,45 +10,13 @@
   "use strict";
 
   const providers = {
-    "music-city-native": {
-      id: "music-city-native",
-      name: "Music City Native",
-      live: true,
-      requiresBackend: false,
-      output: "instrumental",
-      description: "Self-contained Music City instrumental prototype."
-    },
-    suno: {
-      id: "suno",
-      name: "Suno Premium",
-      live: false,
-      requiresBackend: true,
-      output: "music",
-      description: "Premium provider slot awaiting approved API access."
-    },
     elevenlabs: {
       id: "elevenlabs",
       name: "ElevenLabs Music v2.5",
       live: true,
       requiresBackend: true,
       output: "music",
-      description: "Primary Music City review provider through the secure server adapter."
-    },
-    "stable-audio": {
-      id: "stable-audio",
-      name: "Stable Audio",
-      live: false,
-      requiresBackend: true,
-      output: "music",
-      legacy: true
-    },
-    "google-lyria": {
-      id: "google-lyria",
-      name: "Google Lyria",
-      live: false,
-      requiresBackend: true,
-      output: "music",
-      legacy: true
+      description: "The only AI generation engine used by Music City Estates studio."
     }
   };
 
@@ -116,9 +82,8 @@
 
   function normalizeRequest(input) {
     const request = input || {};
-    let provider = clean(request.provider, "music-city-native");
-    if (provider === "demo") provider = "music-city-native";
-    if (provider === "partner") provider = "suno";
+    let provider = clean(request.provider, "elevenlabs");
+    if (provider !== "elevenlabs") provider = "elevenlabs";
 
     return {
       provider,
@@ -613,17 +578,6 @@
       const request = normalizeRequest(input);
       if (!providers[request.provider]) {
         throw new Error("Unknown AI provider: " + request.provider);
-      }
-
-      if (request.provider === "music-city-native") {
-        return generateNativeInstrumental(request);
-      }
-
-      if (request.provider === "suno" && !providers.suno.live) {
-        throw new Error(
-          "Suno Premium is wired into the Music City provider layer, but API access is not activated yet. " +
-          "Keep using Music City Native while we build usage data for the partnership request."
-        );
       }
 
       return generateThroughBackend(request);
