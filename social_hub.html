@@ -45,7 +45,7 @@
   <div class="live-state"><div class="online"><span id="liveCount">0</span> <small>ONLINE HERE</small></div><div id="liveRoomName" style="margin-top:5px;color:#91c9df;font-size:10px">SOCIAL WORLD</div></div>
   <button class="live-button" id="openLive" type="button">OPEN GROUP CHAT</button>
   <button class="live-button" id="openVoice" type="button">🎙 JOIN LIVE VOICE</button>
-  <div class="voice-note">The LIVE control follows you around Music City. When you enter a studio, lobby, café, warehouse or other supported space, you automatically join that room’s presence and chat.</div>
+  <div class="voice-note">The LIVE control follows you around Music City. When you enter a studio, lobby, café, warehouse or other supported space, you automatically join that room’s presence and chat.</div><div class="voice-note" id="collabInbox"><b>COLLAB INTEREST</b><br>No artist requests yet. Post to the wall and build connections.</div>
   <div class="anti-spam"><b>GAME ECONOMY:</b> Social actions reward participation, not spam. Wall-post rewards stop after three rewarded posts each day. Real 🔥 reactions from other players can also convert into fans, capped at 10 fan rewards per day.</div>
 </aside>
 </section>
@@ -115,6 +115,13 @@
     }
     return daily;
   }
+  function renderCollabInbox(reactions){
+    const mine=playerId(),box=$("collabInbox");
+    const requests=(reactions||[]).filter(r=>r.reaction==="collab"&&r.post_owner_id===mine);
+    const names=Array.from(new Set(requests.map(r=>r.reactor_name).filter(Boolean))).slice(0,6);
+    if(!names.length){box.innerHTML="<b>COLLAB INTEREST</b><br>No artist requests yet. Post to the wall and build connections.";return}
+    box.innerHTML="<b>🤝 COLLAB INTEREST</b><br>"+names.map(name=>name+" wants to work").join("<br>")+"<br><br><span style='color:#e3cf8c'>Networking opens the door. Your manager still has to book the official collaboration session.</span>";
+  }
   function renderPosts(rows,reactions){
     const feed=$("feed");feed.innerHTML="";const mine=playerId();
     if(!rows||!rows.length){feed.innerHTML='<div class="empty">Nobody has posted yet. Be the first artist on the wall.</div>';return}
@@ -160,7 +167,7 @@
       const response=await sb.from("social_reactions").select("id,post_id,reactor_id,reactor_name,post_owner_id,reaction,created_at").in("post_id",ids);
       if(!response.error)reactions=response.data||[];
     }
-    rewardReactionBuzz(reactions);
+    rewardReactionBuzz(reactions);renderCollabInbox(reactions);
     $("wallStatus").textContent="● LIVE WALL";$("wallStatus").classList.add("status-good");renderPosts(data,reactions);
   }
   $("postForm").addEventListener("submit",async e=>{
