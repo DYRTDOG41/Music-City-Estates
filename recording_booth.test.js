@@ -8,14 +8,43 @@ function check(name, fn) {
 
 const booth = fs.readFileSync('record_music.html', 'utf8');
 
-check('studio explains the three-step ElevenLabs creative flow', () => {
-  assert.match(booth, /1 • DESCRIBE IT/);
-  assert.match(booth, /2 • RECORD IT/);
-  assert.match(booth, /3 • CREATE IT/);
-  assert.match(booth, /Eleven Music v2\.5 generates through the secure Music City server/);
+check('studio teaches the six-step standard song workflow', () => {
+  assert.match(booth, /1 • BEAT/);
+  assert.match(booth, /2 • LEAD/);
+  assert.match(booth, /3 • DOUBLES/);
+  assert.match(booth, /4 • AD-LIBS/);
+  assert.match(booth, /5 • AI ENGINEER/);
+  assert.match(booth, /6 • FINISHED/);
 });
 
-check('ElevenLabs is the only studio AI engine', () => {
+check('studio records separate vocal layers', () => {
+  assert.match(booth, /const vocalTakes = \{lead:null,double:null,adlibs:null,harmony:null\}/);
+  assert.match(booth, /selectVocalTrack\('lead'\)/);
+  assert.match(booth, /selectVocalTrack\('double'\)/);
+  assert.match(booth, /selectVocalTrack\('adlibs'\)/);
+  assert.match(booth, /selectVocalTrack\('harmony'\)/);
+});
+
+check('AI Engineer exposes simple artist-facing styles and intensity', () => {
+  assert.match(booth, /CLEAN \/ NATURAL/);
+  assert.match(booth, /MODERN HIP-HOP/);
+  assert.match(booth, /TRAP/);
+  assert.match(booth, /MELODIC/);
+  assert.match(booth, /AGGRESSIVE/);
+  assert.match(booth, /RADIO READY/);
+  assert.match(booth, /engineerIntensity/);
+});
+
+check('automatic engineer performs track-aware DSP', () => {
+  assert.match(booth, /createBiquadFilter/);
+  assert.match(booth, /createDynamicsCompressor/);
+  assert.match(booth, /createConvolver/);
+  assert.match(booth, /createDelay/);
+  assert.match(booth, /createStereoPanner/);
+  assert.match(booth, /roles=\{/);
+});
+
+check('ElevenLabs is the only studio AI provider', () => {
   assert.match(booth, /value="elevenlabs"/);
   assert.match(booth, /ElevenLabs Music v2\.5 — the only studio AI engine/);
   assert.doesNotMatch(booth, /Suno/i);
@@ -28,41 +57,31 @@ check('studio API secret is never embedded in the browser page', () => {
   assert.match(booth, /API key never appears in this page or in GitHub/);
 });
 
-check('music generation routes through the shared ElevenLabs engine', () => {
-  assert.match(booth, /window\.MusicCityAI\.generate/);
-  assert.match(booth, /provider,title:details\.title/);
-  assert.match(booth, /Generating one secure ElevenLabs Music v2\.5 base track/);
-});
-
-check('recorded vocals can be cleaned with ElevenLabs Voice Isolator', () => {
+check('lead cleanup uses ElevenLabs Voice Isolator', () => {
   assert.match(booth, /async function cleanVoiceWithElevenLabs/);
   assert.match(booth, /\/api\/elevenlabs\/isolate/);
-  assert.match(booth, /Cleaning your vocal with ElevenLabs Voice Isolator/);
+  assert.match(booth, /ElevenLabs is cleaning the lead vocal before the mix/);
 });
 
-check('recorded vocals can be transcribed with ElevenLabs Scribe', () => {
+check('vocal transcription still uses ElevenLabs Scribe', () => {
   assert.match(booth, /async function transcribeCurrentTake/);
   assert.match(booth, /\/api\/elevenlabs\/transcribe/);
-  assert.match(booth, /ElevenLabs Scribe returned the vocal transcript/);
 });
 
-check('studio engineer voice uses ElevenLabs TTS', () => {
+check('studio engineer voice still uses ElevenLabs TTS', () => {
   assert.match(booth, /async function playEngineerVoice/);
   assert.match(booth, /\/api\/elevenlabs\/tts/);
-  assert.match(booth, /Live ElevenLabs studio-engineer audio returned successfully/);
 });
 
 check('recording over a selected beat remains available', () => {
   assert.match(booth, /async function toggleVoiceRecording/);
   assert.match(booth, /recordingBeatAudio=new Audio/);
-  assert.match(booth, /RECORD OVER BEAT/);
 });
 
-check('one ElevenLabs generation can produce two local mix choices', () => {
-  assert.match(booth, /async function createTwoVersions/);
-  assert.match(booth, /Version A/);
-  assert.match(booth, /Version B/);
-  assert.match(booth, /Two mixes are ready from one ElevenLabs generation/);
+check('AI Engineer creates clean and creative A-B mixes', () => {
+  assert.match(booth, /A • Clean Mix/);
+  assert.match(booth, /B • Creative Mix/);
+  assert.match(booth, /AI Engineer finished both mixes/);
 });
 
-console.log('9 ElevenLabs recording studio tests passed');
+console.log('11 guided AI engineer studio tests passed');
