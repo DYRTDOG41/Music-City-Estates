@@ -26,10 +26,66 @@ export function createRoom(options={}) {
   daylight.position.set(8,14,10);daylight.castShadow=false;
   scene.add(hemisphere,ambient,daylight);
   const keys={},colliders=[],interactions=[],animated=[];
+  const remoteActors=new Map();
   let yaw=options.yaw||0,pitch=0,drag=false,lastX=0,lastY=0,current=null,last=performance.now();
+  let lastPoseBroadcast=0;
   let joystickX=0,joystickY=0,cameraOverride=null;
   const prompt=document.getElementById('interactPrompt');
   const material=(color,rough=.78,metal=.12)=>new THREE.MeshStandardMaterial({color,roughness:rough,metalness:metal});
+
+  function remoteLabel(name){
+    const canvas=document.createElement('canvas');canvas.width=512;canvas.height=128;
+    const ctx=canvas.getContext('2d');ctx.clearRect(0,0,512,128);
+    ctx.fillStyle='rgba(2,7,15,.72)';ctx.roundRect?.(12,18,488,92,24);ctx.fill?.();
+    ctx.font='900 42px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#f4fbff';
+    ctx.shadowBlur=12;ctx.shadowColor='#000';ctx.fillText(String(name||'Artist').slice(0,24),256,64);
+    const map=new THREE.CanvasTexture(canvas);map.colorSpace=THREE.SRGBColorSpace;
+    const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map,transparent:true,depthTest:true,toneMapped:false}));
+    sprite.position.set(0,2.2,0);sprite.scale.set(2.7,.68,1);return sprite;
+  }
+
+  function createRemoteActor(detail){
+    const id=String(detail&&detail.sessionId||'');if(!id)return null;
+    if(remoteActors.has(id))return remoteActors.get(id);
+    const group=new THREE.Group();group.name='Remote Player '+String(detail.name||'Artist');
+    const color=/^#[0-9a-f]{6}$/i.test(String(detail.color||''))?detail.color:'#59dfff';
+    const cloth=new THREE.MeshStandardMaterial({color,roughness:.68,metalness:.05});
+    const skin=new THREE.MeshStandardMaterial({color:0x9b684a,roughness:.62,metalness:0});
+    const dark=new THREE.MeshStandardMaterial({color:0x151922,roughness:.72,metalness:.02});
+    const torso=new THREE.Mesh(new THREE.CapsuleGeometry(.3,.72,7,14),cloth);torso.position.y=1.02;torso.castShadow=true;
+    const head=new THREE.Mesh(new THREE.SphereGeometry(.255,18,14),skin);head.position.y=1.72;head.castShadow=true;
+    const face=new THREE.Mesh(new THREE.BoxGeometry(.18,.08,.035),new THREE.MeshBasicMaterial({color:0xeaf8ff}));face.position.set(0,1.73,-.242);
+    const legs=[];
+    for(const side of [-1,1]){const leg=new THREE.Mesh(new THREE.CapsuleGeometry(.105,.54,6,10),dark);leg.position.set(side*.14,.35,0);leg.castShadow=true;legs.push(leg)}
+    const arms=[];
+    for(const side of [-1,1]){const arm=new THREE.Mesh(new THREE.CapsuleGeometry(.085,.5,6,10),skin);arm.position.set(side*.39,1.02,0);arm.rotation.z=side*.08;arm.castShadow=true;arms.push(arm)}
+    const label=remoteLabel(detail.name||'Artist');
+    group.add(torso,head,face,label,...legs,...arms);
+    group.userData.targetPosition=new THREE.Vector3();
+    group.userData.targetYaw=0;
+    group.userData.lastSeen=performance.now();
+    scene.add(group);remoteActors.set(id,group);return group;
+  }
+
+  function receiveRemotePose(event){
+    const detail=event&&event.detail||{},pose=detail.pose||{},id=String(detail.sessionId||'');
+    if(!id)return;
+    const actor=createRemoteActor(detail);if(!actor)return;
+    actor.userData.targetPosition.set(Number(pose.x)||0,0,Number(pose.z)||0);
+    actor.userData.targetYaw=Number(pose.yaw)||0;
+    actor.userData.lastSeen=performance.now();
+    if(!actor.userData.hasPose){
+      actor.position.copy(actor.userData.targetPosition);actor.rotation.y=actor.userData.targetYaw;actor.userData.hasPose=true;
+    }
+  }
+
+  function receiveRemoteRoster(event){
+    const ids=new Set((event&&event.detail&&event.detail.sessionIds)||[]);
+    remoteActors.forEach((actor,id)=>{if(!ids.has(id)){scene.remove(actor);remoteActors.delete(id)}});
+  }
+
+  window.addEventListener('mce:remote-pose',receiveRemotePose);
+  window.addEventListener('mce:remote-roster',receiveRemoteRoster);
   function box(name,size,pos,color,opts={}){const mesh=new THREE.Mesh(new THREE.BoxGeometry(...size),opts.material||material(color,opts.roughness,opts.metalness));mesh.name=name;mesh.position.fromArray(pos);mesh.castShadow=opts.cast!==false;mesh.receiveShadow=opts.receive!==false;scene.add(mesh);if(opts.collider)colliders.push(new THREE.Box3().setFromObject(mesh));return mesh}
   function cylinder(name,r,h,pos,color,opts={}){const mesh=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,20),material(color,opts.roughness,opts.metalness));mesh.name=name;mesh.position.fromArray(pos);mesh.castShadow=true;mesh.receiveShadow=true;scene.add(mesh);return mesh}
   function label(text,pos,color='#ffffff',scale=[4,1]){const c=document.createElement('canvas');c.width=1024;c.height=256;const x=c.getContext('2d'),lines=String(text).split('\n');x.font=`900 ${lines.length>1?68:92}px Arial`;x.textAlign='center';x.textBaseline='middle';x.shadowBlur=22;x.shadowColor=color;x.fillStyle=color;lines.forEach((line,index)=>x.fillText(line,c.width/2,c.height/2+(index-(lines.length-1)/2)*(lines.length>1?76:0)));const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthTest:true}));s.position.fromArray(pos);s.scale.set(scale[0],scale[1],1);scene.add(s);return s}
@@ -181,6 +237,24 @@ export function createRoom(options={}) {
 
   function loop(t){
     const dt=Math.min((t-last)/1000,.04);last=t;
+
+    if(t-lastPoseBroadcast>110){
+      lastPoseBroadcast=t;
+      try{
+        window.dispatchEvent(new CustomEvent('mce:player-pose',{detail:{
+          x:camera.position.x,y:camera.position.y,z:camera.position.z,yaw:yaw,pitch:pitch
+        }}));
+      }catch(error){}
+    }
+
+    remoteActors.forEach((actor,id)=>{
+      const target=actor.userData.targetPosition;
+      if(target)actor.position.lerp(target,Math.min(1,dt*9));
+      const wanted=Number(actor.userData.targetYaw)||0;
+      let delta=((wanted-actor.rotation.y+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI;
+      actor.rotation.y+=delta*Math.min(1,dt*10);
+      if(t-Number(actor.userData.lastSeen||0)>12000){scene.remove(actor);remoteActors.delete(id)}
+    });
     if(cameraOverride){
       camera.position.lerp(cameraOverride.position,cameraOverride.lerp);
       camera.lookAt(cameraOverride.target);
@@ -203,7 +277,7 @@ export function createRoom(options={}) {
     animated.forEach(f=>f(t,dt));renderer.render(scene,camera)
   }
   renderer.setAnimationLoop(loop);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
-  return {THREE,scene,camera,renderer,box,cylinder,label,light,interact,wallBounds,animated,material,colliders,setCameraOverride,clearCameraOverride};
+  return {THREE,scene,camera,renderer,box,cylinder,label,light,interact,wallBounds,animated,material,colliders,remoteActors,setCameraOverride,clearCameraOverride};
 }
 
 export function buildAvatar(room,data={},pos=[0,0,0],scale=1){
