@@ -778,11 +778,9 @@ onchange="loadUploadedAudio(event)"
 <div class="master-actions" style="margin-top:10px;">
 <button type="button" id="mixdownButton" onclick="mixAndPlay()">🎚️ MANUAL MIX &amp; PLAY</button>
 <button type="button" id="downloadMixButton" onclick="downloadCurrentMaster()" disabled>⬇️ EXPORT MIX</button>
-<button type="button" id="sunoFinishButton" onclick="finishInSuno()">✨ SUNO HANDOFF</button>
 </div>
 <div class="master-actions" style="margin-top:10px;">
 <label class="master-import-label" for="proMasterUpload">⬆️ IMPORT PRO STUDIO MASTER<input type="file" id="proMasterUpload" accept="audio/*" onchange="importProStudioMaster(event)"></label>
-<label class="master-import-label" for="sunoMasterUpload">⬆️ IMPORT SUNO MASTER<input type="file" id="sunoMasterUpload" accept="audio/*" onchange="importSunoMaster(event)"></label>
 </div>
 </div>
 </div>
@@ -790,9 +788,9 @@ onchange="loadUploadedAudio(event)"
 
 <div class="panel" id="aiProducerPanel">
 
-<h3>Advanced: Music City AI Producer</h3>
+<h3>Advanced: ElevenLabs AI Producer</h3>
 
-<p class="engine-status">Generate an instrumental without leaving the studio. <strong>Music City Native</strong> works now as our self-contained prototype. <strong>Suno Premium</strong> is already reserved in the same provider layer for approved API access later.</p>
+<p class="engine-status">ElevenLabs is the studio's only AI engine. Music v2.5 handles generation, Audio Reference can guide the sound, and your API key stays on the secure Music City server.</p>
 
 <div class="row">
 
@@ -801,8 +799,7 @@ onchange="loadUploadedAudio(event)"
 
 <select id="creationMode">
 <option selected>Generate Instrumental</option>
-<option disabled>Reference-Guided Instrumental — Native Model Phase 2</option>
-<option disabled>Create Full Song — Future Vocal Engine</option>
+<option>Use Recording as Reference</option>
 </select>
 </div>
 
@@ -819,11 +816,10 @@ onchange="loadUploadedAudio(event)"
 <div class="engine-box">
 <label>AI Producer Engine</label>
 <select id="aiProvider" onchange="updateEngineStatus()">
-<option value="music-city-native" selected>Music City Native — Works Now</option>
-<option value="suno" disabled>Suno Premium — API Access Pending</option>
+<option value="elevenlabs" selected>ElevenLabs Music v2.5 — Secure API</option>
 </select>
 <p id="aiEngineStatus" class="engine-status ready">
-Music City Native generates an instrumental inside the app and loads it directly into Track 01.
+ElevenLabs Music v2.5 generates the instrumental through the secure Music City backend and loads it directly into Track 01.
 </p>
 
 <div class="row" style="margin-top:14px;">
@@ -1270,8 +1266,8 @@ blob:result.audioBlob || null,
 genre:String(style || "Original"),
 mood:"AI Producer",
 bpm:Number(result.bpm || document.getElementById("aiBpm").value || 0),
-producer:result.providerName || "Music City Native",
-source:result.provider || "music-city-native",
+producer:result.providerName || "ElevenLabs Music v2.5",
+source:result.provider || "elevenlabs",
 generated:true
 };
 
@@ -1285,7 +1281,7 @@ if (button) selectBeat(beatTitle, button);
 
 const beatLane = document.querySelector('.track-lane[data-track="beat"] .track-name small');
 if (beatLane) {
-beatLane.textContent = (result.providerName || "Music City Native") +
+beatLane.textContent = (result.providerName || "ElevenLabs Music v2.5") +
 (result.bpm ? " • " + result.bpm + " BPM" : "");
 }
 
@@ -1481,6 +1477,55 @@ if (status) status.textContent = error.message || "Music City could not prepare 
 }
 }
 
+
+function elevenBackendBase() {
+const configured = window.MusicCityAI && window.MusicCityAI.getStatus
+? window.MusicCityAI.getStatus().backendEndpoint
+: "";
+const endpoint = configured || "https://music-city-estates-api-willwill3515-5514s-projects.vercel.app/api/music/generate";
+return endpoint.replace(/\/api\/music\/generate\/?$/i, "");
+}
+
+function blobToElevenBase64(blob) {
+return new Promise((resolve, reject) => {
+const reader = new FileReader();
+reader.onload = () => {
+const value = String(reader.result || "");
+const comma = value.indexOf(",");
+resolve(comma >= 0 ? value.slice(comma + 1) : value);
+};
+reader.onerror = () => reject(new Error("Music City could not read the vocal take."));
+reader.readAsDataURL(blob);
+});
+}
+
+async function readElevenError(response) {
+try {
+const payload = await response.json();
+return payload && payload.error ? payload.error : "ElevenLabs request failed.";
+} catch (error) {
+return "ElevenLabs request failed.";
+}
+}
+
+async function isolateVocalTrack(blob) {
+if (!(blob instanceof Blob) || !blob.size) throw new Error("Record a lead vocal first.");
+const audioBase64 = await blobToElevenBase64(blob);
+const response = await fetch(elevenBackendBase() + "/api/elevenlabs/isolate", {
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+audioBase64,
+mimeType:blob.type || "audio/webm",
+filename:"music-city-lead-vocal.webm"
+})
+});
+if (!response.ok) throw new Error(await readElevenError(response));
+const cleaned = await response.blob();
+if (!cleaned.size) throw new Error("ElevenLabs returned an empty cleaned vocal.");
+return cleaned;
+}
+
 async function quickAIFinish() {
 const status = document.getElementById("masterStatus");
 const button = document.getElementById("quickFinishButton");
@@ -1501,9 +1546,21 @@ return;
 
 button.disabled = true;
 button.textContent = "✨ FINISHING YOUR SONG...";
-setMasterStatus("AI Finish is balancing the beat and your real voice, cleaning the vocal, compressing the mix, and creating one master...", "");
+setMasterStatus("ElevenLabs Voice Isolator is cleaning your lead vocal, then Music City will balance and master the session...", "");
 
 try {
+try {
+const cleanedLead = await isolateVocalTrack(sessionTracks.lead.blob);
+const leadTrack = sessionTracks.lead;
+if (leadTrack.url) URL.revokeObjectURL(leadTrack.url);
+leadTrack.blob = cleanedLead;
+leadTrack.url = URL.createObjectURL(cleanedLead);
+referenceAudioBlob = cleanedLead;
+renderRecordedTrack("lead");
+setMasterStatus("✓ ElevenLabs cleaned the lead vocal. Building the finished master now...", "ready");
+} catch (isolationError) {
+setMasterStatus((isolationError.message || "ElevenLabs vocal cleanup was unavailable.") + " Using the original take for this mix.", "error");
+}
 const quickMix = { beat:68, lead:100, double:58, adlibs:50, harmony:48 };
 Object.keys(quickMix).forEach(trackName => {
 const fader = document.querySelector('.track-level[data-track="' + trackName + '"]');
@@ -1512,7 +1569,7 @@ if (fader) fader.value = quickMix[trackName];
 invalidateMixedMaster();
 const blob = await ensureSessionMix();
 if (!blob) throw new Error("Music City could not create the finished master.");
-setMasterStatus("✓ AI Finish complete. This is one smooth master made from your selected beat and your actual recorded voice. Play it below, then save the finished song.", "ready");
+setMasterStatus("✓ ElevenLabs-assisted finish complete. The lead vocal was cleaned with ElevenLabs when available, then mixed with your selected beat into one master. Play it below, then save the finished song.", "ready");
 const player = document.getElementById("masterAudio");
 await player.play().catch(() => {});
 } catch (error) {
@@ -1524,28 +1581,12 @@ button.textContent = "✨ AI FINISH MY SONG";
 }
 
 function updateEngineStatus() {
-const provider = document.getElementById("aiProvider").value;
 const status = document.getElementById("aiEngineStatus");
 const createButton = document.getElementById("createSongButton");
-
-if (provider === "music-city-native") {
-status.textContent = "Music City Native is ready. It renders a real instrumental inside this browser, then automatically loads it into Track 01. This is our self-contained prototype while we prepare a fine-tuned model.";
+status.textContent = "ElevenLabs Music v2.5 is the only AI producer engine. Requests run through the secure Music City backend; no API key is exposed in the browser.";
 status.className = "engine-status ready";
 createButton.disabled = false;
-createButton.textContent = "🎹 GENERATE & LOAD TRACK 01";
-return;
-}
-
-if (provider === "suno") {
-status.textContent = "Suno Premium is wired into the provider architecture but API credentials are not activated yet. No Suno key will ever be exposed in the browser.";
-status.className = "engine-status";
-createButton.disabled = true;
-createButton.textContent = "SUNO PREMIUM — ACCESS PENDING";
-return;
-}
-
-status.textContent = "Select an available Music City AI Producer engine.";
-status.className = "engine-status";
+createButton.textContent = "🎹 GENERATE WITH ELEVENLABS";
 }
 
 function addStyle(style) {
@@ -2024,32 +2065,10 @@ return;
 }
 const extension = currentMasterBlob.type.includes("wav") ? "wav" : currentMasterBlob.type.includes("mpeg") ? "mp3" : "audio";
 downloadBlob(currentMasterBlob, safeSongFilename(
-(currentMasterKind === "suno-master" || currentMasterKind === "pro-studio-master") ? "final-master" : "rough-mix",
+currentMasterKind === "pro-studio-master" ? "final-master" : "rough-mix",
 extension
 ));
 setMasterStatus("Master downloaded to this device.", "ready");
-}
-
-async function finishInSuno() {
-const sunoWindow = window.open("about:blank", "musicCitySuno");
-if (sunoWindow) {
-sunoWindow.document.write("<title>Preparing Suno handoff</title><p style='font-family:sans-serif;padding:24px'>Music City is preparing your rough mix...</p>");
-}
-try {
-const blob = await ensureSessionMix();
-await saveBoothSession(false);
-localStorage.setItem("musicCitySunoReturnPending", "1");
-downloadBlob(blob, safeSongFilename("rough-mix-for-suno", "wav"));
-if (sunoWindow) sunoWindow.location.href = "https://suno.com/create";
-else {
-setMasterStatus("Your browser blocked the new tab. The session is saved; Music City is opening Suno in this tab, and Back will restore the studio.", "ready");
-setTimeout(() => { window.location.href = "https://suno.com/create"; }, 900);
-return;
-}
-setMasterStatus("Rough mix downloaded and Suno opened. Upload the WAV there, download your result, return to this studio tab, then choose Import Suno Master.", "ready");
-} catch (error) {
-if (sunoWindow) sunoWindow.close();
-}
 }
 
 function importProStudioMaster(event) {
@@ -2070,25 +2089,6 @@ localStorage.removeItem("musicCityProReturnPending");
 saveBoothSession(false);
 setMasterStatus("Pro Studio master imported. Play it here, then save it as the finished song in your Artist Catalog.", "ready");
 event.target.value = "";
-}
-
-function importSunoMaster(event) {
-const file = event.target.files && event.target.files[0];
-if (!file) return;
-if (!file.type.startsWith("audio/")) {
-setMasterStatus("Choose an audio file downloaded from Suno.", "error");
-event.target.value = "";
-return;
-}
-if (file.size > 50 * 1024 * 1024) {
-setMasterStatus("The returned master must be 50 MB or smaller for this device build.", "error");
-event.target.value = "";
-return;
-}
-setMasterBlob(file, "suno-master");
-localStorage.removeItem("musicCitySunoReturnPending");
-saveBoothSession(false);
-setMasterStatus("Suno master imported. Play it here, download it again, or save it as the finished song in your Artist Catalog.", "ready");
 }
 
 function openBoothDatabase() {
@@ -2156,7 +2156,7 @@ transaction.objectStore("sessions").put(record);
 transaction.oncomplete = () => resolve();
 transaction.onerror = () => reject(transaction.error || new Error("Session save failed."));
 });
-if (showConfirmation) setMasterStatus("Studio session saved on this device. You can leave for Pro Studio or Suno and return without losing the recording.", "ready");
+if (showConfirmation) setMasterStatus("Studio session saved on this device. You can leave for Pro Studio and return without losing the recording.", "ready");
 return record;
 } catch (error) {
 if (showConfirmation) setMasterStatus(error.message || "Music City could not save this studio session.", "error");
@@ -2233,8 +2233,6 @@ if (record.masterBlob) {
 setMasterBlob(record.masterBlob, record.masterKind || "music-city-mix");
 setMasterStatus(localStorage.getItem("musicCityProReturnPending")
 ? "Welcome back from Pro Studio. Your Music City session is restored—choose Import Pro Studio Master when your exported mix is ready."
-: localStorage.getItem("musicCitySunoReturnPending")
-? "Welcome back. Your Music City session is restored—choose Import Suno Master when your Suno download is ready."
 : "Saved studio session restored on this device.", "ready");
 } else {
 setMasterStatus("Saved vocal session restored. Press Mix & Play to create the master.", "ready");
@@ -2252,11 +2250,9 @@ style:document.getElementById("style").value || "Original Style",
 studio,
 beat:selectedBeat || "",
 provider:currentMasterKind,
-providerName:currentMasterKind === "suno-master"
-? "Suno AI Finish"
-: currentMasterKind === "pro-studio-master"
+providerName:currentMasterKind === "pro-studio-master"
 ? "Music City Pro Studio"
-: "Music City Mixdown",
+: "ElevenLabs-assisted Music City Mixdown",
 createdAt:new Date().toISOString(),
 originalLyricsConfirmed:document.getElementById("originalLyricsConfirmed").checked,
 audioBlob:currentMasterBlob
@@ -2837,7 +2833,7 @@ document.getElementById("generatedAudio");
 resultBox.style.display = "block";
 resultText.innerHTML =
 "<strong>" + title + "</strong><br>" +
-"Submitting to Music City AI...";
+"Submitting to ElevenLabs Music v2.5...";
 
 engineMessage.textContent =
 "Creating production job...";
@@ -2848,9 +2844,14 @@ generatedAudio.removeAttribute("src");
 try {
 
 if (mode === "Use Recording as Reference") {
-throw new Error(
-"Reference-guided native generation is reserved for the fine-tuned Music City model phase. Generate an instrumental from style, BPM and key for this prototype."
-);
+if (!referenceAudioBlob) throw new Error("Record or upload a reference take first.");
+engineMessage.textContent = "Uploading Audio Reference securely to ElevenLabs...";
+const reference = await window.MusicCityAI.uploadReference(referenceAudioBlob, {
+filename:"music-city-reference.webm"
+});
+request.referenceSongId = reference.songId;
+request.referenceDurationMs = Math.max(50, Math.min(referenceAudioDurationMs || 10000, 30000));
+request.mode = "Generate Instrumental";
 }
 
 const result =
@@ -2952,7 +2953,7 @@ catch(error) {
 
 resultText.innerHTML =
 "<strong>" + title + "</strong><br>" +
-"Music City could not submit this provider yet.";
+"Music City could not complete the ElevenLabs request.";
 
 engineMessage.textContent =
 error.message || "AI generation failed.";
