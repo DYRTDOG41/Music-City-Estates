@@ -477,10 +477,36 @@
     root.addEventListener("beforeunload",()=>{stopSession();if(micStream)micStream.getTracks().forEach(t=>t.stop());Object.values(trackState).forEach(t=>{if(t.url)URL.revokeObjectURL(t.url)});if(masterUrl)URL.revokeObjectURL(masterUrl);if(beat&&beat.url&&beat.url.startsWith("blob:"))URL.revokeObjectURL(beat.url)});
   }
 
+  async function checkApiStatus(){
+    const badge=$("apiBadge");if(!badge)return;
+    try{
+      const response=await fetch("/api/elevenlabs/status",{cache:"no-store"});
+      const data=await response.json();
+      if(data&&data.connected){
+        badge.textContent="ELEVENLABS • CONNECTED";
+        badge.style.borderColor="#74eba2";
+        badge.style.color="#a8f5c1";
+      }else if(data&&data.configured){
+        badge.textContent="ELEVENLABS • KEY FOUND / CHECK FAILED";
+        badge.style.borderColor="#f2cf73";
+        badge.style.color="#f4dda1";
+      }else{
+        badge.textContent="ELEVENLABS • KEY NOT FOUND";
+        badge.style.borderColor="#ff6d7d";
+        badge.style.color="#ffc0c8";
+      }
+    }catch(error){
+      badge.textContent="ELEVENLABS • STATUS UNAVAILABLE";
+      badge.style.borderColor="#ff6d7d";
+      badge.style.color="#ffc0c8";
+    }
+  }
+
   function init(){
     bind();renderCollab();renderTrackRows();
     try{if(root.MCE)root.MCE.load()}catch(error){}
     $("beatPreview").hidden=true;
+    checkApiStatus();
     setStatus("Step 1: load a beat. Then Music City will guide you through each vocal layer.");
   }
 
