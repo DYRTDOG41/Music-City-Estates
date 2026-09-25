@@ -91,6 +91,64 @@
     $("aiMix").disabled=!beat||!trackState.lead.blob;
   }
 
+  function audioMimeForFile(file){
+    const ext=String(file&&file.name||"").split(".").pop().toLowerCase();
+    const byExt={
+      mp3:"audio/mpeg",wav:"audio/wav",m4a:"audio/mp4",aac:"audio/aac",
+      mp4:"audio/mp4",webm:"audio/webm",ogg:"audio/ogg",oga:"audio/ogg",
+      flac:"audio/flac"
+    };
+    const reported=String(file&&file.type||"").toLowerCase();
+    if(reported.startsWith("audio/"))return reported;
+    return byExt[ext]||"";
+  }
+
+  async function normalizeBeatFile(file){
+    if(!file)throw new Error("Choose an audio file first.");
+    const ext=String(file.name||"").split(".").pop().toLowerCase();
+    const allowed=["mp3","wav","m4a","aac","mp4","webm","ogg","oga","flac"];
+    const mime=audioMimeForFile(file);
+    if(!mime&&!allowed.includes(ext)){
+      throw new Error("Use an MP3, WAV, M4A, AAC, MP4, WebM, OGG or FLAC audio file.");
+    }
+    if(Number(file.size||0)>80*1024*1024){
+      throw new Error("That beat is too large for the phone studio. Keep beat files under 80 MB.");
+    }
+    const data=await file.arrayBuffer();
+    if(!data.byteLength)throw new Error("That audio file is empty.");
+    return new Blob([data],{type:mime||"audio/mpeg"});
+  }
+
+  async function loadBeatFile(file){
+    try{
+      setStatus("Loading "+String(file&&file.name||"your beat")+" from this device…");
+      const blob=await normalizeBeatFile(file);
+      setBeat(blob,String(file.name||"My Beat").replace(/\.[^.]+$/,""),"device");
+      const audio=$("beatPreview");
+      audio.load();
+      const playable=await new Promise(resolve=>{
+        let done=false;
+        const finish=value=>{if(done)return;done=true;audio.removeEventListener("loadedmetadata",ok);audio.removeEventListener("canplay",ok);audio.removeEventListener("error",bad);resolve(value)};
+        const ok=()=>finish(true),bad=()=>finish(false);
+        audio.addEventListener("loadedmetadata",ok,{once:true});
+        audio.addEventListener("canplay",ok,{once:true});
+        audio.addEventListener("error",bad,{once:true});
+        setTimeout(()=>finish(Boolean(audio.duration&&Number.isFinite(audio.duration))),3500);
+      });
+      if(!playable){
+        beat=null;
+        audio.removeAttribute("src");audio.load();audio.hidden=true;
+        $("beatName").textContent="No beat selected";$("beatState").textContent="FILE COULD NOT PLAY";
+        $("beatPlay").disabled=true;$("beatMute").disabled=true;$("beatLevel").disabled=true;
+        renderTrackRows();
+        throw new Error("Your phone selected the file, but the browser could not play that audio format. Try MP3, WAV or M4A.");
+      }
+      setStatus("Beat loaded from your phone. Tap PLAY BEAT to check it, then record the Lead Vocal.","ok");
+    }catch(error){
+      setStatus(error.message||"Music City could not load that audio file.","error");
+    }
+  }
+
   function setBeat(blob,name,source){
     if(!blob||!blob.size){setStatus("That beat could not be loaded.","error");return}
     if(beat&&beat.url&&beat.url.startsWith("blob:"))URL.revokeObjectURL(beat.url);
@@ -407,7 +465,7 @@
 
   function bind(){
     $("backLink").href=studio==="bedroom"?"bedroom_studio.html":"begenius_studio.html";
-    $("beatFile").onchange=e=>{const f=e.target.files&&e.target.files[0];if(f)setBeat(f,f.name.replace(/\.[^.]+$/,""),"upload");e.target.value=""};
+    $("beatFile").onchange=async e=>{const f=e.target.files&&e.target.files[0];if(f)await loadBeatFile(f);e.target.value=""};
     $("beatPlay").onclick=toggleBeat;
     $("beatMute").onclick=toggleBeatMute;
     $("beatLevel").oninput=e=>{if(!beat)return;beat.level=Number(e.target.value);$("beatLevelValue").textContent=Math.round(beat.level)+"%";updateLiveGain("beat");markDirty()};
