@@ -51,9 +51,9 @@
     {
       id: "cafe-access",
       location: "Artist Catalog",
-      onsite: "You need 10 XP to unlock the Hip-Hop Café. Use the Street Team invite button on one of your songs for +5 XP per completed invite, or claim the rehearsal / street-promo hustle rewards.",
+      onsite: "You need 10 XP to unlock the Hip-Hop Café. Post on the Social World wall for small daily fan/XP rewards, use the Street Team invite button, or claim rehearsal / street-promo hustle rewards.",
       title: "Earn 10 XP for Your First Show",
-      description: "Build enough early career XP to unlock the Hip-Hop Café without getting stuck.",
+      description: "Build early momentum through social posts, promotion hustles, and your first release until the Hip-Hop Café unlocks."
       action: "BUILD EARLY MOMENTUM",
       href: "artist_catalog.html",
       reward: "Hip-Hop Café unlocks at 10 XP.",
