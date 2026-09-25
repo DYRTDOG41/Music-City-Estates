@@ -367,6 +367,13 @@
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
   else start();
+  root.addEventListener("mce-audio-session", function (event) {
+    var detail = event && event.detail || {};
+    if (detail.active && detail.source !== "realtime-voice" && voiceEnabled) {
+      toggleVoice();
+    }
+  });
+
   root.addEventListener("beforeunload", function () {
     try { if (channel) channel.untrack(); } catch (error) {}
     try { if (client && channel) client.removeChannel(channel); } catch (error) {}
