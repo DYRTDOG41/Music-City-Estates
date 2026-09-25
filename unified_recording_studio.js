@@ -13,7 +13,7 @@
   const studio = params.get("studio") || "begenius";
   const $ = id => document.getElementById(id);
   const trackState = {};
-  TRACKS.forEach(t => trackState[t.id] = {blob:null,url:"",durationMs:0,muted:false,level:t.level,cleanBlob:null});
+  TRACKS.forEach(t => trackState[t.id] = {blob:null,url:"",durationMs:0,muted:false,level:t.level,cleanBlob:null,syncTrimMs:0});
 
   let beat = null;
   let recorder = null;
@@ -29,6 +29,10 @@
   let masterUrl = "";
   let generatedBeatUrl = "";
   let previewAudio = null;
+  let recordMonitorContext = null;
+  let recordMonitorSources = [];
+  let recordingSyncTrimMs = 0;
+  const RECORD_PREROLL_MS = 360;
   let masterDirty = true;
 
   function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[ch])}
@@ -43,7 +47,15 @@
   function nextMissingTrack(){
     return TRACKS.find(t=>!trackState[t.id].blob) || null;
   }
-  function markDirty(){masterDirty=true;$("saveMaster").disabled=true;$("masterBadge").textContent="MIX CHANGED";}
+  function markDirty(){
+    masterDirty=true;
+    $("saveMaster").disabled=true;
+    $("masterBadge").textContent="MIX CHANGED";
+    if(masterUrl){URL.revokeObjectURL(masterUrl);masterUrl=""}
+    masterBlob=null;
+    const player=$("masterAudio");
+    if(player){player.pause();player.removeAttribute("src");player.hidden=true;player.load()}
+  }
 
   function pendingCollab(){
     try{return JSON.parse(localStorage.getItem("mcePendingCollab")||"null")}catch(error){return null}
@@ -72,11 +84,13 @@
           '<button type="button" class="record-layer">'+(recordingTrack===def.id?'■ STOP':'● RECORD')+'</button>'+
           '<button type="button" class="play-layer" '+(state.blob?'':'disabled')+'>▶ PLAY</button>'+
           '<button type="button" class="mute-layer'+(state.muted?' on':'')+'" '+(state.blob?'':'disabled')+'>'+(state.muted?'UNMUTE':'MUTE')+'</button>'+
+          '<button type="button" class="discard-layer" '+(state.blob?'':'disabled')+'>↺ DISCARD</button>'+
         '</div>'+
         '<div class="level-box"><label>VOLUME <b>'+Math.round(state.level)+'%</b></label><input class="level-slider" type="range" min="0" max="125" value="'+state.level+'" '+(state.blob?'':'disabled')+'></div>';
       row.querySelector(".record-layer").onclick=()=>toggleRecord(def.id);
       row.querySelector(".play-layer").onclick=()=>playLayer(def.id);
       row.querySelector(".mute-layer").onclick=()=>toggleMute(def.id);
+      row.querySelector(".discard-layer").onclick=()=>discardTake(def.id);
       const slider=row.querySelector(".level-slider");
       slider.oninput=()=>{
         state.level=Number(slider.value);
@@ -196,6 +210,66 @@
     finally{button.disabled=false;button.textContent="✨ GENERATE AI BEAT";}
   }
 
+  function discardTake(trackId){
+    if(recordingTrack){setStatus("Stop recording before discarding a take.","error");return}
+    const state=trackState[trackId];if(!state||!state.blob)return;
+    stopSession();stopRecordMonitor();
+    if(state.url)URL.revokeObjectURL(state.url);
+    state.blob=null;state.url="";state.durationMs=0;state.cleanBlob=null;state.syncTrimMs=0;state.muted=false;
+    markDirty();renderTrackRows();
+    setStatus(TRACKS.find(t=>t.id===trackId).label+" discarded. That lane is clean and ready for another take.","ok");
+  }
+
+  function stopRecordMonitor(){
+    recordMonitorSources.forEach(source=>{try{source.stop()}catch(error){}});
+    recordMonitorSources=[];
+    if(recordMonitorContext){recordMonitorContext.close().catch(()=>{});recordMonitorContext=null}
+  }
+
+  async function startRecordMonitor(recordTrackId){
+    stopRecordMonitor();
+    const Ctx=root.AudioContext||root.webkitAudioContext;
+    if(!Ctx)throw new Error("This browser cannot synchronize the recording monitor.");
+    recordMonitorContext=new Ctx();
+    const startAt=recordMonitorContext.currentTime+(RECORD_PREROLL_MS/1000);
+    const sources=[];
+
+    const beatBuffer=await blobBuffer(recordMonitorContext,beat.blob);
+    const beatSource=recordMonitorContext.createBufferSource();
+    beatSource.buffer=beatBuffer;
+    const beatGain=recordMonitorContext.createGain();
+    beatGain.gain.value=beat.muted?0:clamp(beat.level/100,0,1.15);
+    beatSource.connect(beatGain).connect(recordMonitorContext.destination);
+    beatSource.start(startAt);
+    sources.push(beatSource);
+
+    for(const def of TRACKS){
+      if(def.id===recordTrackId)continue;
+      const state=trackState[def.id];
+      if(!state.blob||state.muted)continue;
+      const buffer=await blobBuffer(recordMonitorContext,state.blob);
+      const source=recordMonitorContext.createBufferSource();
+      const gain=recordMonitorContext.createGain();
+      source.buffer=buffer;
+      gain.gain.value=clamp(state.level/100,0,1.15);
+      if(recordMonitorContext.createStereoPanner){
+        const pan=recordMonitorContext.createStereoPanner();
+        pan.pan.value=def.pan;
+        source.connect(gain).connect(pan).connect(recordMonitorContext.destination);
+      }else source.connect(gain).connect(recordMonitorContext.destination);
+      const trim=Math.max(0,Number(state.syncTrimMs||0))/1000;
+      const maxOffset=Math.max(0,buffer.duration-.01);
+      source.start(startAt,Math.min(trim,maxOffset));
+      sources.push(source);
+    }
+
+    recordMonitorSources=sources;
+    recordingSyncTrimMs=RECORD_PREROLL_MS;
+    beatSource.onended=()=>{
+      if(recorder&&recorder.state==="recording")recorder.stop();
+    };
+  }
+
   function preferredMime(){
     const choices=["audio/webm;codecs=opus","audio/webm","audio/mp4"];
     return choices.find(t=>root.MediaRecorder&&MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t))||"";
@@ -221,27 +295,37 @@
       chunks=[];
       const mime=preferredMime();
       recorder=mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream);
-      recordingTrack=trackId;recordingStartedAt=Date.now();
+      recordingTrack=trackId;recordingStartedAt=Date.now();recordingSyncTrimMs=0;
       const beatAudio=$("beatPreview");beatAudio.pause();beatAudio.currentTime=0;beatAudio.loop=false;
       recorder.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
-      recorder.onerror=()=>setStatus("The microphone recording stopped unexpectedly.","error");
+      recorder.onerror=()=>{stopRecordMonitor();setStatus("The microphone recording stopped unexpectedly.","error")};
       recorder.onstop=()=>{
         const id=recordingTrack;
         recordingTrack="";
-        beatAudio.pause();beatAudio.currentTime=0;
+        stopRecordMonitor();
         dispatchAudio(false);
         const blob=new Blob(chunks,{type:recorder.mimeType||"audio/webm"});
         const state=trackState[id];
         if(state.url)URL.revokeObjectURL(state.url);
-        state.blob=blob;state.url=URL.createObjectURL(blob);state.durationMs=Math.max(500,Date.now()-recordingStartedAt);state.cleanBlob=null;
-        masterDirty=true;renderTrackRows();
+        state.blob=blob;state.url=URL.createObjectURL(blob);
+        state.durationMs=Math.max(500,Date.now()-recordingStartedAt);
+        state.cleanBlob=null;
+        state.syncTrimMs=Math.max(0,recordingSyncTrimMs||RECORD_PREROLL_MS);
+        markDirty();renderTrackRows();
         const next=nextMissingTrack();
-        setStatus(next?"Nice. "+TRACKS.find(t=>t.id===id).label+" is ready. Next: "+next.label+".":"All layers are recorded. Play the session or let the AI Engineer mix it.","ok");
+        setStatus(next?"Take saved and synchronized. Next: "+next.label+". You will hear the beat plus your finished layers while you record it.":"All layers are synchronized. Play the session or let the AI Engineer mix it.","ok");
       };
-      beatAudio.onended=()=>{if(recorder&&recorder.state==="recording")recorder.stop()};
+      recorder.onstart=async()=>{
+        try{
+          await startRecordMonitor(trackId);
+          const heard=TRACKS.filter(t=>t.id!==trackId&&trackState[t.id].blob&&!trackState[t.id].muted).map(t=>t.label);
+          setStatus("Recording "+TRACKS.find(t=>t.id===trackId).label+". Headphones: beat"+(heard.length?" + "+heard.join(" + "):"")+" are playing together. Tap STOP when finished.","recording");
+        }catch(error){
+          if(recorder&&recorder.state==="recording")recorder.stop();
+          setStatus(error.message||"Could not start synchronized monitoring.","error");
+        }
+      };
       recorder.start(250);
-      await beatAudio.play();
-      setStatus("Recording "+TRACKS.find(t=>t.id===trackId).label+" over the beat. Tap STOP when the layer is finished.","recording");
       renderTrackRows();
     }catch(error){
       recordingTrack="";dispatchAudio(false);renderTrackRows();
@@ -252,7 +336,10 @@
   function playLayer(trackId){
     const t=trackState[trackId];if(!t.blob)return;
     stopSession();dispatchAudio(true);
-    const a=new Audio(t.url);previewAudio=a;a.volume=clamp(t.level/100,0,1);a.onended=()=>{previewAudio=null;dispatchAudio(false)};a.play().catch(()=>{previewAudio=null;dispatchAudio(false)});
+    const a=new Audio(t.url);previewAudio=a;a.volume=clamp(t.level/100,0,1);
+    const begin=()=>{const trim=Math.max(0,Number(t.syncTrimMs||0))/1000;if(Number.isFinite(a.duration)&&a.duration>trim+.01)a.currentTime=trim;a.play().catch(()=>{previewAudio=null;dispatchAudio(false)})};
+    a.onloadedmetadata=begin;a.onended=()=>{previewAudio=null;dispatchAudio(false)};
+    if(a.readyState>=1)begin();
     setStatus("Playing "+TRACKS.find(x=>x.id===trackId).label+" by itself.");
   }
 
@@ -316,7 +403,7 @@
         source.buffer=buffer;gain.gain.value=state.muted?0:clamp(state.level/100,0,1.25);
         if(sessionContext.createStereoPanner){const pan=sessionContext.createStereoPanner();pan.pan.value=def.pan;source.connect(gain).connect(pan).connect(sessionContext.destination)}
         else source.connect(gain).connect(sessionContext.destination);
-        source.start(start);sources.push(source);sessionNodes.set(def.id,gain);
+        const trim=Math.max(0,Number(state.syncTrimMs||0))/1000;source.start(start,Math.min(trim,Math.max(0,buffer.duration-.01)));sources.push(source);sessionNodes.set(def.id,gain);
       }
       sessionSources=sources;sessionPlaying=true;$("playAll").textContent="■ STOP PLAYBACK";
       beatSource.onended=()=>{if(sessionPlaying)stopSession()};
@@ -408,9 +495,9 @@
         dry.connect(master);
         if(def.reverb){const send=offline.createGain();send.gain.value=def.reverb;dry.connect(send).connect(reverb)}
         if(def.delay){const sendD=offline.createGain();sendD.gain.value=def.delay;dry.connect(sendD).connect(delay)}
-        source.start(0);
+        const trim=Math.max(0,Number(state.syncTrimMs||0))/1000;source.start(0,Math.min(trim,Math.max(0,buffer.duration-.01)));
       }
-      $("engineDetail").textContent="Mastering: balance, glue compression and loudness";
+      $("engineDetail").textContent="Timing aligned to the shared session clock • EQ • compression • space • master glue";
       return encodeWav(await offline.startRendering());
     }finally{decodeCtx.close().catch(()=>{})}
   }
@@ -423,7 +510,7 @@
       const blob=await renderMaster();
       if(masterUrl)URL.revokeObjectURL(masterUrl);masterBlob=blob;masterUrl=URL.createObjectURL(blob);masterDirty=false;
       const player=$("masterAudio");player.src=masterUrl;player.hidden=false;$("saveMaster").disabled=false;$("masterBadge").textContent="MASTER READY";
-      $("engineDetail").textContent="Done: vocal cleanup • EQ • compression • de-essing • space • stereo placement • master";
+      $("engineDetail").textContent="Done: timing alignment • vocal cleanup • EQ • compression • de-essing • space • stereo placement • master";
       setStatus("Master ready. Compare it with Play All. You can still mute or rebalance tracks, then run AI Mix again.","ok");
       await player.play().catch(()=>{});
     }catch(error){$("masterBadge").textContent="MIX NEEDS ATTENTION";setStatus(error.message||"AI Engineer could not finish this mix.","error")}
@@ -474,7 +561,7 @@
     $("aiMix").onclick=aiMix;
     $("saveMaster").onclick=saveMaster;
     $("masterAudio").onplay=()=>dispatchAudio(true);$("masterAudio").onpause=()=>dispatchAudio(false);$("masterAudio").onended=()=>dispatchAudio(false);
-    root.addEventListener("beforeunload",()=>{stopSession();if(micStream)micStream.getTracks().forEach(t=>t.stop());Object.values(trackState).forEach(t=>{if(t.url)URL.revokeObjectURL(t.url)});if(masterUrl)URL.revokeObjectURL(masterUrl);if(beat&&beat.url&&beat.url.startsWith("blob:"))URL.revokeObjectURL(beat.url)});
+    root.addEventListener("beforeunload",()=>{stopSession();stopRecordMonitor();if(micStream)micStream.getTracks().forEach(t=>t.stop());Object.values(trackState).forEach(t=>{if(t.url)URL.revokeObjectURL(t.url)});if(masterUrl)URL.revokeObjectURL(masterUrl);if(beat&&beat.url&&beat.url.startsWith("blob:"))URL.revokeObjectURL(beat.url)});
   }
 
   async function checkApiStatus(){
