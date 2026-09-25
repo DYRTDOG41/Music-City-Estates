@@ -1907,5 +1907,16 @@
   };
 
   root.MCE = api;
+
+  // Game-wide realtime loader. Every gameplay page that uses player-state
+  // joins its room automatically; pages that already loaded it are skipped.
+  if (root.document && !root.MCERealtime && !root.document.querySelector('script[data-mce-realtime-loader]')) {
+    var realtimeScript = root.document.createElement('script');
+    realtimeScript.src = 'music_city_realtime.js?v=realtime-2';
+    realtimeScript.async = true;
+    realtimeScript.dataset.mceRealtimeLoader = '1';
+    root.document.head.appendChild(realtimeScript);
+  }
+
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : globalThis);
