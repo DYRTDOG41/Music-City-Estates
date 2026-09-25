@@ -131,6 +131,37 @@ body.custom-mode .quick-only{display:none}
 .eleven-status.error{border-color:#6c3942;color:#ffc1c8}
 .transcript-box{margin-top:10px;min-height:74px;padding:11px;border:1px solid #29465d;border-radius:10px;background:#050b12;color:#e8f7ff;font-size:12px;line-height:1.5;white-space:pre-wrap}
 .eleven-flow{grid-template-columns:repeat(3,1fr)}
+
+/* Guided artist recording lesson */
+.eleven-flow{grid-template-columns:repeat(6,1fr)}
+.workflow-step{position:relative;transition:.2s ease}
+.workflow-step.active{border-color:var(--cyan);box-shadow:0 0 20px rgba(35,213,255,.14)}
+.workflow-step.done{border-color:var(--green);background:#092018}
+.workflow-step.done strong{color:#baffd2}
+.take-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}
+.take-tab{min-height:62px;border:1px solid #29425e;border-radius:12px;background:#07101a;color:#a9bfd2;font-weight:900;padding:8px}
+.take-tab.active{border-color:var(--cyan);background:#0b2433;color:#e9fbff;box-shadow:0 0 18px rgba(35,213,255,.14)}
+.take-tab.done{border-color:var(--green);color:#c8fadd}
+.take-tab small{display:block;margin-top:4px;color:#7892aa;font-size:9px}
+.lesson-coach{margin:10px 0;padding:12px 13px;border-left:3px solid var(--cyan);border-radius:8px;background:#071725;color:#cdeafa;font-size:12px;line-height:1.5}
+.take-checklist{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.take-check{padding:9px;border:1px solid #243c55;border-radius:10px;background:#06101a;color:#829ab0;font-size:10px;font-weight:900;text-align:center}
+.take-check.done{border-color:#2c7657;color:#baffd2;background:#0b2219}
+.engineer-controls{display:grid;grid-template-columns:1.3fr .7fr;gap:14px;margin-top:12px}
+.engineer-style-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.engineer-chip{min-height:44px;border:1px solid #2d4b68;border-radius:10px;background:#08131f;color:#a9bfd2;font-size:11px;font-weight:900}
+.engineer-chip.active{border-color:var(--green);background:#0c2a20;color:#ddffe9;box-shadow:0 0 15px rgba(116,240,172,.12)}
+.engineer-chain{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:12px}
+.engineer-chain span{padding:8px 5px;border:1px solid #28445f;border-radius:8px;background:#06101a;text-align:center;color:#9eb4c8;font-size:9px;font-weight:900}
+.track-purpose{margin-top:7px;color:#8ea8be;font-size:11px;line-height:1.4}
+@media(max-width:760px){
+  .eleven-flow{grid-template-columns:repeat(2,1fr)}
+  .take-tabs,.take-checklist{grid-template-columns:1fr 1fr}
+  .engineer-controls{grid-template-columns:1fr}
+  .engineer-style-grid{grid-template-columns:1fr 1fr}
+  .engineer-chain{grid-template-columns:repeat(3,1fr)}
+}
+
 @media(max-width:760px){
   .custom-grid,.source-grid,.version-grid,.advanced-grid,.workflow{grid-template-columns:1fr}
   .inline-actions,.inline-actions.three,.choice-row{grid-template-columns:1fr 1fr}
@@ -162,16 +193,19 @@ body.custom-mode .quick-only{display:none}
   </nav>
 
   <section class="card">
-    <h2>Fast song flow</h2>
-    <p class="helper">The studio is simple on purpose. Create first. The work required to properly release and push the record happens afterward in Music City.</p>
+    <h2>Learn to record a real song</h2>
+    <p class="helper">Music City coaches you through the same basic layers used in a professional vocal session. Finish one step at a time — the AI Engineer handles the technical mix afterward.</p>
     <div class="workflow eleven-flow">
-      <div class="workflow-step"><strong>1 • DESCRIBE IT</strong><span>Give Music City one sentence about the sound you want.</span></div>
-      <div class="workflow-step"><strong>2 • RECORD IT</strong><span>Add your own vocal or beat. ElevenLabs Scribe can turn a take into editable lyrics.</span></div>
-      <div class="workflow-step"><strong>3 • CREATE IT</strong><span>Eleven Music v2.5 generates through the secure Music City server, then the record continues into your Artist Catalog.</span></div>
+      <div class="workflow-step active" id="flowBeat"><strong>1 • BEAT</strong><span>Choose or create the instrumental.</span></div>
+      <div class="workflow-step" id="flowLead"><strong>2 • LEAD</strong><span>Record the main vocal people will hear.</span></div>
+      <div class="workflow-step" id="flowDouble"><strong>3 • DOUBLES</strong><span>Repeat key lines to make them hit harder.</span></div>
+      <div class="workflow-step" id="flowAdlibs"><strong>4 • AD-LIBS</strong><span>Add energy, responses and emphasis.</span></div>
+      <div class="workflow-step" id="flowEngineer"><strong>5 • AI ENGINEER</strong><span>Auto EQ, compression, space and balance.</span></div>
+      <div class="workflow-step" id="flowFinished"><strong>6 • FINISHED</strong><span>Compare A/B mixes and save your record.</span></div>
     </div>
   </section>
 
-  <section class="card quick-only">
+<section class="card quick-only">
     <h2>What do you want the song to sound like?</h2>
     <p class="helper">Keep it simple. One sentence is enough.</p>
     <textarea id="quickPrompt" class="quick-prompt" placeholder="Example: dark melodic trap with emotional piano, heavy 808s and a late-night feel"></textarea>
@@ -220,51 +254,73 @@ body.custom-mode .quick-only{display:none}
   </section>
 
   <section class="card">
-    <h2>Optional: add your own performance</h2>
-    <p class="helper">You can skip this. Use it when you want your own vocal or instrumental inside the Music City session. Your vocal can also be transcribed with ElevenLabs Scribe.</p>
+    <h2>Session type</h2>
+    <p class="helper">Standard Song teaches you the full vocal-session workflow. Instrumental mode skips the vocal lesson.</p>
     <div class="choice-row">
-      <button type="button" id="voiceChoice" class="choice active" onclick="setSongType('voice')">🎙️ MY VOICE</button>
-      <button type="button" id="instrumentalChoice" class="choice" onclick="setSongType('instrumental')">🎹 INSTRUMENTAL</button>
+      <button type="button" id="voiceChoice" class="choice active" onclick="setSongType('voice')">🎙️ STANDARD SONG</button>
+      <button type="button" id="instrumentalChoice" class="choice" onclick="setSongType('instrumental')">🎹 INSTRUMENTAL ONLY</button>
     </div>
   </section>
 
   <section class="card">
-    <h2>Optional: your beat or voice</h2>
-    <p class="helper">Add a beat, record a vocal, or upload a vocal. Music City can mix the take locally and use ElevenLabs services around the session without exposing your API key.</p>
-
-    <div class="source-grid">
-      <div class="source-box" id="beatSourceBox">
-        <div class="source-title">
-          <strong>🎧 Beat / Instrumental</strong>
-          <span class="status-pill" id="beatStatusPill">OPTIONAL</span>
-        </div>
-        <p class="helper" id="selectedBeatText">Step 1: choose a beat below or add your own. You can still generate one later from your description.</p>
-        <div class="inline-actions three">
-          <label class="file-label">ADD BEAT<input id="beatUpload" type="file"></label>
-          <button class="secondary-btn writing-btn" id="writingModeButton" type="button" onclick="toggleWritingMode()" disabled>▶ WRITE / TEST</button>
-          <button class="secondary-btn" type="button" onclick="clearSelectedBeat()">CLEAR</button>
-        </div>
-        <div id="beatLockerList" class="locker-list"></div>
-        <audio id="beatPreview" controls style="display:none"></audio>
+    <h2>1. Pick your beat</h2>
+    <p class="helper">Choose a saved instrumental, upload your own, or leave this empty and let ElevenLabs Music create the base track from your description.</p>
+    <div class="source-box" id="beatSourceBox">
+      <div class="source-title">
+        <strong>🎧 Beat / Instrumental</strong>
+        <span class="status-pill" id="beatStatusPill">CHOOSE / ADD</span>
       </div>
-
-      <div class="source-box" id="voiceSourceBox">
-        <div class="source-title">
-          <strong>🎤 Your Voice</strong>
-          <span class="status-pill" id="voiceStatusPill">REQUIRED FOR MY VOICE</span>
-        </div>
-        <p class="helper" id="voiceStatusText">Step 3: record a vocal or upload one you already made. If a beat is selected, it will restart from the beginning and play while you record.</p>
-        <div class="inline-actions">
-          <button class="record-btn" id="recordVoiceButton" type="button" onclick="toggleVoiceRecording()">● RECORD VOICE</button>
-          <label class="file-label">UPLOAD VOICE<input id="voiceUpload" type="file"></label>
-        </div>
-        <audio id="voicePreview" controls style="display:none"></audio>
+      <p class="helper" id="selectedBeatText">Choose a beat below or add your own. Use Write / Test to practice before recording.</p>
+      <div class="inline-actions three">
+        <label class="file-label">ADD BEAT<input id="beatUpload" type="file"></label>
+        <button class="secondary-btn writing-btn" id="writingModeButton" type="button" onclick="toggleWritingMode()" disabled>▶ WRITE / TEST</button>
+        <button class="secondary-btn" type="button" onclick="clearSelectedBeat()">CLEAR</button>
       </div>
+      <div id="beatLockerList" class="locker-list"></div>
+      <audio id="beatPreview" controls style="display:none"></audio>
     </div>
-    <p class="note">🎧 Use headphones when recording over a beat so the instrumental does not bleed back into the microphone.</p>
+  </section>
+
+  <section class="card" id="vocalLessonCard">
+    <h2>2–4. Build your vocal performance</h2>
+    <p class="helper">Record each layer separately. Music City keeps the takes on their own tracks so the engineer can treat each one differently.</p>
+
+    <div class="take-tabs">
+      <button type="button" class="take-tab active" id="takeTabLead" onclick="selectVocalTrack('lead')">LEAD<small>Main performance</small></button>
+      <button type="button" class="take-tab" id="takeTabDouble" onclick="selectVocalTrack('double')">DOUBLE<small>Repeat key lines</small></button>
+      <button type="button" class="take-tab" id="takeTabAdlibs" onclick="selectVocalTrack('adlibs')">AD-LIBS<small>Energy + responses</small></button>
+      <button type="button" class="take-tab" id="takeTabHarmony" onclick="selectVocalTrack('harmony')">HARMONY<small>Optional hook layer</small></button>
+    </div>
+
+    <div class="lesson-coach" id="lessonCoach"><strong>Lead vocal:</strong> Perform the full verse and hook as your main take. Stay close to the mic and keep a steady distance.</div>
+
+    <div class="source-box" id="voiceSourceBox">
+      <div class="source-title">
+        <strong id="activeTrackTitle">🎤 Lead Vocal</strong>
+        <span class="status-pill" id="voiceStatusPill">REQUIRED</span>
+      </div>
+      <p class="helper" id="voiceStatusText">Record your main vocal first. The beat restarts and plays in your headphones while the microphone captures your voice.</p>
+      <div class="inline-actions three">
+        <button class="record-btn" id="recordVoiceButton" type="button" onclick="toggleVoiceRecording()">● RECORD LEAD</button>
+        <label class="file-label">UPLOAD TAKE<input id="voiceUpload" type="file"></label>
+        <button class="secondary-btn" type="button" onclick="nextVocalTrack()">NEXT VOCAL →</button>
+      </div>
+      <audio id="voicePreview" controls style="display:none"></audio>
+    </div>
+
+    <div class="take-checklist">
+      <div class="take-check" id="takeCheckLead">LEAD — NOT RECORDED</div>
+      <div class="take-check" id="takeCheckDouble">DOUBLE — NOT RECORDED</div>
+      <div class="take-check" id="takeCheckAdlibs">AD-LIBS — NOT RECORDED</div>
+      <div class="take-check" id="takeCheckHarmony">HARMONY — OPTIONAL</div>
+    </div>
+    <p class="note">🎧 Use headphones. The instrumental should be in your ears, not bleeding into the microphone.</p>
   </section>
 
   <section class="card custom-only">
+    <button type="button" class="secondary-btn" style="width:100%" onclick="toggleAdvanced()">⚙️ ADVANCED OPTIONS</button>
+
+<section class="card custom-only">
     <button type="button" class="secondary-btn" style="width:100%" onclick="toggleAdvanced()">⚙️ ADVANCED OPTIONS</button>
     <div class="advanced-box" id="advancedBox">
       <div class="advanced-grid">
@@ -292,14 +348,42 @@ body.custom-mode .quick-only{display:none}
     </div>
   </section>
 
+
+  <section class="card elevenlabs-card" id="aiEngineerPanel">
+    <span class="eleven-kicker">AUTOPILOT MIX ENGINEER</span>
+    <h2>5. AI Engineer — Mix My Song</h2>
+    <p class="helper">Choose the sound you want. Music City cleans the lead vocal with ElevenLabs when available, then automatically applies track-aware EQ, compression, stereo placement, reverb, delay, gain staging and master-bus control.</p>
+    <div class="engineer-controls">
+      <div>
+        <div class="field"><label>ENGINEER STYLE</label></div>
+        <div class="engineer-style-grid">
+          <button type="button" class="engineer-chip" onclick="setEngineerStyle('clean',this)">CLEAN / NATURAL</button>
+          <button type="button" class="engineer-chip active" onclick="setEngineerStyle('modern',this)">MODERN HIP-HOP</button>
+          <button type="button" class="engineer-chip" onclick="setEngineerStyle('trap',this)">TRAP</button>
+          <button type="button" class="engineer-chip" onclick="setEngineerStyle('melodic',this)">MELODIC</button>
+          <button type="button" class="engineer-chip" onclick="setEngineerStyle('aggressive',this)">AGGRESSIVE</button>
+          <button type="button" class="engineer-chip" onclick="setEngineerStyle('radio',this)">RADIO READY</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="engineerIntensity">EFFECT INTENSITY <span id="engineerIntensityReadout">55%</span></label>
+        <input id="engineerIntensity" type="range" min="0" max="100" value="55" oninput="document.getElementById('engineerIntensityReadout').textContent=this.value+'%'">
+        <p class="track-purpose">Lower = natural and dry. Higher = more obvious space, width and vocal effects.</p>
+      </div>
+    </div>
+    <div class="engineer-chain" aria-label="Automatic engineer processing chain">
+      <span>CLEANUP</span><span>EQ</span><span>COMPRESS</span><span>DE-ESS / TAME</span><span>REVERB + DELAY</span><span>MASTER</span>
+    </div>
+  </section>
+
   <section class="card native-create-card">
-    <button type="button" id="createButton" class="create-btn" onclick="createTwoVersions()">✨ CREATE A/B VERSIONS WITH ELEVENLABS</button>
-    <p class="create-status" id="createStatus">Ready when you are.</p>
+    <button type="button" id="createButton" class="create-btn" onclick="createTwoVersions()">✨ AI ENGINEER — MIX MY SONG</button>
+    <p class="create-status" id="createStatus">Record your lead, doubles and ad-libs, then let the engineer take over.</p>
   </section>
 
   <section class="card results" id="resultsSection">
-    <h2>Your versions</h2>
-    <p class="helper">Listen to both. Pick the one that feels closest, save it, or create again.</p>
+    <h2>6. Finished Record — A/B Mixes</h2>
+    <p class="helper">Version A stays cleaner and more natural. Version B pushes the creative effects harder. Pick the mix that fits your song.</p>
     <div class="version-grid" id="versionGrid"></div>
     <button type="button" class="secondary-btn" style="width:100%;margin-top:12px" onclick="createTwoVersions()">↻ CREATE 2 MORE</button>
   </section>
@@ -328,6 +412,10 @@ let selectedBeat = null;
 let voiceBlob = null;
 let cleanedVoiceBlob = null;
 let cleanedVoiceSource = null;
+let activeVocalTrack = "lead";
+let engineerStyle = "modern";
+const vocalTakes = {lead:null,double:null,adlibs:null,harmony:null};
+const cleanedVocalTakes = {lead:null,double:null,adlibs:null,harmony:null};
 let voiceUrl = "";
 let mediaRecorder = null;
 let mediaStream = null;
@@ -504,12 +592,12 @@ function openBoothSessionDb(){
 }
 
 async function saveQuickSessionForProStudio(){
-  if(!voiceBlob&&!selectedBeat)throw new Error("Add a beat or record a vocal before opening Pro Studio.");
+  if(!vocalTakes.lead&&!selectedBeat)throw new Error("Add a beat or record a lead vocal before opening Pro Studio.");
   const details=getPromptAndTitle();
   const beatBlob=selectedBeat?await selectedBeatBlob():null;
   let roughMix=null;
-  if(beatBlob&&voiceBlob){
-    try{roughMix=await renderVersion(beatBlob,voiceBlob,"A")}catch(error){}
+  if(beatBlob&&vocalTakes.lead){
+    try{roughMix=await renderVersion(beatBlob,vocalTakes,"A")}catch(error){}
   }else if(beatBlob&&!voiceBlob){
     roughMix=beatBlob;
   }
@@ -535,10 +623,10 @@ async function saveQuickSessionForProStudio(){
     }:null,
     armedTrack:"lead",
     tracks:{
-      lead:{blob:voiceBlob,durationMs:leadDuration},
-      double:{blob:null,durationMs:0},
-      adlibs:{blob:null,durationMs:0},
-      harmony:{blob:null,durationMs:0}
+      lead:{blob:vocalTakes.lead,durationMs:leadDuration},
+      double:{blob:vocalTakes.double,durationMs:0},
+      adlibs:{blob:vocalTakes.adlibs,durationMs:0},
+      harmony:{blob:vocalTakes.harmony,durationMs:0}
     },
     mixSettings:{
       beat:{level:72,pan:0,muted:false,soloed:false},
@@ -582,33 +670,109 @@ async function sendToProStudio(){
   }
 }
 
+function vocalTrackLabel(track){
+  return ({lead:"Lead Vocal",double:"Double",adlibs:"Ad-Libs",harmony:"Harmony"})[track]||"Vocal";
+}
+function vocalCoach(track){
+  return {
+    lead:"<strong>Lead vocal:</strong> Perform the full verse and hook as your main take. Stay close to the mic and keep a steady distance.",
+    double:"<strong>Double:</strong> Repeat the important lead lines as tightly as you can. This layer sits lower and wider behind the lead.",
+    adlibs:"<strong>Ad-libs:</strong> Add reactions, emphasis and short responses in the open spaces. Do not cover every word of the lead.",
+    harmony:"<strong>Harmony:</strong> Optional. Add a sung or melodic layer to the hook. The engineer will tuck it behind the main vocal."
+  }[track]||"Record your vocal.";
+}
+function setEngineerStyle(style,button){
+  engineerStyle=style||"modern";
+  document.querySelectorAll(".engineer-chip").forEach(el=>el.classList.toggle("active",el===button));
+  status("AI Engineer style set to "+String(button&&button.textContent||engineerStyle).trim()+".","ok");
+}
+function engineerSettings(){
+  const intensity=Number(document.getElementById("engineerIntensity")?.value||55)/100;
+  const profiles={
+    clean:{presence:1.5,compression:2.8,reverb:.045,delay:.025,width:.35,beat:.72},
+    modern:{presence:2.8,compression:3.8,reverb:.075,delay:.055,width:.58,beat:.68},
+    trap:{presence:3.4,compression:4.4,reverb:.065,delay:.085,width:.70,beat:.67},
+    melodic:{presence:2.3,compression:3.4,reverb:.13,delay:.105,width:.75,beat:.66},
+    aggressive:{presence:4.0,compression:5.2,reverb:.045,delay:.045,width:.52,beat:.64},
+    radio:{presence:3.0,compression:4.2,reverb:.07,delay:.05,width:.55,beat:.66}
+  };
+  return {...(profiles[engineerStyle]||profiles.modern),intensity};
+}
+function updateLessonProgress(){
+  const hasBeat=!!selectedBeat||!!document.getElementById("quickPrompt")?.value.trim();
+  const done={lead:!!vocalTakes.lead,double:!!vocalTakes.double,adlibs:!!vocalTakes.adlibs,harmony:!!vocalTakes.harmony};
+  const flow={flowBeat:hasBeat,flowLead:done.lead,flowDouble:done.double,flowAdlibs:done.adlibs,flowEngineer:resultVersions.length>0,flowFinished:resultVersions.length>0};
+  Object.entries(flow).forEach(([id,isDone])=>document.getElementById(id)?.classList.toggle("done",isDone));
+  document.querySelectorAll(".workflow-step").forEach(el=>el.classList.remove("active"));
+  const active=!hasBeat?"flowBeat":!done.lead?"flowLead":!done.double?"flowDouble":!done.adlibs?"flowAdlibs":resultVersions.length?"flowFinished":"flowEngineer";
+  document.getElementById(active)?.classList.add("active");
+  ["lead","double","adlibs","harmony"].forEach(track=>{
+    const cap=track.charAt(0).toUpperCase()+track.slice(1);
+    document.getElementById("takeTab"+cap)?.classList.toggle("done",done[track]);
+    const check=document.getElementById("takeCheck"+cap);
+    if(check){
+      check.classList.toggle("done",done[track]);
+      const optional=track==="harmony";
+      check.textContent=vocalTrackLabel(track).toUpperCase()+" — "+(done[track]?"RECORDED":optional?"OPTIONAL":"NOT RECORDED");
+    }
+  });
+}
 function setVoiceBlob(blob,label){
-  if(voiceUrl)URL.revokeObjectURL(voiceUrl);
   voiceBlob=blob;
+  vocalTakes[activeVocalTrack]=blob;
+  cleanedVocalTakes[activeVocalTrack]=null;
   cleanedVoiceBlob=null;
   cleanedVoiceSource=null;
+  if(voiceUrl)URL.revokeObjectURL(voiceUrl);
   voiceUrl=URL.createObjectURL(blob);
   const player=document.getElementById("voicePreview");
   player.src=voiceUrl;player.style.display="block";
-  document.getElementById("voiceStatusText").textContent=(label||"Voice recording")+" is ready.";
+  document.getElementById("voiceStatusText").textContent=(label||vocalTrackLabel(activeVocalTrack))+" is ready. Listen back before moving on.";
   updateSourceBoxes();
+}
+function selectVocalTrack(track){
+  if(!["lead","double","adlibs","harmony"].includes(track))track="lead";
+  activeVocalTrack=track;
+  voiceBlob=vocalTakes[track]||null;
+  cleanedVoiceBlob=null;cleanedVoiceSource=null;
+  document.querySelectorAll(".take-tab").forEach(el=>el.classList.remove("active"));
+  const cap=track.charAt(0).toUpperCase()+track.slice(1);
+  document.getElementById("takeTab"+cap)?.classList.add("active");
+  document.getElementById("activeTrackTitle").textContent="🎤 "+vocalTrackLabel(track);
+  document.getElementById("lessonCoach").innerHTML=vocalCoach(track);
+  const player=document.getElementById("voicePreview");
+  if(voiceUrl){URL.revokeObjectURL(voiceUrl);voiceUrl="";}
+  if(voiceBlob){
+    voiceUrl=URL.createObjectURL(voiceBlob);player.src=voiceUrl;player.style.display="block";
+    document.getElementById("voiceStatusText").textContent=vocalTrackLabel(track)+" take is recorded. Listen back or replace it.";
+  }else{
+    player.removeAttribute("src");player.load();player.style.display="none";
+    document.getElementById("voiceStatusText").textContent="Record your "+vocalTrackLabel(track).toLowerCase()+" over the beat.";
+  }
+  updateSourceBoxes();
+}
+function nextVocalTrack(){
+  const order=["lead","double","adlibs","harmony"];
+  const index=Math.max(0,order.indexOf(activeVocalTrack));
+  selectVocalTrack(order[Math.min(order.length-1,index+1)]);
 }
 function updateSourceBoxes(){
   document.getElementById("beatSourceBox").classList.toggle("ready",!!selectedBeat);
   document.getElementById("beatStatusPill").textContent=selectedBeat?"READY":"CHOOSE / ADD";
   const writingButton=document.getElementById("writingModeButton");
   writingButton.disabled=!selectedBeat;
-  document.getElementById("voiceSourceBox").classList.toggle("ready",songType==="voice"&&!!voiceBlob);
-  if(songType==="voice")document.getElementById("voiceStatusPill").textContent=voiceBlob?"READY":"REQUIRED";
+  document.getElementById("voiceSourceBox").classList.toggle("ready",!!vocalTakes[activeVocalTrack]);
+  if(songType==="voice")document.getElementById("voiceStatusPill").textContent=vocalTakes[activeVocalTrack]?"RECORDED":activeVocalTrack==="harmony"?"OPTIONAL":"RECORD THIS";
   const recordButton=document.getElementById("recordVoiceButton");
-  if(!mediaRecorder||mediaRecorder.state!=="recording")recordButton.textContent=selectedBeat?"● RECORD OVER BEAT":"● RECORD VOICE";
+  if(!mediaRecorder||mediaRecorder.state!=="recording")recordButton.textContent="● RECORD "+vocalTrackLabel(activeVocalTrack).toUpperCase();
+  document.getElementById("vocalLessonCard").style.opacity=songType==="voice"?"1":".5";
+  updateLessonProgress();
 }
 
 async function toggleVoiceRecording(){
   const button=document.getElementById("recordVoiceButton");
-  if(mediaRecorder&&mediaRecorder.state==="recording"){
-    mediaRecorder.stop();return;
-  }
+  if(songType!=="voice"){status("Switch to Standard Song to record vocals.","error");return;}
+  if(mediaRecorder&&mediaRecorder.state==="recording"){mediaRecorder.stop();return;}
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
     status("Microphone recording is not supported in this browser.","error");return;
   }
@@ -617,15 +781,18 @@ async function toggleVoiceRecording(){
     mediaStream=await navigator.mediaDevices.getUserMedia({audio:true});
     mediaRecorder=new MediaRecorder(mediaStream);
     voiceChunks=[];
+    const recordingTrack=activeVocalTrack;
     mediaRecorder.ondataavailable=e=>{if(e.data&&e.data.size)voiceChunks.push(e.data)};
     mediaRecorder.onstop=()=>{
       if(recordingTimer)clearTimeout(recordingTimer);
       if(recordingBeatAudio){recordingBeatAudio.pause();recordingBeatAudio.currentTime=0;recordingBeatAudio=null}
       const blob=new Blob(voiceChunks,{type:mediaRecorder.mimeType||"audio/webm"});
-      setVoiceBlob(blob,"Recorded vocal");
-      mediaStream.getTracks().forEach(t=>t.stop());mediaStream=null;
+      activeVocalTrack=recordingTrack;
+      setVoiceBlob(blob,"Recorded "+vocalTrackLabel(recordingTrack));
+      if(mediaStream)mediaStream.getTracks().forEach(t=>t.stop());mediaStream=null;
       button.classList.remove("recording");updateSourceBoxes();
-      status("Voice recorded. Listen back, then Create two mixed versions when ready.","ok");
+      const next=recordingTrack==="lead"?"double":recordingTrack==="double"?"ad-libs":recordingTrack==="adlibs"?"optional harmony":"AI Engineer";
+      status(vocalTrackLabel(recordingTrack)+" saved. Next: "+next+".","ok");
     };
     if(selectedBeat){
       recordingBeatAudio=new Audio(selectedBeat.objectUrl||selectedBeat.src);
@@ -633,10 +800,8 @@ async function toggleVoiceRecording(){
       await recordingBeatAudio.play().catch(()=>{});
     }
     mediaRecorder.start();
-    button.textContent="■ STOP RECORDING";button.classList.add("recording");
-    status(selectedBeat
-      ?"Recording over "+selectedBeat.title+". The beat is playing while your microphone captures your voice. Tap Stop when finished."
-      :"Recording your voice without a beat. Tap Stop when finished.");
+    button.textContent="■ STOP "+vocalTrackLabel(recordingTrack).toUpperCase();button.classList.add("recording");
+    status("Recording "+vocalTrackLabel(recordingTrack)+" over "+(selectedBeat?selectedBeat.title:"your session")+". Tap Stop when the take is finished.");
     recordingTimer=setTimeout(()=>{if(mediaRecorder&&mediaRecorder.state==="recording")mediaRecorder.stop()},240000);
   }catch(error){
     status("Microphone permission is required to record your voice.","error");
@@ -657,31 +822,80 @@ function waveBlob(buffer){
   for(let i=0;i<samples;i++)for(let c=0;c<channels;c++){const v=Math.max(-1,Math.min(1,data[c][i]));view.setInt16(o,v<0?v*32768:v*32767,true);o+=2}
   return new Blob([out],{type:"audio/wav"});
 }
-async function renderVersion(beatBlob,voice,preset){
+async function renderVersion(beatBlob,tracks,preset){
   const AC=window.AudioContext||window.webkitAudioContext;
   const OC=window.OfflineAudioContext||window.webkitOfflineAudioContext;
   if(!AC||!OC)throw new Error("This browser cannot render the song.");
-  const decoder=new AC();let beatBuffer,voiceBuffer=null;
+  const decoder=new AC();
+  let beatBuffer;
+  const buffers={};
   try{
     beatBuffer=await decodeBlob(decoder,beatBlob);
-    if(voice)voiceBuffer=await decodeBlob(decoder,voice);
+    for(const [name,blob] of Object.entries(tracks||{})){
+      if(blob)buffers[name]=await decodeBlob(decoder,blob);
+    }
   }finally{decoder.close().catch(()=>{})}
-  const duration=Math.min(240,Math.max(beatBuffer.duration,voiceBuffer?voiceBuffer.duration:0));
+  const allDurations=[beatBuffer.duration,...Object.values(buffers).map(b=>b.duration)];
+  const duration=Math.min(240,Math.max(...allDurations));
   const rate=44100,ctx=new OC(2,Math.ceil(duration*rate),rate);
+  const settings=engineerSettings();
+  const creative=preset==="B";
+  const intensity=settings.intensity*(creative?1.35:.78);
+
   const master=ctx.createDynamicsCompressor();
-  master.threshold.value=preset==="A"?-16:-19;master.knee.value=18;master.ratio.value=preset==="A"?3.4:4.5;
-  master.attack.value=.004;master.release.value=.22;master.connect(ctx.destination);
+  master.threshold.value=creative?-19:-16;
+  master.knee.value=18;
+  master.ratio.value=settings.compression+(creative?.7:0);
+  master.attack.value=.004;
+  master.release.value=.22;
+  const masterGain=ctx.createGain();masterGain.gain.value=.93;
+  master.connect(masterGain).connect(ctx.destination);
 
   const beat=ctx.createBufferSource(),beatGain=ctx.createGain();
-  beat.buffer=beatBuffer;beat.loop=beatBuffer.duration<duration-.1;beatGain.gain.value=preset==="A"?.70:.64;
+  beat.buffer=beatBuffer;beat.loop=beatBuffer.duration<duration-.1;
+  beatGain.gain.value=Math.max(.48,settings.beat-(creative?.03:0));
   beat.connect(beatGain).connect(master);beat.start(0);beat.stop(duration);
 
-  if(voiceBuffer){
-    const source=ctx.createBufferSource(),hp=ctx.createBiquadFilter(),presence=ctx.createBiquadFilter(),gain=ctx.createGain();
-    source.buffer=voiceBuffer;hp.type="highpass";hp.frequency.value=preset==="A"?78:88;
-    presence.type="peaking";presence.frequency.value=preset==="A"?3000:3600;presence.Q.value=.75;presence.gain.value=preset==="A"?2.1:3.1;
-    gain.gain.value=preset==="A"?.92:1.0;
-    source.connect(hp).connect(presence).connect(gain).connect(master);source.start(0);
+  const impulseLength=Math.floor(rate*(creative?1.45:1.05));
+  const impulse=ctx.createBuffer(2,impulseLength,rate);
+  for(let ch=0;ch<2;ch++){
+    const data=impulse.getChannelData(ch);
+    for(let i=0;i<impulseLength;i++)data[i]=(Math.random()*2-1)*Math.pow(1-i/impulseLength,2.6);
+  }
+  const convolver=ctx.createConvolver();convolver.buffer=impulse;convolver.connect(master);
+  const delay=ctx.createDelay(1);delay.delayTime.value=creative?.31:.22;
+  const delayReturn=ctx.createGain();delayReturn.gain.value=.42;
+  const feedback=ctx.createGain();feedback.gain.value=creative?.24:.14;
+  delay.connect(delayReturn).connect(master);delay.connect(feedback).connect(delay);
+
+  const roles={
+    lead:{gain:.98,pan:0,hp:82,presence:settings.presence,reverb:settings.reverb,delay:settings.delay},
+    double:{gain:.58,pan:-settings.width,hp:105,presence:settings.presence-.6,reverb:settings.reverb*1.15,delay:settings.delay*.75},
+    adlibs:{gain:.52,pan:settings.width,hp:120,presence:settings.presence+.5,reverb:settings.reverb*1.65,delay:settings.delay*1.9},
+    harmony:{gain:.48,pan:settings.width*.45,hp:115,presence:settings.presence-.3,reverb:settings.reverb*1.5,delay:settings.delay*1.15}
+  };
+
+  for(const [name,buffer] of Object.entries(buffers)){
+    const role=roles[name]||roles.lead;
+    const source=ctx.createBufferSource(),hp=ctx.createBiquadFilter(),presence=ctx.createBiquadFilter(),comp=ctx.createDynamicsCompressor(),gain=ctx.createGain();
+    source.buffer=buffer;
+    hp.type="highpass";hp.frequency.value=role.hp;
+    presence.type="peaking";presence.frequency.value=name==="adlibs"?4200:3300;presence.Q.value=.8;presence.gain.value=role.presence;
+    comp.threshold.value=name==="lead"?-20:-23;comp.knee.value=16;comp.ratio.value=settings.compression;comp.attack.value=.006;comp.release.value=.18;
+    gain.gain.value=role.gain;
+    let panNode=gain;
+    if(typeof ctx.createStereoPanner==="function"){
+      panNode=ctx.createStereoPanner();panNode.pan.value=Math.max(-1,Math.min(1,role.pan*(creative?1.15:1)));
+      gain.connect(panNode);
+    }
+    source.connect(hp).connect(presence).connect(comp).connect(gain);
+    panNode.connect(master);
+
+    const reverbSend=ctx.createGain();reverbSend.gain.value=Math.min(.32,role.reverb*(.45+intensity));
+    panNode.connect(reverbSend).connect(convolver);
+    const delaySend=ctx.createGain();delaySend.gain.value=Math.min(.28,role.delay*(.35+intensity));
+    panNode.connect(delaySend).connect(delay);
+    source.start(0);
   }
   return waveBlob(await ctx.startRendering());
 }
@@ -720,48 +934,54 @@ async function makeBaseBeat(versionIndex,details){
 async function createTwoVersions(){
   const details=getPromptAndTitle();
   if(!details.prompt&&!selectedBeat){
-    status("Describe the song or add a beat before creating.","error");return;
+    status("Describe the song or add a beat before mixing.","error");return;
   }
-  if(songType==="voice"&&!voiceBlob){
-    status("Add or record your voice first, or switch to Instrumental.","error");return;
+  if(songType==="voice"&&!vocalTakes.lead){
+    status("Record the lead vocal first. That is the foundation of the song.","error");selectVocalTrack("lead");return;
   }
   const button=document.getElementById("createButton");
-  button.disabled=true;button.textContent="CREATING 2 VERSIONS...";
-  status("Building Version A and Version B...");
+  button.disabled=true;button.textContent="AI ENGINEER IS MIXING...";
+  status("AI Engineer is preparing the session...");
   clearResults();
   generationRound+=1;
   try{
     const built=[];
-    let mixVoice=songType==="voice"?voiceBlob:null;
-    if(mixVoice){
-      status("Cleaning your vocal with ElevenLabs Voice Isolator...");
+    const mixTracks={...vocalTakes};
+    if(songType==="voice"&&mixTracks.lead){
+      status("ElevenLabs is cleaning the lead vocal before the mix...");
       try{
-        mixVoice=await cleanVoiceWithElevenLabs();
+        mixTracks.lead=await cleanVoiceWithElevenLabs("lead",mixTracks.lead);
       }catch(error){
-        setElevenStatus((error.message||"Voice Isolator was unavailable.")+" Using your original take for this mix.","warn");
-        mixVoice=voiceBlob;
+        setElevenStatus((error.message||"Voice cleanup was unavailable.")+" The engineer will use the original lead take.","warn");
       }
     }
-    status("Generating one secure ElevenLabs Music v2.5 base track...");
+    status(selectedBeat?"Loading your instrumental...":"Creating the instrumental with ElevenLabs Music v2.5...");
     const base=await makeBaseBeat(0,details);
-    for(let i=0;i<2;i++){
-      status("Mixing Version "+(i===0?"A":"B")+"...");
-      const master=await renderVersion(base.blob,mixVoice,i===0?"A":"B");
-      built.push({
-        id:"creation-"+Date.now().toString(36)+"-"+i+"-"+Math.random().toString(36).slice(2,6),
-        label:i===0?"Version A":"Version B",blob:master,title:details.title,style:details.prompt,
-        source:base.source,provider:base.providerName,createdAt:new Date().toISOString(),
-        description:i===0?"Balanced mix — beat and vocal sit together naturally.":"Vocal-forward mix — more vocal presence and tighter compression."
-      });
-    }
-    resultVersions=built;renderResults();
-    status("Two mixes are ready from one ElevenLabs generation. Your vocal cleanup used ElevenLabs Voice Isolator when available.","ok");
+    status("Engineering Track A: cleaner, more natural vocal balance...");
+    const cleanMix=await renderVersion(base.blob,songType==="voice"?mixTracks:{},"A");
+    built.push({
+      id:"creation-"+Date.now().toString(36)+"-a-"+Math.random().toString(36).slice(2,6),
+      label:"A • Clean Mix",blob:cleanMix,title:details.title,style:details.prompt,
+      source:base.source,provider:base.providerName,createdAt:new Date().toISOString(),
+      description:"Cleaner vocal mix — controlled compression, centered lead, restrained reverb and delay."
+    });
+    status("Engineering Track B: wider, more creative hip-hop effects...");
+    const creativeMix=await renderVersion(base.blob,songType==="voice"?mixTracks:{},"B");
+    built.push({
+      id:"creation-"+Date.now().toString(36)+"-b-"+Math.random().toString(36).slice(2,6),
+      label:"B • Creative Mix",blob:creativeMix,title:details.title,style:details.prompt,
+      source:base.source,provider:base.providerName,createdAt:new Date().toISOString(),
+      description:"Creative mix — wider doubles and ad-libs, stronger delay/reverb throws and tighter vocal control."
+    });
+    resultVersions=built;renderResults();updateLessonProgress();
+    status("AI Engineer finished both mixes. Compare A and B, then save the one that fits your record.","ok");
   }catch(error){
-    status(error.message||"Music City could not create the versions.","error");
+    status(error.message||"Music City could not finish the mix.","error");
   }finally{
-    button.disabled=false;button.textContent="✨ CREATE A/B VERSIONS WITH ELEVENLABS";
+    button.disabled=false;button.textContent="✨ AI ENGINEER — MIX MY SONG";
   }
 }
+
 function clearResults(){
   resultUrls.forEach(url=>URL.revokeObjectURL(url));resultUrls=[];resultVersions=[];
   document.getElementById("resultsSection").classList.remove("show");
@@ -855,7 +1075,7 @@ async function playEngineerVoice(){
     const response=await fetch(elevenBackendBase()+"/api/elevenlabs/tts",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({text:"Welcome to BeGenius Studio. Pick your beat, record your take, and I will help turn the session into your next Music City release."})
+      body:JSON.stringify({text:"Welcome to BeGenius Studio. Start with your beat, then record your lead vocal, doubles, and ad-libs. When your performance is ready, the AI Engineer will clean, balance, compress, EQ, add space, and create two finished mixes for you to compare."})
     });
     if(!response.ok)throw new Error(await readElevenError(response));
     const blob=await response.blob();
@@ -884,26 +1104,29 @@ function blobToElevenBase64(blob){
   });
 }
 
-async function cleanVoiceWithElevenLabs(){
-  if(!voiceBlob)throw new Error("Record or upload a vocal first.");
-  if(cleanedVoiceBlob&&cleanedVoiceSource===voiceBlob)return cleanedVoiceBlob;
-  const audioBase64=await blobToElevenBase64(voiceBlob);
+async function cleanVoiceWithElevenLabs(trackName,blob){
+  const track=trackName||activeVocalTrack||"lead";
+  const targetBlob=blob||vocalTakes[track]||voiceBlob;
+  if(!targetBlob)throw new Error("Record or upload a vocal first.");
+  const cached=cleanedVocalTakes[track];
+  if(cached&&cached.source===targetBlob)return cached.blob;
+  const audioBase64=await blobToElevenBase64(targetBlob);
   const response=await fetch(elevenBackendBase()+"/api/elevenlabs/isolate",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
       audioBase64,
-      mimeType:voiceBlob.type||"audio/webm",
-      filename:"music-city-vocal-clean."+audioExtension(voiceBlob)
+      mimeType:targetBlob.type||"audio/webm",
+      filename:"music-city-"+track+"-clean."+audioExtension(targetBlob)
     })
   });
   if(!response.ok)throw new Error(await readElevenError(response));
-  const blob=await response.blob();
-  if(!blob.size)throw new Error("ElevenLabs returned an empty cleaned vocal.");
-  cleanedVoiceBlob=blob;
-  cleanedVoiceSource=voiceBlob;
-  setElevenStatus("ElevenLabs Voice Isolator cleaned the current vocal take.","ok");
-  return blob;
+  const cleanBlob=await response.blob();
+  if(!cleanBlob.size)throw new Error("ElevenLabs returned an empty cleaned vocal.");
+  cleanedVocalTakes[track]={source:targetBlob,blob:cleanBlob};
+  if(track===activeVocalTrack){cleanedVoiceBlob=cleanBlob;cleanedVoiceSource=targetBlob;}
+  setElevenStatus("ElevenLabs Voice Isolator cleaned the "+vocalTrackLabel(track).toLowerCase()+".","ok");
+  return cleanBlob;
 }
 
 async function transcribeCurrentTake(){
@@ -954,12 +1177,12 @@ document.getElementById("beatUpload").addEventListener("change",async e=>{
 document.getElementById("voiceUpload").addEventListener("change",e=>{
   const file=e.target.files&&e.target.files[0];e.target.value="";
   if(!file)return;if(!supportedAudio(file)){status("Choose a supported vocal audio file.","error");return}
-  setVoiceBlob(file,file.name);status("Voice audio ready.","ok");
+  setVoiceBlob(file,file.name);status(vocalTrackLabel(activeVocalTrack)+" audio ready.","ok");
 });
 
 async function init(){
   try{await loadBeatLocker()}catch(error){}
-  setCreateMode("quick");setSongType("voice");updateSourceBoxes();
+  setCreateMode("quick");setSongType("voice");selectVocalTrack("lead");updateSourceBoxes();
   if(document.getElementById("provider"))document.getElementById("provider").value="elevenlabs";
   checkElevenLabsConnection();
 }
