@@ -31,6 +31,7 @@
   let previewAudio = null;
   let recordMonitorContext = null;
   let recordMonitorSources = [];
+  let recordMonitorToken = 0;
   let recordingSyncTrimMs = 0;
   const RECORD_PREROLL_MS = 360;
   let masterDirty = true;
@@ -221,6 +222,7 @@
   }
 
   function stopRecordMonitor(){
+    recordMonitorToken+=1;
     recordMonitorSources.forEach(source=>{try{source.stop()}catch(error){}});
     recordMonitorSources=[];
     if(recordMonitorContext){recordMonitorContext.close().catch(()=>{});recordMonitorContext=null}
@@ -228,6 +230,7 @@
 
   async function startRecordMonitor(recordTrackId){
     stopRecordMonitor();
+    const token=recordMonitorToken;
     const Ctx=root.AudioContext||root.webkitAudioContext;
     if(!Ctx)throw new Error("This browser cannot synchronize the recording monitor.");
     recordMonitorContext=new Ctx();
@@ -236,14 +239,18 @@
     // trim value is measured from the actual recorder start instead of assuming
     // a fixed device speed.
     const beatBuffer=await blobBuffer(recordMonitorContext,beat.blob);
+    if(token!==recordMonitorToken||!recorder||recorder.state!=="recording"||recordingTrack!==recordTrackId)throw new Error("Recording monitor cancelled.");
     const monitorTracks=[];
     for(const def of TRACKS){
       if(def.id===recordTrackId)continue;
       const state=trackState[def.id];
       if(!state.blob||state.muted)continue;
-      monitorTracks.push({def,state,buffer:await blobBuffer(recordMonitorContext,state.blob)});
+      const buffer=await blobBuffer(recordMonitorContext,state.blob);
+      if(token!==recordMonitorToken||!recorder||recorder.state!=="recording"||recordingTrack!==recordTrackId)throw new Error("Recording monitor cancelled.");
+      monitorTracks.push({def,state,buffer});
     }
 
+    if(token!==recordMonitorToken||!recordMonitorContext)throw new Error("Recording monitor cancelled.");
     const startAt=recordMonitorContext.currentTime+(RECORD_PREROLL_MS/1000);
     recordingSyncTrimMs=Math.max(
       RECORD_PREROLL_MS,
@@ -332,6 +339,7 @@
           const heard=TRACKS.filter(t=>t.id!==trackId&&trackState[t.id].blob&&!trackState[t.id].muted).map(t=>t.label);
           setStatus("Recording "+TRACKS.find(t=>t.id===trackId).label+". Headphones: beat"+(heard.length?" + "+heard.join(" + "):"")+" are playing together. Tap STOP when finished.","recording");
         }catch(error){
+          if(String(error&&error.message||"").includes("cancelled"))return;
           if(recorder&&recorder.state==="recording")recorder.stop();
           setStatus(error.message||"Could not start synchronized monitoring.","error");
         }
