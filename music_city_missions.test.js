@@ -18,7 +18,7 @@ function check(name, fn) {
   catch (error) { console.error('not ok - ' + name); throw error; }
 }
 
-const emptyContext = { avatar: null, cafePerformances: 0 };
+const emptyContext = { avatar: null, cafePerformances: 0, collaborations: 0 };
 
 check('new players start by creating an artist', () => {
   const result = missions.career(state(), emptyContext);
@@ -64,7 +64,7 @@ check('the first cafe show advances to the fan goal', () => {
   const result = missions.career(state({
     name: 'Midnight Will', fans: 12,
     releases: [{ id: 'one', releaseStatus: 'released' }]
-  }), { avatar: null, cafePerformances: 1 });
+  }), { avatar: null, cafePerformances: 1, collaborations: 0 });
   assert.equal(result.current.id, 'battle-access');
   assert.deepEqual(missions.progressFor(result.current, state({ fans: 12 })), {
     value: 12, goal: 25, unit: 'fans', percent: 48
@@ -75,7 +75,7 @@ check('battle completion advances to management', () => {
   const result = missions.career(state({
     name: 'Midnight Will', fans: 30, battles: 1,
     releases: [{ id: 'one', releaseStatus: 'released' }]
-  }), { avatar: null, cafePerformances: 2 });
+  }), { avatar: null, cafePerformances: 2, collaborations: 0 });
   assert.equal(result.current.id, 'manager');
 });
 
@@ -83,18 +83,36 @@ check('underfunded manager task routes back to repeatable cafe shows', () => {
   const result = missions.career(state({
     name: 'Midnight Will', cash: 150, fans: 30, xp: 40, battles: 1,
     releases: [{ id: 'one', releaseStatus: 'released' }]
-  }), { avatar: null, cafePerformances: 2 });
+  }), { avatar: null, cafePerformances: 2, collaborations: 0 });
   assert.equal(result.current.id, 'manager');
   assert.equal(missions.missionHref(result.current, state({ cash: 150 })), 'hiphop_cafe.html');
   assert.equal(missions.missionHref(result.current, state({ cash: 200 })), 'manager.html');
 });
 
-check('manager and promotion advance to radio readiness', () => {
+check('hiring a manager makes collaboration the next career move', () => {
+  const result = missions.career(state({
+    name: 'Midnight Will', fans: 40, xp: 80, battles: 1,
+    manager: { hired: true },
+    releases: [{ id: 'one', releaseStatus: 'released' }]
+  }), { avatar: null, cafePerformances: 2, collaborations: 0 });
+  assert.equal(result.current.id, 'collaboration');
+});
+
+check('first collaboration advances to promotion', () => {
+  const result = missions.career(state({
+    name: 'Midnight Will', fans: 40, xp: 80, battles: 1,
+    manager: { hired: true },
+    releases: [{ id: 'one', releaseStatus: 'released' }]
+  }), { avatar: null, cafePerformances: 2, collaborations: 1 });
+  assert.equal(result.current.id, 'promotion');
+});
+
+check('collaboration and promotion advance to radio readiness', () => {
   const result = missions.career(state({
     name: 'Midnight Will', fans: 40, xp: 80, battles: 1,
     manager: { hired: true },
     releases: [{ id: 'one', releaseStatus: 'released', promotionCount: 1 }]
-  }), { avatar: null, cafePerformances: 2 });
+  }), { avatar: null, cafePerformances: 2, collaborations: 1 });
   assert.equal(result.current.id, 'radio-access');
 });
 
@@ -103,9 +121,9 @@ check('radio submission completes the first career run', () => {
     name: 'Midnight Will', fans: 120, xp: 175, battles: 1,
     manager: { hired: true },
     releases: [{ id: 'one', releaseStatus: 'released', promotionCount: 1, radioStatus: 'submitted' }]
-  }), { avatar: null, cafePerformances: 3 });
+  }), { avatar: null, cafePerformances: 3, collaborations: 1 });
   assert.equal(result.finished, true);
   assert.equal(result.completedCount, missions.MISSIONS.length);
 });
 
-console.log('10 mission loop tests passed');
+console.log('12 mission loop tests passed');
