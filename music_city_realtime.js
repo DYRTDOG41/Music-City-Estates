@@ -11,6 +11,7 @@
   var peers = new Map();
   var players = new Map();
   var messages = [];
+  var seenMessages = new Set();
   var voiceEnabled = false;
   var started = false;
   var ui = {};
@@ -62,6 +63,19 @@
     return map[file] || "music-city";
   }
 
+  function stablePlayerId() {
+    var key = "mce-social-player-id";
+    try {
+      var existing = root.localStorage && root.localStorage.getItem(key);
+      if (existing) return existing;
+      var created = (root.crypto && root.crypto.randomUUID) ? root.crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2));
+      if (root.localStorage) root.localStorage.setItem(key, created);
+      return created;
+    } catch (error) {
+      return sessionId;
+    }
+  }
+
   function safeParse(value, fallback) {
     try { return JSON.parse(value || "null") || fallback; } catch (error) { return fallback; }
   }
@@ -92,7 +106,7 @@
         if (/^#[0-9a-f]{6}$/i.test(saved.color || "")) color = saved.color;
       }
     } catch (error) {}
-    return { id: sessionId, name: String(name).slice(0, 24), role: String(role).slice(0, 20), color: color, voice: voiceEnabled };
+    return { id: sessionId, playerId: stablePlayerId(), name: String(name).slice(0, 24), role: String(role).slice(0, 20), color: color, voice: voiceEnabled };
   }
 
   function loadScript(src) {
@@ -178,6 +192,49 @@
     });
   }
 
+  function appendMessage(message) {
+    if (!message || !message.id || seenMessages.has(message.id)) return false;
+    seenMessages.add(message.id);
+    messages.push(message);
+    messages = messages.slice(-40);
+    renderMessages();
+    return true;
+  }
+
+  async function loadRoomHistory(roomId) {
+    if (!client) return;
+    try {
+      var response = await client
+        .from("room_messages")
+        .select("client_message_id,player_id,name,role,color,body,created_at")
+        .eq("room", roomId)
+        .order("created_at", { ascending: false })
+        .limit(40);
+      if (response.error) throw response.error;
+      var rows = (response.data || []).slice().reverse();
+      messages = [];
+      seenMessages.clear();
+      rows.forEach(function (row) {
+        var message = {
+          id: row.client_message_id,
+          playerId: row.player_id,
+          name: row.name,
+          role: row.role,
+          color: row.color,
+          text: row.body,
+          sentAt: new Date(row.created_at).getTime()
+        };
+        if (!seenMessages.has(message.id)) {
+          seenMessages.add(message.id);
+          messages.push(message);
+        }
+      });
+      renderMessages();
+    } catch (error) {
+      if (ui.status) ui.status.textContent = "Live now. Recent room history could not load.";
+    }
+  }
+
   function renderMessages() {
     if (!ui.messages) return;
     ui.messages.innerHTML = "";
@@ -191,14 +248,38 @@
     emitUpdate();
   }
 
-  function sendChat(text) {
+  async function sendChat(text) {
     var body = String(text || "").trim().slice(0, 280);
-    if (!body || !channel) return;
+    if (!body || !channel || !client) return;
     var p = profile();
-    var msg = { id: sessionId + ":" + Date.now(), playerId: sessionId, name: p.name, role: p.role, color: p.color, text: body, sentAt: Date.now() };
-    messages.push(msg);
-    renderMessages();
+    var msg = {
+      id: sessionId + ":" + Date.now(),
+      playerId: p.playerId,
+      name: p.name,
+      role: p.role,
+      color: p.color,
+      text: body,
+      sentAt: Date.now()
+    };
+    appendMessage(msg);
+
+    // Broadcast keeps the room instant; the database insert makes the
+    // conversation visible to players who enter a few minutes later.
     channel.send({ type: "broadcast", event: "chat", payload: msg });
+    try {
+      var response = await client.from("room_messages").insert({
+        client_message_id: msg.id,
+        room: roomForPage(),
+        player_id: msg.playerId,
+        name: msg.name,
+        role: msg.role,
+        color: msg.color,
+        body: msg.text
+      });
+      if (response.error) throw response.error;
+    } catch (error) {
+      if (ui.status) ui.status.textContent = "Message sent live, but history save is retrying.";
+    }
   }
 
   function rebuildPresence() {
@@ -320,9 +401,21 @@
     channel.on("presence", { event: "leave" }, rebuildPresence);
     channel.on("broadcast", { event: "chat" }, function (packet) {
       var msg = packet && packet.payload;
-      if (!msg || msg.playerId === sessionId) return;
-      messages.push(msg);
-      renderMessages();
+      if (!msg || msg.id && seenMessages.has(msg.id)) return;
+      appendMessage(msg);
+    });
+    channel.on("postgres_changes", { event: "INSERT", schema: "public", table: "room_messages", filter: "room=eq." + roomId }, function (packet) {
+      var row = packet && packet.new;
+      if (!row) return;
+      appendMessage({
+        id: row.client_message_id,
+        playerId: row.player_id,
+        name: row.name,
+        role: row.role,
+        color: row.color,
+        text: row.body,
+        sentAt: new Date(row.created_at).getTime()
+      });
     });
     channel.on("broadcast", { event: "voice-ready" }, function (packet) {
       var data = packet && packet.payload;
@@ -333,7 +426,8 @@
     channel.subscribe(async function (status) {
       if (status === "SUBSCRIBED") {
         await channel.track(profile());
-        if (ui.status) ui.status.textContent = "Connected. Chat updates instantly across devices.";
+        await loadRoomHistory(roomId);
+        if (ui.status) ui.status.textContent = "Connected. Live chat and recent room history are synced across devices.";
       } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
         if (ui.status) ui.status.textContent = "Realtime connection is retrying…";
       }
