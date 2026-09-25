@@ -108,9 +108,22 @@
       action: "MEET MANAGERS",
       href: "manager.html",
       route: function (state) { return Number(state.cash || 0) >= 200 ? "manager.html" : "hiphop_cafe.html"; },
-      reward: "Managers unlock promotion, radio, and Sync Cinema.",
+      reward: "Managers unlock collaboration introductions, promotion, radio, and Sync Cinema.",
       progress: function (state) { return { value: Number(state.cash || 0), goal: 200, unit: "cash" }; },
       complete: function (state) { return Boolean(state.manager && state.manager.hired); }
+    },
+    {
+      id: "collaboration",
+      location: "Collaboration Network",
+      onsite: "Have your manager make an introduction outside your home scene. Choose Latin Quarter, Velvet Grove, Country Crossings, or Global Sound and complete the session.",
+      title: "Complete Your First Collaboration",
+      description: "Use your manager to connect with an artist from another district and share audiences.",
+      action: "ARRANGE A COLLAB",
+      href: "collaboration.html",
+      reward: "Cross-district collaborations build fans, XP, reputation, and relationship capital for both artists.",
+      complete: function (state, context) {
+        return Number(context && context.collaborations || 0) > 0;
+      }
     },
     {
       id: "promotion",
@@ -168,16 +181,20 @@
 
   function contextFromStorage(storage) {
     var source = storage || (root && root.localStorage);
-    if (!source) return { avatar: null, cafePerformances: 0 };
+    if (!source) return { avatar: null, cafePerformances: 0, collaborations: 0 };
     return {
       avatar: safeParse(source.getItem("mceAvatar")),
-      cafePerformances: Math.max(0, Number(source.getItem("mceCafePerformances")) || 0)
+      cafePerformances: Math.max(0, Number(source.getItem("mceCafePerformances")) || 0),
+      collaborations: (function () {
+        var collabs = safeParse(source.getItem("mceCollaborationsV1"));
+        return Array.isArray(collabs) ? collabs.length : 0;
+      })()
     };
   }
 
   function career(state, context) {
     var player = state || {};
-    var facts = context || { avatar: null, cafePerformances: 0 };
+    var facts = context || { avatar: null, cafePerformances: 0, collaborations: 0 };
     var completed = [];
     var current = null;
     for (var i = 0; i < MISSIONS.length; i++) {
