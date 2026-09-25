@@ -1,11 +1,10 @@
 /* Music City Estates - Hybrid AI Studio Engine
  *
  * Provider architecture:
- *   1. Music City Native: works now in-browser as a self-contained instrumental prototype.
- *      It is intentionally labeled a prototype; it is not a trained foundation model yet.
- *      A self-hosted model such as ACE-Step can replace this provider later without changing
- *      the recording booth contract.
- *   2. Suno Premium: secure-backend provider slot. No API key is stored in the browser.
+ *   1. ElevenLabs Music: primary secure-backend provider for the review build.
+ *      The browser sends only session inputs; ELEVENLABS_API_KEY stays on the server.
+ *   2. Music City Native: self-contained browser fallback for offline/demo continuity.
+ *   3. Additional providers remain optional adapters and do not receive credentials here.
  *
  * NEVER place provider API keys in this file.
  */
@@ -31,11 +30,11 @@
     },
     elevenlabs: {
       id: "elevenlabs",
-      name: "ElevenLabs Music",
+      name: "ElevenLabs Music v2.5",
       live: true,
       requiresBackend: true,
       output: "music",
-      legacy: true
+      description: "Primary Music City review provider through the secure server adapter."
     },
     "stable-audio": {
       id: "stable-audio",
