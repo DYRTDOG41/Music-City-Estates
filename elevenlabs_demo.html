@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Music City Estates × ElevenLabs API Demo</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#05070a;--panel:#0b1017;--panel2:#101722;--line:#273344;--text:#f7fbff;--muted:#9bacc0;--accent:#63e6be;--cyan:#4cc9f0;--warn:#ffd166;--danger:#ff7b89}
+html{background:var(--bg)}
+body{margin:0;min-height:100vh;font-family:Arial,Helvetica,sans-serif;color:var(--text);background:radial-gradient(circle at 20% -10%,rgba(76,201,240,.18),transparent 32%),radial-gradient(circle at 90% 0%,rgba(99,230,190,.13),transparent 28%),linear-gradient(180deg,#07101a,#030507 72%)}
+button,a{font:inherit}
+.top{position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px max(14px,env(safe-area-inset-right)) 13px max(14px,env(safe-area-inset-left));border-bottom:1px solid #1d2a38;background:rgba(4,7,11,.91);backdrop-filter:blur(14px)}
+.brand{font-weight:1000;letter-spacing:.08em;font-size:13px}.brand span{color:var(--accent)}
+.back{color:#dcecff;text-decoration:none;border:1px solid #33465b;border-radius:10px;padding:9px 11px;font-size:12px;font-weight:900}
+.shell{width:min(1040px,94%);margin:26px auto 70px}
+.hero{padding:26px 0 14px}.eyebrow{display:inline-flex;align-items:center;gap:8px;padding:6px 9px;border:1px solid #2e4a5d;border-radius:999px;background:#07131c;color:#bfefff;font-size:10px;font-weight:1000;letter-spacing:.1em}
+.hero h1{font-size:clamp(34px,7vw,70px);line-height:.98;letter-spacing:-.055em;margin:14px 0 12px;max-width:880px}
+.hero p{max-width:780px;color:#a9bbce;line-height:1.6;margin:0;font-size:15px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:18px}
+.card{border:1px solid var(--line);border-radius:18px;background:linear-gradient(145deg,rgba(13,20,30,.97),rgba(7,11,17,.98));padding:18px;box-shadow:0 18px 45px rgba(0,0,0,.24)}
+.card.full{grid-column:1/-1}.card h2{margin:0 0 7px;font-size:19px}.card p{margin:0;color:var(--muted);line-height:1.5;font-size:13px}
+.pill{display:inline-block;margin-bottom:10px;padding:4px 8px;border-radius:99px;background:#13202b;color:#9ab0c4;font-size:9px;font-weight:1000;letter-spacing:.08em}
+.pill.live{background:#123427;color:#bffbd8}.pill.ready{background:#162f3e;color:#c9f2ff}.pill.plan{background:#30280e;color:#ffe4a1}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+button,.btn{min-height:44px;border:1px solid #35506a;border-radius:10px;background:#0c1926;color:white;padding:10px 13px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-grid;place-items:center}
+button.primary,.btn.primary{border:0;background:linear-gradient(135deg,#3dd6c0,#4ab6e8);color:#001017}
+button:disabled{opacity:.5;cursor:not-allowed}
+.status{margin-top:12px;padding:11px 12px;border:1px solid #263c50;border-radius:11px;background:#071019;color:#a8bfd3;font-size:12px;line-height:1.5}
+.status.ok{border-color:#295f4b;color:#bffbd8}.status.warn{border-color:#5f5125;color:#ffe9ab}.status.error{border-color:#6d3440;color:#ffc0c8}
+audio{width:100%;margin-top:12px}
+.transcript{margin-top:12px;min-height:92px;padding:12px;border:1px solid #294158;border-radius:11px;background:#050b11;color:#eaf7ff;white-space:pre-wrap;font-size:13px;line-height:1.5}
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}.step{padding:12px;border:1px solid #26394d;border-radius:12px;background:#08111a}.step strong{display:block;font-size:11px;margin-bottom:5px;color:#dff7ff}.step span{color:#90a6ba;font-size:11px;line-height:1.4}
+.small{margin-top:18px;color:#72889d;font-size:10px;line-height:1.5}
+@media(max-width:760px){.grid,.flow{grid-template-columns:1fr}.card.full{grid-column:auto}.shell{width:min(96%,700px);margin-top:14px}.hero{padding-top:16px}.top{align-items:flex-start}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">MUSIC CITY ESTATES <span>× ELEVENLABS API</span></div>
+  <a class="back" href="record_music.html?studio=begenius&provider=elevenlabs">OPEN STUDIO →</a>
+</header>
+<main class="shell">
+  <section class="hero">
+    <span class="eyebrow">REVIEW BUILD • SECURE SERVER-SIDE INTEGRATION</span>
+    <h1>AI audio is part of the game loop, not a bolt-on.</h1>
+    <p>Music City Estates uses ElevenLabs as a secure provider layer for studio guidance, speech-to-text, and Eleven Music generation. The API key stays on the server. Players remain inside the career simulation while the audio tools become part of recording, catalog, release, radio, and performance progression.</p>
+  </section>
+
+  <section class="card full">
+    <span class="pill ready">INTEGRATION ARCHITECTURE</span>
+    <h2>One artist session → multiple ElevenLabs capabilities</h2>
+    <div class="flow">
+      <div class="step"><strong>1 • ENTER STUDIO</strong><span>The AI engineer can speak instructions and session feedback.</span></div>
+      <div class="step"><strong>2 • RECORD A TAKE</strong><span>The player's microphone take stays in the Music City recording flow.</span></div>
+      <div class="step"><strong>3 • TRANSCRIBE</strong><span>Scribe turns the performance into editable lyrics/session text.</span></div>
+      <div class="step"><strong>4 • CREATE + RELEASE</strong><span>Eleven Music can generate a track, then the record continues into the in-game career loop.</span></div>
+    </div>
+    <div class="actions">
+      <button class="primary" id="checkButton" type="button">CHECK LIVE CONNECTION</button>
+      <a class="btn" href="record_music.html?studio=begenius&provider=elevenlabs">OPEN BEGENIUS STUDIO</a>
+    </div>
+    <div class="status" id="connectionStatus">Ready to verify the secure ElevenLabs connection.</div>
+  </section>
+
+  <section class="grid">
+    <article class="card">
+      <span class="pill live">TEXT TO SPEECH</span>
+      <h2>Studio Engineer Voice</h2>
+      <p>Hear the in-game engineer welcome an artist into a session. This request goes through the Music City server; the browser never receives the ElevenLabs API key.</p>
+      <div class="actions"><button class="primary" id="engineerButton" type="button">▶ HEAR THE ENGINEER</button></div>
+      <audio id="engineerAudio" controls style="display:none"></audio>
+      <div class="status" id="engineerStatus">Ready.</div>
+    </article>
+
+    <article class="card">
+      <span class="pill live">SPEECH TO TEXT</span>
+      <h2>Lyric / Freestyle Transcription</h2>
+      <p>Record a short take and send it to Scribe. The transcript can become editable lyrics, captions, battle text, or session notes.</p>
+      <div class="actions">
+        <button class="primary" id="recordButton" type="button">● RECORD 10-SECOND TAKE</button>
+        <button id="transcribeButton" type="button" disabled>TRANSCRIBE TAKE</button>
+      </div>
+      <audio id="takeAudio" controls style="display:none"></audio>
+      <div class="transcript" id="transcript">Your transcript will appear here.</div>
+    </article>
+
+    <article class="card full">
+      <span class="pill plan">ELEVEN MUSIC v2.5</span>
+      <h2>Music generation is already wired into the studio adapter</h2>
+      <p>The production endpoint calls <strong>POST /v1/music</strong> with <strong>music_v2_5</strong>, keeps credentials server-side, returns playable audio to Music City, and preserves the song for the Artist Catalog and career system. Music API entitlement is controlled by the ElevenLabs account plan; the integration itself is already in the app.</p>
+      <div class="actions"><a class="btn primary" href="record_music.html?studio=begenius&provider=elevenlabs">TRY THE MUSIC WORKFLOW</a></div>
+      <div class="status">The studio uses one generation for both A/B local mix previews, reducing unnecessary API usage while keeping the comparison workflow.</div>
+    </article>
+  </section>
+
+  <p class="small">Prototype integration page for Music City Estates. ElevenLabs names and services are referenced to describe the connected API; this page does not claim an endorsement or partnership.</p>
+</main>
+<script>
+const DEFAULT_BACKEND="https://music-city-estates-api-willwill3515-5514s-projects.vercel.app";
+const query=new URLSearchParams(location.search);
+const backend=(query.get("apiBackend")||DEFAULT_BACKEND).replace(/\/$/,"");
+let takeBlob=null;
+let takeUrl="";
+let recorder=null;
+let stream=null;
+let chunks=[];
+
+function setStatus(id,message,state){
+  const el=document.getElementById(id);
+  el.textContent=message;
+  el.className="status"+(state?" "+state:"");
+}
+
+async function readError(response){
+  try{
+    const data=await response.json();
+    return data&&data.error?data.error:"Request failed.";
+  }catch(error){
+    return "Request failed.";
+  }
+}
+
+document.getElementById("checkButton").addEventListener("click",async()=>{
+  const button=document.getElementById("checkButton");
+  button.disabled=true;button.textContent="CHECKING...";
+  try{
+    const response=await fetch(backend+"/api/elevenlabs/status");
+    const data=await response.json();
+    if(data.connected){
+      setStatus("connectionStatus","Connected to ElevenLabs. Server key validated; TTS/STT endpoints are ready. Eleven Music remains subject to the account's Music API entitlement.","ok");
+    }else if(data.configured){
+      setStatus("connectionStatus",data.message||"The key is configured but could not be validated.","warn");
+    }else{
+      setStatus("connectionStatus",data.message||"Add ELEVENLABS_API_KEY to the server environment.","warn");
+    }
+  }catch(error){
+    setStatus("connectionStatus","Could not reach the Music City API server.","error");
+  }finally{
+    button.disabled=false;button.textContent="CHECK LIVE CONNECTION";
+  }
+});
+
+document.getElementById("engineerButton").addEventListener("click",async()=>{
+  const button=document.getElementById("engineerButton");
+  button.disabled=true;button.textContent="GENERATING VOICE...";
+  setStatus("engineerStatus","Asking ElevenLabs to voice the studio engineer...");
+  try{
+    const response=await fetch(backend+"/api/elevenlabs/tts",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({text:"Welcome to BeGenius Studio. Pick your beat, record your take, and I will help turn the session into your next Music City release."})
+    });
+    if(!response.ok)throw new Error(await readError(response));
+    const blob=await response.blob();
+    const audio=document.getElementById("engineerAudio");
+    if(audio.dataset.url)URL.revokeObjectURL(audio.dataset.url);
+    const url=URL.createObjectURL(blob);
+    audio.dataset.url=url;audio.src=url;audio.style.display="block";
+    setStatus("engineerStatus","Live ElevenLabs audio returned successfully.","ok");
+    await audio.play().catch(()=>{});
+  }catch(error){
+    setStatus("engineerStatus",error.message||"Voice generation failed.","error");
+  }finally{
+    button.disabled=false;button.textContent="▶ HEAR THE ENGINEER";
+  }
+});
+
+document.getElementById("recordButton").addEventListener("click",async()=>{
+  const button=document.getElementById("recordButton");
+  if(recorder&&recorder.state==="recording"){recorder.stop();return}
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    document.getElementById("transcript").textContent="Microphone recording is not supported in this browser.";
+    return;
+  }
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    recorder=new MediaRecorder(stream);chunks=[];
+    recorder.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
+    recorder.onstop=()=>{
+      takeBlob=new Blob(chunks,{type:recorder.mimeType||"audio/webm"});
+      if(takeUrl)URL.revokeObjectURL(takeUrl);
+      takeUrl=URL.createObjectURL(takeBlob);
+      const audio=document.getElementById("takeAudio");audio.src=takeUrl;audio.style.display="block";
+      stream.getTracks().forEach(track=>track.stop());stream=null;
+      button.textContent="● RECORD ANOTHER TAKE";
+      document.getElementById("transcribeButton").disabled=false;
+      document.getElementById("transcript").textContent="Take recorded. Tap Transcribe Take.";
+    };
+    recorder.start();
+    button.textContent="■ STOP RECORDING";
+    document.getElementById("transcript").textContent="Recording... speak a lyric, hook, freestyle, or session note.";
+    setTimeout(()=>{if(recorder&&recorder.state==="recording")recorder.stop()},10000);
+  }catch(error){
+    document.getElementById("transcript").textContent="Microphone permission is required for this demo.";
+  }
+});
+
+function blobToBase64(blob){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>{
+      const value=String(reader.result||"");
+      resolve(value.slice(value.indexOf(",")+1));
+    };
+    reader.onerror=()=>reject(new Error("Could not read the recorded take."));
+    reader.readAsDataURL(blob);
+  });
+}
+
+document.getElementById("transcribeButton").addEventListener("click",async()=>{
+  const button=document.getElementById("transcribeButton");
+  if(!takeBlob)return;
+  button.disabled=true;button.textContent="TRANSCRIBING...";
+  document.getElementById("transcript").textContent="Sending the take to ElevenLabs Scribe...";
+  try{
+    const audioBase64=await blobToBase64(takeBlob);
+    const response=await fetch(backend+"/api/elevenlabs/transcribe",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({audioBase64,mimeType:takeBlob.type||"audio/webm",filename:"music-city-review-take.webm"})
+    });
+    if(!response.ok)throw new Error(await readError(response));
+    const data=await response.json();
+    document.getElementById("transcript").textContent=data.text||"No speech was detected.";
+  }catch(error){
+    document.getElementById("transcript").textContent=error.message||"Transcription failed.";
+  }finally{
+    button.disabled=false;button.textContent="TRANSCRIBE TAKE";
+  }
+});
+
+window.addEventListener("beforeunload",()=>{
+  if(takeUrl)URL.revokeObjectURL(takeUrl);
+  if(stream)stream.getTracks().forEach(track=>track.stop());
+});
+</script>
+</body>
+</html>
