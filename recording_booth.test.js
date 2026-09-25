@@ -6,82 +6,80 @@ function check(name, fn) {
   catch (error) { console.error('not ok - ' + name); throw error; }
 }
 
-const booth = fs.readFileSync('record_music.html', 'utf8');
+const studio = fs.readFileSync('advanced_recording_studio.html', 'utf8');
+const engine = fs.readFileSync('unified_recording_studio.js', 'utf8');
+const legacy = fs.readFileSync('record_music.html', 'utf8');
 
-check('studio teaches the six-step standard song workflow', () => {
-  assert.match(booth, /1 • BEAT/);
-  assert.match(booth, /2 • LEAD/);
-  assert.match(booth, /3 • DOUBLES/);
-  assert.match(booth, /4 • AD-LIBS/);
-  assert.match(booth, /5 • AI ENGINEER/);
-  assert.match(booth, /6 • FINISHED/);
+check('there is one canonical guided studio', () => {
+  assert.match(studio, /ONE STUDIO • GUIDED MODE/);
+  assert.match(legacy, /mce-unified-studio-redirect/);
+  assert.match(legacy, /advanced_recording_studio\.html/);
 });
 
-check('studio records separate vocal layers', () => {
-  assert.match(booth, /const vocalTakes = \{lead:null,double:null,adlibs:null,harmony:null\}/);
-  assert.match(booth, /selectVocalTrack\('lead'\)/);
-  assert.match(booth, /selectVocalTrack\('double'\)/);
-  assert.match(booth, /selectVocalTrack\('adlibs'\)/);
-  assert.match(booth, /selectVocalTrack\('harmony'\)/);
+check('studio teaches a short beat-to-master workflow', () => {
+  assert.match(studio, />BEAT</);
+  assert.match(studio, />LEAD</);
+  assert.match(studio, />DOUBLE</);
+  assert.match(studio, />AD-LIBS</);
+  assert.match(studio, />BACKGROUNDS</);
+  assert.match(studio, />AI MASTER</);
 });
 
-check('AI Engineer exposes simple artist-facing styles and intensity', () => {
-  assert.match(booth, /CLEAN \/ NATURAL/);
-  assert.match(booth, /MODERN HIP-HOP/);
-  assert.match(booth, /TRAP/);
-  assert.match(booth, /MELODIC/);
-  assert.match(booth, /AGGRESSIVE/);
-  assert.match(booth, /RADIO READY/);
-  assert.match(booth, /engineerIntensity/);
+check('five vocal performance layers stay separate', () => {
+  ['lead','double','adlibs','harmony','background'].forEach(id => assert.match(engine, new RegExp('id:"'+id+'"')));
 });
 
-check('automatic engineer performs track-aware DSP', () => {
-  assert.match(booth, /createBiquadFilter/);
-  assert.match(booth, /createDynamicsCompressor/);
-  assert.match(booth, /createConvolver/);
-  assert.match(booth, /createDelay/);
-  assert.match(booth, /createStereoPanner/);
-  assert.match(booth, /roles=\{/);
+check('each layer has record play mute and volume controls', () => {
+  assert.match(engine, /record-layer/);
+  assert.match(engine, /play-layer/);
+  assert.match(engine, /mute-layer/);
+  assert.match(engine, /level-slider/);
 });
 
-check('ElevenLabs is the only studio AI provider', () => {
-  assert.match(booth, /value="elevenlabs"/);
-  assert.match(booth, /ElevenLabs Music v2\.5 — the only studio AI engine/);
-  assert.doesNotMatch(booth, /Suno/i);
-  assert.doesNotMatch(booth, /music-city-native/i);
+check('artist can play all raw layers together and rebalance live', () => {
+  assert.match(studio, /PLAY ALL TRACKS/);
+  assert.match(engine, /async function playAll/);
+  assert.match(engine, /updateLiveGain/);
+  assert.match(engine, /sessionNodes/);
 });
 
-check('studio API secret is never embedded in the browser page', () => {
-  assert.doesNotMatch(booth, /xi-api-key/i);
-  assert.doesNotMatch(booth, /process\.env/);
-  assert.match(booth, /API key never appears in this page or in GitHub/);
+check('AI Engineer produces one automatic master', () => {
+  assert.match(studio, /AI MIX &amp; MASTER/);
+  assert.match(engine, /async function renderMaster/);
+  assert.match(engine, /createBiquadFilter/);
+  assert.match(engine, /createDynamicsCompressor/);
+  assert.match(engine, /createConvolver/);
+  assert.match(engine, /createDelay/);
+  assert.match(engine, /createStereoPanner/);
 });
 
-check('lead cleanup uses ElevenLabs Voice Isolator', () => {
-  assert.match(booth, /async function cleanVoiceWithElevenLabs/);
-  assert.match(booth, /\/api\/elevenlabs\/isolate/);
-  assert.match(booth, /ElevenLabs is cleaning the lead vocal before the mix/);
+check('ElevenLabs vocal cleanup remains server-side', () => {
+  assert.match(engine, /\/api\/elevenlabs\/isolate/);
+  assert.doesNotMatch(studio, /xi-api-key/i);
+  assert.doesNotMatch(engine, /xi-api-key/i);
+  assert.doesNotMatch(engine, /ELEVENLABS_API_KEY/);
 });
 
-check('vocal transcription still uses ElevenLabs Scribe', () => {
-  assert.match(booth, /async function transcribeCurrentTake/);
-  assert.match(booth, /\/api\/elevenlabs\/transcribe/);
+check('studio can use ElevenLabs for an optional beat preview', () => {
+  assert.match(studio, /GENERATE AI BEAT/);
+  assert.match(engine, /MusicCityAI\.generate/);
+  assert.doesNotMatch(engine, /Suno/i);
 });
 
-check('studio engineer voice still uses ElevenLabs TTS', () => {
-  assert.match(booth, /async function playEngineerVoice/);
-  assert.match(booth, /\/api\/elevenlabs\/tts/);
+check('finished master saves to the Music City catalog', () => {
+  assert.match(engine, /MusicCityCatalog\.saveTrack/);
+  assert.match(engine, /MCE\.addRelease/);
 });
 
-check('recording over a selected beat remains available', () => {
-  assert.match(booth, /async function toggleVoiceRecording/);
-  assert.match(booth, /recordingBeatAudio=new Audio/);
+check('manager-booked collaboration completes only after master save', () => {
+  assert.match(engine, /mcePendingCollab/);
+  assert.match(engine, /completePendingCollab/);
+  assert.match(engine, /mceCollaborationsV1/);
 });
 
-check('AI Engineer creates clean and creative A-B mixes', () => {
-  assert.match(booth, /A • Clean Mix/);
-  assert.match(booth, /B • Creative Mix/);
-  assert.match(booth, /AI Engineer finished both mixes/);
+check('recording tells realtime voice and soundtrack to yield the microphone', () => {
+  assert.match(engine, /mce-audio-session/);
+  assert.match(engine, /source:"recording-studio"/);
 });
 
-console.log('11 guided AI engineer studio tests passed');
+console.log('11 unified guided studio tests passed');
