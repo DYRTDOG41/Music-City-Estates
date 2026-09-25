@@ -231,10 +231,26 @@
     const Ctx=root.AudioContext||root.webkitAudioContext;
     if(!Ctx)throw new Error("This browser cannot synchronize the recording monitor.");
     recordMonitorContext=new Ctx();
+
+    // Decode everything first. iPhones can take longer here, so the take's
+    // trim value is measured from the actual recorder start instead of assuming
+    // a fixed device speed.
+    const beatBuffer=await blobBuffer(recordMonitorContext,beat.blob);
+    const monitorTracks=[];
+    for(const def of TRACKS){
+      if(def.id===recordTrackId)continue;
+      const state=trackState[def.id];
+      if(!state.blob||state.muted)continue;
+      monitorTracks.push({def,state,buffer:await blobBuffer(recordMonitorContext,state.blob)});
+    }
+
     const startAt=recordMonitorContext.currentTime+(RECORD_PREROLL_MS/1000);
+    recordingSyncTrimMs=Math.max(
+      RECORD_PREROLL_MS,
+      (Date.now()-recordingStartedAt)+RECORD_PREROLL_MS
+    );
     const sources=[];
 
-    const beatBuffer=await blobBuffer(recordMonitorContext,beat.blob);
     const beatSource=recordMonitorContext.createBufferSource();
     beatSource.buffer=beatBuffer;
     const beatGain=recordMonitorContext.createGain();
@@ -243,11 +259,8 @@
     beatSource.start(startAt);
     sources.push(beatSource);
 
-    for(const def of TRACKS){
-      if(def.id===recordTrackId)continue;
-      const state=trackState[def.id];
-      if(!state.blob||state.muted)continue;
-      const buffer=await blobBuffer(recordMonitorContext,state.blob);
+    for(const item of monitorTracks){
+      const def=item.def,state=item.state,buffer=item.buffer;
       const source=recordMonitorContext.createBufferSource();
       const gain=recordMonitorContext.createGain();
       source.buffer=buffer;
@@ -258,13 +271,11 @@
         source.connect(gain).connect(pan).connect(recordMonitorContext.destination);
       }else source.connect(gain).connect(recordMonitorContext.destination);
       const trim=Math.max(0,Number(state.syncTrimMs||0))/1000;
-      const maxOffset=Math.max(0,buffer.duration-.01);
-      source.start(startAt,Math.min(trim,maxOffset));
+      source.start(startAt,Math.min(trim,Math.max(0,buffer.duration-.01)));
       sources.push(source);
     }
 
     recordMonitorSources=sources;
-    recordingSyncTrimMs=RECORD_PREROLL_MS;
     beatSource.onended=()=>{
       if(recorder&&recorder.state==="recording")recorder.stop();
     };
