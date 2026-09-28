@@ -1,0 +1,86 @@
+export const SIDES = ['North', 'East', 'South', 'West'];
+
+export const BOARD_SPACES = [
+  { id:'start', name:'Motor City Start', type:'corner', effect:'Collect $200,000 when passing.' },
+  { id:'n1', name:'Palmer Heights', type:'neighborhood', side:'North', price:100000, baseRent:10000 },
+  { id:'n2', name:'Seven Mile Commons', type:'neighborhood', side:'North', price:110000, baseRent:11000 },
+  { id:'n3', name:'University Row', type:'neighborhood', side:'North', price:120000, baseRent:12000 },
+  { id:'moment_n', name:'Motor City Moment', type:'event', side:'North' },
+  { id:'auto_n', name:'Great Lakes Motor Works', type:'auto', side:'North', price:200000 },
+  { id:'n4', name:'Fashion Avenue', type:'neighborhood', side:'North', price:130000, baseRent:13000 },
+  { id:'n5', name:'North End Gardens', type:'neighborhood', side:'North', price:140000, baseRent:14000 },
+  { id:'n6', name:'Grand Boulevard North', type:'neighborhood', side:'North', price:150000, baseRent:15000 },
+  { id:'n7', name:'Highland View', type:'neighborhood', side:'North', price:160000, baseRent:16000 },
+  { id:'corner_ne', name:'Downtown Junction', type:'corner', effect:'Safe transfer space.' },
+  { id:'e1', name:'Jefferson Harbor', type:'neighborhood', side:'East', price:170000, baseRent:17000 },
+  { id:'e2', name:'East River Village', type:'neighborhood', side:'East', price:180000, baseRent:18000 },
+  { id:'e3', name:'Island View', type:'neighborhood', side:'East', price:190000, baseRent:19000 },
+  { id:'moment_e', name:'Motor City Moment', type:'event', side:'East' },
+  { id:'auto_e', name:'Jefferson Electric Auto', type:'auto', side:'East', price:200000 },
+  { id:'e4', name:'Market East', type:'neighborhood', side:'East', price:200000, baseRent:20000 },
+  { id:'e5', name:'Marina Row', type:'neighborhood', side:'East', price:210000, baseRent:21000 },
+  { id:'e6', name:'Village Gardens', type:'neighborhood', side:'East', price:220000, baseRent:22000 },
+  { id:'e7', name:'Gratiot Commons', type:'neighborhood', side:'East', price:230000, baseRent:23000 },
+  { id:'corner_se', name:'Riverfront Transfer', type:'corner', effect:'Riverfront bonus space.' },
+  { id:'s1', name:'Southwest Village', type:'neighborhood', side:'South', price:240000, baseRent:24000 },
+  { id:'s2', name:'Vernor Commons', type:'neighborhood', side:'South', price:250000, baseRent:25000 },
+  { id:'s3', name:'Bridgeview', type:'neighborhood', side:'South', price:260000, baseRent:26000 },
+  { id:'moment_s', name:'Motor City Moment', type:'event', side:'South' },
+  { id:'auto_s', name:'Motor Foundry Trucks', type:'auto', side:'South', price:200000 },
+  { id:'s4', name:'Mercado District', type:'neighborhood', side:'South', price:270000, baseRent:27000 },
+  { id:'s5', name:'Clark Row', type:'neighborhood', side:'South', price:280000, baseRent:28000 },
+  { id:'s6', name:'River Works', type:'neighborhood', side:'South', price:290000, baseRent:29000 },
+  { id:'s7', name:'Junction Heights', type:'neighborhood', side:'South', price:300000, baseRent:30000 },
+  { id:'corner_sw', name:'City Hall Square', type:'corner', effect:'Civic center space.' },
+  { id:'w1', name:'Grandmont Park', type:'neighborhood', side:'West', price:310000, baseRent:31000 },
+  { id:'w2', name:'Rosedale Row', type:'neighborhood', side:'West', price:320000, baseRent:32000 },
+  { id:'w3', name:'Grand River Village', type:'neighborhood', side:'West', price:330000, baseRent:33000 },
+  { id:'moment_w', name:'Motor City Moment', type:'event', side:'West' },
+  { id:'auto_w', name:'River City Mobility', type:'auto', side:'West', price:200000 },
+  { id:'w4', name:'Joy District', type:'neighborhood', side:'West', price:340000, baseRent:34000 },
+  { id:'w5', name:'Rouge Park Estates', type:'neighborhood', side:'West', price:350000, baseRent:35000 },
+  { id:'w6', name:'West Warren Commons', type:'neighborhood', side:'West', price:360000, baseRent:36000 },
+  { id:'w7', name:'Tireman Heights', type:'neighborhood', side:'West', price:380000, baseRent:38000 },
+];
+
+export const LANDMARKS = [
+  { id:'casino', name:'Greek Casino', side:'All', price:350000, boost:0.05, x:0, z:0, type:'casino', description:'A citywide nightlife landmark. Ownership increases every neighborhood rent by 5%.' },
+  { id:'dog_n', name:'North Motor Dog Grill', side:'North', price:120000, boost:0.10, x:-4.8, z:5.7, type:'diner', description:'North Side diner traffic boosts nearby neighborhood values.' },
+  { id:'dog_e', name:'East Motor Dog Grill', side:'East', price:120000, boost:0.10, x:5.8, z:3.2, type:'diner', description:'East Side diner traffic boosts nearby neighborhood values.' },
+  { id:'dog_s', name:'South Motor Dog Grill', side:'South', price:120000, boost:0.10, x:4.0, z:-5.6, type:'diner', description:'South Side diner traffic boosts nearby neighborhood values.' },
+  { id:'dog_w', name:'West Motor Dog Grill', side:'West', price:120000, boost:0.10, x:-5.8, z:-3.0, type:'diner', description:'West Side diner traffic boosts nearby neighborhood values.' },
+  { id:'music', name:'Motor Music House', side:'North', price:220000, boost:0.15, x:1.7, z:5.7, type:'music', description:'Concert traffic and entertainment spending increase North Side rents.' },
+  { id:'market', name:'East Market Hall', side:'East', price:190000, boost:0.15, x:5.8, z:-2.1, type:'market', description:'Retail and food traffic increase East Side rents.' },
+  { id:'bridge', name:'Bridge Works', side:'South', price:230000, boost:0.15, x:-1.2, z:-5.8, type:'factory', description:'Industry and redevelopment increase South Side rents.' },
+  { id:'auto_center', name:'Auto Heritage Center', side:'West', price:240000, boost:0.15, x:-5.8, z:2.1, type:'auto', description:'Automotive tourism and events increase West Side rents.' },
+];
+
+export const MOTOR_CITY_MOMENTS = [
+  { id:'casino_visit', title:'Night Out', text:'Head to Greek Casino. Try your luck, then return to your board position.', action:'casino' },
+  { id:'test_track', title:'Test Track Challenge', text:'Head to Auto Heritage Center for a high-stakes test run.', action:'autoTest' },
+  { id:'food_run', title:'Late-Night Food Run', text:'Head to the nearest Motor Dog Grill and pick a mystery tray.', action:'diner' },
+  { id:'music_show', title:'Motor Music Showcase', text:'Head to Motor Music House. Pick a stage door and see whether the show pays off.', action:'music' },
+  { id:'festival', title:'Neighborhood Festival', text:'A neighborhood festival boosts your business traffic. Collect $40,000.', cash:40000 },
+  { id:'grant', title:'Development Grant', text:'You receive a redevelopment grant. Collect $60,000.', cash:60000 },
+  { id:'repair', title:'Street Repair Bill', text:'Infrastructure repairs hit your portfolio. Pay $25,000.', cash:-25000 },
+  { id:'parking', title:'Parking Trouble', text:'Tow and storage fees cost you $15,000.', cash:-15000 },
+  { id:'tax_break', title:'Small Business Tax Break', text:'A city incentive saves you $35,000.', cash:35000 },
+  { id:'construction', title:'Construction Delay', text:'A project delay costs $30,000.', cash:-30000 },
+  { id:'traffic_stop', title:'Traffic Stop', text:'A patrol cruiser pulls in behind your vehicle. Pull over and see how the stop resolves.', action:'encounter', encounter:'trafficStop' },
+  { id:'car_show', title:'Car Show Invitation', text:'Your current ride has been selected for the Motor City Auto Show. Enter it for a chance at cash, rims, or a vehicle prize.', action:'encounter', encounter:'carShow' },
+  { id:'dealer_prize', title:'Dealer Prize', text:'You won a Motor Gallery prize drawing. Head to the car lot and reveal your free vehicle upgrade.', action:'encounter', encounter:'dealerPrize' },
+  { id:'rim_giveaway', title:'Wheel Giveaway', text:'A local custom shop picked your number. Head to the garage and claim a free premium rim package.', action:'encounter', encounter:'rimGiveaway' },
+  { id:'trade_in', title:'Trade-In Weekend', text:'A dealer promotion gives you a one-time discount toward your next vehicle purchase.', action:'encounter', encounter:'tradeIn' },
+  { id:'collector_unlock', title:'Collector Showcase', text:'A private auto showcase has opened a special collector-car opportunity for your garage.', action:'encounter', encounter:'collectorUnlock' },
+];
+
+export const PLAYER_COLORS = ['#2f80ed', '#e2584d', '#e0a83e', '#7f62c9'];
+
+export const GAME_CONFIG = {
+  startCash: 1000000,
+  passStartBonus: 200000,
+  maxPlayers: 4,
+  minPlayers: 2,
+  autoMultipliers: [0, 4, 8, 15, 25],
+  saveKey: 'detroit-empire-mvp-v1'
+};

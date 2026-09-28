@@ -1,0 +1,456 @@
+:root{--bg:#080d13;--panel:#111820;--panel2:#17212b;--line:#2b3948;--text:#f1f4f7;--muted:#96a6b5;--gold:#c89b4b;--gold2:#e0bc71;--blue:#376fa5;--green:#55784d;--south:#975b46;--west:#74558a;--danger:#c95b54}
+*{box-sizing:border-box}html,body{margin:0;background:radial-gradient(circle at top,#162332 0,#080d13 52%);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,select{font:inherit}button{cursor:pointer;color:var(--text);background:#18232d;border:1px solid var(--line);border-radius:12px;min-height:44px;padding:0 14px}button:hover{border-color:#5b7084}button:disabled{opacity:.42;cursor:not-allowed}.primary{background:linear-gradient(180deg,#d4aa5a,#ac7e34);color:#101010;border-color:#e0bc71;font-weight:800}.app{max-width:1500px;margin:0 auto;padding:18px}.topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px}.brand{display:flex;align-items:center;gap:12px}.brandmark{width:50px;height:50px;border-radius:14px;border:1px solid #8b6b35;background:linear-gradient(145deg,#d7b265,#5d4522);display:grid;place-items:center;color:#111;font-weight:950;font-size:20px}.brand h1{font-size:22px;margin:0}.brand p{margin:3px 0 0;color:var(--muted);font-size:13px}.top-actions{display:flex;gap:8px;flex-wrap:wrap}.game-grid{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:14px}.stage-card{background:rgba(12,18,25,.82);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.24)}#game3d{height:650px;min-height:480px;position:relative}#game3d canvas{width:100%;height:100%;display:block;touch-action:pan-y}.camera-bar{display:flex;gap:8px;flex-wrap:wrap;padding:10px;border-top:1px solid var(--line);background:#0e151d}.status-row{display:flex;gap:10px;flex-wrap:wrap;padding:0 0 12px}.status-pill{background:rgba(17,24,32,.85);border:1px solid var(--line);border-radius:12px;padding:9px 12px;font-size:13px}.status-pill span{color:var(--muted);display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em}.sidebar{display:flex;flex-direction:column;gap:12px}.panel{background:rgba(17,24,32,.9);border:1px solid var(--line);border-radius:16px;padding:14px}.eyebrow{text-transform:uppercase;letter-spacing:.12em;color:var(--gold2);font-size:10px;font-weight:800}.turn-card h2,.inspector h2{margin:5px 0 2px;font-size:20px}.big-money{font-size:25px;font-weight:900;margin-top:8px}.meta-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:12px}.meta-grid div,.metric{border:1px solid var(--line);background:#0d141b;border-radius:10px;padding:8px}.meta-grid span,.metric span{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.06em}.meta-grid strong,.metric strong{font-size:13px}.players{display:grid;gap:7px}.player-card{display:flex;gap:9px;align-items:center;border:1px solid var(--line);border-radius:11px;padding:8px;background:#0e151d}.player-card.active{border-color:var(--gold);background:#1b1b16}.player-dot{width:12px;height:12px;border-radius:50%;box-shadow:0 0 0 3px rgba(255,255,255,.07)}.player-card span{display:block;color:var(--muted);font-size:11px;margin-top:2px}.inspect-head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.owner-badge{border:1px solid var(--line);border-radius:999px;padding:5px 8px;color:var(--muted);font-size:11px}.metrics{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:12px}.description{color:var(--muted);font-size:13px;line-height:1.45;margin:12px 0}.action-stack{display:grid;gap:7px}.log{padding-left:18px;margin:9px 0 0;color:#b5c0ca;font-size:12px;line-height:1.5}.bottom-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.modal{position:fixed;inset:0;background:rgba(3,6,9,.74);display:none;align-items:center;justify-content:center;padding:18px;z-index:20;backdrop-filter:blur(8px)}.modal.open{display:flex}.modal-card{width:min(520px,100%);background:#101820;border:1px solid #405064;border-radius:20px;padding:22px;box-shadow:0 25px 90px rgba(0,0,0,.55)}.modal-card.wide{width:min(650px,100%)}.modal-card h2{margin:5px 0 8px}.modal-card p{color:#b7c3ce;line-height:1.5}.modal-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}.slots{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0}.slots div{font-size:34px;text-align:center;padding:20px;border:1px solid #4a5b6c;border-radius:14px;background:#090e13}.tray-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:14px}.tray-grid button{min-height:72px}.mini-result{border:1px solid var(--line);background:#0c131a;border-radius:12px;padding:15px;font-size:20px;font-weight:800}.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);background:#1c2833;border:1px solid #45586a;padding:10px 15px;border-radius:999px;opacity:0;pointer-events:none;transition:.2s;z-index:30;box-shadow:0 12px 35px rgba(0,0,0,.3)}.toast.show{opacity:1;transform:translate(-50%,0)}.legal{font-size:11px;color:#6f8191;text-align:center;margin:14px 0 2px}.legend{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:12px}.legend div{border-radius:9px;padding:7px;text-align:center;font-size:11px;border:1px solid var(--line)}.north{background:#17263a}.east{background:#1c2b1c}.south{background:#342019}.west{background:#281c32}@media(max-width:980px){.game-grid{grid-template-columns:1fr}.sidebar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}#game3d{height:560px}}@media(max-width:650px){.app{padding:10px}.topbar{align-items:flex-start;flex-direction:column}.top-actions{width:100%}.top-actions button{flex:1}.game-grid{display:block}.sidebar{display:block}.panel{margin-top:10px}#game3d{height:500px}.camera-bar button{flex:1 1 28%}.legend{grid-template-columns:repeat(2,1fr)}.tray-grid{grid-template-columns:1fr}.meta-grid{grid-template-columns:repeat(3,1fr)}}
+
+.setup-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0}.setup-grid label{font-size:12px;color:var(--muted)}.setup-grid input{width:100%;margin-top:5px;min-height:44px;border-radius:10px;border:1px solid var(--line);background:#0c131a;color:var(--text);padding:0 11px;font-size:16px}.setup-grid input:focus{outline:2px solid var(--gold);outline-offset:1px}@media(max-width:560px){.setup-grid{grid-template-columns:1fr}}
+
+/* Board-game presentation pass */
+.stage-card{background:linear-gradient(180deg,#1b241d,#0c1116);border-color:#3f4a40}
+#game3d{background:radial-gradient(circle at center,#5d7356 0,#25372f 54%,#10161b 100%)}
+.deed-card{width:min(560px,96vw);background:#f5efe3;color:#17202a;border:0;border-radius:24px;overflow:hidden;box-shadow:0 35px 110px rgba(0,0,0,.55);padding:0}
+.deed-banner{padding:14px 18px;text-align:center;font-size:28px;font-weight:950;letter-spacing:.02em;background:linear-gradient(135deg,#13c9c5,#167d9c);color:white}
+.deed-body{padding:22px}
+.deed-kicker{text-transform:uppercase;letter-spacing:.14em;font-size:10px;font-weight:900;color:#586673}
+.deed-title{font-size:30px;line-height:1.05;margin:6px 0 4px;color:#0c1218}
+.deed-sub{color:#596673;font-size:13px;margin-bottom:18px}
+.deed-price{display:flex;justify-content:space-between;align-items:center;background:white;border:2px solid #1c2731;border-radius:14px;padding:12px 14px;margin:12px 0;font-weight:800}
+.deed-price strong{font-size:24px}
+.deed-table{display:grid;grid-template-columns:1fr auto;border:2px solid #1c2731;border-radius:14px;overflow:hidden;background:white}
+.deed-table div{padding:10px 12px;border-bottom:1px solid #cfd5d9}
+.deed-table div:nth-last-child(-n+2){border-bottom:0}
+.deed-table .value{text-align:right;font-weight:900}
+.deed-note{margin:14px 0 0;color:#4a5865;font-size:12px;line-height:1.45}
+.deed-actions{display:grid;grid-template-columns:1.25fr .75fr;gap:10px;margin-top:18px}
+.deed-actions button{min-height:52px;border-radius:14px}
+.deed-actions .buy-now{background:linear-gradient(180deg,#dcb665,#b98735);border:1px solid #9b6f2b;color:#111;font-weight:950}
+.deed-actions .pass-now{background:#e8edf0;color:#1d2831;border:1px solid #bdc7ce;font-weight:800}
+.board-hint{position:absolute;left:14px;top:14px;z-index:2;background:rgba(7,11,15,.72);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(9px);padding:8px 11px;border-radius:12px;color:#e9eef2;font-size:11px;pointer-events:none}
+@media(max-width:650px){.deed-title{font-size:25px}.deed-banner{font-size:24px}.deed-body{padding:16px}.deed-actions{grid-template-columns:1fr}.board-hint{font-size:10px;left:8px;top:8px}}
+
+
+/* Immersive full-screen game shell */
+html,body.immersive-body{width:100%;height:100%;overflow:hidden;background:#080d13}
+.immersive-body{overscroll-behavior:none}
+.immersive-game{position:fixed;inset:0;width:100vw;height:100dvh;overflow:hidden;background:#080d13}
+.immersive-stage{position:absolute!important;inset:0;width:100%!important;height:100%!important;min-height:0!important;background:radial-gradient(circle at center,#627a59 0,#26392f 58%,#0d1317 100%)!important}
+.immersive-stage canvas{display:block;width:100%!important;height:100%!important;touch-action:none}
+.hud-glass{background:rgba(8,13,19,.56);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:0 10px 30px rgba(0,0,0,.18)}
+.hud-top{position:absolute;left:max(12px,env(safe-area-inset-left));right:74px;top:max(12px,env(safe-area-inset-top));z-index:6;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border-radius:16px;pointer-events:none}
+.hud-brand{display:flex;align-items:center;gap:8px;min-width:0}.hud-mark{width:32px;height:32px;display:grid;place-items:center;border-radius:9px;background:linear-gradient(145deg,#dfbd74,#91672d);color:#111;font-size:12px;font-weight:950;flex:none}.hud-brand strong{display:block;font-size:13px;white-space:nowrap}.hud-brand span{display:block;font-size:11px;color:#b9c5cf;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px}.hud-money{text-align:right}.hud-money span{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#9fb0be}.hud-money strong{font-size:14px}
+.hud-menu{position:absolute;right:max(12px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));z-index:7;width:50px;height:50px;min-height:50px;padding:0;border-radius:16px;background:rgba(8,13,19,.62);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);font-size:20px;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+.hud-bottom{position:absolute;z-index:7;left:50%;bottom:max(16px,calc(env(safe-area-inset-bottom) + 8px));transform:translateX(-50%);display:flex;align-items:center;gap:8px}
+.dice-chip{min-width:78px;height:54px;padding:8px 11px;border-radius:16px;display:flex;flex-direction:column;justify-content:center;pointer-events:none}.dice-chip span{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#a9b7c2}.dice-chip strong{font-size:12px;white-space:nowrap}
+.roll-fab{min-width:104px;height:56px;border-radius:18px!important;font-size:17px;letter-spacing:.06em;box-shadow:0 12px 30px rgba(0,0,0,.3)}
+.end-fab{height:54px;min-width:88px;border-radius:16px!important;background:rgba(8,13,19,.65)!important;border:1px solid rgba(255,255,255,.15)!important;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);font-size:12px}
+.tiny-status{position:absolute;left:max(12px,env(safe-area-inset-left));bottom:max(82px,calc(env(safe-area-inset-bottom) + 74px));z-index:6;display:flex;gap:8px;padding:6px 9px;border-radius:999px;font-size:10px;color:#c4ced6;pointer-events:none}
+.game-drawer{position:fixed;z-index:40;top:0;right:0;width:min(360px,90vw);height:100dvh;background:rgba(11,17,23,.96);border-left:1px solid rgba(255,255,255,.1);box-shadow:-24px 0 80px rgba(0,0,0,.45);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);transform:translateX(102%);transition:transform .22s ease;padding:calc(env(safe-area-inset-top) + 16px) 14px calc(env(safe-area-inset-bottom) + 18px);overflow:auto}
+.game-drawer.open{transform:translateX(0)}
+.drawer-shade{position:fixed;z-index:39;inset:0;background:rgba(0,0,0,.34);opacity:0;pointer-events:none;transition:opacity .2s}.drawer-shade.open{opacity:1;pointer-events:auto}
+.drawer-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:4px 2px 12px}.drawer-head h2{margin:4px 0 0;font-size:20px}.drawer-close{width:44px;height:44px;min-height:44px;padding:0;border-radius:50%;font-size:27px;background:#18222b}
+.drawer-section{padding:13px 0;border-top:1px solid rgba(255,255,255,.08)}.drawer-title{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:#8ea0af;margin-bottom:9px}.drawer-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.drawer-grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}.drawer-grid button{min-height:42px;font-size:12px}
+.drawer-muted{color:var(--muted);font-size:12px}
+.game-drawer .panel,.game-drawer .inspector{background:transparent;border:0;border-radius:0;padding:0}.game-drawer .players{display:grid;gap:6px}.game-drawer .player-card{background:rgba(255,255,255,.035)}
+.game-drawer .metrics{margin-top:10px}.game-drawer .log{margin-bottom:0}
+.immersive-body .modal{z-index:80}
+.immersive-body .toast{z-index:90}
+.immersive-body .topbar,.immersive-body .status-row,.immersive-body .legend,.immersive-body .camera-bar,.immersive-body .sidebar,.immersive-body .legal{display:none!important}
+@media(max-width:480px){.hud-top{right:66px}.hud-brand strong{font-size:12px}.hud-money strong{font-size:13px}.hud-bottom{gap:6px}.dice-chip{min-width:66px;padding:7px 8px}.roll-fab{min-width:96px}.end-fab{min-width:76px;padding:0 10px}.game-drawer{width:92vw}}
+
+
+/* Context-only interface */
+.minimal-hud{
+  position:absolute;z-index:7;left:max(14px,env(safe-area-inset-left));right:max(14px,env(safe-area-inset-right));
+  top:max(12px,env(safe-area-inset-top));display:flex;justify-content:space-between;align-items:flex-start;
+  pointer-events:none;text-shadow:0 2px 8px rgba(0,0,0,.85)
+}
+.minimal-turn strong,.minimal-money strong{display:block;font-size:15px;font-weight:900;letter-spacing:.01em}
+.minimal-turn span,.minimal-money span{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:rgba(238,244,248,.72);margin-top:2px}
+.minimal-money{text-align:right}
+.context-controls{
+  position:absolute;z-index:8;left:50%;bottom:max(18px,calc(env(safe-area-inset-bottom) + 10px));
+  transform:translateX(-50%);display:flex;align-items:center;gap:9px
+}
+.context-btn{
+  min-height:54px!important;padding:0 22px!important;border-radius:999px!important;
+  background:rgba(7,12,17,.12)!important;color:#fff!important;
+  border:1px solid rgba(255,255,255,.46)!important;
+  box-shadow:0 8px 26px rgba(0,0,0,.18)!important;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  font-weight:900;letter-spacing:.08em;text-shadow:0 2px 8px rgba(0,0,0,.8)
+}
+.context-btn:active{background:rgba(255,255,255,.12)!important;transform:scale(.97)}
+.context-btn[hidden],.dice-readout[hidden]{display:none!important}
+.roll-btn{font-size:17px}.end-btn{font-size:12px}
+.dice-readout{
+  color:#fff;text-align:center;min-width:74px;text-shadow:0 2px 8px rgba(0,0,0,.9);pointer-events:none
+}
+.dice-readout span{display:block;font-size:8px;text-transform:uppercase;letter-spacing:.12em;color:rgba(255,255,255,.7)}
+.dice-readout strong{font-size:12px}
+.phase-readout{
+  position:absolute;z-index:6;left:max(14px,env(safe-area-inset-left));
+  bottom:max(84px,calc(env(safe-area-inset-bottom) + 76px));
+  color:rgba(255,255,255,.6);font-size:9px;text-transform:uppercase;letter-spacing:.12em;
+  text-shadow:0 2px 8px rgba(0,0,0,.9);pointer-events:none
+}
+.immersive-body button,
+.immersive-body .primary,
+.immersive-body .modal button,
+.immersive-body .deed-actions button{
+  background:transparent!important;
+  box-shadow:none!important;
+  backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)
+}
+.immersive-body .modal-card button{
+  border:1px solid rgba(255,255,255,.4)!important;color:#fff!important
+}
+.immersive-body .deed-card button{
+  border:2px solid rgba(18,28,36,.7)!important;color:#17202a!important;text-shadow:none!important
+}
+.immersive-body .deed-actions .buy-now,
+.immersive-body .deed-actions .pass-now{background:transparent!important}
+.game-drawer,.drawer-shade,.hud-menu,.hud-top,.hud-bottom,.tiny-status{display:none!important}
+@media(max-width:480px){
+  .minimal-turn strong,.minimal-money strong{font-size:14px}
+  .context-btn{min-height:50px!important;padding:0 19px!important}
+  .roll-btn{font-size:16px}
+}
+
+
+/* Premium property deed system */
+.property-deed{position:relative;width:min(590px,96vw);max-height:min(88dvh,760px);overflow:auto;border-radius:26px;isolation:isolate;box-shadow:0 34px 110px rgba(0,0,0,.58);scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.property-deed::-webkit-scrollbar{display:none}
+.property-deed.standard{color:#17212a;background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(241,237,226,.99));border:2px solid rgba(28,39,48,.82)}
+.property-deed.standard::before{content:"";position:absolute;inset:8px;border:1px solid var(--district-accent);opacity:.46;border-radius:19px;pointer-events:none;z-index:3}
+.property-deed.luxury{color:#f5ead1;background:radial-gradient(circle at 18% 0%,rgba(213,177,89,.16),transparent 32%),radial-gradient(circle at 90% 100%,rgba(213,177,89,.1),transparent 34%),linear-gradient(145deg,#17140f 0%,#080908 55%,#141008 100%);border:1px solid #d5b45d;box-shadow:0 34px 120px rgba(0,0,0,.72),0 0 36px rgba(198,155,61,.14)}
+.property-deed.luxury::before,.property-deed.luxury::after{content:"";position:absolute;pointer-events:none;border-radius:20px;z-index:3}
+.property-deed.luxury::before{inset:7px;border:1px solid rgba(222,189,102,.72);background:linear-gradient(90deg,transparent 0 7%,rgba(224,190,95,.18) 7.2% 7.5%,transparent 7.7% 92.3%,rgba(224,190,95,.18) 92.5% 92.8%,transparent 93%),linear-gradient(0deg,transparent 0 7%,rgba(224,190,95,.14) 7.2% 7.5%,transparent 7.7% 92.3%,rgba(224,190,95,.14) 92.5% 92.8%,transparent 93%)}
+.property-deed.luxury::after{inset:14px;border:1px solid rgba(222,189,102,.24)}
+.deed-ornament{display:none}
+.property-deed.luxury .deed-ornament{display:block;position:absolute;width:62px;height:62px;z-index:4;pointer-events:none;opacity:.84}
+.property-deed.luxury .ornament-a{left:13px;top:13px;border-left:2px solid #d7b45b;border-top:2px solid #d7b45b;border-radius:18px 0 0 0}
+.property-deed.luxury .ornament-b{right:13px;bottom:13px;border-right:2px solid #d7b45b;border-bottom:2px solid #d7b45b;border-radius:0 0 18px 0}
+.property-close{position:absolute!important;right:15px;top:13px;z-index:8;width:42px;height:42px;min-height:42px!important;padding:0!important;border-radius:50%!important;font-size:25px!important;line-height:1}
+.property-deed.standard .property-close{color:#1b2730!important;border:1px solid rgba(27,39,48,.32)!important}
+.property-deed.luxury .property-close{color:#efd99c!important;border:1px solid rgba(222,189,102,.42)!important}
+.property-hero{position:relative;padding:26px 24px 20px;text-align:center}
+.property-deed.standard .property-hero{background:linear-gradient(135deg,var(--district-accent),rgba(47,59,68,.78));color:#fff;border-bottom:1px solid rgba(0,0,0,.18)}
+.property-deed.luxury .property-hero{padding-top:31px;border-bottom:1px solid rgba(220,182,86,.32);background:linear-gradient(180deg,rgba(214,176,82,.08),transparent)}
+.property-eyebrow{font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.18em;opacity:.8;margin-bottom:10px}
+.property-badges{display:flex;justify-content:center;gap:7px;flex-wrap:wrap;margin-bottom:10px}
+.property-class,.property-status{display:inline-flex;align-items:center;min-height:27px;padding:5px 9px;border-radius:999px;font-size:9px;font-weight:850;text-transform:uppercase;letter-spacing:.08em}
+.property-deed.standard .property-class,.property-deed.standard .property-status{border:1px solid rgba(255,255,255,.38);background:rgba(0,0,0,.09)}
+.property-deed.luxury .property-class{color:#f0d793;border:1px solid rgba(221,183,88,.65);background:rgba(216,175,72,.06)}
+.property-deed.luxury .property-status{color:#c9d1d7;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.03)}
+.property-hero h2{margin:4px auto 5px;max-width:470px;font-size:clamp(28px,7vw,42px);line-height:1.02;letter-spacing:-.025em}
+.property-deed.luxury .property-hero h2{color:#f7e7b9;text-shadow:0 1px 0 #6f5421,0 0 18px rgba(222,183,86,.18);font-family:Georgia,"Times New Roman",serif;font-weight:700;letter-spacing:.01em}
+.property-location{font-size:11px;text-transform:uppercase;letter-spacing:.16em;opacity:.78}
+.property-body{padding:20px 22px 23px}
+.property-section-label{font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.14em;margin-bottom:7px;opacity:.64}
+.property-explainer p{margin:0;font-size:14px;line-height:1.55}
+.property-deed.standard .property-explainer p{color:#35424c}
+.property-deed.luxury .property-explainer p{color:#d8d0c1}
+.property-effect{margin-top:11px;padding:11px 12px;border-radius:13px;font-size:12px;line-height:1.45}
+.property-deed.standard .property-effect{background:rgba(20,30,38,.045);border:1px solid rgba(20,30,38,.12);color:#26343e;box-shadow:inset 3px 0 0 var(--district-accent)}
+.property-deed.luxury .property-effect{background:rgba(215,177,82,.055);border:1px solid rgba(215,177,82,.22);color:#eadbad}
+.property-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:17px}
+.property-stat{min-height:67px;border-radius:14px;padding:10px 11px;display:flex;flex-direction:column;justify-content:center}
+.property-stat span{font-size:8px;text-transform:uppercase;letter-spacing:.11em;opacity:.62;margin-bottom:4px}
+.property-stat strong{font-size:14px;line-height:1.1}
+.property-stat.featured strong{font-size:20px}
+.property-deed.standard .property-stat{background:rgba(255,255,255,.66);border:1px solid rgba(28,39,48,.13)}
+.property-deed.standard .property-stat.featured{border-color:var(--district-accent);box-shadow:inset 3px 0 0 var(--district-accent)}
+.property-deed.luxury .property-stat{background:rgba(255,255,255,.025);border:1px solid rgba(224,191,102,.16)}
+.property-deed.luxury .property-stat.featured{background:linear-gradient(135deg,rgba(211,171,72,.09),rgba(255,255,255,.015));border-color:rgba(222,186,91,.42)}
+.property-deed.luxury .property-stat.featured strong{color:#f0d27f}
+.property-notice{margin-top:13px;padding:10px 12px;border-radius:12px;font-size:11px;line-height:1.4}
+.property-deed.standard .property-notice{background:#ece7db;color:#5c5146;border:1px solid #d4cab8}
+.property-deed.luxury .property-notice{background:rgba(255,255,255,.035);color:#bbb4a8;border:1px solid rgba(255,255,255,.1)}
+.property-actions{display:grid;grid-template-columns:1.35fr .85fr;gap:9px;margin-top:17px}
+.property-action{min-height:52px!important;border-radius:999px!important;font-weight:900!important;letter-spacing:.035em!important;font-size:12px!important}
+.property-deed.standard .property-action{color:#1a2730!important;border:1.5px solid rgba(23,35,44,.54)!important;background:transparent!important}
+.property-deed.standard .property-action.primary-action{border-color:var(--district-accent)!important;box-shadow:inset 0 0 0 1px rgba(0,0,0,.04)!important}
+.property-deed.luxury .property-action{color:#ead9aa!important;border:1px solid rgba(220,181,83,.46)!important;background:transparent!important}
+.property-deed.luxury .property-action.primary-action{border-color:#ddb858!important;box-shadow:inset 0 0 0 1px rgba(221,184,88,.18)!important;text-shadow:0 0 12px rgba(222,184,88,.2)}
+.property-action:active{transform:scale(.98)}
+@media(max-width:520px){.property-deed{width:95vw;max-height:86dvh;border-radius:22px}.property-hero{padding:22px 17px 17px}.property-body{padding:16px}.property-hero h2{font-size:29px}.property-stats{gap:6px}.property-stat{min-height:61px;padding:9px}.property-stat strong{font-size:13px}.property-stat.featured strong{font-size:18px}.property-actions{grid-template-columns:1fr}}
+
+
+/* In-game property preview image */
+.property-image-wrap{position:relative;width:100%;aspect-ratio:16/9;margin:0 0 17px;border-radius:17px;overflow:hidden;background:linear-gradient(145deg,#26343c,#11181d)}
+.property-image{display:block;width:100%;height:100%;object-fit:cover;transform:scale(1.002)}
+.property-image-shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.06),transparent 36%,rgba(0,0,0,.2))}
+.property-image-tag{position:absolute;left:10px;bottom:10px;padding:6px 9px;border-radius:999px;background:rgba(5,9,12,.6);border:1px solid rgba(255,255,255,.22);color:#fff;font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.11em;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.property-deed.standard .property-image-wrap{border:1px solid rgba(26,37,45,.18);box-shadow:0 10px 28px rgba(21,31,38,.13)}
+.property-deed.luxury .property-image-wrap{border:1px solid rgba(220,181,83,.46);box-shadow:0 16px 36px rgba(0,0,0,.38),inset 0 0 0 1px rgba(222,184,88,.14)}
+.property-deed.luxury .property-image-wrap::before{content:"";position:absolute;inset:5px;border:1px solid rgba(222,184,88,.24);border-radius:12px;z-index:2;pointer-events:none}
+.property-deed.luxury .property-image-tag{color:#f0dc9e;border-color:rgba(222,184,88,.45);background:rgba(14,11,7,.68)}
+@media(max-width:520px){.property-image-wrap{margin-bottom:13px;border-radius:14px}}
+
+
+/* Board block identification + arrival banner */
+.landing-banner{
+  position:absolute;z-index:9;left:50%;top:max(64px,calc(env(safe-area-inset-top) + 52px));
+  transform:translate(-50%,-12px) scale(.96);min-width:min(330px,84vw);max-width:88vw;
+  padding:9px 15px 11px;border-radius:15px;text-align:center;color:#fff;
+  background:linear-gradient(180deg,rgba(8,14,20,.82),rgba(6,10,14,.66));
+  border:1px solid rgba(126,200,255,.38);box-shadow:0 14px 40px rgba(0,0,0,.3);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  pointer-events:none;opacity:0;transition:opacity .18s ease,transform .2s ease;
+  text-shadow:0 2px 8px rgba(0,0,0,.75)
+}
+.landing-banner.show{opacity:1;transform:translate(-50%,0) scale(1)}
+.landing-banner span{display:block;font-size:8px;font-weight:850;letter-spacing:.14em;text-transform:uppercase;color:rgba(208,231,244,.78);margin-bottom:3px}
+.landing-banner strong{display:block;font-size:16px;line-height:1.08;font-weight:950;letter-spacing:.015em}
+@media(max-width:520px){
+  .landing-banner{top:max(59px,calc(env(safe-area-inset-top) + 47px));min-width:min(290px,82vw);padding:8px 12px 10px}
+  .landing-banner strong{font-size:14px}
+}
+
+
+/* Motor City Garage + vehicle progression */
+.garage-btn{font-size:10px!important;min-height:46px!important;padding:0 15px!important;border-color:rgba(98,190,255,.42)!important}
+.garage-card{position:relative;width:min(940px,96vw);max-height:90dvh;overflow:auto;padding:22px;border-radius:26px;color:#eef5f9;background:radial-gradient(circle at 20% 0%,rgba(36,145,220,.13),transparent 32%),linear-gradient(155deg,#111820,#080c11 62%,#11150f);border:1px solid rgba(105,193,255,.28);box-shadow:0 34px 120px rgba(0,0,0,.72);scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.garage-card::-webkit-scrollbar{display:none}
+.garage-close{position:absolute!important;right:13px;top:13px;width:42px;height:42px;min-height:42px!important;padding:0!important;border-radius:50%!important;font-size:24px!important;color:#e8f5ff!important;border:1px solid rgba(255,255,255,.25)!important;z-index:4}
+.garage-header{display:grid;grid-template-columns:1.4fr .7fr;gap:18px;padding:5px 48px 18px 2px;border-bottom:1px solid rgba(255,255,255,.1)}
+.garage-eyebrow,.garage-section-head small{font-size:9px;font-weight:900;letter-spacing:.16em;text-transform:uppercase;color:#6ec4ff}
+.garage-header h2{font-size:32px;margin:5px 0 6px}.garage-header p{margin:0;color:#9eb0bc;font-size:13px;line-height:1.45}
+.garage-profile{align-self:end;text-align:right;padding:11px 12px;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.09)}
+.garage-profile span,.garage-profile small{display:block;color:#93a6b3;font-size:9px;text-transform:uppercase;letter-spacing:.08em}.garage-profile strong{display:block;font-size:16px;margin:3px 0}
+.garage-fairness{margin:13px 0 4px;padding:10px 12px;border-radius:12px;background:rgba(69,166,226,.07);border:1px solid rgba(91,187,245,.18);font-size:11px;line-height:1.45;color:#b8c8d2}.garage-fairness b{display:block;margin-top:4px;color:#f0cf75}
+.garage-section-head{display:flex;justify-content:space-between;align-items:end;gap:10px;margin:20px 1px 9px}.garage-section-head h3{margin:2px 0 0;font-size:18px}.garage-section-head>span{font-size:10px;color:#8fa2af}
+.garage-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.garage-vehicle{min-width:0;padding:11px;border-radius:16px;background:linear-gradient(160deg,rgba(255,255,255,.055),rgba(255,255,255,.018));border:1px solid rgba(255,255,255,.1);transition:.18s transform,.18s border-color}
+.garage-vehicle.active{border-color:#67c5ff;box-shadow:inset 0 0 0 1px rgba(103,197,255,.16),0 0 24px rgba(55,156,220,.08)}
+.garage-vehicle[class*="tier-elite"],.garage-vehicle.tier-collector,.garage-vehicle.tier-achievement{background:radial-gradient(circle at 80% 0%,rgba(220,177,78,.12),transparent 36%),rgba(255,255,255,.025);border-color:rgba(218,179,86,.28)}
+.garage-vehicle-art{position:relative;height:94px;margin:-2px 0 8px;overflow:hidden;border-radius:12px;background:radial-gradient(ellipse at 50% 84%,rgba(86,169,219,.16),transparent 48%),linear-gradient(180deg,#17212a,#0d1217)}
+.garage-car-body{position:absolute;left:12%;right:10%;height:29%;bottom:23%;border-radius:38% 48% 22% 22%;background:linear-gradient(180deg,color-mix(in srgb,var(--garage-paint),white 18%),var(--garage-paint));box-shadow:inset 0 -5px 8px rgba(0,0,0,.3)}
+.garage-car-cabin{position:absolute;left:37%;right:28%;height:28%;bottom:45%;border-radius:50% 48% 18% 16%;background:linear-gradient(135deg,#6f9cb2,#253b48);border:4px solid color-mix(in srgb,var(--garage-paint),black 28%)}
+.garage-wheel{position:absolute;width:25px;height:25px;bottom:13%;border-radius:50%;background:radial-gradient(circle,#d4dbe0 0 17%,#717d85 18% 36%,#14181b 38% 68%,#07090b 69%);border:2px solid #111}.garage-wheel::after{content:"";position:absolute;inset:4px;border:2px solid #ced7dd;border-radius:50%}.wheel-a{left:21%}.wheel-b{right:16%}
+.model-offroad .garage-car-body,.model-suv .garage-car-body{height:35%;bottom:24%;border-radius:22%}.model-offroad .garage-car-cabin,.model-suv .garage-car-cabin{height:34%;bottom:50%;left:34%;right:22%}.model-offroad .garage-wheel{width:29px;height:29px;bottom:10%}
+.model-exotic .garage-car-body{height:22%;bottom:24%;border-radius:60% 55% 25% 28%}.model-exotic .garage-car-cabin{height:20%;bottom:42%;left:42%;right:29%}.model-classic .garage-car-body{height:31%;left:8%;right:7%}
+.garage-vehicle-head{display:flex;justify-content:space-between;gap:8px;align-items:start}.garage-vehicle-head small{display:block;color:#77bfe9;text-transform:uppercase;letter-spacing:.1em;font-size:8px}.garage-vehicle-head strong{display:block;font-size:14px;margin-top:2px}.garage-vehicle-head>span{font-size:8px;text-transform:uppercase;letter-spacing:.08em;color:#a6b6c0}
+.garage-vehicle p{min-height:47px;margin:8px 0;color:#9eafb9;font-size:10px;line-height:1.45}.garage-vehicle-meta{display:flex;justify-content:space-between;gap:7px;align-items:center;padding:7px 0;border-top:1px solid rgba(255,255,255,.07);font-size:9px}.garage-vehicle-meta span{color:#81929e;text-align:right}.garage-vehicle-meta b{font-size:11px}
+.garage-action,.garage-rim-btn{width:100%;min-height:40px!important;border-radius:999px!important;border:1px solid rgba(115,198,247,.35)!important;color:#e9f7ff!important;font-size:10px!important;font-weight:850!important}.garage-action.buy{border-color:rgba(222,184,88,.5)!important;color:#f2d68a!important}.garage-action.locked{opacity:.45}.garage-action.equipped{border-color:rgba(96,218,151,.32)!important;color:#8de2b2!important}
+.garage-rim-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.garage-rim{display:grid;grid-template-columns:48px 1fr auto;gap:9px;align-items:center;padding:9px;border-radius:14px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.08)}.garage-rim.active{border-color:rgba(102,195,255,.42)}.garage-rim strong{display:block;font-size:11px}.garage-rim small{display:block;font-size:8px;color:#8497a3;margin-top:2px}.garage-rim-btn{width:auto;min-height:34px!important;padding:0 9px!important}
+.rim-preview{position:relative;width:43px;height:43px;border-radius:50%;background:radial-gradient(circle,#171b1e 0 48%,#080a0c 49% 70%,#242a2f 71%);border:1px solid #343b40}.rim-preview span{position:absolute;inset:8px;border-radius:50%;background:repeating-conic-gradient(from 0deg,#dbe2e7 0 5deg,transparent 5deg calc(360deg / var(--spokes)));border:2px solid #c9d1d6}.finish-gold span{background:repeating-conic-gradient(from 0deg,#d8ad52 0 5deg,transparent 5deg calc(360deg / var(--spokes)));border-color:#d8ad52}.finish-dark span{background:repeating-conic-gradient(from 0deg,#68727a 0 5deg,transparent 5deg calc(360deg / var(--spokes)));border-color:#626b72}
+.garage-paints{display:flex;gap:9px;flex-wrap:wrap;padding:4px 2px 5px}.garage-paint{width:38px!important;height:38px!important;min-height:38px!important;padding:0!important;border-radius:50%!important;background:var(--paint)!important;border:3px solid rgba(255,255,255,.18)!important;box-shadow:inset 0 0 0 2px rgba(0,0,0,.24)!important}.garage-paint.active{outline:2px solid #fff;outline-offset:2px}
+
+/* Motor City Encounters */
+.encounter-card{position:relative;width:min(480px,92vw);padding:26px 22px 22px;border-radius:24px;text-align:center;color:#edf6fb;background:radial-gradient(circle at 50% -20%,rgba(54,167,235,.2),transparent 48%),linear-gradient(155deg,#131d25,#090d12);border:1px solid rgba(105,195,255,.32);box-shadow:0 32px 100px rgba(0,0,0,.66)}
+.encounter-icon{width:64px;height:64px;margin:0 auto 10px;display:grid;place-items:center;border-radius:50%;font-size:30px;font-weight:950;color:#92d5ff;border:1px solid rgba(112,204,255,.42);background:rgba(55,155,218,.08);box-shadow:0 0 28px rgba(47,162,232,.12)}
+.encounter-eyebrow{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#76c9fb;font-weight:900}.encounter-card h2{font-size:28px;margin:6px 0 9px}.encounter-card p{margin:0 auto 18px;max-width:390px;color:#b0c0ca;line-height:1.55;font-size:13px}.encounter-actions{display:grid;gap:8px}.encounter-actions button{min-height:48px!important;border-radius:999px!important;border:1px solid rgba(255,255,255,.3)!important;color:#edf7fc!important;font-weight:850!important}.outcome-vehicle .encounter-icon,.outcome-rim .encounter-icon,.outcome-unlock .encounter-icon{color:#efd27d;border-color:rgba(222,184,88,.55);background:rgba(222,184,88,.08)}.outcome-ticket .encounter-icon{color:#ff857c;border-color:rgba(255,102,93,.48);background:rgba(255,80,70,.07)}
+
+@media(max-width:760px){
+  .garage-card{width:96vw;max-height:88dvh;padding:16px;border-radius:22px}
+  .garage-header{grid-template-columns:1fr;padding-right:42px;gap:10px}.garage-header h2{font-size:26px}.garage-profile{text-align:left}
+  .garage-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .garage-rim-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:480px){
+  .context-controls{max-width:96vw}.garage-btn{padding:0 11px!important;font-size:9px!important}
+  .garage-grid{grid-template-columns:1fr}.garage-rim-grid{grid-template-columns:1fr}
+  .garage-vehicle p{min-height:0}.garage-card{padding:13px}.garage-section-head{margin-top:16px}
+  .garage-vehicle-art{height:88px}.encounter-card{padding:22px 17px 18px}.encounter-card h2{font-size:24px}
+}
+
+.garage-asset-credit{margin-top:18px;padding-top:11px;border-top:1px solid rgba(255,255,255,.07);font-size:8px;line-height:1.45;color:#667985;text-align:center}
+
+
+/* v25 garage actual-model previews */
+.garage-vehicle-art.actual-model{
+  position:relative;height:128px;margin:-2px 0 9px;overflow:hidden;border-radius:14px;
+  background:radial-gradient(ellipse at 50% 82%,rgba(92,183,238,.18),transparent 44%),linear-gradient(180deg,#17232c,#0b1015);
+  border:1px solid rgba(255,255,255,.07)
+}
+.garage-vehicle-art.actual-model img{
+  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transform:scale(1.02);
+  transition:opacity .22s ease
+}
+.garage-vehicle-art.actual-model.ready img{opacity:1}
+.garage-preview-loading{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;
+  color:#6f8796;font-size:8px;text-transform:uppercase;letter-spacing:.11em
+}
+.garage-preview-loading span{
+  width:23px;height:23px;border-radius:50%;border:2px solid rgba(255,255,255,.14);border-top-color:#68c4ff;
+  animation:garageSpin .8s linear infinite
+}
+.garage-vehicle-art.ready .garage-preview-loading{display:none}
+.garage-vehicle-art.preview-failed .garage-preview-loading b{font-size:0}
+.garage-vehicle-art.preview-failed .garage-preview-loading b::after{content:"3D preview unavailable";font-size:8px}
+.garage-preview-badge{
+  position:absolute;left:7px;bottom:7px;padding:5px 7px;border-radius:999px;background:rgba(5,10,14,.7);
+  border:1px solid rgba(103,197,255,.28);color:#bfe8ff;font-size:7px;font-weight:900;letter-spacing:.1em;
+  backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)
+}
+@keyframes garageSpin{to{transform:rotate(360deg)}}
+@media(max-width:480px){.garage-vehicle-art.actual-model{height:122px}}
+
+
+/* v32 always-open public places */
+.explore-btn{font-size:10px!important;border-color:rgba(102,207,255,.55)!important}
+.public-hub h2,.mall-card h2{font-size:30px;margin-bottom:6px}
+.public-place-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:18px 0}
+.public-place{min-height:126px!important;padding:16px!important;border-radius:18px!important;text-align:left!important;display:flex!important;flex-direction:column;align-items:flex-start!important;justify-content:flex-end!important;background:linear-gradient(160deg,rgba(27,42,54,.66),rgba(7,12,17,.34))!important}
+.public-place>span{font-size:27px;line-height:1;margin-bottom:auto;color:#83d3ff;text-shadow:0 0 18px rgba(75,190,255,.38)}
+.public-place strong{font-size:15px;margin-top:12px}.public-place small{display:block;color:#91a6b4;line-height:1.35;margin-top:4px}
+.public-place.casino-place{border-color:rgba(223,188,97,.58)!important}.public-place.casino-place>span{color:#efd278}
+.public-status{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:12px 14px;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:rgba(255,255,255,.025)}
+.public-status span{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:#7890a0}.public-status strong{text-align:right}.public-status small{grid-column:1/-1;color:#8195a3;margin-top:4px}
+.mall-directory{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:16px 0}
+.mall-directory>div{position:relative;padding:14px 13px 14px 48px;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:rgba(255,255,255,.025)}
+.mall-directory span{position:absolute;left:13px;top:15px;font:800 11px/1 monospace;color:#6fcaff}
+.mall-directory strong{display:block;font-size:13px}.mall-directory small{display:block;color:#8297a5;font-size:10px;line-height:1.35;margin-top:3px}
+.public-note{font-size:11px!important;color:#7e929f!important}
+@media(max-width:480px){
+  .context-controls{gap:6px}
+  .context-btn{padding:0 13px!important}
+  .public-place-grid,.mall-directory{grid-template-columns:1fr}
+  .public-place{min-height:100px!important}
+}
+
+
+/* v33 interactive 3D public interiors */
+.room-exit-btn{border-color:rgba(255,203,98,.68)!important;font-size:10px!important}
+.roulette-picks{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
+.roulette-picks button{min-height:76px!important;font-size:17px!important;font-weight:950!important}
+.roulette-picks button[data-roulette="red"]{border-color:rgba(255,87,96,.72)!important}
+.roulette-picks button[data-roulette="black"]{border-color:rgba(170,190,205,.42)!important}
+.cashier-balance{display:flex;align-items:center;justify-content:space-between;border:1px solid rgba(255,255,255,.14);border-radius:15px;padding:14px;margin:15px 0;background:rgba(255,255,255,.03)}
+.cashier-balance span{color:#8fa4b2;font-size:11px;text-transform:uppercase;letter-spacing:.12em}.cashier-balance strong{font-size:24px}
+@media(max-width:480px){.room-exit-btn{padding:0 12px!important}}
+
+
+/* v34 portfolio + Motor City Bank */
+.minimal-money{pointer-events:auto}
+.portfolio-chip{
+  pointer-events:auto!important;margin-top:6px!important;min-height:27px!important;padding:0 9px!important;
+  border-radius:999px!important;border:1px solid rgba(255,255,255,.32)!important;
+  color:#dff3ff!important;background:rgba(6,13,19,.2)!important;font-size:8px!important;
+  font-weight:900!important;letter-spacing:.09em!important;text-shadow:0 2px 6px rgba(0,0,0,.7)!important
+}
+.portfolio-chip b{color:#75d0ff}
+.portfolio-card,.bank-desk-card{
+  position:relative;width:min(760px,96vw);max-height:min(88dvh,820px);overflow:auto;
+  background:radial-gradient(circle at 85% 0%,rgba(52,166,230,.12),transparent 32%),linear-gradient(155deg,#111b23,#080d12);
+  border:1px solid rgba(109,197,247,.28);border-radius:25px;padding:21px;color:#edf7fc;
+  box-shadow:0 34px 120px rgba(0,0,0,.68);scrollbar-width:none
+}
+.portfolio-card::-webkit-scrollbar,.bank-desk-card::-webkit-scrollbar{display:none}
+.portfolio-close{position:absolute!important;right:14px;top:13px;width:38px;height:38px;min-height:38px!important;padding:0!important;border-radius:50%!important;font-size:22px!important}
+.portfolio-header{display:flex;justify-content:space-between;gap:20px;align-items:start;padding-right:42px}
+.portfolio-header h2{font-size:29px;margin:5px 0}.portfolio-cash{text-align:right}.portfolio-cash span{display:block;color:#7f96a5;font-size:9px;text-transform:uppercase;letter-spacing:.12em}.portfolio-cash strong{font-size:23px}
+.portfolio-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:15px 0 20px}
+.portfolio-summary>div{padding:11px;border-radius:13px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.025)}
+.portfolio-summary span{display:block;color:#7e94a2;font-size:8px;text-transform:uppercase;letter-spacing:.1em}.portfolio-summary strong{display:block;margin-top:4px;font-size:13px}
+.portfolio-section{margin-top:18px}.portfolio-section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.portfolio-section-head h3{font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin:0}.portfolio-section-head span{font-size:10px;color:#74cbff}
+.portfolio-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.portfolio-asset{padding:12px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:rgba(255,255,255,.025);cursor:pointer}
+.portfolio-asset:active{transform:scale(.985)}.portfolio-asset-top{display:flex;justify-content:space-between;gap:8px}.portfolio-asset small{color:#75c7f5;font-size:8px;text-transform:uppercase;letter-spacing:.08em}.portfolio-asset strong{display:block;font-size:13px;margin-top:2px}.portfolio-asset p{margin:7px 0;color:#8ea2ae;font-size:9px;line-height:1.4}
+.portfolio-protected{height:max-content;padding:4px 6px;border:1px solid rgba(110,220,164,.35);border-radius:999px;color:#8be0b4;font-size:7px;font-weight:900}
+.portfolio-values{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;border-top:1px solid rgba(255,255,255,.06);padding-top:7px}.portfolio-values span{color:#718793;font-size:7px}.portfolio-values b{display:block;color:#e5f1f7;font-size:9px;margin-top:2px}
+.portfolio-bank-note{margin-top:17px;padding:11px;border-radius:12px;border:1px solid rgba(220,182,86,.18);color:#a99a72;background:rgba(220,182,86,.035);font-size:9px;line-height:1.45}.portfolio-empty{padding:20px;text-align:center;color:#8095a2;border:1px dashed rgba(255,255,255,.12);border-radius:14px}
+.bank-place{border-color:rgba(216,180,93,.48)!important}.bank-place>span{color:#efd078!important}
+.bank-account-balance{display:flex;justify-content:space-between;align-items:center;padding:14px;margin:14px 0;border:1px solid rgba(216,180,93,.28);border-radius:14px;background:rgba(216,180,93,.035)}.bank-account-balance span{color:#9b8d69;font-size:10px;text-transform:uppercase}.bank-account-balance strong{font-size:24px}
+.bank-account-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.bank-account-grid>div{padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:12px}.bank-account-grid span{display:block;color:#8296a3;font-size:8px;text-transform:uppercase}.bank-account-grid b{display:block;margin-top:3px}
+.bank-desk-card header{padding-right:40px}.bank-desk-card h2{font-size:29px;margin:5px 0 3px}.bank-desk-card header p{color:#98aab5;font-size:11px}
+.bank-desk-summary{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:12px 14px;margin:13px 0;border-radius:13px;border:1px solid rgba(216,180,93,.2);background:rgba(216,180,93,.035)}.bank-desk-summary span{font-size:9px;text-transform:uppercase;color:#a08f65}.bank-desk-summary strong{text-align:right}.bank-desk-summary small{grid-column:1/-1;color:#8196a3}
+.bank-asset-list{display:grid;gap:7px}.bank-asset-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:11px;border:1px solid rgba(255,255,255,.08);border-radius:13px;background:rgba(255,255,255,.025)}.bank-asset-row small{color:#79c9f7;font-size:8px;text-transform:uppercase}.bank-asset-row strong{display:block;font-size:12px;margin-top:2px}.bank-asset-row span{display:block;color:#8196a2;font-size:9px;margin-top:3px}.bank-quote{text-align:right}.bank-quote b{display:block;color:#efd27d;font-size:13px;margin:2px 0 5px}.bank-quote button{min-height:32px!important;padding:0 11px!important;border-color:rgba(216,180,93,.4)!important;color:#efd27d!important;font-size:8px!important}
+.bank-confirm-values{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:15px 0}.bank-confirm-values>div{padding:12px;border:1px solid rgba(255,255,255,.09);border-radius:13px}.bank-confirm-values span{display:block;color:#8296a2;font-size:8px;text-transform:uppercase}.bank-confirm-values strong{display:block;font-size:18px;margin-top:4px}.bank-confirm-values>div:last-child strong{color:#efd27d}
+@media(max-width:560px){
+  .portfolio-summary{grid-template-columns:1fr 1fr}.portfolio-grid{grid-template-columns:1fr}
+  .portfolio-header{display:block}.portfolio-cash{text-align:left;margin-top:8px}
+  .portfolio-card,.bank-desk-card{padding:15px;border-radius:21px}
+  .bank-asset-row{grid-template-columns:1fr}.bank-quote{text-align:left;display:flex;align-items:center;gap:8px}.bank-quote small{margin-right:auto}
+}
+
+
+/* v39 Detroit Empire Neon City Remaster */
+.immersive-game::before{
+  content:"";position:absolute;inset:0;z-index:5;pointer-events:none;
+  background:
+    linear-gradient(180deg,rgba(2,5,12,.18),transparent 18%,transparent 78%,rgba(2,4,8,.2)),
+    radial-gradient(ellipse at center,transparent 48%,rgba(0,0,0,.30) 100%);
+  mix-blend-mode:multiply
+}
+.immersive-game::after{
+  content:"";position:absolute;inset:0;z-index:5;pointer-events:none;opacity:.34;
+  background-image:linear-gradient(rgba(255,255,255,.012) 1px,transparent 1px);
+  background-size:100% 4px
+}
+.minimal-hud{
+  z-index:12!important;top:max(14px,env(safe-area-inset-top))!important;
+  padding:0!important;text-shadow:none!important
+}
+.minimal-turn,.minimal-money{
+  position:relative;min-width:142px;padding:10px 13px!important;
+  border:1px solid rgba(125,205,255,.22);border-radius:15px;
+  background:linear-gradient(150deg,rgba(5,11,18,.72),rgba(13,23,34,.45));
+  backdrop-filter:blur(18px) saturate(1.35);-webkit-backdrop-filter:blur(18px) saturate(1.35);
+  box-shadow:0 14px 38px rgba(0,0,0,.28),inset 0 1px rgba(255,255,255,.05)
+}
+.minimal-turn::before,.minimal-money::before{
+  content:"";position:absolute;left:12px;right:12px;top:0;height:1px;
+  background:linear-gradient(90deg,transparent,#42baff,transparent);opacity:.7
+}
+.minimal-turn strong,.minimal-money strong{
+  font-size:16px!important;letter-spacing:.02em;color:#f7fbff;
+  text-shadow:0 0 16px rgba(80,185,255,.15)
+}
+.minimal-turn span,.minimal-money span{color:#8faabb!important;margin-top:3px!important}
+.minimal-money{text-align:right}
+.portfolio-chip{
+  border-color:rgba(81,190,255,.38)!important;
+  background:linear-gradient(180deg,rgba(25,89,128,.25),rgba(3,14,22,.12))!important;
+  box-shadow:inset 0 0 18px rgba(35,145,215,.08)!important
+}
+.context-controls{z-index:13!important;gap:8px!important}
+.context-btn{
+  background:linear-gradient(180deg,rgba(14,26,38,.54),rgba(5,10,16,.32))!important;
+  border:1px solid rgba(150,214,255,.34)!important;
+  box-shadow:0 12px 34px rgba(0,0,0,.3),inset 0 1px rgba(255,255,255,.06)!important;
+  backdrop-filter:blur(16px) saturate(1.4)!important;
+  -webkit-backdrop-filter:blur(16px) saturate(1.4)!important;
+  transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease!important
+}
+.context-btn:hover{
+  border-color:rgba(102,202,255,.72)!important;
+  box-shadow:0 14px 40px rgba(0,0,0,.34),0 0 20px rgba(40,164,235,.12)!important
+}
+.roll-btn{
+  min-width:112px!important;
+  border-color:rgba(86,196,255,.7)!important;
+  background:linear-gradient(180deg,rgba(26,130,196,.48),rgba(4,30,48,.28))!important;
+  box-shadow:0 14px 40px rgba(0,0,0,.34),0 0 26px rgba(44,172,255,.18),inset 0 1px rgba(255,255,255,.12)!important
+}
+.end-btn{border-color:rgba(244,194,91,.48)!important}
+.phase-readout{
+  z-index:12!important;padding:6px 10px;border-radius:999px;
+  background:rgba(5,10,16,.34);border:1px solid rgba(255,255,255,.1);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  color:rgba(207,228,242,.72)!important
+}
+.dice-readout{
+  padding:7px 10px;border-radius:13px;
+  background:rgba(4,10,16,.4);border:1px solid rgba(98,194,250,.22);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)
+}
+.immersive-stage canvas{filter:drop-shadow(0 0 1px rgba(77,176,235,.1))}
+.modal.open{background:rgba(2,5,9,.72)!important;backdrop-filter:blur(12px) saturate(1.2)!important}
+.toast{
+  background:linear-gradient(180deg,rgba(14,28,41,.94),rgba(6,12,18,.94))!important;
+  border-color:rgba(84,184,240,.34)!important;
+  box-shadow:0 15px 45px rgba(0,0,0,.42),0 0 26px rgba(45,165,230,.09)!important
+}
+@media(max-width:560px){
+  .minimal-turn,.minimal-money{min-width:0;padding:8px 10px!important;border-radius:13px}
+  .minimal-turn strong,.minimal-money strong{font-size:14px!important}
+  .minimal-turn span,.minimal-money span{font-size:8px!important}
+  .context-controls{max-width:96vw;gap:6px!important}
+  .context-btn{padding:0 16px!important}
+  .roll-btn{min-width:96px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  .context-btn{transition:none!important}
+}
+

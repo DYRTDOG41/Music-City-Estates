@@ -33,6 +33,19 @@ configured in `begenius_catalog.js`.
 
 Progress is saved automatically in the browser with `localStorage`.
 
+## Fusion board prototype
+
+Open `fusion_board.html` to play the separate four-borough board match. The 40-space board,
+cars, dice, producers, property income, manager, radio, and finale are adapted from the
+Detroit Empire prototype. Hip-Hop Heights opens the existing walkable street and its rooms
+in a board overlay; closing it returns to the same car, space, and turn. The BeGenius door
+requires four producer sounds and a landing on its studio space during a board match.
+
+The board's short recording action and the full BeGenius room currently have separate song
+state. Matches are saved on one device; separate-phone rooms and shared song playback still
+need a server. Country Crossings, Latin Quarter, and Global Sound have producer blocks and
+visible borough entrances, with walkable interiors to follow.
+
 The Live Freestyle feature is an MVP test path. It uses PeerJS public signaling so no private game server is required for early phone testing. Production multiplayer should move signaling, identity, moderation, room persistence, and anti-abuse controls to owned infrastructure.
 
 ## Project structure
@@ -74,4 +87,3 @@ ELEVENLABS_VOICE_ID=optional_voice_id
 ```
 
 Never place the ElevenLabs API key in GitHub, HTML, client JavaScript, or a query string. The Music API itself is subject to the ElevenLabs account's API entitlement.
-
