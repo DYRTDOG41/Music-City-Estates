@@ -1,3 +1,5 @@
+import { DISTRICTS } from './fusion-data.js?v=4';
+
 // Peer-to-peer playtest rooms for the Fusion Board.
 // The host is authoritative for turns and cash. No API key or paid backend required.
 // This is not production multiplayer: keep the host tab open; public PeerJS signalling
@@ -68,6 +70,7 @@ export class FusionRoom {
         '<button id="createFusionRoom" class="primary">Create online room</button>'+
         '<p id="phoneRoomStatus" role="status">For friends to join, keep this tab open.</p>';
       roster.after(panel);
+      this.renderCollab();
       document.getElementById('createFusionRoom').onclick=()=>this.hostRoom();
       return;
     }
@@ -82,6 +85,7 @@ export class FusionRoom {
       '<button type="submit">Send</button></form>'+
       '<p class="fusion-room-note">Text only. Host tab must stay open. Finished audio remains on the artist’s device; it is not shared through the room yet.</p>';
     roster.after(panel);
+    this.renderCollab();
     if(host)document.getElementById('copyRoomInvite').onclick=async()=>{
       try{await navigator.clipboard.writeText(this.inviteLink());this.updatePanel('Online invite copied for Messenger.');}
       catch(e){this.updatePanel('Copy this invite: '+this.inviteLink());}
@@ -92,6 +96,70 @@ export class FusionRoom {
       const input=document.getElementById('roomChat');this.sendChat(input.value);input.value='';
     };
     this.drawChat();
+  }
+  // Every artist carries their own producer cards in the phone, even off-turn.
+  // Exchanging a card is host-validated and changes only the recipient's missing slot.
+  renderCollab(){
+    const roster=document.querySelector('.phone-roster');
+    if(!roster)return;
+    let zone=document.getElementById('phoneCollabPanel');
+    if(!zone){zone=document.createElement('section');zone.id='phoneCollabPanel';zone.className='fusion-online-panel';}
+    roster.after(zone);
+    const me=this.active?this.engine.state.players.find(p=>p.id===this.seatId):this.engine.currentPlayer;
+    if(!me){zone.innerHTML='<h3>Producer network</h3><p>Connecting your artist seat…</p>';return;}
+    const owned=DISTRICTS.filter(d=>me.producerParts?.[d.id]);
+    const cards=DISTRICTS.map(d=>{
+      const part=me.producerParts?.[d.id];
+      return '<div class="fusion-prompt-card"><b>'+html(d.name)+'</b><span>'+
+        (part?html(part.name)+' · '+html(part.prompt)+(part.sharedBy?' <em>Shared by '+html(part.sharedBy)+'</em>':''):'Visit this producer or receive a card from a friend.')+
+        '</span></div>';
+    }).join('');
+    const receivers=this.active?this.engine.state.players.filter(p=>p.id!==me.id&&!p.bot):[];
+    const canOffer=owned.length>0&&receivers.length>0&&!me.song&&!this.engine.state.showcaseComplete&&
+      (this.role==='host'||Boolean(this.connection?.open));
+    const possible=DISTRICTS.filter(d=>me.producerParts?.[d.id]&&receivers.some(p=>!p.producerParts?.[d.id]&&!p.song));
+    zone.innerHTML='<h3>Producer network · '+owned.length+'/4 cards</h3>'+
+      '<p>Earn cards on producer blocks. You keep your card when you share it with a friend who needs that borough.</p>'+
+      '<div class="fusion-prompt-cards">'+cards+'</div>'+
+      (canOffer&&possible.length?'<form id="sharePromptForm" class="fusion-share-form">'+
+        '<label>Send to<select id="sharePromptArtist">'+receivers.map(p=>'<option value="'+html(p.id)+'">'+html(p.name)+'</option>').join('')+'</select></label>'+
+        '<label>Your card<select id="sharePromptDistrict">'+possible.map(d=>'<option value="'+html(d.id)+'">'+html(d.name)+'</option>').join('')+'</select></label>'+
+        '<button type="submit" class="primary">Share card</button></form>'+
+        '<p id="sharePromptStatus" role="status"></p>':
+        this.active?'<p>Connect another artist or collect a card they are missing to exchange prompts.</p>':'<p>Start an online room to exchange cards with artists on other phones.</p>')+
+      (owned.length===4?'<details class="fusion-song-draft"><summary>Preview your four-prompt song</summary>'+
+        '<textarea id="phoneSongDraft" readonly rows="8">'+html(this.ui.composePrompt(me))+'</textarea>'+
+        '<button id="copyPhoneSongPrompt" type="button">Copy song prompt</button>'+
+        '<p id="phonePromptCopyStatus" role="status"></p>'+
+        '<p>Bring this prompt to BeGenius Studio when you land there to finish the song.</p></details>':'');
+    document.getElementById('sharePromptForm')?.addEventListener('submit',event=>{
+      event.preventDefault();
+      const target=document.getElementById('sharePromptArtist').value;
+      const district=document.getElementById('sharePromptDistrict').value;
+      this.sharePart(target,district);
+    });
+    document.getElementById('copyPhoneSongPrompt')?.addEventListener('click',async()=>{
+      const box=document.getElementById('phoneSongDraft');
+      try{await navigator.clipboard.writeText(box.value);document.getElementById('phonePromptCopyStatus').textContent='Prompt copied.';}
+      catch(error){box.focus();box.select();document.getElementById('phonePromptCopyStatus').textContent='Select and copy this prompt.';}
+    });
+  }
+  announcePartShare(result){
+    const message={type:'chat',from:'Producer Network',text:result.from+' shared a '+result.district+' card with '+result.to+'.'};
+    this.appendChat(message);this.broadcast(message);
+  }
+  sharePart(toId,districtId){
+    if(!this.active){this.notice('Create or join a room to share producer prompts.');return;}
+    if(this.isGuest){
+      const sent=this.request('sharePart',[toId,districtId]);
+      const status=document.getElementById('sharePromptStatus');
+      if(status)status.textContent=sent?'Offer sent to the host…':'Could not contact the host.';
+      return;
+    }
+    const result=this.engine.sharePart(this.seatId,toId,districtId);
+    if(!result.ok){this.notice(result.reason);return;}
+    this.ui.save();this.announcePartShare(result);this.queueBroadcast();
+    this.renderCollab();
   }
   drawChat(){
     const box=document.getElementById('roomMessages');
@@ -192,6 +260,13 @@ export class FusionRoom {
   async hostCommand(conn,message){
     const seat=this.seats.get(conn.peer),player=this.engine.currentPlayer;
     const action=String(message.action || '');
+    if(action==='sharePart'){
+      const args=Array.isArray(message.args)?message.args.slice(0,2):[];
+      const result=this.engine.sharePart(seat,args[0],args[1]);
+      if(!result.ok){conn.send({type:'error',text:result.reason});return;}
+      this.ui.save();this.announcePartShare(result);this.queueBroadcast();
+      conn.send({type:'ack',text:'Producer card shared.'});return;
+    }
     if(seat!==player.id || this.ui.busy || player.bot || this.engine.state.showcaseComplete){
       conn.send({type:'error',text:'Wait for your turn to take that action.'});return;
     }
