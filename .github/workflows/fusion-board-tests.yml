@@ -32,5 +32,7 @@ jobs:
           node --check fusion/fusion-ui.js
           node --check fusion/fusion-room.js
           node --check fusion/fusion-app.js
+          node --check fusion/fusion-art-map.js
+          node --check fusion/fusion-art-board.js
       - name: Run game tests
         run: npm test
