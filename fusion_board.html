@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#090d19">
+  <title>Music City Estates · Fusion Board</title>
+  <link rel="stylesheet" href="./fusion/styles.css?v=42">
+  <link rel="stylesheet" href="./fusion/fusion.css?v=8">
+</head>
+<body class="immersive-body fusion-body">
+  <main class="immersive-game">
+    <section id="game3d" class="immersive-stage" aria-label="Interactive 3D Music City board"></section>
+    <header class="fusion-top">
+      <div><small>MUSIC CITY ESTATES</small><strong>Fusion Board</strong></div>
+      <button id="phoneBtn" class="phone-toggle" type="button" aria-label="Open Music City phone" title="Music City phone">📱</button>
+      <button id="boardMenuToggle" class="board-menu-toggle" type="button" aria-expanded="false" aria-controls="boardMenu" aria-label="Open board menu">☰</button>
+      <nav id="boardMenu" class="fusion-top-actions" aria-label="Board menu"><button id="boardOverview" type="button">Full board view</button><button id="garageBtn" type="button">Garage</button><button id="visitHeights" type="button">Visit Hip-Hop Heights</button><button id="newGame" type="button">New game</button></nav>
+    </header>
+    <aside class="fusion-hud" aria-live="polite">
+      <div class="fusion-summary"><div class="fusion-current"><span>Round <b id="round">1</b></span><strong id="artistName">Artist 1</strong></div><div class="fusion-wallet"><small>CASH</small><strong id="cash">$1,000</strong></div><button id="statusToggle" class="fusion-status-toggle" type="button" aria-expanded="false" aria-controls="fusionDetails">Goals <b id="goalCount">0/5</b> ▾</button></div>
+      <div id="goalStrip" class="fusion-goal-strip" aria-label="Song progress"></div>
+      <div id="fusionDetails" class="fusion-details"><h2>Make your fusion song</h2><div class="fusion-pieces" id="pieces"></div><h2>Reach the showcase</h2><div id="career" class="fusion-career"></div><p id="instruction" class="fusion-instruction"></p></div>
+    </aside>
+    <div class="fusion-dice">
+      <span id="diceResult">Roll to move</span>
+      <button id="roll" type="button">Roll dice</button>
+      <button id="endTurn" type="button" hidden>End turn</button>
+    </div>
+    <div class="fusion-actions" id="actions"></div>
+    <div id="gameNotice" class="fusion-notice" role="status" aria-live="polite"></div>
+    <div class="fusion-log" id="gameLog" aria-live="polite"></div>
+  </main>
+  <div id="fusionModal" class="fusion-modal" role="dialog" aria-modal="true" hidden></div>
+  <section id="boroughView" class="borough-view" role="dialog" aria-modal="true" aria-label="Hip-Hop Heights" hidden>
+    <div class="borough-bar"><strong>Hip-Hop Heights</strong><span>Explore the existing street, café, warehouse and BeGenius Studio</span><button id="leaveBorough" type="button">Return to board</button></div>
+    <iframe id="boroughFrame" title="Hip-Hop Heights walkable neighborhood" loading="lazy"></iframe>
+  </section>
+  <script type="importmap">
+  {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}
+  </script>
+  <script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js" defer></script>
+  <script type="module" src="./fusion/fusion-app.js?v=11"></script>
+</body>
+</html>

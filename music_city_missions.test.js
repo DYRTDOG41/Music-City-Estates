@@ -62,7 +62,7 @@ check('10 XP advances the artist to the first cafe show', () => {
 
 check('the first cafe show advances to the fan goal', () => {
   const result = missions.career(state({
-    name: 'Midnight Will', fans: 12,
+    name: 'Midnight Will', fans: 12, xp: 10,
     releases: [{ id: 'one', releaseStatus: 'released' }]
   }), { avatar: null, cafePerformances: 1, collaborations: 0 });
   assert.equal(result.current.id, 'battle-access');
@@ -73,7 +73,7 @@ check('the first cafe show advances to the fan goal', () => {
 
 check('battle completion advances to management', () => {
   const result = missions.career(state({
-    name: 'Midnight Will', fans: 30, battles: 1,
+    name: 'Midnight Will', fans: 30, xp: 10, battles: 1,
     releases: [{ id: 'one', releaseStatus: 'released' }]
   }), { avatar: null, cafePerformances: 2, collaborations: 0 });
   assert.equal(result.current.id, 'manager');

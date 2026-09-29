@@ -1,0 +1,39 @@
+name: Music City Fusion Board checks
+
+on:
+  push:
+    branches:
+      - feature/fusion-four-borough-board
+  pull_request:
+    branches:
+      - dev
+    paths:
+      - 'fusion/**'
+      - 'fusion_board.html'
+      - 'package.json'
+      - '.github/workflows/fusion-board-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check fusion board syntax
+        run: |
+          node --check fusion/fusion-engine.js
+          node --check fusion/fusion-ui.js
+          node --check fusion/fusion-room.js
+          node --check fusion/fusion-app.js
+          node --check fusion/fusion-art-map.js
+          node --check fusion/fusion-art-board.js
+          node --check fusion/live-preview.test.mjs
+      - name: Run game tests
+        run: npm test

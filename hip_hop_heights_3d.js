@@ -169,6 +169,17 @@ const materials = {
 function destinationAction(destination, name) {
   return () => {
     if (destination) {
+      if (destination === 'begenius_studio.html' && new URLSearchParams(location.search).has('fusion')) {
+        const match = window.parent?.musicCityFusion?.engine;
+        if (!match?.hasAllParts() || match.currentSpace.kind !== 'studio' || match.state.phase !== 'landed') {
+          const toast = document.getElementById('toast');
+          toast.textContent = 'In this match, collect all four sounds and land on BeGenius Studio to enter.';
+          toast.classList.add('show');
+          clearTimeout(window.mceToastTimer);
+          window.mceToastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
+          return;
+        }
+      }
       location.href = destination;
       return;
     }
