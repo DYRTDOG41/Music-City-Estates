@@ -80,3 +80,16 @@
 .fusion-online-panel form button{margin:0 0 12px;flex:none}
 .fusion-room-note{opacity:.75}
 @media(max-width:460px){.fusion-online-panel form{align-items:stretch;flex-direction:column}.fusion-online-panel form button{margin:0 0 7px}}
+
+/* Phone producer network: readable cards and touch-friendly exchange controls. */
+.fusion-prompt-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:8px;margin:10px 0}
+.fusion-prompt-card{display:flex;flex-direction:column;gap:5px;padding:11px;border:1px solid #7bbad255;border-radius:11px;background:#081e2d}
+.fusion-prompt-card b{color:#91e9ba;font-size:13px}
+.fusion-prompt-card span{font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.fusion-prompt-card em{display:block;color:#e6c7ff;font-size:11px;margin-top:4px}
+.fusion-share-form{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px}
+.fusion-share-form label{flex:1 1 115px;min-width:0}
+.fusion-share-form select{display:block;width:100%;margin-top:5px;padding:10px;color:#f5faff;background:#0c2a39;border:1px solid #a6c8dd99;border-radius:8px}
+.fusion-song-draft{border-top:1px solid #ffffff29;margin-top:12px;padding-top:9px}
+.fusion-song-draft summary{cursor:pointer;font-weight:700;color:#a7eacb}
+.fusion-song-draft textarea{display:block;box-sizing:border-box;width:100%;margin:9px 0;color:#ecf9fb;background:#091a29;border:1px solid #84b5ca8a;border-radius:8px;padding:9px;line-height:1.5}
