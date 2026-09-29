@@ -1,4 +1,4 @@
-import { BOARD_SPACES, LANDMARKS, DISTRICTS, CONFIG } from './fusion-data.js?v=4';
+import { BOARD_SPACES, LANDMARKS, DISTRICTS, CONFIG } from './fusion-data.js?v=5';
 import { VEHICLES, RIMS, PAINTS, STARTER_VEHICLES, vehicleGate, rimGate } from './fusion-vehicles.js';
 
 const copy = value => JSON.parse(JSON.stringify(value));
@@ -14,13 +14,13 @@ export class FusionEngine extends EventTarget {
       players:entries.slice(0,4).map((entry,i)=>({
         id:'p'+(i+1),name:String(entry.name||'Artist '+(i+1)).slice(0,22),
         bot:!!entry.bot,color:COLORS[i],cash:CONFIG.startCash,position:0,laps:0,
-        producerParts:{},song:null,manager:false,radio:false,radioRound:null,
+        producerParts:{},song:null,studioBooked:false,managerUnlockLap:null,manager:false,radio:false,radioRound:null,
         ownedVehicles:['city_standard',...(STARTER_VEHICLES.includes(entry.vehicleId)&&entry.vehicleId!=='city_standard'?[entry.vehicleId]:[])],
         equippedVehicle:STARTER_VEHICLES.includes(entry.vehicleId)?entry.vehicleId:'city_standard',
         ownedRims:['factory'],equippedRim:'factory',vehiclePaint:COLORS[i],
       }))
     };
-    this.log('Collect four producer prompt cards, make a fusion song, hire a manager and reach radio.');
+    this.log('Collect four prompt cards and finish two laps, then book your $500 BeGenius session from the phone.');
     this.emit('state');
   }
   get currentPlayer(){return this.state.players[this.state.turn];}
@@ -132,6 +132,344 @@ export class FusionEngine extends EventTarget {
     this.log(sender.name+' shared a '+district.name+' producer prompt with '+recipient.name+'.');
     this.emit('state');
     return {ok:true,from:sender.name,to:recipient.name,district:district.name};
+  }
+  studioStatus(p=this.currentPlayer){
+    if(p.song)return {ok:false,reason:'Your fusion song is already recorded.'};
+    if(!this.hasAllParts(p))return {ok:false,reason:'Collect all four producer prompt cards first.'};
+    if(p.studioBooked)return {ok:true,booked:true,reason:'Your BeGenius Studio session is booked.'};
+    if(p.laps<CONFIG.studioMinLaps)return {ok:false,reason:'Complete '+(CONFIG.studioMinLaps-p.laps)+' more lap'+(CONFIG.studioMinLaps-p.laps===1?'':'s')+' before booking BeGenius Studio.'};
+    if(p.cash<CONFIG.studioSessionFee)return {ok:false,reason:'Earn 
+    const p=this.currentPlayer;
+    const item=type==='landmark'?this.state.landmarks.find(x=>x.id===id):this.currentSpace;
+    if(!this.canAct()||!item||item.kind==='producer'||!item.price||item.ownerId)
+      return {ok:false,reason:'This business is not available.'};
+    if(type!=='landmark'&&item.id!==id)return {ok:false,reason:'Land here to buy.'};
+    if(p.cash<item.price)return {ok:false,reason:'You need $'+item.price+'.'};
+    p.cash-=item.price;item.ownerId=p.id;
+    this.log(p.name+' bought '+item.name+' for $'+item.price+'.');
+    this.emit('state');return {ok:true};
+  }
+  hireManager(){
+    const p=this.currentPlayer;
+    if(!this.canAct()||p.manager)return {ok:false,reason:'Manager already hired or turn unavailable.'};
+    if(this.ownedCount(p)<1)return {ok:false,reason:'Buy a music property before hiring a manager.'};
+    if(p.cash<CONFIG.managerCost)return {ok:false,reason:'Manager costs $'+CONFIG.managerCost+'.'};
+    p.cash-=CONFIG.managerCost;p.manager=true;this.log(p.name+' hired a manager.');
+    this.emit('state');return {ok:true};
+  }
+  recordSong(title,audioKey=null,prompt=''){
+    const p=this.currentPlayer;
+    if(!this.canAct()||this.currentSpace.kind!=='studio')return {ok:false,reason:'Land at BeGenius Studio.'};
+    if(!this.hasAllParts(p))return {ok:false,reason:'Collect a prompt card from all four producers first.'};
+    const safeTitle=String(title||'').trim().slice(0,44);
+    if(!safeTitle)return {ok:false,reason:'Give your fusion song a title.'};
+    if(!p.bot&&!audioKey)return {ok:false,reason:'Upload the song made from your prompt before finishing.'};
+    p.song={title:safeTitle,audioKey:audioKey||null,prompt:String(prompt||'').trim().slice(0,3000),parts:copy(p.producerParts)};
+    this.log(p.name+(audioKey?' uploaded':' drafted')+' “'+safeTitle+'” at BeGenius Studio.');
+    this.emit('state');return {ok:true};
+  }
+  submitRadio(){
+    const p=this.currentPlayer;
+    if(!this.canAct()||this.currentSpace.kind!=='radio')return {ok:false,reason:'Land on Music City Radio.'};
+    if(!p.song||!p.manager)return {ok:false,reason:'Finish a song and hire your manager first.'};
+    if(p.radio)return {ok:false,reason:'Your song has already played on radio.'};
+    if(p.cash<CONFIG.radioCost)return {ok:false,reason:'Radio submission costs $'+CONFIG.radioCost+'.'};
+    p.cash-=CONFIG.radioCost;p.radio=true;p.radioRound=this.state.round;
+    this.log('ON AIR: '+p.name+' — “'+p.song.title+'” played on Music City Radio!');
+    this.emit('state');return {ok:true};
+  }
+  bookFinale(){
+    const p=this.currentPlayer;
+    if(!this.canAct()||this.currentSpace.kind!=='festival')return {ok:false,reason:'Land at the Festival Finale.'};
+    if(!p.radio)return {ok:false,reason:'Your song must play on radio first.'};
+    if(!this.state.headlineId){
+      this.state.headlineId=p.id;this.log(p.name+' booked the headline slot. The final showcase opens when every artist has a song.');
+    }else this.log(p.name+' joined the festival lineup.');
+    this.emit('state');return {ok:true};
+  }
+  canShowcase(){return !!this.state.headlineId&&this.state.players.every(p=>!!p.song);}
+  finishShowcase(winnerId){
+    if(!this.canShowcase()||this.state.showcaseComplete)return false;
+    const winner=this.state.players.find(x=>x.id===winnerId);
+    if(!winner)return false;
+    winner.cash+=CONFIG.prize;this.state.winnerId=winner.id;
+    this.state.showcaseComplete=true;this.state.phase='showcase';
+    this.log(winner.name+' won the $'+CONFIG.prize+' festival prize!');
+    this.emit('state');return true;
+  }
+  endTurn(){
+    if(this.state.phase!=='landed')return false;
+    this.state.turn=(this.state.turn+1)%this.state.players.length;
+    if(this.state.turn===0)this.state.round++;
+    this.state.lastRoll=[0,0];this.state.phase='turn';
+    this.log(this.currentPlayer.name+' is up.');this.emit('turn');return true;
+  }
+  exportState(){return copy(this.state);}
+  importState(value){
+    if(value?.version!==1||!Array.isArray(value.players)||value.players.length<2||value.players.length>4)throw Error('Invalid fusion save');
+    value.players.forEach(p=>{
+      p.ownedVehicles ||= ['city_standard'];p.ownedRims ||= ['factory'];
+      if(!VEHICLES.some(v=>v.id===p.equippedVehicle))p.equippedVehicle='city_standard';
+      if(!RIMS.some(r=>r.id===p.equippedRim))p.equippedRim='factory';
+      if(!p.ownedVehicles.includes(p.equippedVehicle))p.ownedVehicles.push(p.equippedVehicle);
+      if(!p.ownedRims.includes(p.equippedRim))p.ownedRims.push(p.equippedRim);
+      p.vehiclePaint ||= p.color;
+    });
+    this.state=value;this.emit('state');
+  }
+}
++(CONFIG.studioSessionFee-p.cash)+' more for your 
+    const p=this.currentPlayer;
+    const item=type==='landmark'?this.state.landmarks.find(x=>x.id===id):this.currentSpace;
+    if(!this.canAct()||!item||item.kind==='producer'||!item.price||item.ownerId)
+      return {ok:false,reason:'This business is not available.'};
+    if(type!=='landmark'&&item.id!==id)return {ok:false,reason:'Land here to buy.'};
+    if(p.cash<item.price)return {ok:false,reason:'You need $'+item.price+'.'};
+    p.cash-=item.price;item.ownerId=p.id;
+    this.log(p.name+' bought '+item.name+' for $'+item.price+'.');
+    this.emit('state');return {ok:true};
+  }
+  hireManager(){
+    const p=this.currentPlayer;
+    if(!this.canAct()||p.manager)return {ok:false,reason:'Manager already hired or turn unavailable.'};
+    if(this.ownedCount(p)<1)return {ok:false,reason:'Buy a music property before hiring a manager.'};
+    if(p.cash<CONFIG.managerCost)return {ok:false,reason:'Manager costs $'+CONFIG.managerCost+'.'};
+    p.cash-=CONFIG.managerCost;p.manager=true;this.log(p.name+' hired a manager.');
+    this.emit('state');return {ok:true};
+  }
+  recordSong(title,audioKey=null,prompt=''){
+    const p=this.currentPlayer;
+    if(!this.canAct()||this.currentSpace.kind!=='studio')return {ok:false,reason:'Land at BeGenius Studio.'};
+    if(!this.hasAllParts(p))return {ok:false,reason:'Collect a prompt card from all four producers first.'};
+    const safeTitle=String(title||'').trim().slice(0,44);
+    if(!safeTitle)return {ok:false,reason:'Give your fusion song a title.'};
+    if(!p.bot&&!audioKey)return {ok:false,reason:'Upload the song made from your prompt before finishing.'};
+    p.song={title:safeTitle,audioKey:audioKey||null,prompt:String(prompt||'').trim().slice(0,3000),parts:copy(p.producerParts)};
+    this.log(p.name+(audioKey?' uploaded':' drafted')+' “'+safeTitle+'” at BeGenius Studio.');
+    this.emit('state');return {ok:true};
+  }
+  submitRadio(){
+    const p=this.currentPlayer;
+    if(!this.canAct()||this.currentSpace.kind!=='radio')return {ok:false,reason:'Land on Music City Radio.'};
+    if(!p.song||!p.manager)return {ok:false,reason:'Finish a song and hire your manager first.'};
+    if(p.radio)return {ok:false,reason:'Your song has already played on radio.'};
+    if(p.cash<CONFIG.radioCost)return {ok:false,reason:'Radio submission costs $'+CONFIG.radioCost+'.'};
+    p.cash-=CONFIG.radioCost;p.radio=true;p.radioRound=this.state.round;
+    this.log('ON AIR: '+p.name+' — “'+p.song.title+'” played on Music City Radio!');
+    this.emit('state');return {ok:true};
+  }
+  bookFinale(){
+    const p=this.currentPlayer;
+    if(!this.canAct()||this.currentSpace.kind!=='festival')return {ok:false,reason:'Land at the Festival Finale.'};
+    if(!p.radio)return {ok:false,reason:'Your song must play on radio first.'};
+    if(!this.state.headlineId){
+      this.state.headlineId=p.id;this.log(p.name+' booked the headline slot. The final showcase opens when every artist has a song.');
+    }else this.log(p.name+' joined the festival lineup.');
+    this.emit('state');return {ok:true};
+  }
+  canShowcase(){return !!this.state.headlineId&&this.state.players.every(p=>!!p.song);}
+  finishShowcase(winnerId){
+    if(!this.canShowcase()||this.state.showcaseComplete)return false;
+    const winner=this.state.players.find(x=>x.id===winnerId);
+    if(!winner)return false;
+    winner.cash+=CONFIG.prize;this.state.winnerId=winner.id;
+    this.state.showcaseComplete=true;this.state.phase='showcase';
+    this.log(winner.name+' won the $'+CONFIG.prize+' festival prize!');
+    this.emit('state');return true;
+  }
+  endTurn(){
+    if(this.state.phase!=='landed')return false;
+    this.state.turn=(this.state.turn+1)%this.state.players.length;
+    if(this.state.turn===0)this.state.round++;
+    this.state.lastRoll=[0,0];this.state.phase='turn';
+    this.log(this.currentPlayer.name+' is up.');this.emit('turn');return true;
+  }
+  exportState(){return copy(this.state);}
+  importState(value){
+    if(value?.version!==1||!Array.isArray(value.players)||value.players.length<2||value.players.length>4)throw Error('Invalid fusion save');
+    value.players.forEach(p=>{
+      p.ownedVehicles ||= ['city_standard'];p.ownedRims ||= ['factory'];
+      if(!VEHICLES.some(v=>v.id===p.equippedVehicle))p.equippedVehicle='city_standard';
+      if(!RIMS.some(r=>r.id===p.equippedRim))p.equippedRim='factory';
+      if(!p.ownedVehicles.includes(p.equippedVehicle))p.ownedVehicles.push(p.equippedVehicle);
+      if(!p.ownedRims.includes(p.equippedRim))p.ownedRims.push(p.equippedRim);
+      p.vehiclePaint ||= p.color;
+    });
+    this.state=value;this.emit('state');
+  }
+}
++CONFIG.studioSessionFee+' studio session.'};
+    return {ok:true,reason:'You can book your 
+    const p=this.currentPlayer;
+    const item=type==='landmark'?this.state.landmarks.find(x=>x.id===id):this.currentSpace;
+    if(!this.canAct()||!item||item.kind==='producer'||!item.price||item.ownerId)
+      return {ok:false,reason:'This business is not available.'};
+    if(type!=='landmark'&&item.id!==id)return {ok:false,reason:'Land here to buy.'};
+    if(p.cash<item.price)return {ok:false,reason:'You need $'+item.price+'.'};
+    p.cash-=item.price;item.ownerId=p.id;
+    this.log(p.name+' bought '+item.name+' for $'+item.price+'.');
+    this.emit('state');return {ok:true};
+  }
+  hireManager(){
+    const p=this.currentPlayer;
+    if(!this.canAct()||p.manager)return {ok:false,reason:'Manager already hired or turn unavailable.'};
+    if(this.ownedCount(p)<1)return {ok:false,reason:'Buy a music property before hiring a manager.'};
+    if(p.cash<CONFIG.managerCost)return {ok:false,reason:'Manager costs $'+CONFIG.managerCost+'.'};
+    p.cash-=CONFIG.managerCost;p.manager=true;this.log(p.name+' hired a manager.');
+    this.emit('state');return {ok:true};
+  }
+  recordSong(title,audioKey=null,prompt=''){
+    const p=this.currentPlayer;
+    if(!this.canAct()||this.currentSpace.kind!=='studio')return {ok:false,reason:'Land at BeGenius Studio.'};
+    if(!this.hasAllParts(p))return {ok:false,reason:'Collect a prompt card from all four producers first.'};
+    const safeTitle=String(title||'').trim().slice(0,44);
+    if(!safeTitle)return {ok:false,reason:'Give your fusion song a title.'};
+    if(!p.bot&&!audioKey)return {ok:false,reason:'Upload the song made from your prompt before finishing.'};
+    p.song={title:safeTitle,audioKey:audioKey||null,prompt:String(prompt||'').trim().slice(0,3000),parts:copy(p.producerParts)};
+    this.log(p.name+(audioKey?' uploaded':' drafted')+' “'+safeTitle+'” at BeGenius Studio.');
+    this.emit('state');return {ok:true};
+  }
+  submitRadio(){
+    const p=this.currentPlayer;
+    if(!this.canAct()||this.currentSpace.kind!=='radio')return {ok:false,reason:'Land on Music City Radio.'};
+    if(!p.song||!p.manager)return {ok:false,reason:'Finish a song and hire your manager first.'};
+    if(p.radio)return {ok:false,reason:'Your song has already played on radio.'};
+    if(p.cash<CONFIG.radioCost)return {ok:false,reason:'Radio submission costs $'+CONFIG.radioCost+'.'};
+    p.cash-=CONFIG.radioCost;p.radio=true;p.radioRound=this.state.round;
+    this.log('ON AIR: '+p.name+' — “'+p.song.title+'” played on Music City Radio!');
+    this.emit('state');return {ok:true};
+  }
+  bookFinale(){
+    const p=this.currentPlayer;
+    if(!this.canAct()||this.currentSpace.kind!=='festival')return {ok:false,reason:'Land at the Festival Finale.'};
+    if(!p.radio)return {ok:false,reason:'Your song must play on radio first.'};
+    if(!this.state.headlineId){
+      this.state.headlineId=p.id;this.log(p.name+' booked the headline slot. The final showcase opens when every artist has a song.');
+    }else this.log(p.name+' joined the festival lineup.');
+    this.emit('state');return {ok:true};
+  }
+  canShowcase(){return !!this.state.headlineId&&this.state.players.every(p=>!!p.song);}
+  finishShowcase(winnerId){
+    if(!this.canShowcase()||this.state.showcaseComplete)return false;
+    const winner=this.state.players.find(x=>x.id===winnerId);
+    if(!winner)return false;
+    winner.cash+=CONFIG.prize;this.state.winnerId=winner.id;
+    this.state.showcaseComplete=true;this.state.phase='showcase';
+    this.log(winner.name+' won the $'+CONFIG.prize+' festival prize!');
+    this.emit('state');return true;
+  }
+  endTurn(){
+    if(this.state.phase!=='landed')return false;
+    this.state.turn=(this.state.turn+1)%this.state.players.length;
+    if(this.state.turn===0)this.state.round++;
+    this.state.lastRoll=[0,0];this.state.phase='turn';
+    this.log(this.currentPlayer.name+' is up.');this.emit('turn');return true;
+  }
+  exportState(){return copy(this.state);}
+  importState(value){
+    if(value?.version!==1||!Array.isArray(value.players)||value.players.length<2||value.players.length>4)throw Error('Invalid fusion save');
+    value.players.forEach(p=>{
+      p.ownedVehicles ||= ['city_standard'];p.ownedRims ||= ['factory'];
+      if(!VEHICLES.some(v=>v.id===p.equippedVehicle))p.equippedVehicle='city_standard';
+      if(!RIMS.some(r=>r.id===p.equippedRim))p.equippedRim='factory';
+      if(!p.ownedVehicles.includes(p.equippedVehicle))p.ownedVehicles.push(p.equippedVehicle);
+      if(!p.ownedRims.includes(p.equippedRim))p.ownedRims.push(p.equippedRim);
+      p.vehiclePaint ||= p.color;
+    });
+    this.state=value;this.emit('state');
+  }
+}
++CONFIG.studioSessionFee+' BeGenius Studio session now.'};
+  }
+  bookStudio(){
+    if(!this.canAct())return {ok:false,reason:'Book the studio on your turn after rolling.'};
+    const p=this.currentPlayer,status=this.studioStatus(p);
+    if(p.studioBooked)return {ok:false,reason:'You already paid for this studio session. Enter from the phone.'};
+    if(!status.ok)return status;
+    p.cash-=CONFIG.studioSessionFee;
+    p.studioBooked=true;
+    this.log(p.name+' booked BeGenius Studio for 
+    const p=this.currentPlayer;
+    const item=type==='landmark'?this.state.landmarks.find(x=>x.id===id):this.currentSpace;
+    if(!this.canAct()||!item||item.kind==='producer'||!item.price||item.ownerId)
+      return {ok:false,reason:'This business is not available.'};
+    if(type!=='landmark'&&item.id!==id)return {ok:false,reason:'Land here to buy.'};
+    if(p.cash<item.price)return {ok:false,reason:'You need $'+item.price+'.'};
+    p.cash-=item.price;item.ownerId=p.id;
+    this.log(p.name+' bought '+item.name+' for $'+item.price+'.');
+    this.emit('state');return {ok:true};
+  }
+  hireManager(){
+    const p=this.currentPlayer;
+    if(!this.canAct()||p.manager)return {ok:false,reason:'Manager already hired or turn unavailable.'};
+    if(this.ownedCount(p)<1)return {ok:false,reason:'Buy a music property before hiring a manager.'};
+    if(p.cash<CONFIG.managerCost)return {ok:false,reason:'Manager costs $'+CONFIG.managerCost+'.'};
+    p.cash-=CONFIG.managerCost;p.manager=true;this.log(p.name+' hired a manager.');
+    this.emit('state');return {ok:true};
+  }
+  recordSong(title,audioKey=null,prompt=''){
+    const p=this.currentPlayer;
+    if(!this.canAct()||this.currentSpace.kind!=='studio')return {ok:false,reason:'Land at BeGenius Studio.'};
+    if(!this.hasAllParts(p))return {ok:false,reason:'Collect a prompt card from all four producers first.'};
+    const safeTitle=String(title||'').trim().slice(0,44);
+    if(!safeTitle)return {ok:false,reason:'Give your fusion song a title.'};
+    if(!p.bot&&!audioKey)return {ok:false,reason:'Upload the song made from your prompt before finishing.'};
+    p.song={title:safeTitle,audioKey:audioKey||null,prompt:String(prompt||'').trim().slice(0,3000),parts:copy(p.producerParts)};
+    this.log(p.name+(audioKey?' uploaded':' drafted')+' “'+safeTitle+'” at BeGenius Studio.');
+    this.emit('state');return {ok:true};
+  }
+  submitRadio(){
+    const p=this.currentPlayer;
+    if(!this.canAct()||this.currentSpace.kind!=='radio')return {ok:false,reason:'Land on Music City Radio.'};
+    if(!p.song||!p.manager)return {ok:false,reason:'Finish a song and hire your manager first.'};
+    if(p.radio)return {ok:false,reason:'Your song has already played on radio.'};
+    if(p.cash<CONFIG.radioCost)return {ok:false,reason:'Radio submission costs $'+CONFIG.radioCost+'.'};
+    p.cash-=CONFIG.radioCost;p.radio=true;p.radioRound=this.state.round;
+    this.log('ON AIR: '+p.name+' — “'+p.song.title+'” played on Music City Radio!');
+    this.emit('state');return {ok:true};
+  }
+  bookFinale(){
+    const p=this.currentPlayer;
+    if(!this.canAct()||this.currentSpace.kind!=='festival')return {ok:false,reason:'Land at the Festival Finale.'};
+    if(!p.radio)return {ok:false,reason:'Your song must play on radio first.'};
+    if(!this.state.headlineId){
+      this.state.headlineId=p.id;this.log(p.name+' booked the headline slot. The final showcase opens when every artist has a song.');
+    }else this.log(p.name+' joined the festival lineup.');
+    this.emit('state');return {ok:true};
+  }
+  canShowcase(){return !!this.state.headlineId&&this.state.players.every(p=>!!p.song);}
+  finishShowcase(winnerId){
+    if(!this.canShowcase()||this.state.showcaseComplete)return false;
+    const winner=this.state.players.find(x=>x.id===winnerId);
+    if(!winner)return false;
+    winner.cash+=CONFIG.prize;this.state.winnerId=winner.id;
+    this.state.showcaseComplete=true;this.state.phase='showcase';
+    this.log(winner.name+' won the $'+CONFIG.prize+' festival prize!');
+    this.emit('state');return true;
+  }
+  endTurn(){
+    if(this.state.phase!=='landed')return false;
+    this.state.turn=(this.state.turn+1)%this.state.players.length;
+    if(this.state.turn===0)this.state.round++;
+    this.state.lastRoll=[0,0];this.state.phase='turn';
+    this.log(this.currentPlayer.name+' is up.');this.emit('turn');return true;
+  }
+  exportState(){return copy(this.state);}
+  importState(value){
+    if(value?.version!==1||!Array.isArray(value.players)||value.players.length<2||value.players.length>4)throw Error('Invalid fusion save');
+    value.players.forEach(p=>{
+      p.ownedVehicles ||= ['city_standard'];p.ownedRims ||= ['factory'];
+      if(!VEHICLES.some(v=>v.id===p.equippedVehicle))p.equippedVehicle='city_standard';
+      if(!RIMS.some(r=>r.id===p.equippedRim))p.equippedRim='factory';
+      if(!p.ownedVehicles.includes(p.equippedVehicle))p.ownedVehicles.push(p.equippedVehicle);
+      if(!p.ownedRims.includes(p.equippedRim))p.ownedRims.push(p.equippedRim);
+      p.vehiclePaint ||= p.color;
+    });
+    this.state=value;this.emit('state');
+  }
+}
++CONFIG.studioSessionFee+'. Enter from your in-game phone to finish the song.');
+    this.emit('state');return {ok:true};
   }
   buyProperty(type='space',id=this.currentSpace.id){
     const p=this.currentPlayer;
