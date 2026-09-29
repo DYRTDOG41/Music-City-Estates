@@ -1,4 +1,4 @@
-import { DISTRICTS } from './fusion-data.js?v=4';
+import { DISTRICTS } from './fusion-data.js?v=5';
 
 // Peer-to-peer playtest rooms for the Fusion Board.
 // The host is authoritative for turns and cash. No API key or paid backend required.
@@ -6,7 +6,7 @@ import { DISTRICTS } from './fusion-data.js?v=4';
 // has no account, moderation, server persistence, or guaranteed reconnect.
 const html = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const nameOf = value => String(value || 'Guest Artist').trim().slice(0,22) || 'Guest Artist';
-const allowed = new Set(['collectPart','buyProperty','hireManager','recordSong','submitRadio','bookFinale',
+const allowed = new Set(['collectPart','buyProperty','bookStudio','hireManager','recordSong','submitRadio','bookFinale',
   'claimVehicle','equipVehicle','claimRim','equipRim','setVehiclePaint']);
 const roomPattern = /^mce-fusion-[a-z0-9]{6,14}$/;
 
@@ -75,6 +75,7 @@ export class FusionRoom {
         '<p id="phoneRoomStatus" role="status">For friends to join, keep this tab open.</p>';
       roster.after(panel);
       this.renderCollab();
+      this.ui.renderStudioPhone?.();
       document.getElementById('createFusionRoom').onclick=()=>this.hostRoom();
       return;
     }
@@ -90,6 +91,7 @@ export class FusionRoom {
       '<p class="fusion-room-note">Text only. Host tab must stay open. Finished audio remains on the artist’s device; it is not shared through the room yet.</p>';
     roster.after(panel);
     this.renderCollab();
+    this.ui.renderStudioPhone?.();
     if(host)document.getElementById('copyRoomInvite').onclick=async()=>{
       try{await navigator.clipboard.writeText(this.inviteLink());this.updatePanel('Online invite copied for Messenger.');}
       catch(e){this.updatePanel('Copy this invite: '+this.inviteLink());}
@@ -135,7 +137,7 @@ export class FusionRoom {
         '<textarea id="phoneSongDraft" readonly rows="8">'+html(this.ui.composePrompt(me))+'</textarea>'+
         '<button id="copyPhoneSongPrompt" type="button">Copy song prompt</button>'+
         '<p id="phonePromptCopyStatus" role="status"></p>'+
-        '<p>Bring this prompt to BeGenius Studio when you land there to finish the song.</p></details>':'');
+        '<p>After two laps, book a session through the phone and enter BeGenius from any square on your turn.</p></details>':'');
     document.getElementById('sharePromptForm')?.addEventListener('submit',event=>{
       event.preventDefault();
       const target=document.getElementById('sharePromptArtist').value;
