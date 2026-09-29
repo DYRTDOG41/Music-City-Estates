@@ -33,6 +33,43 @@ configured in `begenius_catalog.js`.
 
 Progress is saved automatically in the browser with `localStorage`.
 
+## The exact approved 3D Fusion Board artwork
+
+![User-approved exact Music City Estates game board](assets/fusion/board-approved-original.png)
+
+The Fusion Board now uses the **actual approved 1448 × 1086 image, unaltered,
+byte-for-byte**, on a Three.js 3D board face. The PNG at
+`assets/fusion/board-approved-original.png` has SHA-256
+`49f4bf27b440f89e88462e615e9cf3a9d452f18e01c48d8787f3120938e00695`.
+There is no redraw of lookalike squares or regenerated city geometry.
+
+The 40 invisible landing areas and 3D car locations in
+`fusion/fusion-art-map.js` follow the painted roads. Cars are still created
+by the existing Detroit-derived vehicle builder, retain their rims/paint,
+animate after each dice roll and use the chase/drone camera; ownership rings
+appear only when a player owns a location. Tap the built-in producer artwork
+or neighborhood marker to inspect it. Use **Menu → Full board view** after
+zooming in on a landed car, including on iPhone.
+
+The four producer stops follow the approved image's geography:
+**Hip-Hop Heights** (blue lower-left, prompt 3), **Country Crossings**
+(gold upper-left, prompt 1), **Velvet Grove** (purple upper-right, prompt 2)
+and **Latin Quarter** (red lower-right, prompt 4).
+The original `global` internal save key now represents Velvet Grove,
+preserving existing players' fourth card and legacy music prompts. Old
+board saves rebase street names and visible map artwork while retaining
+money, completed laps, songs, managers, vehicles, saved cards and property
+owners by stable location ID. The approved artwork shows some illustrative
+printed UI: the live HUD above it is the authoritative source of actual
+cash, prompts, turns and score.
+
+The existing game loop still requires **four producer prompt cards**,
+**two full laps**, a **$500 booked studio session**, a recorded/uploaded song,
+and a later full lap plus business ownership/cash for manager access.
+The approved image adds no paid AI requirement. Producer exchanges,
+PeerJS online rooms and host-authoritative money/career rules remain
+unchanged; audio uploads remain private to the artist's own device.
+
 ## Fusion board prototype
 
 Open `fusion_board.html` to play the separate four-borough board match. The 40-space board,
