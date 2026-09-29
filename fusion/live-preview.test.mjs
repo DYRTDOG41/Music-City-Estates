@@ -44,6 +44,27 @@ try{
   assert.equal(board.imageBytes,2856862,'Must load the exact original approved PNG');
   assert.match(board.contentType,/image\/png/);
   console.log('PASS: exact 2.86 MB user-approved art is the loaded 3D board texture, with 40 road stops');
+
+  await host.screenshot({path:'fusion-art-board-initial.png',fullPage:true});
+  await host.locator('#roll').click();
+  await host.waitForFunction(()=>{
+    const g=window.musicCityFusion;
+    return g.engine.state.phase==='landed' && !g.ui.busy;
+  },null,{timeout:75000});
+  const movedCar=await host.evaluate(()=>{
+    const {engine,renderer}=window.musicCityFusion,p=engine.currentPlayer;
+    const token=renderer.playerTokens.get(p.id),slot=renderer.getLandingSlot(p.position,0);
+    return {position:p.position,actual:[token.position.x,token.position.z],
+      expected:[slot.x,slot.z],halo:!!token.userData.playerHalo};
+  });
+  assert.ok(movedCar.position>=2&&movedCar.position<=12,'Dice must move the live car');
+  assert.ok(Math.hypot(movedCar.actual[0]-movedCar.expected[0],
+    movedCar.actual[1]-movedCar.expected[1])<.2,'The live 3D car must land on its mapped image road');
+  assert.equal(movedCar.halo,true,'The player car must be visible over printed scenery');
+  if(await host.locator('#later').count())await host.locator('#later').click();
+  await host.screenshot({path:'fusion-art-board-car-after-roll.png',fullPage:true});
+  console.log('PASS: actual dice roll drove the glowing 3D artist car to its mapped roadway stop');
+
   await host.locator('#phoneBtn').click();
   await host.locator('#createFusionRoom').click();
   await host.waitForFunction(()=>window.musicCityFusion?.room?.role==='host'&&
@@ -119,7 +140,7 @@ try{
   console.log('PASS: $500 session purchased once and BeGenius Studio entered from another board square');
   assert.equal(failures.length,0,'Browser page errors: '+failures.join('; '));
   await host.screenshot({path:'fusion-art-board-mobile.png',fullPage:true});
-  console.log('LIVE SMOKE PASS: approved exact art texture, 40 mapped road stops, two mobile browsers, chat, producer sharing and reachable $500 studio');
+  console.log('LIVE SMOKE PASS: exact art, dice-driven 3D car, 40 road stops, two mobile browsers, chat, producer exchange and studio');
 }catch(error){
   for(const [page,name] of [[host,'host'],[guest,'guest']])if(page)try{
     await page.screenshot({path:'fusion-live-'+name+'.png',fullPage:true,timeout:5000});
