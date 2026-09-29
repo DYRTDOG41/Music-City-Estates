@@ -1,0 +1,42 @@
+name: Import the user-approved Music City Fusion Board artwork
+
+on:
+  push:
+    branches:
+      - feature/fusion-four-borough-board
+    paths:
+      - '.github/workflows/import-approved-fusion-art.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  import-exact-art:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/fusion-four-borough-board
+          persist-credentials: true
+      - name: Download the exact user-approved board image from the owner's Music City asset store
+        run: |
+          mkdir -p assets/fusion
+          curl --fail --location --retry 3 --retry-delay 3 --max-time 90 \
+            'https://bb04c958-3fcd-4f5c-b497-3933c18a6806.sandbox.floot.app/_cdn/static/b13aa093-28be-4dca-9d78-ffbf016dc98d-fusion-board-approved-original.png' \
+            --output assets/fusion/board-approved-original.png
+          printf '%s  %s\n' '49f4bf27b440f89e88462e615e9cf3a9d452f18e01c48d8787f3120938e00695' 'assets/fusion/board-approved-original.png' | sha256sum --check
+          test "$(stat -c %s assets/fusion/board-approved-original.png)" = '2856862'
+          file assets/fusion/board-approved-original.png
+      - name: Commit original art to the Fusion development branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/fusion/board-approved-original.png
+          if git diff --cached --quiet; then
+            echo 'Exact board image was already imported.'
+          else
+            git commit -m 'Add exact user-approved Music City Fusion Board image'
+            git push origin HEAD:feature/fusion-four-borough-board
+          fi
