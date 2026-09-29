@@ -106,14 +106,21 @@ export class FusionUI {
     this.$('artistName').textContent=p.name+(p.bot?' · computer':'');
     this.$('round').textContent=s.round;
     this.$('cash').textContent='$'+p.cash.toLocaleString();
-    this.$('pieceCount').textContent=Object.keys(p.producerParts).length+'/4';
+    const sounds=Object.keys(p.producerParts).length;
+    this.$('goalCount').textContent=(sounds+Number(Boolean(p.song)))+'/5';
+    const shortNames={hiphop:'Hip-Hop',latin:'Latin',global:'Global',country:'Country'};
+    this.$('goalStrip').innerHTML=[...DISTRICTS.map(d=>({name:shortNames[d.id]||d.name,done:Boolean(p.producerParts[d.id])})),{name:'Song',done:Boolean(p.song)}]
+      .map(goal=>'<div class="fusion-goal '+(goal.done?'done':'pending')+'"><span class="fusion-goal-mark" aria-hidden="true">'+(goal.done?'✓':'○')+'</span><span>'+esc(goal.name)+'</span></div>').join('');
     this.$('diceResult').textContent=s.lastRoll[0]?s.lastRoll.join(' + ')+' = '+(s.lastRoll[0]+s.lastRoll[1]):'Roll to move';
+    const goalRow=(label,done,detail)=>'<div class="fusion-check '+(done?'done':'pending')+'"><span class="fusion-check-mark" aria-hidden="true">'+(done?'✓':'○')+'</span><span><b>'+esc(label)+'</b><small>'+esc(detail)+'</small></span></div>';
     this.$('pieces').innerHTML=DISTRICTS.map(d=>{
       const part=p.producerParts[d.id];
-      return '<div class="fusion-piece '+(part?'done':'')+'"><b>'+esc(d.name)+'</b>'+esc(part?part.name:'Find producer')+'</div>';
-    }).join('');
-    this.$('career').textContent='Properties: '+this.engine.ownedCount(p)+' · Song: '+(p.song?p.song.title:'unfinished')+
-      ' · Manager: '+(p.manager?'hired':'needed')+' · Radio: '+(p.radio?'played':'waiting');
+      return goalRow(d.name,Boolean(part),part?part.name:'Meet this producer');
+    }).join('')+goalRow('Record fusion song',Boolean(p.song),p.song?.title||'Collect four sounds, then visit the studio');
+    this.$('career').innerHTML=goalRow('Music business',this.engine.ownedCount(p)>0,this.engine.ownedCount(p)+' owned · earn cash for your career')+
+      goalRow('Hire manager',Boolean(p.manager),p.manager?'Hired':'Cost $'+CONFIG.managerCost)+
+      goalRow('Radio airplay',Boolean(p.radio),p.radio?'Played':'Submit song · $'+CONFIG.radioCost)+
+      goalRow('Festival headline',s.headlineId===p.id,s.headlineId===p.id?'Booked':'Book after radio airplay');
     const canRoll=!this.busy&&!p.bot&&!s.showcaseComplete&&['ready','turn'].includes(s.phase);
     const canEnd=!this.busy&&!p.bot&&!s.showcaseComplete&&s.phase==='landed';
     this.$('roll').hidden=!canRoll;this.$('endTurn').hidden=!canEnd;

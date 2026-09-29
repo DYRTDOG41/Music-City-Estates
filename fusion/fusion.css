@@ -15,12 +15,13 @@
 .borough-view iframe{width:100%;flex:1;border:0;background:#090815}
 .fusion-top button:disabled,.fusion-actions button:disabled,.fusion-dice button:disabled{opacity:.45;cursor:default}
 .fusion-hud{position:absolute;z-index:11;top:90px;left:16px;width:min(330px,calc(100vw - 32px));padding:16px;background:#0a1322ec;backdrop-filter:blur(15px);border:1px solid #6ba9df62;border-radius:18px;box-shadow:0 15px 55px #0008}
+.fusion-summary{display:flex;align-items:center;gap:10px}.fusion-current{flex:1;min-width:0}
 .fusion-status-toggle{display:none}
-.fusion-current{display:grid;gap:4px}.fusion-current span{font-size:14px;color:#b9d1eb}.fusion-current strong{font-size:24px;line-height:1.1}
-.fusion-pieces{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:15px 0}
-.fusion-piece{font-size:13px;border:1px solid #7189a65c;border-radius:9px;padding:8px;background:#132236}
-.fusion-piece.done{background:#173b35;border-color:#70d9a8}.fusion-piece b{display:block;font-size:14px}
-.fusion-career{font-size:14px;line-height:1.45;color:#c8d7e7;border-top:1px solid #ffffff26;padding-top:10px}
+.fusion-current{display:grid;gap:4px}.fusion-current span{font-size:14px;color:#b9d1eb}.fusion-current strong{font-size:24px;line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fusion-wallet{display:grid;justify-items:end;flex:none;padding:6px 9px;background:#174535c9;border:1px solid #84eab780;border-radius:10px;font-variant-numeric:tabular-nums}.fusion-wallet small{font-size:10px;letter-spacing:.1em;color:#b7edcf}.fusion-wallet strong{font-size:19px;line-height:1.1;color:#c6ffdc}
+.fusion-goal-strip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;margin-top:10px}.fusion-goal{display:grid;justify-items:center;gap:1px;min-width:0;padding:4px 1px;border:1px solid #ffffff3d;border-radius:7px;background:#ffffff12;font-size:10px;text-align:center;white-space:nowrap}.fusion-goal.pending{color:#d2deea;opacity:.55}.fusion-goal.done{background:#14583caa;border-color:#70d9a8;color:#caffdc;opacity:1}.fusion-goal-mark{font-size:16px;line-height:1}.fusion-goal.done .fusion-goal-mark{font-weight:900}
+.fusion-details h2{font-size:13px;letter-spacing:.03em;margin:14px 0 7px;color:#c7ddf1}.fusion-pieces,.fusion-career{display:grid;gap:6px}.fusion-career{border-top:1px solid #ffffff26;padding-top:9px}
+.fusion-check{display:flex;align-items:center;gap:8px;border:1px solid #ffffff3d;border-radius:9px;padding:7px 9px;background:#ffffff12;font-size:13px}.fusion-check.pending{opacity:.55}.fusion-check.done{background:#14583caa;border-color:#70d9a8;color:#e4ffed;opacity:1}.fusion-check-mark{width:22px;height:22px;display:grid;place-items:center;flex:none;border:1px solid currentColor;border-radius:50%;font-size:15px;font-weight:800}.fusion-check span:last-child{display:grid;gap:1px}.fusion-check b{font-size:13px}.fusion-check small{font-size:11px;line-height:1.2}
 .fusion-actions{position:absolute;z-index:12;left:16px;bottom:92px;width:min(340px,calc(100vw - 32px));display:flex;flex-wrap:wrap;gap:7px;padding:9px;background:#0a1322d9;border:1px solid #6ba9df62;border-radius:13px;backdrop-filter:blur(12px)}.fusion-actions:empty{display:none}.fusion-actions button{background:#1a5581}.fusion-actions button.secondary{background:#233248}
 .fusion-instruction{font-size:13px;line-height:1.4;color:#b8c6d9;margin:12px 0 0}
 .fusion-notice{position:absolute;z-index:13;left:50%;top:86px;transform:translate(-50%,-8px);width:max-content;max-width:min(370px,calc(100vw - 24px));padding:9px 13px;background:#0b1b2ce8;border:1px solid #79c8ef94;border-radius:11px;text-align:center;font-size:13px;line-height:1.35;opacity:0;visibility:hidden;transition:opacity .2s,transform .2s;pointer-events:none}.fusion-notice.show{opacity:1;visibility:visible;transform:translate(-50%,0)}
@@ -44,17 +45,18 @@
  .fusion-top-actions{display:none;position:absolute;right:0;top:48px;flex-direction:column;gap:5px;padding:7px;background:#0b1525f2;border:1px solid #6ba9df62;border-radius:12px;box-shadow:0 12px 30px #0008}.fusion-top-actions.open{display:flex}.fusion-top-actions button{font-size:13px;padding:9px 12px;text-align:left}
  .borough-bar{flex-wrap:wrap;gap:5px}.borough-bar span{display:none}.borough-bar button{margin-left:auto}
  .fusion-top{left:10px;right:10px}.fusion-top>div{padding:6px 9px}.fusion-top strong{font-size:16px}
- .fusion-hud{top:68px;left:10px;right:10px;width:auto;padding:7px 10px;background:#0a1322c5;box-shadow:0 5px 20px #0005}
+ .fusion-hud{top:68px;left:10px;right:10px;width:auto;padding:7px 9px;background:#0a1322b8;box-shadow:0 5px 20px #0005}
  .fusion-hud.expanded{background:#0a1322f5;max-height:min(65vh,430px);overflow:auto}
- .fusion-summary{display:flex;align-items:center;justify-content:space-between;gap:8px}
- .fusion-current{display:flex;align-items:center;gap:8px;min-width:0;white-space:nowrap}.fusion-current span{font-size:12px}.fusion-current strong{font-size:15px;overflow:hidden;text-overflow:ellipsis}.fusion-current span:last-child{font-size:14px}
- .fusion-status-toggle{display:block;flex:none;border:1px solid #79c8ef80;border-radius:8px;background:#173a54;color:#fff;padding:7px 9px;font-size:12px;font-weight:700;cursor:pointer}.fusion-status-toggle b{color:#9ce5bd}
+ .fusion-summary{gap:6px}
+ .fusion-current{display:grid;gap:0}.fusion-current span{font-size:10px}.fusion-current strong{font-size:14px}
+ .fusion-wallet{padding:4px 6px}.fusion-wallet small{font-size:8px}.fusion-wallet strong{font-size:16px}
+ .fusion-status-toggle{display:block;flex:none;border:1px solid #79c8ef80;border-radius:8px;background:#173a54;color:#fff;padding:7px 6px;font-size:11px;font-weight:700;cursor:pointer}.fusion-status-toggle b{color:#9ce5bd}
+ .fusion-goal-strip{margin-top:6px}.fusion-goal{font-size:9px;padding:2px 0}.fusion-goal-mark{font-size:13px}
  .fusion-details{display:none}.fusion-hud.expanded .fusion-details{display:block}
- .fusion-pieces{margin:9px 0;gap:5px}
- .fusion-piece{font-size:12px;padding:5px}.fusion-piece b{font-size:12px}
+ .fusion-details h2{margin:9px 0 5px}.fusion-pieces,.fusion-career{gap:4px}.fusion-check{padding:5px 7px}
  .fusion-log{display:none}.fusion-dice{bottom:max(10px,env(safe-area-inset-bottom));max-width:calc(100vw - 20px);padding:5px 7px;background:#0a1425bf}.fusion-dice span{display:none}
  .fusion-dice button{padding:10px 18px}.fusion-card{padding:15px}
  .fusion-actions{left:10px;right:10px;bottom:max(71px,calc(env(safe-area-inset-bottom) + 70px));width:auto;max-height:128px;overflow:auto;padding:6px;background:#0a1322de}.fusion-actions button{flex:1;min-width:125px;padding:9px;font-size:13px}
- .fusion-notice{top:123px;font-size:12px}
+ .fusion-notice{top:158px;font-size:12px}
 }
 @media(max-height:650px){.fusion-hud.expanded{max-height:calc(100vh - 190px)}}

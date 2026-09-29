@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#090d19">
   <title>Music City Estates · Fusion Board</title>
   <link rel="stylesheet" href="./fusion/styles.css?v=42">
-  <link rel="stylesheet" href="./fusion/fusion.css?v=2">
+  <link rel="stylesheet" href="./fusion/fusion.css?v=3">
 </head>
 <body class="immersive-body fusion-body">
   <main class="immersive-game">
@@ -17,8 +17,9 @@
       <nav id="boardMenu" class="fusion-top-actions" aria-label="Board menu"><button id="visitHeights" type="button">Visit Hip-Hop Heights</button><button id="newGame" type="button">New game</button></nav>
     </header>
     <aside class="fusion-hud" aria-live="polite">
-      <div class="fusion-summary"><div class="fusion-current"><span>Round <b id="round">1</b></span><strong id="artistName">Artist 1</strong><span id="cash">$240</span></div><button id="statusToggle" class="fusion-status-toggle" type="button" aria-expanded="false" aria-controls="fusionDetails">Sounds <b id="pieceCount">0/4</b></button></div>
-      <div id="fusionDetails" class="fusion-details"><div class="fusion-pieces" id="pieces"></div><div id="career" class="fusion-career"></div><p id="instruction" class="fusion-instruction"></p></div>
+      <div class="fusion-summary"><div class="fusion-current"><span>Round <b id="round">1</b></span><strong id="artistName">Artist 1</strong></div><div class="fusion-wallet"><small>CASH</small><strong id="cash">$240</strong></div><button id="statusToggle" class="fusion-status-toggle" type="button" aria-expanded="false" aria-controls="fusionDetails">Goals <b id="goalCount">0/5</b> ▾</button></div>
+      <div id="goalStrip" class="fusion-goal-strip" aria-label="Song progress"></div>
+      <div id="fusionDetails" class="fusion-details"><h2>Make your fusion song</h2><div class="fusion-pieces" id="pieces"></div><h2>Reach the showcase</h2><div id="career" class="fusion-career"></div><p id="instruction" class="fusion-instruction"></p></div>
     </aside>
     <div class="fusion-dice">
       <span id="diceResult">Roll to move</span>
@@ -37,6 +38,6 @@
   <script type="importmap">
   {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}
   </script>
-  <script type="module" src="./fusion/fusion-app.js?v=2"></script>
+  <script type="module" src="./fusion/fusion-app.js?v=3"></script>
 </body>
 </html>
