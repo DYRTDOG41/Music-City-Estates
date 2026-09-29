@@ -33,8 +33,9 @@
 .fusion-modal[hidden]{display:none}.fusion-card{width:min(630px,100%);max-height:95vh;overflow:auto;background:#101c31;border:1px solid #6daee688;border-radius:20px;padding:22px;box-shadow:0 24px 75px #000b}
 .fusion-card h2{font-size:25px;margin:4px 0 12px}.fusion-card p{font-size:15px;line-height:1.5;color:#d1ddec}
 .fusion-card label{display:block;font-size:14px;margin:12px 0}.fusion-card input:not([type=file]){display:block;width:100%;box-sizing:border-box;margin-top:5px;border:1px solid #7292ad;background:#091422;color:white;border-radius:8px;font-size:16px;padding:10px}
+.fusion-card textarea{display:block;width:100%;box-sizing:border-box;margin-top:5px;border:1px solid #7292ad;background:#091422;color:white;border-radius:8px;font-size:16px;line-height:1.4;padding:10px;resize:vertical}
 .fusion-card input[type=file]{display:block;max-width:100%;margin-top:8px}.fusion-card button{margin:5px 6px 5px 0}.fusion-card button.primary{background:#2572aa}
-.fusion-card .choices{display:grid;gap:10px}.fusion-card .choices button{text-align:left}
+.fusion-card .choices{display:grid;gap:10px}.fusion-card .choices button{text-align:left}.fusion-card .choices small{display:block;margin-top:4px;font-size:12px;line-height:1.35;font-weight:400;color:#d2deee}
 .fusion-card .progress{color:#91dcaf}.fusion-card audio{width:100%;margin:8px 0}
 .fusion-spotlight{background:radial-gradient(circle at 50% 0%,#488bdb88,transparent 46%),linear-gradient(130deg,#132c50,#201936);padding:34px 16px;border-radius:13px;text-align:center;min-height:185px;display:flex;flex-direction:column;justify-content:center;border:1px solid #96caff88;box-shadow:inset 0 -35px 70px #020713,0 0 30px #3274c850;animation:stagePulse 2s ease-in-out infinite alternate}
 @keyframes stagePulse{to{box-shadow:inset 0 -35px 70px #020713,0 0 58px #b279e887}}

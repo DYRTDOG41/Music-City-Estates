@@ -2,13 +2,13 @@ import { BOARD_SPACES as DETROIT_BOARD, LANDMARKS as DETROIT_LANDMARKS } from '.
 
 export const DISTRICTS = [
   { id:'hiphop', name:'Hip-Hop Heights', side:'North', accent:'#4b9bff',
-    parts:[{id:'boom',name:'Boom-bap drums'},{id:'trap',name:'Modern 808 groove'}] },
+    parts:[{id:'boom',name:'Boom-bap groove',prompt:'Use a laid-back boom-bap drum groove with room for the vocal.'},{id:'trap',name:'Modern 808 groove',prompt:'Use crisp hip-hop drums and a warm, restrained 808 bassline.'}] },
   { id:'latin', name:'Latin Quarter', side:'East', accent:'#f5a853',
-    parts:[{id:'clave',name:'Clave and percussion'},{id:'dance',name:'Dance percussion'}] },
+    parts:[{id:'clave',name:'Clave rhythm',prompt:'Add a subtle clave-inspired rhythm and layered hand percussion.'},{id:'dance',name:'Dance percussion',prompt:'Add bright, syncopated Latin dance percussion that lifts the chorus.'}] },
   { id:'global', name:'Global Sound District', side:'South', accent:'#9cdfb6',
-    parts:[{id:'hand',name:'Hand-drum pattern'},{id:'pluck',name:'Plucked melody'}] },
+    parts:[{id:'hand',name:'Hand-drum texture',prompt:'Weave a gentle hand-drum pattern into the arrangement.'},{id:'pluck',name:'Plucked melody',prompt:'Add a warm plucked-string melody as a global fusion texture.'}] },
   { id:'country', name:'Country Crossings', side:'West', accent:'#d9aeec',
-    parts:[{id:'guitar',name:'Country guitar pulse'},{id:'shuffle',name:'Country shuffle'}] },
+    parts:[{id:'guitar',name:'Acoustic guitar',prompt:'Bring in a clear acoustic guitar motif and a storytelling chorus.'},{id:'shuffle',name:'Country shuffle',prompt:'Give the song a light country shuffle and a melodic, story-driven hook.'}] },
 ];
 
 const producerBlocks = {North:[3,4,5],East:[13,14,15],South:[23,24,25],West:[33,34,35]};
@@ -22,7 +22,7 @@ const cursors={North:0,East:0,South:0,West:0};
 export const BOARD_SPACES = DETROIT_BOARD.map((original,index)=>{
   const s={...original,ownerId:null};
   if(index===0)return {...s,name:'Music City Start',kind:'start',effect:'Collect $80 each lap.'};
-  if(index===8)return {...s,name:'BeGenius Studio · Hip-Hop Heights',kind:'studio',effect:'Four producer pieces required.'};
+  if(index===8)return {...s,name:'BeGenius Studio · Hip-Hop Heights',kind:'studio',effect:'Four producer prompt cards required.'};
   if(index===10)return {...s,name:'Borough Junction',kind:'event',effect:'Connect to the next borough.'};
   if(index===20)return {...s,name:'Music City Radio',kind:'radio',effect:'Manager and finished song required.'};
   if(index===30)return {...s,name:'Festival Finale',kind:'festival',effect:'Radio airplay required.'};

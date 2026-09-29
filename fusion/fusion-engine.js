@@ -1,4 +1,4 @@
-import { BOARD_SPACES, LANDMARKS, DISTRICTS, CONFIG } from './fusion-data.js';
+import { BOARD_SPACES, LANDMARKS, DISTRICTS, CONFIG } from './fusion-data.js?v=4';
 
 const copy = value => JSON.parse(JSON.stringify(value));
 const COLORS=['#47a9ff','#f29964','#ba8cf5','#6bd2ad'];
@@ -18,7 +18,7 @@ export class FusionEngine extends EventTarget {
         ownedRims:['factory'],equippedRim:'factory',vehiclePaint:COLORS[i],
       }))
     };
-    this.log('Collect four producer sounds, record one fusion song, hire a manager and reach radio.');
+    this.log('Collect four producer prompt cards, make a fusion song, hire a manager and reach radio.');
     this.emit('state');
   }
   get currentPlayer(){return this.state.players[this.state.turn];}
@@ -59,7 +59,7 @@ export class FusionEngine extends EventTarget {
       p.cash-=paid;owner.cash+=paid;
       this.log(p.name+' paid '+owner.name+' $'+paid+' at '+space.name+'.');
     }else if(space.kind==='producer'){
-      this.log(p.name+' met the '+space.name+'. Choose a sound for the fusion record.');
+      this.log(p.name+' met the '+space.name+'. Choose a prompt card for the fusion song.');
     }else if(space.kind==='event'){
       const payout=25+Math.floor(Math.random()*36);
       p.cash+=payout;this.log(p.name+' earned $'+payout+' from a Music City opportunity.');
@@ -70,11 +70,12 @@ export class FusionEngine extends EventTarget {
   collectPart(partId){
     const p=this.currentPlayer,space=this.currentSpace;
     if(!this.canAct()||space.kind!=='producer')return {ok:false,reason:'Land on a producer block first.'};
+    if(p.song)return {ok:false,reason:'Your producer cards are locked into your finished song.'};
     const district=DISTRICTS.find(d=>d.id===space.producer);
     const part=district?.parts.find(x=>x.id===partId);
-    if(!part)return {ok:false,reason:'Choose a sound from this producer.'};
-    p.producerParts[district.id]={id:part.id,name:part.name,district:district.name};
-    this.log(p.name+' collected '+part.name+' from '+district.name+'.');
+    if(!part)return {ok:false,reason:'Choose a prompt card from this producer.'};
+    p.producerParts[district.id]={id:part.id,name:part.name,prompt:part.prompt,district:district.name};
+    this.log(p.name+' collected the '+part.name+' prompt card from '+district.name+'.');
     this.emit('state');return {ok:true};
   }
   buyProperty(type='space',id=this.currentSpace.id){
@@ -96,14 +97,15 @@ export class FusionEngine extends EventTarget {
     p.cash-=CONFIG.managerCost;p.manager=true;this.log(p.name+' hired a manager.');
     this.emit('state');return {ok:true};
   }
-  recordSong(title,vocalData=null){
+  recordSong(title,audioKey=null,prompt=''){
     const p=this.currentPlayer;
     if(!this.canAct()||this.currentSpace.kind!=='studio')return {ok:false,reason:'Land at BeGenius Studio.'};
-    if(!this.hasAllParts(p))return {ok:false,reason:'Collect a sound from all four producers first.'};
+    if(!this.hasAllParts(p))return {ok:false,reason:'Collect a prompt card from all four producers first.'};
     const safeTitle=String(title||'').trim().slice(0,44);
     if(!safeTitle)return {ok:false,reason:'Give your fusion song a title.'};
-    p.song={title:safeTitle,vocalData:vocalData||null,parts:copy(p.producerParts)};
-    this.log(p.name+' recorded “'+safeTitle+'” at BeGenius Studio.');
+    if(!p.bot&&!audioKey)return {ok:false,reason:'Upload the song made from your prompt before finishing.'};
+    p.song={title:safeTitle,audioKey:audioKey||null,prompt:String(prompt||'').trim().slice(0,3000),parts:copy(p.producerParts)};
+    this.log(p.name+(audioKey?' uploaded':' drafted')+' “'+safeTitle+'” at BeGenius Studio.');
     this.emit('state');return {ok:true};
   }
   submitRadio(){
@@ -148,4 +150,3 @@ export class FusionEngine extends EventTarget {
     this.state=value;this.emit('state');
   }
 }
-

@@ -1,7 +1,7 @@
-import { BOARD_SPACES, LANDMARKS } from './fusion-data.js';
+import { BOARD_SPACES, LANDMARKS } from './fusion-data.js?v=4';
 import { DetroitRenderer, useBoardData } from './renderer.js?v=42';
-import { FusionEngine } from './fusion-engine.js';
-import { FusionUI } from './fusion-ui.js?v=3';
+import { FusionEngine } from './fusion-engine.js?v=4';
+import { FusionUI } from './fusion-ui.js?v=4';
 
 useBoardData(BOARD_SPACES,LANDMARKS);
 const engine=new FusionEngine();
@@ -10,4 +10,3 @@ renderer.setPlayers(engine.state.players);
 renderer.boardView();
 const ui=new FusionUI(engine,renderer);
 window.musicCityFusion={engine,renderer,ui};
-

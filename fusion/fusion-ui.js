@@ -1,13 +1,33 @@
-import { DISTRICTS, CONFIG } from './fusion-data.js';
+import { DISTRICTS, CONFIG } from './fusion-data.js?v=4';
 
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+const openAudioDb=()=>new Promise((resolve,reject)=>{
+  const request=indexedDB.open('mce-fusion-audio',1);
+  request.onupgradeneeded=()=>request.result.createObjectStore('songs');
+  request.onsuccess=()=>resolve(request.result);
+  request.onerror=()=>reject(request.error);
+});
+const storeAudio=async(key,blob)=>{
+  const db=await openAudioDb();
+  try{await new Promise((resolve,reject)=>{
+    const tx=db.transaction('songs','readwrite');tx.objectStore('songs').put(blob,key);
+    tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);
+  });}finally{db.close();}
+};
+const loadAudio=async key=>{
+  const db=await openAudioDb();
+  try{return await new Promise((resolve,reject)=>{
+    const request=db.transaction('songs').objectStore('songs').get(key);
+    request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);
+  });}finally{db.close();}
+};
 export class FusionUI {
   constructor(engine,renderer){
     this.engine=engine;this.renderer=renderer;
     this.$=id=>document.getElementById(id);
     this.modal=this.$('fusionModal');
-    this.busy=false;this.audioContext=null;this.playingAudio=null;
+    this.busy=false;this.playingAudio=null;
     this.$('roll').onclick=()=>this.moveCurrent();
     this.$('endTurn').onclick=()=>this.endTurn();
     this.$('statusToggle').onclick=()=>this.setStatusExpanded(!document.querySelector('.fusion-hud').classList.contains('expanded'));
@@ -26,7 +46,7 @@ export class FusionUI {
       }
       if(e.detail.type==='space'){
         const item=engine.state.spaces.find(x=>x.id===e.detail.id);
-        if(item)this.showNotice(item.name+' · '+(item.kind==='producer'?'Land here to choose a sound.':item.kind==='property'?'Land here to buy this music business.':item.effect||''));
+        if(item)this.showNotice(item.name+' · '+(item.kind==='producer'?'Land here to choose a prompt card.':item.kind==='property'?'Land here to buy this music business.':item.effect||''));
       }
     });
     engine.addEventListener('state',()=>this.render());
@@ -73,7 +93,7 @@ export class FusionUI {
   openModal(html){this.modal.innerHTML='<div class="fusion-card">'+html+'</div>';this.modal.hidden=false;}
   openSetup(){
     this.setStatusExpanded(false);this.setMenuOpen(false);
-    this.openModal('<h2>Music City Estates · Fusion Board</h2><p>Roll around the 3D city, meet four producers, build one song, buy a music business, hire a manager and get radio airplay. The first artist to reach the festival headlines the four-song showcase.</p>'+
+    this.openModal('<h2>Music City Estates · Fusion Board</h2><p>Roll around the 3D city, collect four producer prompt cards, create one fusion song, buy a music business, hire a manager and get radio airplay. The first artist to reach the festival headlines the showcase.</p>'+ 
       '<p><strong>Four artists enter the showcase.</strong> Uncheck “Computer artist” for each friend playing on this device. Online rooms are not connected in this prototype.</p>'+
       '<div id="setupRows"></div><div><button class="primary" id="begin">Start game</button><button id="continue">Continue saved game</button></div>');
     const rows=this.$('setupRows');
@@ -106,8 +126,8 @@ export class FusionUI {
     this.$('artistName').textContent=p.name+(p.bot?' · computer':'');
     this.$('round').textContent=s.round;
     this.$('cash').textContent='$'+p.cash.toLocaleString();
-    const sounds=Object.keys(p.producerParts).length;
-    this.$('goalCount').textContent=(sounds+Number(Boolean(p.song)))+'/5';
+    const cards=Object.keys(p.producerParts).length;
+    this.$('goalCount').textContent=(cards+Number(Boolean(p.song)))+'/5';
     const shortNames={hiphop:'Hip-Hop',latin:'Latin',global:'Global',country:'Country'};
     this.$('goalStrip').innerHTML=[...DISTRICTS.map(d=>({name:shortNames[d.id]||d.name,done:Boolean(p.producerParts[d.id])})),{name:'Song',done:Boolean(p.song)}]
       .map(goal=>'<div class="fusion-goal '+(goal.done?'done':'pending')+'"><span class="fusion-goal-mark" aria-hidden="true">'+(goal.done?'✓':'○')+'</span><span>'+esc(goal.name)+'</span></div>').join('');
@@ -115,8 +135,8 @@ export class FusionUI {
     const goalRow=(label,done,detail)=>'<div class="fusion-check '+(done?'done':'pending')+'"><span class="fusion-check-mark" aria-hidden="true">'+(done?'✓':'○')+'</span><span><b>'+esc(label)+'</b><small>'+esc(detail)+'</small></span></div>';
     this.$('pieces').innerHTML=DISTRICTS.map(d=>{
       const part=p.producerParts[d.id];
-      return goalRow(d.name,Boolean(part),part?part.name:'Meet this producer');
-    }).join('')+goalRow('Record fusion song',Boolean(p.song),p.song?.title||'Collect four sounds, then visit the studio');
+      return goalRow(d.name,Boolean(part),part?part.name+' · prompt card':'Meet this producer');
+    }).join('')+goalRow('Finish fusion song',Boolean(p.song),p.song?.title||'Combine four prompts, then upload the song');
     this.$('career').innerHTML=goalRow('Music business',this.engine.ownedCount(p)>0,this.engine.ownedCount(p)+' owned · earn cash for your career')+
       goalRow('Hire manager',Boolean(p.manager),p.manager?'Hired':'Cost $'+CONFIG.managerCost)+
       goalRow('Radio airplay',Boolean(p.radio),p.radio?'Played':'Submit song · $'+CONFIG.radioCost)+
@@ -133,13 +153,13 @@ export class FusionUI {
     };
     if(canEnd){
       if(space.kind==='producer'){
-        if(!p.producerParts[space.producer])action('Meet producer',()=>this.openProducer());
-        else action('Choose another sound',()=>this.openProducer(),true);
+        if(!p.producerParts[space.producer])action('Get prompt card',()=>this.openProducer());
+        else if(!p.song)action('Swap prompt card',()=>this.openProducer(),true);
       }
       if(space.kind==='property'&&!space.ownerId&&p.cash>=space.price)
         action('Buy '+space.name+' · $'+space.price,()=>this.act(()=>this.engine.buyProperty()));
       if(space.kind==='studio'){
-        action('Record fusion song',()=>this.openStudio());
+        action('Create fusion song',()=>this.openStudio());
         if(this.engine.hasAllParts(p))action('Explore Hip-Hop Heights',()=>this.openBorough(),true);
       }
       if(space.kind==='radio')action('Submit to radio · $'+CONFIG.radioCost,()=>this.act(()=>this.engine.submitRadio()));
@@ -155,10 +175,10 @@ export class FusionUI {
     this.renderer.syncOwnership(s);
   }
   nextStep(p,space){
-    if(space.kind==='studio')return this.engine.hasAllParts(p)?'All four sounds ready. Record your song.':'Studio locked. Visit all four producers.';
+    if(space.kind==='studio')return this.engine.hasAllParts(p)?'All four prompts ready. Make your song.':'Studio locked. Visit all four producers.';
     if(space.kind==='radio')return p.manager&&p.song?'Submit your song.':'A recorded song and manager are required.';
     if(space.kind==='festival')return p.radio?'Book the headline slot.':'Get radio airplay first.';
-    if(space.kind==='producer')return p.producerParts[space.producer]?'You can swap this sound.':'Choose a sound for your song.';
+    if(space.kind==='producer')return p.song?'This prompt is locked into your finished song.':p.producerParts[space.producer]?'You can swap this prompt card.':'Choose a prompt card for your song.';
     return space.kind==='property'?'Buy this business to fund your manager.':'Keep moving toward your next producer.';
   }
   act(fn){
@@ -192,8 +212,8 @@ export class FusionUI {
     const space=this.engine.currentSpace;
     const district=DISTRICTS.find(x=>x.id===space.producer);
     if(!district)return;
-    this.openModal('<small>PRODUCER SESSION</small><h2>'+esc(district.name)+'</h2><p>Pick one sound for your fusion song. Every artist can work with this producer.</p><div class="choices">'+
-      district.parts.map(part=>'<button data-part="'+esc(part.id)+'">'+esc(part.name)+'</button>').join('')+
+    this.openModal('<small>PRODUCER SESSION</small><h2>'+esc(district.name)+'</h2><p>Choose one short direction for your AI song prompt. You can swap it if you land here again.</p><div class="choices">'+
+      district.parts.map(part=>'<button data-part="'+esc(part.id)+'"><strong>'+esc(part.name)+'</strong><small>'+esc(part.prompt)+'</small></button>').join('')+
       '</div><button id="later">Decide later</button>');
     this.modal.querySelectorAll('[data-part]').forEach(button=>button.onclick=()=>{
       this.act(()=>this.engine.collectPart(button.dataset.part));
@@ -201,56 +221,64 @@ export class FusionUI {
     });
     this.$('later').onclick=()=>this.closeModal();
   }
+  composePrompt(p){
+    const directions=DISTRICTS.map(d=>{
+      const chosen=p.producerParts[d.id];
+      return chosen.prompt||d.parts.find(part=>part.id===chosen.id)?.prompt||chosen.name;
+    });
+    return 'Create an original fusion song that blends these four producer directions into one coherent arrangement:\n'+
+      directions.map((line,i)=>(i+1)+'. '+line).join('\n')+
+      '\nLeave room for an original lead vocal and a memorable chorus. Avoid imitating a specific artist.';
+  }
   openStudio(){
     const p=this.engine.currentPlayer;
-    if(!this.engine.hasAllParts(p)){this.showNotice('Studio locked: collect all four producer sounds.');return;}
-    this.openModal('<small>BEGENIUS STUDIO</small><h2>Make your fusion song</h2><p>Your four producers supplied the groove, percussion, melody and texture. Record a short original vocal or upload one to finish your song.</p>'+
+    if(!this.engine.hasAllParts(p)){this.showNotice('Studio locked: collect all four producer prompts.');return;}
+    const defaultPrompt=this.composePrompt(p);
+    this.openModal('<small>BEGENIUS STUDIO · PROMPT LAB</small><h2>Make your fusion song</h2><p>Your four producer cards create one prompt. Copy it into the music generator you choose, then return and upload the finished audio. AI generation is not connected inside this game yet.</p>'+
+      '<label>Combined song prompt<textarea id="songPrompt" rows="9" maxlength="3000"></textarea></label><button id="copyPrompt">Copy prompt</button><span id="copyStatus" class="progress" role="status"></span>'+
       '<label>Song title<input id="songTitle" maxlength="44" placeholder="Name your song" value="'+esc(p.song?.title||'')+'"></label>'+
-      '<button id="recordVocal">Record 12 seconds</button><label>Or upload your own short vocal<input id="vocalFile" type="file" accept="audio/*"></label>'+
-      '<p id="vocalStatus" class="progress">A vocal is required for a human artist.</p><audio id="vocalPreview" controls hidden></audio>'+
+      '<label>Upload your finished song (audio, up to 25 MB)<input id="songFile" type="file" accept="audio/*"></label>'+
+      '<p id="songStatus" class="progress">Audio stays on this device. Bring back the track made from your four prompts.</p><audio id="songPreview" controls hidden></audio>'+
       '<button class="primary" id="finishSong">Finish song</button><button id="leaveStudio">Return to board</button>');
-    let vocalData=p.song?.vocalData||null;
-    const setVocal=data=>{vocalData=data;this.$('vocalStatus').textContent='Vocal ready. Your four sounds will play beneath it at the showcase.';this.$('vocalPreview').src=data;this.$('vocalPreview').hidden=false;};
-    if(vocalData)setVocal(vocalData);
-    this.$('vocalFile').onchange=async e=>{
-      const file=e.target.files?.[0];if(!file)return;
-      if(file.size>700000){this.$('vocalStatus').textContent='Choose a short audio clip under 700 KB for device saving.';return;}
-      const reader=new FileReader();reader.onload=()=>setVocal(reader.result);reader.readAsDataURL(file);
+    this.$('songPrompt').value=p.song?.prompt||defaultPrompt;
+    this.$('copyPrompt').onclick=async()=>{
+      const field=this.$('songPrompt');
+      try{await navigator.clipboard.writeText(field.value);this.$('copyStatus').textContent=' Copied!';}
+      catch(error){field.focus();field.select();this.$('copyStatus').textContent=' Select and copy this prompt.';}
     };
-    this.$('recordVocal').onclick=async()=>{
-      if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder){
-        this.$('vocalStatus').textContent='Microphone recording is unavailable here. Upload a short audio clip instead.';return;
-      }
-      let stream;
+    let file=null,previewUrl=null;
+    this.$('songFile').onchange=e=>{
+      file=e.target.files?.[0]||null;
+      if(previewUrl)URL.revokeObjectURL(previewUrl);
+      if(!file)return;
+      if(file.size>25*1024*1024){this.$('songStatus').textContent='Choose an audio file under 25 MB.';file=null;return;}
+      previewUrl=URL.createObjectURL(file);
+      this.$('songPreview').src=previewUrl;this.$('songPreview').hidden=false;
+      this.$('songStatus').textContent='Song ready to save on this device.';
+    };
+    this.$('finishSong').onclick=async()=>{
+      const title=this.$('songTitle').value.trim(),prompt=this.$('songPrompt').value.trim();
+      if(!title){this.$('songStatus').textContent='Name your song first.';return;}
+      if(!prompt){this.$('songStatus').textContent='Keep a prompt for your song.';return;}
+      if(!file&&!p.song?.audioKey){this.$('songStatus').textContent='Upload the finished audio first.';return;}
+      const button=this.$('finishSong');button.disabled=true;
       try{
-        stream=await navigator.mediaDevices.getUserMedia({audio:true});
-        const recorder=new MediaRecorder(stream),chunks=[];
-        recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};
-        recorder.onstop=()=>{
-          stream.getTracks().forEach(t=>t.stop());
-          const blob=new Blob(chunks,{type:recorder.mimeType||'audio/webm'});
-          if(blob.size>700000){this.$('vocalStatus').textContent='Recording too large; upload a shorter clip.';return;}
-          const reader=new FileReader();reader.onload=()=>setVocal(reader.result);reader.readAsDataURL(blob);
-        };
-        recorder.start();this.$('recordVocal').disabled=true;
-        this.$('vocalStatus').textContent='Recording… sing or rap your original hook.';
-        setTimeout(()=>{if(recorder.state==='recording')recorder.stop();},12000);
-      }catch(error){stream?.getTracks().forEach(t=>t.stop());this.$('vocalStatus').textContent='Microphone unavailable. Upload a short clip instead.';}
+        let key=p.song?.audioKey||null;
+        if(file){key=p.id+'-'+Date.now()+'-'+Math.random().toString(36).slice(2);await storeAudio(key,file);}
+        const result=this.engine.recordSong(title,key,prompt);
+        if(!result.ok){this.$('songStatus').textContent=result.reason;button.disabled=false;return;}
+        if(previewUrl)URL.revokeObjectURL(previewUrl);
+        this.closeModal();this.save();this.render();this.showNotice('Song finished · your prompt and audio are saved on this device.');
+      }catch(error){this.$('songStatus').textContent='Could not save audio on this device. Try a smaller file or free storage.';button.disabled=false;}
     };
-    this.$('finishSong').onclick=()=>{
-      if(!vocalData){this.$('vocalStatus').textContent='Record or upload your vocal first.';return;}
-      const result=this.engine.recordSong(this.$('songTitle').value,vocalData);
-      if(!result.ok){this.$('vocalStatus').textContent=result.reason;return;}
-      this.closeModal();this.save();this.render();
-    };
-    this.$('leaveStudio').onclick=()=>this.closeModal();
+    this.$('leaveStudio').onclick=()=>{if(previewUrl)URL.revokeObjectURL(previewUrl);this.closeModal();};
   }
   botAction(){
     const e=this.engine,p=e.currentPlayer,space=e.currentSpace;
     if(space.kind==='producer')e.collectPart(DISTRICTS.find(d=>d.id===space.producer).parts[(p.laps+p.position)%2].id);
     if(space.kind==='property'&&!space.ownerId&&p.cash>=space.price+75&&e.ownedCount(p)<2)e.buyProperty();
     if(!p.manager&&e.ownedCount(p)>0&&p.cash>=CONFIG.managerCost)e.hireManager();
-    if(space.kind==='studio'&&e.hasAllParts(p)&&!p.song)e.recordSong(p.name+' Across the City');
+    if(space.kind==='studio'&&e.hasAllParts(p)&&!p.song)e.recordSong(p.name+' Across the City',null,this.composePrompt(p));
     if(space.kind==='radio'&&p.song&&p.manager&&p.cash>=CONFIG.radioCost)e.submitRadio();
     if(space.kind==='festival'&&p.radio)e.bookFinale();
     this.save();this.render();
@@ -266,47 +294,39 @@ export class FusionUI {
     if(this.engine.currentPlayer.bot&&!this.engine.state.showcaseComplete&&this.modal.hidden)
       setTimeout(()=>this.moveCurrent(),600);
   }
-  async playSong(p,duration=11000){
+  async playSong(p){
     this.stopAudio();
-    const Context=window.AudioContext||window.webkitAudioContext;
-    if(Context){
-      this.audioContext=new Context();
-      try{await this.audioContext.resume();}catch(e){}
-      const context=this.audioContext,start=context.currentTime+.05;
-      const sound=(time,frequency,length,volume,shape='sine')=>{
-        const oscillator=context.createOscillator(),gain=context.createGain();
-        oscillator.type=shape;oscillator.frequency.setValueAtTime(frequency,time);
-        gain.gain.setValueAtTime(.001,time);gain.gain.exponentialRampToValueAtTime(volume,time+.015);
-        gain.gain.exponentialRampToValueAtTime(.001,time+length);
-        oscillator.connect(gain).connect(context.destination);
-        oscillator.start(time);oscillator.stop(time+length+.03);
-      };
-      for(let i=0;i<24;i++){
-        const t=start+i*.43;
-        if(p.producerParts.hiphop){if(i%4===0)sound(t,70,.20,.15);if(i%4===2)sound(t,175,.08,.07,'triangle');}
-        if(p.producerParts.latin){if(i%3===0)sound(t+.12,460,.06,.055,'triangle');sound(t+.24,740,.04,.025);}
-        if(p.producerParts.global&&i%2===0)sound(t+.06,[330,392,440,392][i%4],.24,.035);
-        if(p.producerParts.country&&i%4===0){sound(t+.04,220,.28,.045,'sawtooth');sound(t+.04,330,.23,.025);}
-      }
-    }
-    if(p.song?.vocalData){
-      const audio=new Audio(p.song.vocalData);this.playingAudio=audio;
-      audio.volume=.85;audio.play().catch(()=>{});
-    }
-    await delay(duration);this.stopAudio();
+    const stage=this.$('showStage');let blob=null,objectUrl=null;
+    try{if(p.song?.audioKey)blob=await loadAudio(p.song.audioKey);}catch(error){}
+    if(blob)objectUrl=URL.createObjectURL(blob);
+    const source=objectUrl||p.song?.vocalData;
+    const status=document.createElement('p');
+    status.textContent=source?'Playing the artist’s uploaded audio.':'Prompt-only demo · no generated audio attached.';
+    stage.appendChild(status);
+    if(!source){await delay(3000);return;}
+    const player=document.createElement('audio');player.controls=true;player.src=source;
+    player.style.width='100%';stage.appendChild(player);this.playingAudio=player;
+    const next=document.createElement('button');next.textContent='Next artist';stage.appendChild(next);
+    await new Promise(resolve=>{
+      let done=false;
+      const finish=()=>{if(done)return;done=true;resolve();};
+      player.onended=finish;player.onerror=()=>{status.textContent='Audio could not play on this device.';finish();};
+      next.onclick=finish;
+      player.play().catch(()=>{status.textContent='Tap play to hear this song, then continue.';});
+    });
+    this.stopAudio();if(objectUrl)URL.revokeObjectURL(objectUrl);
   }
   stopAudio(){
     this.playingAudio?.pause();this.playingAudio=null;
-    this.audioContext?.close().catch(()=>{});this.audioContext=null;
   }
   async runShowcase(){
     if(!this.engine.canShowcase()||this.busy)return;
     this.busy=true;this.render();
     const players=this.engine.state.players;
-    this.openModal('<small>LIVE FROM MUSIC CITY</small><h2>The Fusion Festival</h2><p>Every artist gets a stage moment. Listen to all the songs, then cast one vote per human player. The demo judges score career progress; they do not evaluate audio quality.</p><div id="showStage" class="fusion-spotlight">Stage lights coming up…</div>');
+    this.openModal('<small>LIVE FROM MUSIC CITY</small><h2>The Fusion Festival</h2><p>Artists with uploaded audio play their songs. Computer artists without a generator show prompt-only demos. Then each human player votes; demo judges score career progress, not audio quality.</p><div id="showStage" class="fusion-spotlight">Stage lights coming up…</div>');
     for(let i=0;i<players.length;i++){
       const p=players[i];
-      this.$('showStage').innerHTML='<strong>'+esc(p.name)+'</strong><span>“'+esc(p.song.title)+'”</span><span>'+Object.values(p.song.parts).map(x=>esc(x.name)).join(' · ')+'</span><p>Performance '+(i+1)+' of '+players.length+'</p>';
+      this.$('showStage').innerHTML='<strong>'+esc(p.name)+'</strong><span>“'+esc(p.song.title)+'”</span><span>'+Object.values(p.song.parts).map(x=>esc(x.name)).join(' · ')+'</span><p>Performance '+(i+1)+' of '+players.length+'</p><details><summary>See producer prompt</summary><p>'+esc(p.song.prompt||'Prompt not saved in this older song.')+'</p></details>';
       await this.playSong(p);
     }
     this.busy=false;this.render();this.openVoting();
@@ -315,7 +335,7 @@ export class FusionUI {
     const s=this.engine.state,players=s.players;
     const humans=players.filter(x=>!x.bot);
     const votes={};let index=0;
-    const base=p=>34+Object.keys(p.producerParts).length*7+(p.song?.vocalData?10:0)+(p.radio?8:0)+(s.headlineId===p.id?6:0);
+    const base=p=>34+Object.keys(p.producerParts).length*7+(p.song?.audioKey||p.song?.vocalData?10:0)+(p.radio?8:0)+(s.headlineId===p.id?6:0);
     const showWinner=()=>{
       players.filter(x=>x.bot).forEach(bot=>{
         const choice=players.filter(x=>x.id!==bot.id).sort((a,b)=>base(b)-base(a))[0];
@@ -324,7 +344,7 @@ export class FusionUI {
       const sorted=[...players].sort((a,b)=>(base(b)+(votes[b.id]||0)*16)-(base(a)+(votes[a.id]||0)*16));
       const winner=sorted[0];s.judging={votes,scores:Object.fromEntries(players.map(p=>[p.id,base(p)+(votes[p.id]||0)*16]))};
       this.engine.finishShowcase(winner.id);this.save();
-      this.openModal('<small>FESTIVAL FINALE</small><h2>'+esc(winner.name)+' wins $'+CONFIG.prize+'!</h2><p>The four songs played. Audience votes and career progress determined this demo result.</p>'+
+      this.openModal('<small>FESTIVAL FINALE</small><h2>'+esc(winner.name)+' wins $'+CONFIG.prize+'!</h2><p>Uploaded songs played; prompt-only artist demos appeared on stage. Audience votes and career progress determined this demo result.</p>'+ 
         sorted.map(p=>'<p><strong>'+esc(p.name)+'</strong> · “'+esc(p.song.title)+'” · '+s.judging.scores[p.id]+' points</p>').join('')+
         '<button id="closeShow">View board</button>');
       this.$('closeShow').onclick=()=>{this.closeModal();this.render();};
