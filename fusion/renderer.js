@@ -1638,11 +1638,11 @@ export class DetroitRenderer extends EventTarget {
   followPlayerCamera(token,heading=0,settled=false){
     if(!token)return;
     if(this.artBoardActive){
+      // North-up art camera: avoid rotating readable artwork as the car drives.
+      // A subtle forward offset still shows the raised 3D vehicle and its halo.
       this.showFullBoard=false;
-      const side=settled?5.5:4.9;
-      const height=settled?11:9.5;
       this.desiredTarget.set(token.position.x,0,token.position.z);
-      this.desiredPos.set(token.position.x+side,height,token.position.z+side);
+      this.desiredPos.set(token.position.x+1.3,settled?12.6:11.3,token.position.z+5.4);
       return;
     }
     const behind=settled?6.2:5.4;
@@ -1722,6 +1722,39 @@ export class DetroitRenderer extends EventTarget {
     this.driveMode=false;
     this.droneActive=true;
     this.showLandingBanner(position);
+
+    if(this.artBoardActive){
+      // The image itself contains all four readable district signs and graphics.
+      // Preserve their north-up orientation rather than doing Detroit's 210°
+      // orbital fly-by, which turns the printed board upside down on iPhone.
+      const destination=new THREE.Vector3(focus.x+1.35,13.2,focus.z+5.5);
+      const initialPos=this.desiredPos.clone();
+      const initialTarget=this.desiredTarget.clone();
+      if(this.reduceMotion){
+        this.desiredPos.copy(destination);
+        this.desiredTarget.copy(focus);
+        this.droneActive=false;
+        return Promise.resolve();
+      }
+      const started=performance.now();
+      return new Promise(resolve=>{
+        const frame=now=>{
+          const t=Math.min(1,(now-started)/1100);
+          const eased=t*t*(3-2*t);
+          this.desiredTarget.lerpVectors(initialTarget,focus,eased);
+          this.desiredPos.lerpVectors(initialPos,destination,eased);
+          this.desiredPos.x+=Math.sin(Math.PI*t)*.35;
+          if(t<1)requestAnimationFrame(frame);
+          else{
+            this.desiredPos.copy(destination);
+            this.desiredTarget.copy(focus);
+            this.droneActive=false;
+            resolve();
+          }
+        };
+        requestAnimationFrame(frame);
+      });
+    }
 
     if(this.reduceMotion){
       this.desiredTarget.copy(focus);
