@@ -111,6 +111,28 @@ export class FusionEngine extends EventTarget {
     this.log(p.name+' collected the '+part.name+' prompt card from '+district.name+'.');
     this.emit('state');return {ok:true};
   }
+  // A producer prompt can be offered to another human artist without giving up the original.
+  // Validating the sender ID here keeps sharing safe when the host handles remote phone commands.
+  sharePart(fromId,toId,districtId){
+    const sender=this.state.players.find(p=>p.id===fromId);
+    const recipient=this.state.players.find(p=>p.id===toId);
+    const district=DISTRICTS.find(d=>d.id===districtId);
+    if(this.state.showcaseComplete)return {ok:false,reason:'The final showcase has finished.'};
+    if(!sender||!recipient||sender.id===recipient.id||sender.bot||recipient.bot)
+      return {ok:false,reason:'Choose another human artist in this game.'};
+    if(!district)return {ok:false,reason:'Choose one of the four music boroughs.'};
+    const part=sender.producerParts?.[district.id];
+    if(!part || !district.parts.some(card=>card.id===part.id))
+      return {ok:false,reason:'Collect this producer card yourself before sharing it.'};
+    if(recipient.song)return {ok:false,reason:'This artist already finished their song.'};
+    if(recipient.producerParts?.[district.id])
+      return {ok:false,reason:'That artist already has a prompt from this producer.'};
+    recipient.producerParts ||= {};
+    recipient.producerParts[district.id]={...copy(part),sharedFrom:sender.id,sharedBy:sender.name};
+    this.log(sender.name+' shared a '+district.name+' producer prompt with '+recipient.name+'.');
+    this.emit('state');
+    return {ok:true,from:sender.name,to:recipient.name,district:district.name};
+  }
   buyProperty(type='space',id=this.currentSpace.id){
     const p=this.currentPlayer;
     const item=type==='landmark'?this.state.landmarks.find(x=>x.id===id):this.currentSpace;
