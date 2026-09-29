@@ -62,8 +62,45 @@ try{
   await guest.waitForFunction(()=>window.musicCityFusion?.engine?.state?.players?.[1]?.producerParts?.hiphop?.sharedFrom==='p1',null,{timeout:12000});
   await guest.locator('#phoneCollabPanel').getByText('Shared by Live Test Host').waitFor({timeout:10000});
   console.log('PASS: host offered one earned producer card and remote phone received it');
+  // Verify the actual new mobile UI, not just engine methods: after four cards
+  // the studio is reachable from the phone but only unlocks after two laps.
+  await host.evaluate(()=>{
+    const {engine,ui}=window.musicCityFusion,p=engine.currentPlayer;
+    engine.state.phase='landed';
+    for(const [district,part] of [['latin','clave'],['global','hand'],['country','guitar']]){
+      p.position=engine.state.spaces.findIndex(x=>x.kind==='producer'&&x.producer===district);
+      const result=engine.collectPart(part);
+      if(!result.ok)throw Error(result.reason);
+    }
+    p.position=12;p.laps=1;p.cash=1000;
+    ui.save();ui.render();
+  });
+  const beforeTwoLaps=await host.locator('#phoneStudioPanel').textContent();
+  assert.match(beforeTwoLaps,/1 more lap/);
+  assert.equal(await host.locator('#phoneBookStudio').count(),0);
+  console.log('PASS: studio phone shows the missing second lap instead of allowing early booking');
+  await host.evaluate(()=>{
+    const {engine,ui}=window.musicCityFusion;
+    engine.currentPlayer.laps=2;ui.save();ui.render();
+  });
+  await host.locator('#phoneBookStudio').waitFor({state:'visible',timeout:10000});
+  await host.locator('#phoneBookStudio').click();
+  await host.waitForFunction(()=>{
+    const {engine}=window.musicCityFusion;
+    return engine.currentPlayer.studioBooked===true&&engine.currentPlayer.cash===500;
+  },null,{timeout:10000});
+  await host.locator('#phoneEnterStudio').waitFor({state:'visible',timeout:10000});
+  await host.locator('#phoneEnterStudio').click();
+  await host.locator('#songPrompt').waitFor({state:'visible',timeout:10000});
+  const entry=await host.evaluate(()=>{
+    const {engine}=window.musicCityFusion;
+    return {space:engine.currentPlayer.position,cash:engine.currentPlayer.cash};
+  });
+  assert.deepEqual(entry,{space:12,cash:500});
+  await host.locator('#leaveStudio').click();
+  console.log('PASS: $500 session purchased once and BeGenius Studio entered from another board square');
   assert.equal(failures.length,0,'Browser page errors: '+failures.join('; '));
-  console.log('LIVE SMOKE PASS: preview, two mobile browsers, host/guest, chat, producer sharing');
+  console.log('LIVE SMOKE PASS: two mobile browsers, host/guest, chat, producer sharing and reachable $500 studio');
 }catch(error){
   for(const [page,name] of [[host,'host'],[guest,'guest']])if(page)try{
     await page.screenshot({path:'fusion-live-'+name+'.png',fullPage:true,timeout:5000});
