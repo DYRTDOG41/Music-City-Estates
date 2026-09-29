@@ -11,15 +11,15 @@ const missions = fs.readFileSync('music_city_missions.js', 'utf8');
 const rooms = fs.readFileSync('mce_3d_room.js', 'utf8');
 
 check('mobile radio stays compact and away from movement controls', () => {
-  assert.match(radio, /width:min\(210px/);
-  assert.match(radio, /top:112px/);
+  assert.match(radio, /width:min\(196px/);
+  assert.match(radio, /top:max\(40px,calc\(env\(safe-area-inset-top\) \+ 36px\)\)/);
   assert.doesNotMatch(radio, /bottom:116px/);
 });
 
 check('3D room mission header moves away from interaction prompt', () => {
   assert.match(missions, /room-mode/);
-  assert.match(missions, /top:164px/);
-  assert.match(missions, /collapsed", "room-mode/);
+  assert.match(missions, /top:max\(76px,calc\(env\(safe-area-inset-top\) \+ 66px\)\)/);
+  assert.match(missions, /dock\.classList\.add\("collapsed"\)/);
 });
 
 check('every shared 3D room receives visibility lighting', () => {
