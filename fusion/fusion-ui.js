@@ -89,6 +89,7 @@ export class FusionUI {
     this.$('visitHeights').focus();
   }
   save(){
+    if(this.online?.isGuest)return; // The host alone persists the authoritative online match.
     try{localStorage.setItem(CONFIG.saveKey,JSON.stringify(this.engine.exportState()));}
     catch(error){this.showNotice('This device could not save the session. Audio files may be too large.',5000);}
   }
@@ -102,7 +103,7 @@ export class FusionUI {
       '<p>'+(this.online?.active?'This phone connects you to your live board, invite link and room chat. Voice chat and shared audio are not yet part of the board.':'Create an online room below to play from separate phones, or use the local game on one device.')+'</p>'+ 
       '<div class="phone-actions"><button id="phoneShare" class="primary">Share test link</button><button id="phoneCopy">Copy link</button><a href="https://www.messenger.com/" target="_blank" rel="noopener noreferrer">Open Messenger ↗</a></div>'+ 
       '<p id="phoneStatus" class="progress" role="status">Talk in your Messenger group while you test. Opening Messenger does not join your games together.</p>'+ 
-      '<h3>Artists in this local game</h3><div class="phone-roster">'+players.map(p=>'<div><b>'+esc(p.name)+'</b><small>'+(p.bot?'Computer':'On this device')+'</small></div>').join('')+'</div>'+ 
+      '<h3>Artists in this local game</h3><div class="phone-roster">'+players.map(p=>'<div><b>'+esc(p.name)+'</b><small>'+(p.bot?'Computer':this.online?.active?(this.online.canControl(p)?'This phone':'Online artist'):'On this device')+'</small></div>').join('')+'</div>'+ 
       '<button id="phoneClose">Return to board</button>');
     const link=this.online?.inviteLink() || new URL('fusion_board.html',location.href).href;
     this.$('phoneCopy').onclick=async()=>{
