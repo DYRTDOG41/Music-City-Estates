@@ -41,10 +41,15 @@ Detroit Empire prototype. Hip-Hop Heights opens the existing walkable street and
 in a board overlay; closing it returns to the same car, space, and turn. The BeGenius door
 requires four producer sounds and a landing on its studio space during a board match.
 
-The board's short recording action and the full BeGenius room currently have separate song
-state. Matches are saved on one device; separate-phone rooms and shared song playback still
-need a server. Country Crossings, Latin Quarter, and Global Sound have producer blocks and
-visible borough entrances, with walkable interiors to follow.
+The board's prompt-card song action and the full BeGenius room currently have separate song
+state. An experimental online playtest room now uses PeerJS for host-authoritative turns, shared
+board state, and text chat inside the in-game phone for up to four players on separate devices.
+The host starts a local game, opens the phone, creates a room, and shares its invite; guests join
+from the link and claim an available computer seat. Keep the host tab open. Only the host retains
+the shared match save; uploaded song audio stays on each artist's device and does not play on
+other phones. Voice chat, durable room accounts, reconnects, shared audio, and public-release
+moderation need a production backend. Country Crossings, Latin Quarter, and Global Sound have
+producer blocks and visible borough entrances, with walkable interiors to follow.
 
 The Live Freestyle feature is an MVP test path. It uses PeerJS public signaling so no private game server is required for early phone testing. Production multiplayer should move signaling, identity, moderation, room persistence, and anti-abuse controls to owned infrastructure.
 
