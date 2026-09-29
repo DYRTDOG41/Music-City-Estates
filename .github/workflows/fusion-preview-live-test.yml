@@ -33,7 +33,12 @@ jobs:
             echo "::error::Live preview returned HTTP $status. Check Vercel deployment protection and preview URL."
             exit 1
           fi
-          grep -q 'fusion-app.js' /tmp/fusion-preview.html || { echo "::error::Preview route did not serve Fusion Board HTML"; exit 1; }
+          if ! grep -q 'fusion-app.js' /tmp/fusion-preview.html; then
+            echo "Preview HTML title: $(grep -oi '<title>[^<]*' /tmp/fusion-preview.html | head -1 | cut -c1-170)"
+            echo "Preview HTML first bytes: $(head -c 280 /tmp/fusion-preview.html | tr '\n' ' ' | cut -c1-280)"
+            echo "::error::Preview route returned HTTP 200 but did not serve Fusion Board HTML. Check deployment protection or rewrite rules."
+            exit 1
+          fi
       - name: Install browser test runtime
         run: |
           npm install --no-save --no-package-lock playwright@1.56.1
