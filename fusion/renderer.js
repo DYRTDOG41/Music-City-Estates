@@ -1345,7 +1345,7 @@ export class DetroitRenderer extends EventTarget {
   }
 
   async attachRealVehicleModel(root,vehicleId,paintColor=0x2f80ed,rimStyle='factory'){
-    if(fusionMode)return false; // Keep the board's procedural cars on mobile without fetching a second large model.
+    if(fusionMode && vehicleId!=='motor_aero_25')return false; // Keep distinct procedural Detroit cars; load the original Motor Aero GLB.
     const spec=getRealVehicleSpec(vehicleId);
     if(!spec)return false;
     try{
@@ -1853,10 +1853,16 @@ export class DetroitRenderer extends EventTarget {
     if(this.vehiclePreviewCache.has(key))return this.vehiclePreviewCache.get(key);
 
     const promise=(async()=>{
-      const spec=getRealVehicleSpec(vehicleId);
-      if(!spec)throw new Error('No GLB vehicle source');
-      const base=await this.loadRealVehicleAsset(spec);
-      const visual=this.prepareRealVehicleModel(base,spec,color,rimStyle);
+      let visual;
+      if(fusionMode && vehicleId!=='motor_aero_25'){
+        const vehicle=getVehicle(vehicleId);
+        visual=this.makeCar(color,vehicle.model,'player',{rimStyle});
+      }else{
+        const spec=getRealVehicleSpec(vehicleId);
+        if(!spec)throw new Error('No GLB vehicle source');
+        const base=await this.loadRealVehicleAsset(spec);
+        visual=this.prepareRealVehicleModel(base,spec,color,rimStyle);
+      }
 
       const scene=new THREE.Scene();
       scene.background=new THREE.Color(0x10171d);

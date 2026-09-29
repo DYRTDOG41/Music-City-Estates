@@ -1,4 +1,5 @@
 import { DISTRICTS, CONFIG } from './fusion-data.js?v=4';
+import { VEHICLES, RIMS, PAINTS, STARTER_VEHICLES, getVehicle } from './fusion-vehicles.js';
 
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -33,6 +34,7 @@ export class FusionUI {
     this.$('statusToggle').onclick=()=>this.setStatusExpanded(!document.querySelector('.fusion-hud').classList.contains('expanded'));
     this.$('boardMenuToggle').onclick=()=>this.setMenuOpen(!this.$('boardMenu').classList.contains('open'));
     this.$('newGame').onclick=()=>{this.setMenuOpen(false);this.openSetup();};
+    this.$('garageBtn').onclick=()=>{this.setMenuOpen(false);this.openGarage();};
     this.$('visitHeights').onclick=()=>{this.setMenuOpen(false);this.openBorough();};
     this.$('leaveBorough').onclick=()=>this.closeBorough();
     document.addEventListener('pointerdown',e=>{
@@ -100,14 +102,18 @@ export class FusionUI {
     const add=(name,bot=false)=>{
       if(rows.children.length>=4)return;
       const row=document.createElement('label');
-      row.innerHTML='Artist '+(rows.children.length+1)+'<input maxlength="22" value="'+esc(name)+'" aria-label="Artist name"><label><input type="checkbox" '+(bot?'checked':'')+'> Computer artist</label>';
+      const initialCar=STARTER_VEHICLES[rows.children.length%STARTER_VEHICLES.length];
+      row.innerHTML='Artist '+(rows.children.length+1)+'<input maxlength="22" value="'+esc(name)+'" aria-label="Artist name">'+
+        '<label>Starting car<select aria-label="Starting car">'+STARTER_VEHICLES.map(id=>'<option value="'+id+'" '+(id===initialCar?'selected':'')+'>'+esc(getVehicle(id).name)+'</option>').join('')+'</select></label>'+
+        '<label><input type="checkbox" '+(bot?'checked':'')+'> Computer artist</label>';
       rows.appendChild(row);
     };
     add('Artist 1');add('City Bot 2',true);add('City Bot 3',true);add('City Bot 4',true);
     this.$('begin').onclick=()=>{
       const entries=[...rows.children].map((row,i)=>({
         name:row.querySelector('input:not([type=checkbox])').value.trim()||'Artist '+(i+1),
-        bot:row.querySelector('input[type=checkbox]').checked
+        bot:row.querySelector('input[type=checkbox]').checked,
+        vehicleId:row.querySelector('select').value
       }));
       this.engine.newGame(entries);this.renderer.setPlayers(this.engine.state.players);
       this.renderer.syncOwnership(this.engine.state);this.renderer.boardView();
@@ -120,6 +126,46 @@ export class FusionUI {
         this.renderer.boardView();this.closeModal();this.render();this.maybeBot();
       }catch(e){this.$('continue').textContent='No saved game on this device';}
     };
+  }
+  openGarage(){
+    if(!this.modal.hidden||this.busy||!this.engine.garageAvailable())return;
+    this.renderGarage(this.engine.currentPlayer.equippedVehicle||'city_standard');
+  }
+  renderGarage(selectedId){
+    const p=this.engine.currentPlayer;
+    const selected=VEHICLES.find(v=>v.id===selectedId)||VEHICLES[0];
+    const gate=this.engine.vehicleStatus(selected.id,p),owned=(p.ownedVehicles||[]).includes(selected.id);
+    const carList=VEHICLES.map(v=>{
+      const available=this.engine.vehicleStatus(v.id,p),has=(p.ownedVehicles||[]).includes(v.id);
+      const state=p.equippedVehicle===v.id?'Driving':has?'Owned':available.open?'Ready':'Locked';
+      return '<button type="button" class="garage-car '+(v.id===selected.id?'selected':'')+'" data-garage-car="'+v.id+'"><b>'+esc(v.name)+'</b><small>'+esc(v.tier)+' · '+state+'</small></button>';
+    }).join('');
+    const rimList=RIMS.map(r=>{
+      const unlocked=this.engine.rimStatus(r.id,p),has=(p.ownedRims||[]).includes(r.id);
+      const active=p.equippedRim===r.id;
+      return '<button type="button" class="garage-rim '+(active?'selected':'')+'" data-garage-rim="'+r.id+'" '+(!unlocked.open?'disabled':'')+'><b>'+esc(r.name)+'</b><small>'+esc(active?'Equipped':has?'Equip':unlocked.open?'Claim':'Locked · '+unlocked.reason)+'</small></button>';
+    }).join('');
+    const paintList=PAINTS.map(c=>'<button type="button" class="garage-paint '+(p.vehiclePaint===c.hex?'selected':'')+'" data-garage-paint="'+c.hex+'" style="--paint:'+c.hex+'" aria-label="'+esc(c.name)+'" title="'+esc(c.name)+'"></button>').join('');
+    this.openModal('<small>MUSIC CITY ESTATES</small><h2>City Garage</h2><p>'+esc(p.name)+' · '+esc(getVehicle(p.equippedVehicle).name)+' · $'+p.cash.toLocaleString()+' cash. Detroit cars, rims and paint are cosmetic rewards; they never change your dice or rent.</p>'+
+      '<div class="garage-layout"><div class="garage-car-list">'+carList+'</div><div class="garage-detail"><div class="garage-preview"><img id="garagePreview" alt="Preview of '+esc(selected.name)+'" hidden><span id="garagePreviewStatus">Loading 3D preview…</span></div><h3>'+esc(selected.name)+'</h3><p>'+esc(selected.description)+'</p><p>'+esc(gate.open?'Available now':gate.reason)+'</p><button id="garageAction" class="primary" '+(!gate.open||p.equippedVehicle===selected.id?'disabled':'')+'>'+(p.equippedVehicle===selected.id?'Currently driving':owned?'Drive this car':gate.open?'Claim & drive':'Locked')+'</button></div></div>'+
+      '<h3>Rims</h3><div class="garage-rim-list">'+rimList+'</div><h3>Paint</h3><div class="garage-paint-list">'+paintList+'</div><p id="garageMessage" role="status"></p><button id="garageClose">Return to board</button>');
+    const token=this.garageRenderToken=(this.garageRenderToken||0)+1;
+    this.renderer.captureVehiclePreview(selected.id,p.vehiclePaint,p.equippedRim).then(src=>{
+      if(this.garageRenderToken!==token||!this.$('garagePreview'))return;
+      this.$('garagePreview').src=src;this.$('garagePreview').hidden=false;this.$('garagePreviewStatus').hidden=true;
+    }).catch(()=>{if(this.garageRenderToken===token&&this.$('garagePreviewStatus'))this.$('garagePreviewStatus').textContent='3D preview unavailable. The board car still works.';});
+    this.modal.querySelectorAll('[data-garage-car]').forEach(button=>button.onclick=()=>this.renderGarage(button.dataset.garageCar));
+    const apply=fn=>{
+      const result=fn();
+      if(!result.ok){this.$('garageMessage').textContent=result.reason;return;}
+      this.renderer.setPlayers(this.engine.state.players);this.save();this.render();
+      this.renderGarage(selected.id);
+    };
+    this.$('garageAction').onclick=()=>apply(()=>owned?this.engine.equipVehicle(selected.id):this.engine.claimVehicle(selected.id));
+    this.modal.querySelectorAll('[data-garage-rim]').forEach(button=>button.onclick=()=>apply(()=>
+      (p.ownedRims||[]).includes(button.dataset.garageRim)?this.engine.equipRim(button.dataset.garageRim):this.engine.claimRim(button.dataset.garageRim)));
+    this.modal.querySelectorAll('[data-garage-paint]').forEach(button=>button.onclick=()=>apply(()=>this.engine.setVehiclePaint(button.dataset.garagePaint)));
+    this.$('garageClose').onclick=()=>{this.garageRenderToken++;this.closeModal();};
   }
   render(){
     const s=this.engine.state,p=this.engine.currentPlayer,space=this.engine.currentSpace;
@@ -143,6 +189,7 @@ export class FusionUI {
       goalRow('Festival headline',s.headlineId===p.id,s.headlineId===p.id?'Booked':'Book after radio airplay');
     const canRoll=!this.busy&&!p.bot&&!s.showcaseComplete&&['ready','turn'].includes(s.phase);
     const canEnd=!this.busy&&!p.bot&&!s.showcaseComplete&&s.phase==='landed';
+    this.$('garageBtn').disabled=this.busy||!this.engine.garageAvailable();
     this.$('roll').hidden=!canRoll;this.$('endTurn').hidden=!canEnd;
     this.$('roll').parentElement.classList.toggle('is-empty',!canRoll&&!canEnd);
     const actions=this.$('actions');actions.replaceChildren();

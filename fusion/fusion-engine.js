@@ -1,4 +1,5 @@
 import { BOARD_SPACES, LANDMARKS, DISTRICTS, CONFIG } from './fusion-data.js?v=4';
+import { VEHICLES, RIMS, PAINTS, STARTER_VEHICLES, vehicleGate, rimGate } from './fusion-vehicles.js';
 
 const copy = value => JSON.parse(JSON.stringify(value));
 const COLORS=['#47a9ff','#f29964','#ba8cf5','#6bd2ad'];
@@ -14,7 +15,8 @@ export class FusionEngine extends EventTarget {
         id:'p'+(i+1),name:String(entry.name||'Artist '+(i+1)).slice(0,22),
         bot:!!entry.bot,color:COLORS[i],cash:CONFIG.startCash,position:0,laps:0,
         producerParts:{},song:null,manager:false,radio:false,radioRound:null,
-        ownedVehicles:['city_standard'],equippedVehicle:'city_standard',
+        ownedVehicles:['city_standard',...(STARTER_VEHICLES.includes(entry.vehicleId)&&entry.vehicleId!=='city_standard'?[entry.vehicleId]:[])],
+        equippedVehicle:STARTER_VEHICLES.includes(entry.vehicleId)?entry.vehicleId:'city_standard',
         ownedRims:['factory'],equippedRim:'factory',vehiclePaint:COLORS[i],
       }))
     };
@@ -30,6 +32,37 @@ export class FusionEngine extends EventTarget {
     :this.state.spaces.find(x=>x.id===this.state.selected.id);}
   ownedCount(p=this.currentPlayer){
     return [...this.state.spaces,...this.state.landmarks].filter(x=>x.ownerId===p.id).length;
+  }
+  garageAvailable(){return this.state.phase!=='moving'&&!this.state.showcaseComplete&&!this.currentPlayer.bot;}
+  vehicleStatus(id,p=this.currentPlayer){return vehicleGate(id,p,this.state,this.ownedCount(p));}
+  rimStatus(id,p=this.currentPlayer){return rimGate(id,p,this.ownedCount(p));}
+  claimVehicle(id){
+    const p=this.currentPlayer,vehicle=VEHICLES.find(v=>v.id===id);
+    if(!this.garageAvailable()||!vehicle)return {ok:false,reason:'Choose a car on your turn.'};
+    if(!this.vehicleStatus(id,p).open)return {ok:false,reason:this.vehicleStatus(id,p).reason};
+    p.ownedVehicles ||= ['city_standard'];
+    if(!p.ownedVehicles.includes(id))p.ownedVehicles.push(id);
+    p.equippedVehicle=id;this.log(p.name+' is driving the '+vehicle.name+'.');this.emit('state');return {ok:true};
+  }
+  equipVehicle(id){
+    if(!(this.currentPlayer.ownedVehicles||[]).includes(id))return {ok:false,reason:'Earn this car first.'};
+    return this.claimVehicle(id);
+  }
+  claimRim(id){
+    const p=this.currentPlayer,rim=RIMS.find(r=>r.id===id);
+    if(!this.garageAvailable()||!rim)return {ok:false,reason:'Choose rims on your turn.'};
+    if(!this.rimStatus(id,p).open)return {ok:false,reason:this.rimStatus(id,p).reason};
+    p.ownedRims ||= ['factory'];
+    if(!p.ownedRims.includes(id))p.ownedRims.push(id);
+    p.equippedRim=id;this.log(p.name+' fitted '+rim.name+' rims.');this.emit('state');return {ok:true};
+  }
+  equipRim(id){
+    if(!(this.currentPlayer.ownedRims||[]).includes(id))return {ok:false,reason:'Earn these rims first.'};
+    return this.claimRim(id);
+  }
+  setVehiclePaint(hex){
+    if(!this.garageAvailable()||!PAINTS.some(p=>p.hex===hex))return {ok:false,reason:'Choose an available paint finish.'};
+    this.currentPlayer.vehiclePaint=hex;this.emit('state');return {ok:true};
   }
   hasAllParts(p=this.currentPlayer){return DISTRICTS.every(d=>p.producerParts[d.id]);}
   canAct(){return this.state.phase==='landed'&&!this.state.showcaseComplete;}
@@ -147,6 +180,14 @@ export class FusionEngine extends EventTarget {
   exportState(){return copy(this.state);}
   importState(value){
     if(value?.version!==1||!Array.isArray(value.players)||value.players.length<2||value.players.length>4)throw Error('Invalid fusion save');
+    value.players.forEach(p=>{
+      p.ownedVehicles ||= ['city_standard'];p.ownedRims ||= ['factory'];
+      if(!VEHICLES.some(v=>v.id===p.equippedVehicle))p.equippedVehicle='city_standard';
+      if(!RIMS.some(r=>r.id===p.equippedRim))p.equippedRim='factory';
+      if(!p.ownedVehicles.includes(p.equippedVehicle))p.ownedVehicles.push(p.equippedVehicle);
+      if(!p.ownedRims.includes(p.equippedRim))p.ownedRims.push(p.equippedRim);
+      p.vehiclePaint ||= p.color;
+    });
     this.state=value;this.emit('state');
   }
 }
