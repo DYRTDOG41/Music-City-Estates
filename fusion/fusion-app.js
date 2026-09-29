@@ -1,5 +1,5 @@
 import { BOARD_SPACES, LANDMARKS } from './fusion-data.js?v=6';
-import { DetroitRenderer, useBoardData } from './renderer.js?v=44';
+import { DetroitRenderer, useBoardData } from './renderer.js?v=45';
 import { FusionEngine } from './fusion-engine.js?v=7';
 import { FusionUI } from './fusion-ui.js?v=9';
 import { FusionRoom } from './fusion-room.js?v=3';
