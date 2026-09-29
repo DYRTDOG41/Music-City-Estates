@@ -38,6 +38,10 @@ export class FusionRoom {
   }
   inviteLink(){
     const url=new URL('fusion_board.html',location.href);
+    // Vercel's preview Share link grants invited friends access to the protected branch.
+    // Keep that share parameter when the phone creates a new room invite.
+    const access=new URL(location.href).searchParams.get('_vercel_share');
+    if(access)url.searchParams.set('_vercel_share',access);
     if(this.roomId)url.searchParams.set('room',this.roomId);
     return url.href;
   }
