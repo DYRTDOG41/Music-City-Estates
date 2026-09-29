@@ -14,7 +14,7 @@ export class FusionRoom {
     this.role='solo'; this.peer=null; this.roomId=''; this.seatId='';
     this.connections=new Map(); this.seats=new Map(); this.chat=[];
     this.joinName=''; this.connection=null; this.executingRemote=false; this.sending=false;
-    this.lastRevision=0; this.revision=0;
+    this.lastRevision=0; this.revision=0; this.lastCars='';
     this.invitedRoom=new URL(location.href).searchParams.get('room') || '';
     engine.addEventListener('state',()=>this.queueBroadcast());
     engine.addEventListener('landed',()=>this.queueBroadcast());
@@ -235,8 +235,13 @@ export class FusionRoom {
       this.lastRevision=data.revision;
       try{
         this.engine.importState(data.state);
-        this.renderer.setPlayers(this.engine.state.players);
-        this.renderer.syncOwnership(this.engine.state);this.renderer.boardView();
+        const cars=JSON.stringify(this.engine.state.players.map(p=>[p.id,p.equippedVehicle,p.equippedRim,p.vehiclePaint]));
+        if(data.type==='welcome'||cars!==this.lastCars){
+          this.renderer.setPlayers(this.engine.state.players);
+          this.lastCars=cars;
+        }else this.engine.state.players.forEach((p,i)=>this.renderer.snapPlayer(p,i));
+        this.renderer.syncOwnership(this.engine.state);
+        if(data.type==='welcome')this.renderer.boardView();
         this.ui.render();this.drawChat();
         if(data.type==='welcome')this.notice('Connected! You control '+this.engine.state.players.find(p=>p.id===this.seatId)?.name+'.');
       }catch(e){this.notice('Could not read the host game state.');}
@@ -257,8 +262,14 @@ export class FusionRoom {
   }
   disconnected(){
     if(this.role!=='guest')return;
-    this.notice('Host connection ended. Online game paused.');
-    this.connection=null;this.seatId='';
+    const hadSeat=Boolean(this.seatId);
+    this.connection=null;
+    if(!hadSeat){
+      this.role='solo';this.peer?.destroy();this.peer=null;this.roomId='';
+      this.updatePanel('Could not connect. Check the room code and try again.');
+      return;
+    }
+    this.notice('Host connection ended. Online game paused. Open the phone to leave this room.');
     if(!this.ui.modal.hidden)this.phoneView();
     this.ui.render();
   }
@@ -267,7 +278,7 @@ export class FusionRoom {
     const wasGuest=this.role==='guest';
     this.role='solo';this.connection?.close();this.peer?.destroy();
     this.peer=null;this.connection=null;this.connections.clear();this.seats.clear();
-    this.roomId='';this.seatId='';this.lastRevision=0;
+    this.roomId='';this.seatId='';this.lastRevision=0;this.lastCars='';
     if(wasGuest){this.engine.newGame();this.renderer.setPlayers(this.engine.state.players);this.renderer.boardView();}
     this.ui.closeModal();this.renderer.paused=false;this.ui.render();
     if(!silent)this.notice(wasGuest?'Left the room. Start a solo game or join another room.':'Room closed. Your local game is still saved.');
