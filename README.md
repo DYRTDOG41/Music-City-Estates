@@ -51,6 +51,29 @@ other phones. Voice chat, durable room accounts, reconnects, shared audio, and p
 moderation need a production backend. Country Crossings, Latin Quarter, and Global Sound have
 producer blocks and visible borough entrances, with walkable interiors to follow.
 
+The phone's **Producer Network** displays each artist's four prompt slots. An online
+artist who has collected a card can share a copy with a connected human artist
+missing that borough's card, even when it is not the sender's turn. The host
+validates the sender's actual room seat and the card; recipients cannot receive
+duplicate borough cards or change a completed song. Card exchanges appear in room
+chat, sync to all players, and remain part of the host's saved board state.
+Complete all four prompts to preview/copy the combined song direction from your
+phone, then land at BeGenius Studio to upload the finished song. AI music generation
+is not wired into this board; use your chosen authorized generator externally.
+
+**Two-phone playtest:** Phone A starts the board and creates a room from the
+in-game phone. Share the invite with Phone B, which opens it, enters an artist
+name and joins. Each phone should see the same turn and car positions. Collect
+a producer card, open the phone and share it with the other artist; check the
+recipient's Producer Network and both chat logs, then close and reopen the phone.
+Finally, have the recipient gather all four cards and check the copied prompt.
+Keep both browsers online and the host tab open while testing.
+
+**Automated checks:** run `npm test` with Node.js 22. The fusion collaboration
+suite checks missing-card and forged offers, off-turn exchanges, host seat
+authorization, save/load persistence and four-card studio unlock. A real two-phone
+test remains required before merging the draft PR into `dev`.
+
 The Live Freestyle feature is an MVP test path. It uses PeerJS public signaling so no private game server is required for early phone testing. Production multiplayer should move signaling, identity, moderation, room persistence, and anti-abuse controls to owned infrastructure.
 
 ## Project structure
