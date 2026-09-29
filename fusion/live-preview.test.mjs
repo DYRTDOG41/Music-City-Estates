@@ -26,6 +26,24 @@ try{
   await host.locator('#begin').waitFor({state:'visible',timeout:45000});
   await host.locator('#setupRows input[aria-label="Artist name"]').first().fill('Live Test Host');
   await host.locator('#begin').click();
+  await host.waitForFunction(()=>window.musicCityFusion?.renderer?.artBoard?.textureLoaded===true,
+    null,{timeout:60000});
+  const board=await host.evaluate(async()=>{
+    const renderer=window.musicCityFusion.renderer;
+    const response=await fetch('/assets/fusion/board-approved-original.png');
+    return {
+      ready:renderer.artBoard.textureLoaded,
+      path:renderer.artBoard.source,
+      spaces:renderer.coords.length,
+      imageBytes:(await response.arrayBuffer()).byteLength,
+      contentType:response.headers.get('content-type')
+    };
+  });
+  assert.equal(board.ready,true);
+  assert.equal(board.spaces,40);
+  assert.equal(board.imageBytes,2856862,'Must load the exact original approved PNG');
+  assert.match(board.contentType,/image\\/png/);
+  console.log('PASS: exact 2.86 MB user-approved art is the loaded 3D board texture, with 40 road stops');
   await host.locator('#phoneBtn').click();
   await host.locator('#createFusionRoom').click();
   await host.waitForFunction(()=>window.musicCityFusion?.room?.role==='host'&&
@@ -100,7 +118,8 @@ try{
   await host.locator('#leaveStudio').click();
   console.log('PASS: $500 session purchased once and BeGenius Studio entered from another board square');
   assert.equal(failures.length,0,'Browser page errors: '+failures.join('; '));
-  console.log('LIVE SMOKE PASS: two mobile browsers, host/guest, chat, producer sharing and reachable $500 studio');
+  await host.screenshot({path:'fusion-art-board-mobile.png',fullPage:true});
+  console.log('LIVE SMOKE PASS: approved exact art texture, 40 mapped road stops, two mobile browsers, chat, producer sharing and reachable $500 studio');
 }catch(error){
   for(const [page,name] of [[host,'host'],[guest,'guest']])if(page)try{
     await page.screenshot({path:'fusion-live-'+name+'.png',fullPage:true,timeout:5000});
