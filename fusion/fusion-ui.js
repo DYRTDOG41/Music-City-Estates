@@ -99,28 +99,30 @@ export class FusionUI {
     const players=this.engine.state.players;
     this.renderer.paused=true;
     this.openModal('<small>MUSIC CITY PHONE</small><h2>Connect with your crew</h2>'+ 
-      '<p>This board currently saves games on each device. Share the link to let friends test their own games, or take turns with up to four artists on one device. Live game rooms and in-game chat are not connected yet.</p>'+ 
+      '<p>'+(this.online?.active?'This phone connects you to your live board, invite link and room chat. Voice chat and shared audio are not yet part of the board.':'Create an online room below to play from separate phones, or use the local game on one device.')+'</p>'+ 
       '<div class="phone-actions"><button id="phoneShare" class="primary">Share test link</button><button id="phoneCopy">Copy link</button><a href="https://www.messenger.com/" target="_blank" rel="noopener noreferrer">Open Messenger ↗</a></div>'+ 
       '<p id="phoneStatus" class="progress" role="status">Talk in your Messenger group while you test. Opening Messenger does not join your games together.</p>'+ 
       '<h3>Artists in this local game</h3><div class="phone-roster">'+players.map(p=>'<div><b>'+esc(p.name)+'</b><small>'+(p.bot?'Computer':'On this device')+'</small></div>').join('')+'</div>'+ 
       '<button id="phoneClose">Return to board</button>');
-    const link=new URL('fusion_board.html',location.href).href;
+    const link=this.online?.inviteLink() || new URL('fusion_board.html',location.href).href;
     this.$('phoneCopy').onclick=async()=>{
       try{await navigator.clipboard.writeText(link);this.$('phoneStatus').textContent='Test link copied. Paste it into your Messenger group.';}
       catch(error){this.$('phoneStatus').textContent='Copy this link: '+link;}
     };
     this.$('phoneShare').onclick=async()=>{
       if(navigator.share){
-        try{await navigator.share({title:'Music City Estates · Fusion Board',text:'Try the Fusion Board with me. Each phone currently has its own game.',url:link});}
+        try{await navigator.share({title:'Music City Estates · Fusion Board',text:this.online?.active?'Join my live Fusion Board game.':'Try the Music City Fusion Board.',url:link});}
         catch(error){if(error.name!=='AbortError')this.$('phoneStatus').textContent='Use Copy link to share this game.';}
       }else this.$('phoneCopy').click();
     };
     this.$('phoneClose').onclick=()=>{this.renderer.paused=false;this.closeModal();this.maybeBot();};
+    this.online?.phoneView();
   }
   openSetup(){
+    if(this.online?.active){this.showNotice('Leave the online room before starting another game.');return;}
     this.setStatusExpanded(false);this.setMenuOpen(false);
     this.openModal('<h2>Music City Estates · Fusion Board</h2><p>Roll around the 3D city, collect four producer prompt cards, create one fusion song, buy a music business, hire a manager and get radio airplay. The first artist to reach the festival headlines the showcase.</p>'+ 
-      '<p><strong>Four artists enter the showcase.</strong> Uncheck “Computer artist” for each friend playing on this device. Online rooms are not connected in this prototype.</p>'+
+      '<p><strong>Four artists enter the showcase.</strong> Uncheck “Computer artist” for each friend playing on this device. For a shared online board, start your local game first, open the phone and create a room. Friends can then claim a computer seat with your invite.</p>'+
       '<div id="setupRows"></div><div><button class="primary" id="begin">Start game</button><button id="continue">Continue saved game</button></div>');
     const rows=this.$('setupRows');
     const add=(name,bot=false)=>{
@@ -150,6 +152,7 @@ export class FusionUI {
         this.renderer.boardView();this.closeModal();this.render();this.maybeBot();
       }catch(e){this.$('continue').textContent='No saved game on this device';}
     };
+    this.online?.setupView();
   }
   openGarage(){
     if(!this.modal.hidden||this.busy||!this.engine.garageAvailable())return;
@@ -182,13 +185,14 @@ export class FusionUI {
     const apply=fn=>{
       const result=fn();
       if(!result.ok){this.$('garageMessage').textContent=result.reason;return;}
+      if(result.pending){this.$('garageMessage').textContent='Sent to room host…';return;}
       this.renderer.setPlayers(this.engine.state.players);this.save();this.render();
       this.renderGarage(selected.id);
     };
-    this.$('garageAction').onclick=()=>apply(()=>owned?this.engine.equipVehicle(selected.id):this.engine.claimVehicle(selected.id));
+    this.$('garageAction').onclick=()=>apply(()=>this.perform(owned?'equipVehicle':'claimVehicle',[selected.id]));
     this.modal.querySelectorAll('[data-garage-rim]').forEach(button=>button.onclick=()=>apply(()=>
-      (p.ownedRims||[]).includes(button.dataset.garageRim)?this.engine.equipRim(button.dataset.garageRim):this.engine.claimRim(button.dataset.garageRim)));
-    this.modal.querySelectorAll('[data-garage-paint]').forEach(button=>button.onclick=()=>apply(()=>this.engine.setVehiclePaint(button.dataset.garagePaint)));
+      this.perform((p.ownedRims||[]).includes(button.dataset.garageRim)?'equipRim':'claimRim',[button.dataset.garageRim])));
+    this.modal.querySelectorAll('[data-garage-paint]').forEach(button=>button.onclick=()=>apply(()=>this.perform('setVehiclePaint',[button.dataset.garagePaint])));
     this.$('garageClose').onclick=()=>{this.garageRenderToken++;this.closeModal();};
   }
   render(){
@@ -211,17 +215,17 @@ export class FusionUI {
       goalRow('Hire manager',Boolean(p.manager),p.manager?'Hired':'Cost $'+CONFIG.managerCost)+
       goalRow('Radio airplay',Boolean(p.radio),p.radio?'Played':'Submit song · $'+CONFIG.radioCost)+
       goalRow('Festival headline',s.headlineId===p.id,s.headlineId===p.id?'Booked':'Book after radio airplay');
-    const canRoll=!this.busy&&!p.bot&&!s.showcaseComplete&&['ready','turn'].includes(s.phase);
-    const canEnd=!this.busy&&!p.bot&&!s.showcaseComplete&&s.phase==='landed';
+    const canRoll=!this.busy&&!p.bot&&!s.showcaseComplete&&(!this.online||this.online.canControl(p))&&['ready','turn'].includes(s.phase);
+    const canEnd=!this.busy&&!p.bot&&!s.showcaseComplete&&(!this.online||this.online.canControl(p))&&s.phase==='landed';
     this.$('phoneBtn').disabled=this.busy;
-    this.$('garageBtn').disabled=this.busy||!this.engine.garageAvailable();
+    this.$('garageBtn').disabled=this.busy||!this.engine.garageAvailable()||(this.online&&!this.online.canControl(p));
     this.$('roll').hidden=!canRoll;this.$('endTurn').hidden=!canEnd;
     this.$('roll').parentElement.classList.toggle('is-empty',!canRoll&&!canEnd);
     const actions=this.$('actions');actions.replaceChildren();
     const action=(label,fn,secondary=false)=>{
       const button=document.createElement('button');button.textContent=label;
       if(secondary)button.className='secondary';
-      button.disabled=this.busy||p.bot;button.onclick=fn;actions.appendChild(button);
+      button.disabled=this.busy||p.bot||(this.online&&!this.online.canControl(p));button.onclick=fn;actions.appendChild(button);
     };
     if(canEnd){
       if(space.kind==='producer'){
@@ -229,14 +233,14 @@ export class FusionUI {
         else if(!p.song)action('Swap prompt card',()=>this.openProducer(),true);
       }
       if(space.kind==='property'&&!space.ownerId&&p.cash>=space.price)
-        action('Buy '+space.name+' · $'+space.price,()=>this.act(()=>this.engine.buyProperty()));
+        action('Buy '+space.name+' · $'+space.price,()=>this.act('buyProperty'));
       if(space.kind==='studio'){
         action('Create fusion song',()=>this.openStudio());
         if(this.engine.hasAllParts(p))action('Explore Hip-Hop Heights',()=>this.openBorough(),true);
       }
-      if(space.kind==='radio')action('Submit to radio · $'+CONFIG.radioCost,()=>this.act(()=>this.engine.submitRadio()));
-      if(space.kind==='festival')action('Book festival',()=>this.act(()=>this.engine.bookFinale()));
-      if(!p.manager)action('Hire manager · $'+CONFIG.managerCost,()=>this.act(()=>this.engine.hireManager()),true);
+      if(space.kind==='radio')action('Submit to radio · $'+CONFIG.radioCost,()=>this.act('submitRadio'));
+      if(space.kind==='festival')action('Book festival',()=>this.act('bookFinale'));
+      if(!p.manager)action('Hire manager · $'+CONFIG.managerCost,()=>this.act('hireManager'),true);
     }
     if(this.engine.canShowcase()&&!s.showcaseComplete)action('Watch final showcase',()=>this.runShowcase());
     this.$('instruction').textContent=s.showcaseComplete?'Winner: '+s.players.find(x=>x.id===s.winnerId)?.name:
@@ -253,14 +257,21 @@ export class FusionUI {
     if(space.kind==='producer')return p.song?'This prompt is locked into your finished song.':p.producerParts[space.producer]?'You can swap this prompt card.':'Choose a prompt card for your song.';
     return space.kind==='property'?'Buy this business to fund your manager.':'Keep moving toward your next producer.';
   }
-  act(fn){
-    const result=fn();
+  perform(name,args=[]){
+    if(this.online?.isGuest){const sent=this.online.request(name,args);return {ok:sent,pending:sent,reason:'Host connection unavailable.'};}
+    return this.engine[name](...args);
+  }
+  act(name,args=[]){
+    const result=this.perform(name,args);
     if(!result?.ok){
       const message=result?.reason||'That action is unavailable.';
       this.$('instruction').textContent=message;this.showNotice(message);
-    }else {this.save();this.render();this.showNotice('Done · '+this.nextStep(this.engine.currentPlayer,this.engine.currentSpace));}
+    }else if(result.pending){this.showNotice('Sent to host…');}
+    else {this.save();this.render();this.showNotice('Done · '+this.nextStep(this.engine.currentPlayer,this.engine.currentSpace));}
   }
   async moveCurrent(){
+    if(this.online&&!this.engine.currentPlayer.bot&&!this.online.canControl(this.engine.currentPlayer)&&!this.online.executingRemote)return;
+    if(this.online?.isGuest){this.online.request('roll');return;}
     if(this.busy||this.engine.currentPlayer.bot&&this.modal.hidden===false)return;
     const roll=this.engine.rollDice();if(!roll)return;
     this.setStatusExpanded(false);this.setMenuOpen(false);
@@ -278,7 +289,7 @@ export class FusionUI {
     this.busy=false;this.save();this.render();
     if(!p.bot)this.showNotice(this.engine.currentSpace.name+' · '+this.nextStep(p,this.engine.currentSpace));
     if(p.bot){this.botAction();await delay(450);this.endTurn();}
-    else if(this.engine.currentSpace.kind==='producer'&&!p.producerParts[this.engine.currentSpace.producer])this.openProducer();
+    else if((!this.online||this.online.canControl(p))&&this.engine.currentSpace.kind==='producer'&&!p.producerParts[this.engine.currentSpace.producer])this.openProducer();
   }
   openProducer(){
     const space=this.engine.currentSpace;
@@ -288,7 +299,7 @@ export class FusionUI {
       district.parts.map(part=>'<button data-part="'+esc(part.id)+'"><strong>'+esc(part.name)+'</strong><small>'+esc(part.prompt)+'</small></button>').join('')+
       '</div><button id="later">Decide later</button>');
     this.modal.querySelectorAll('[data-part]').forEach(button=>button.onclick=()=>{
-      this.act(()=>this.engine.collectPart(button.dataset.part));
+      this.act('collectPart',[button.dataset.part]);
       this.closeModal();
     });
     this.$('later').onclick=()=>this.closeModal();
@@ -337,10 +348,10 @@ export class FusionUI {
       try{
         let key=p.song?.audioKey||null;
         if(file){key=p.id+'-'+Date.now()+'-'+Math.random().toString(36).slice(2);await storeAudio(key,file);}
-        const result=this.engine.recordSong(title,key,prompt);
+        const result=this.perform('recordSong',[title,key,prompt]);
         if(!result.ok){this.$('songStatus').textContent=result.reason;button.disabled=false;return;}
         if(previewUrl)URL.revokeObjectURL(previewUrl);
-        this.closeModal();this.save();this.render();this.showNotice('Song finished · your prompt and audio are saved on this device.');
+        this.closeModal();this.save();this.render();this.showNotice(result.pending?'Song details sent to host. Your audio stays on this phone.':'Song finished · your prompt and audio are saved on this device.');
       }catch(error){this.$('songStatus').textContent='Could not save audio on this device. Try a smaller file or free storage.';button.disabled=false;}
     };
     this.$('leaveStudio').onclick=()=>{if(previewUrl)URL.revokeObjectURL(previewUrl);this.closeModal();};
@@ -356,6 +367,8 @@ export class FusionUI {
     this.save();this.render();
   }
   endTurn(){
+    if(this.online&&!this.online.canControl(this.engine.currentPlayer)&&!this.online.executingRemote)return;
+    if(this.online?.isGuest){this.online.request('endTurn');return;}
     if(!this.engine.endTurn())return;
     this.setStatusExpanded(false);this.setMenuOpen(false);
     this.save();this.render();
@@ -363,6 +376,7 @@ export class FusionUI {
     this.maybeBot();
   }
   maybeBot(){
+    if(this.online?.isGuest)return;
     if(this.engine.currentPlayer.bot&&!this.engine.state.showcaseComplete&&this.modal.hidden)
       setTimeout(()=>this.moveCurrent(),600);
   }
