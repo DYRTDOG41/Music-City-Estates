@@ -1,4 +1,4 @@
-import { DISTRICTS } from './fusion-data.js?v=5';
+import { DISTRICTS } from './fusion-data.js?v=6';
 
 // Peer-to-peer playtest rooms for the Fusion Board.
 // The host is authoritative for turns and cash. No API key or paid backend required.
