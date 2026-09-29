@@ -76,6 +76,22 @@ test('four shared prompts persist through save/load and unlock the studio song',
   assert.equal(recipient.song.parts.country.sharedBy,'Lead');
 });
 
+test('online invitations preserve Vercel protected-preview guest access',()=>{
+  const previousLocation=globalThis.location;
+  globalThis.location={href:'https://example.test/fusion_board.html?_vercel_share=test-guest-token'};
+  try{
+    const room=new FusionRoom(makeGame(),{}, {showNotice:()=>{}});
+    room.roomId='mce-fusion-123abc';
+    const link=new URL(room.inviteLink());
+    assert.equal(link.searchParams.get('room'),'mce-fusion-123abc');
+    assert.equal(link.searchParams.get('_vercel_share'),'test-guest-token');
+    assert.equal(link.pathname,'/fusion_board.html');
+  }finally{
+    if(previousLocation===undefined)delete globalThis.location;
+    else globalThis.location=previousLocation;
+  }
+});
+
 test('host uses the authenticated guest seat when accepting an off-turn phone exchange',async()=>{
   const game=makeGame();
   earned(game,'p2','hiphop');
