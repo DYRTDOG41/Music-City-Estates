@@ -119,6 +119,46 @@ export class FusionUI {
     this.$('phoneClose').onclick=()=>{this.renderer.paused=false;this.closeModal();this.maybeBot();};
     this.online?.phoneView();
   }
+  renderStudioPhone(){
+    const roster=document.querySelector('.phone-roster');
+    if(!roster)return;
+    let panel=this.$('phoneStudioPanel');
+    if(!panel){panel=document.createElement('section');panel.id='phoneStudioPanel';panel.className='fusion-online-panel fusion-studio-panel';}
+    roster.after(panel);
+    const s=this.engine.state;
+    const artist=this.online?.active?s.players.find(p=>p.id===this.online.seatId):this.engine.currentPlayer;
+    if(!artist){panel.innerHTML='<h3>BeGenius Studio</h3><p>Connecting your artist seat…</p>';return;}
+    const cards=DISTRICTS.filter(d=>artist.producerParts?.[d.id]).length;
+    const myTurn=s.players[s.turn]?.id===artist.id&&s.phase==='landed';
+    const canUse=myTurn&&!artist.bot&&!this.busy&&(!this.online||this.online.canControl(artist))&&!s.showcaseComplete;
+    const status=this.engine.studioStatus(artist);
+    const managerNext=Number.isInteger(artist.managerUnlockLap)?artist.managerUnlockLap:artist.laps;
+    let detail='',button='';
+    if(artist.song){
+      detail='Recorded: '+esc(artist.song.title)+'. '+(artist.laps<managerNext?
+        'Finish '+(managerNext-artist.laps)+' more lap(s) on the board, then earn enough to hire your manager.':
+        'Return to the board, invest in a music property, then hire your manager.');
+    }else if(cards<4)detail='You have '+cards+'/4 producer cards. Collect all four to qualify for a session.';
+    else if(artist.studioBooked){
+      detail='Session paid. Enter BeGenius from anywhere when your turn is landed. No lucky studio roll is required.';
+      if(canUse)button='<button id="phoneEnterStudio" type="button" class="primary">Enter booked studio</button>';
+    }else{
+      detail=status.reason+' Your session will cost $'+CONFIG.studioSessionFee+'.';
+      if(status.ok&&canUse)button='<button id="phoneBookStudio" type="button" class="primary">Book studio · $'+CONFIG.studioSessionFee+'</button>';
+    }
+    panel.innerHTML='<h3>BeGenius Studio · Recording sessions</h3>'+
+      '<p><strong>Wallet:</strong> $'+artist.cash.toLocaleString()+' · <strong>Laps:</strong> '+artist.laps+'/'+CONFIG.studioMinLaps+
+      ' · <strong>Prompts:</strong> '+cards+'/4</p>'+
+      '<p>'+detail+'</p>'+button+
+      ((!artist.song&&cards===4&&!canUse)?'<p class="fusion-room-note">Booking and recording are available on your own turn after you roll.</p>':'');
+    this.$('phoneBookStudio')?.addEventListener('click',()=>{
+      this.act('bookStudio');
+      this.renderStudioPhone();
+    });
+    this.$('phoneEnterStudio')?.addEventListener('click',()=>{
+      this.closeModal();this.renderer.paused=false;this.openStudio();
+    });
+  }
   openSetup(){
     if(this.online?.active){this.showNotice('Leave the online room before starting another game.');return;}
     this.setStatusExpanded(false);this.setMenuOpen(false);
@@ -211,9 +251,9 @@ export class FusionUI {
     this.$('pieces').innerHTML=DISTRICTS.map(d=>{
       const part=p.producerParts[d.id];
       return goalRow(d.name,Boolean(part),part?part.name+' · prompt card':'Meet this producer');
-    }).join('')+goalRow('Finish fusion song',Boolean(p.song),p.song?.title||'Combine four prompts, then upload the song');
+    }).join('')+goalRow('Book BeGenius Studio',Boolean(p.studioBooked),p.studioBooked?'$'+CONFIG.studioSessionFee+' session paid':'Four cards, '+CONFIG.studioMinLaps+' laps and $'+CONFIG.studioSessionFee)+goalRow('Finish fusion song',Boolean(p.song),p.song?.title||'Record at your booked studio');
     this.$('career').innerHTML=goalRow('Music business',this.engine.ownedCount(p)>0,this.engine.ownedCount(p)+' owned · earn cash for your career')+
-      goalRow('Hire manager',Boolean(p.manager),p.manager?'Hired':'Cost $'+CONFIG.managerCost)+
+      goalRow('Hire manager',Boolean(p.manager),p.manager?'Hired':!p.song?'Record your fusion song first':p.laps<(p.managerUnlockLap??p.laps+1)?'Finish another lap after recording':'Cost $'+CONFIG.managerCost)+
       goalRow('Radio airplay',Boolean(p.radio),p.radio?'Played':'Submit song · $'+CONFIG.radioCost)+
       goalRow('Festival headline',s.headlineId===p.id,s.headlineId===p.id?'Booked':'Book after radio airplay');
     const canRoll=!this.busy&&!p.bot&&!s.showcaseComplete&&(!this.online||this.online.canControl(p))&&['ready','turn'].includes(s.phase);
@@ -235,13 +275,17 @@ export class FusionUI {
       }
       if(space.kind==='property'&&!space.ownerId&&p.cash>=space.price)
         action('Buy '+space.name+' · $'+space.price,()=>this.act('buyProperty'));
-      if(space.kind==='studio'){
-        action('Create fusion song',()=>this.openStudio());
-        if(this.engine.hasAllParts(p))action('Explore Hip-Hop Heights',()=>this.openBorough(),true);
+      if(space.kind==='studio')action('Explore Hip-Hop Heights',()=>this.openBorough(),true);
+      // Every square is connected to the in-game phone studio once the card goal is met.
+      if(this.engine.hasAllParts(p)&&!p.song){
+        const status=this.engine.studioStatus(p);
+        if(p.studioBooked)action('Enter BeGenius Studio',()=>this.openStudio());
+        else if(status.ok)action('Book BeGenius · $'+CONFIG.studioSessionFee,()=>this.act('bookStudio'));
+        else action('Studio: check progress',()=>this.showNotice(status.reason),true);
       }
       if(space.kind==='radio')action('Submit to radio · $'+CONFIG.radioCost,()=>this.act('submitRadio'));
       if(space.kind==='festival')action('Book festival',()=>this.act('bookFinale'));
-      if(!p.manager)action('Hire manager · $'+CONFIG.managerCost,()=>this.act('hireManager'),true);
+      if(!p.manager&&p.song&&p.laps>=(p.managerUnlockLap??p.laps+1))action('Hire manager · $'+CONFIG.managerCost,()=>this.act('hireManager'),true);
     }
     if(this.engine.canShowcase()&&!s.showcaseComplete)action('Watch final showcase',()=>this.runShowcase());
     this.$('instruction').textContent=s.showcaseComplete?'Winner: '+s.players.find(x=>x.id===s.winnerId)?.name:
@@ -251,9 +295,15 @@ export class FusionUI {
     this.$('gameLog').textContent=s.log[0]||'';
     this.renderer.syncOwnership(s);
     this.online?.renderCollab();
+    this.renderStudioPhone();
   }
   nextStep(p,space){
-    if(space.kind==='studio')return this.engine.hasAllParts(p)?'All four prompts ready. Make your song.':'Studio locked. Visit all four producers.';
+    if(!p.song&&this.engine.hasAllParts(p))
+      return p.studioBooked?'Enter your paid BeGenius session from the phone to record.':this.engine.studioStatus(p).reason;
+    if(p.song&&!p.manager&&p.laps<(p.managerUnlockLap??p.laps+1))
+      return 'Record complete! Return to the board and finish another lap before hiring your manager.';
+
+    if(space.kind==='studio')return 'The BeGenius door is also available from your phone after two laps and a paid session.';
     if(space.kind==='radio')return p.manager&&p.song?'Submit your song.':'A recorded song and manager are required.';
     if(space.kind==='festival')return p.radio?'Book the headline slot.':'Get radio airplay first.';
     if(space.kind==='producer')return p.song?'This prompt is locked into your finished song.':p.producerParts[space.producer]?'You can swap this prompt card.':'Choose a prompt card for your song.';
@@ -317,14 +367,18 @@ export class FusionUI {
   }
   openStudio(){
     const p=this.engine.currentPlayer;
+    if(this.online&&!this.online.canControl(p)){this.showNotice('Enter the studio on your own turn.');return;}
     if(!this.engine.hasAllParts(p)){this.showNotice('Studio locked: collect all four producer prompts.');return;}
+    if(!p.studioBooked){this.showNotice(this.engine.studioStatus(p).reason);return;}
+    if(!this.engine.canAct()){this.showNotice('Enter your booked studio after rolling on your turn.');return;}
+    this.renderer.paused=true;
     const defaultPrompt=this.composePrompt(p);
     this.openModal('<small>BEGENIUS STUDIO · PROMPT LAB</small><h2>Make your fusion song</h2><p>Your four producer cards create one prompt. Copy it into the music generator you choose, then return and upload the finished audio. AI generation is not connected inside this game yet.</p>'+
       '<label>Combined song prompt<textarea id="songPrompt" rows="9" maxlength="3000"></textarea></label><button id="copyPrompt">Copy prompt</button><span id="copyStatus" class="progress" role="status"></span>'+
       '<label>Song title<input id="songTitle" maxlength="44" placeholder="Name your song" value="'+esc(p.song?.title||'')+'"></label>'+
       '<label>Upload your finished song (audio, up to 25 MB)<input id="songFile" type="file" accept="audio/*"></label>'+
       '<p id="songStatus" class="progress">Audio stays on this device. Bring back the track made from your four prompts.</p><audio id="songPreview" controls hidden></audio>'+
-      '<button class="primary" id="finishSong">Finish song</button><button id="leaveStudio">Return to board</button>');
+      '<p class="progress">Your $'+CONFIG.studioSessionFee+' studio session is paid. No additional charge to upload.</p><button class="primary" id="finishSong">Finish song</button><button id="leaveStudio">Return to board</button>');
     this.$('songPrompt').value=p.song?.prompt||defaultPrompt;
     this.$('copyPrompt').onclick=async()=>{
       const field=this.$('songPrompt');
@@ -353,17 +407,20 @@ export class FusionUI {
         const result=this.perform('recordSong',[title,key,prompt]);
         if(!result.ok){this.$('songStatus').textContent=result.reason;button.disabled=false;return;}
         if(previewUrl)URL.revokeObjectURL(previewUrl);
-        this.closeModal();this.save();this.render();this.showNotice(result.pending?'Song details sent to host. Your audio stays on this phone.':'Song finished · your prompt and audio are saved on this device.');
+        this.closeModal();this.renderer.paused=false;this.save();this.render();this.showNotice(result.pending?'Song details sent to host. Your audio stays on this phone.':'Song finished · your prompt and audio are saved on this device.');
       }catch(error){this.$('songStatus').textContent='Could not save audio on this device. Try a smaller file or free storage.';button.disabled=false;}
     };
-    this.$('leaveStudio').onclick=()=>{if(previewUrl)URL.revokeObjectURL(previewUrl);this.closeModal();};
+    this.$('leaveStudio').onclick=()=>{if(previewUrl)URL.revokeObjectURL(previewUrl);this.closeModal();this.renderer.paused=false;this.maybeBot();};
   }
   botAction(){
     const e=this.engine,p=e.currentPlayer,space=e.currentSpace;
     if(space.kind==='producer')e.collectPart(DISTRICTS.find(d=>d.id===space.producer).parts[(p.laps+p.position)%2].id);
     if(space.kind==='property'&&!space.ownerId&&p.cash>=space.price+75&&e.ownedCount(p)<2)e.buyProperty();
-    if(!p.manager&&e.ownedCount(p)>0&&p.cash>=CONFIG.managerCost)e.hireManager();
-    if(space.kind==='studio'&&e.hasAllParts(p)&&!p.song)e.recordSong(p.name+' Across the City',null,this.composePrompt(p));
+    if(!p.manager&&p.song&&p.laps>=(p.managerUnlockLap??Infinity)&&e.ownedCount(p)>0&&p.cash>=CONFIG.managerCost)e.hireManager();
+    if(e.hasAllParts(p)&&!p.song&&p.laps>=CONFIG.studioMinLaps){
+      if(!p.studioBooked&&p.cash>=CONFIG.studioSessionFee)e.bookStudio();
+      if(p.studioBooked)e.recordSong(p.name+' Across the City',null,this.composePrompt(p));
+    }
     if(space.kind==='radio'&&p.song&&p.manager&&p.cash>=CONFIG.radioCost)e.submitRadio();
     if(space.kind==='festival'&&p.radio)e.bookFinale();
     this.save();this.render();
