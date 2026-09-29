@@ -1607,6 +1607,21 @@ export class DetroitRenderer extends EventTarget {
         p.equippedRim||vehicle.includedRim||'factory'
       );
       token.scale.setScalar(this.artBoardActive?(vehicle.pieceScale||.68)*.57:(vehicle.pieceScale||.68));
+      if(this.artBoardActive){
+        // Keep player-controlled 3D cars distinguishable from the tiny parked
+        // cars photographed in the exact artwork, without drawing new squares.
+        const halo=new THREE.Mesh(
+          new THREE.RingGeometry(1.23,1.53,36),
+          new THREE.MeshBasicMaterial({
+            color:p.color||'#7ed7ff',transparent:true,opacity:.8,
+            toneMapped:false,depthWrite:false,side:THREE.DoubleSide
+          })
+        );
+        halo.rotation.x=-Math.PI/2;halo.position.y=.07;
+        halo.renderOrder=5;
+        token.add(halo);
+        token.userData.playerHalo=halo;
+      }
       this.scene.add(token);
       this.playerTokens.set(p.id,token);
       this.snapPlayer(p,i);
