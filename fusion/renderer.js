@@ -14,6 +14,8 @@ export function useBoardData(spaces, landmarks) {
 }
 import { getVehicle, getRim } from './vehicles.js?v=42';
 import { getRealVehicleSpec } from './real-vehicle-models.js?v=42';
+import { buildFusionArtBoard, fusionArtLandingSlot, syncFusionArtOwnership } from './fusion-art-board.js?v=1';
+import { ART_WORLD_WIDTH, ART_WORLD_DEPTH } from './fusion-art-map.js?v=1';
 
 export class DetroitRenderer extends EventTarget {
   constructor(container) {
@@ -74,7 +76,8 @@ export class DetroitRenderer extends EventTarget {
     this.driveT = 0;
     this.reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.initLights();
-    this.initWorld();
+    if(fusionMode)buildFusionArtBoard(this,BOARD_SPACES,LANDMARKS);
+    else this.initWorld();
     this.bindControls();
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(this.container);
@@ -289,6 +292,7 @@ export class DetroitRenderer extends EventTarget {
   }
 
   getLandingSlot(position,index=0){
+    if(this.artBoardActive)return fusionArtLandingSlot(position,index);
     const [x,z]=this.coords[position];
     const slot=index%4;
     const col=(slot%2===0?-1:1)*.64;
@@ -1602,7 +1606,7 @@ export class DetroitRenderer extends EventTarget {
         'player',
         p.equippedRim||vehicle.includedRim||'factory'
       );
-      token.scale.setScalar(vehicle.pieceScale||.68);
+      token.scale.setScalar(this.artBoardActive?(vehicle.pieceScale||.68)*.57:(vehicle.pieceScale||.68));
       this.scene.add(token);
       this.playerTokens.set(p.id,token);
       this.snapPlayer(p,i);
@@ -1618,6 +1622,14 @@ export class DetroitRenderer extends EventTarget {
 
   followPlayerCamera(token,heading=0,settled=false){
     if(!token)return;
+    if(this.artBoardActive){
+      this.showFullBoard=false;
+      const side=settled?5.5:4.9;
+      const height=settled?11:9.5;
+      this.desiredTarget.set(token.position.x,0,token.position.z);
+      this.desiredPos.set(token.position.x+side,height,token.position.z+side);
+      return;
+    }
     const behind=settled?6.2:5.4;
     const side=settled?2.0:1.45;
     const height=settled?4.7:4.25;
@@ -1744,6 +1756,7 @@ export class DetroitRenderer extends EventTarget {
   }
 
   syncOwnership(state){
+    if(this.artBoardActive){syncFusionArtOwnership(this,state);return;}
     state.landmarks.forEach(l=>{const g=this.landmarkGroups.get(l.id);if(g)g.scale.setScalar(l.ownerId?1.04+.03*Math.max(0,l.level-1):1);});
     state.spaces.forEach(s=>{const g=this.spaceGroups.get(s.id);if(g)g.scale.y=s.ownerId?1.14:1;});
   }
@@ -2354,7 +2367,21 @@ export class DetroitRenderer extends EventTarget {
     this.dispatchEvent(new CustomEvent('roomchange',{detail:{room:null}}));
   }
 
-  boardView(){this.driveMode=false;this.desiredPos.copy(this.homeBoard);this.desiredTarget.set(0,0,0);this.radius=42;}
+  boardView(){
+    this.driveMode=false;
+    if(this.artBoardActive){
+      const halfTan=Math.tan(THREE.MathUtils.degToRad(this.camera.fov)*.5);
+      const aspect=Math.max(.37,this.camera.aspect);
+      const fit=Math.max(ART_WORLD_DEPTH/(2*halfTan),ART_WORLD_WIDTH/(2*halfTan*aspect));
+      this.homeBoard.set(0,fit*1.18,fit*.055);
+      this.desiredPos.copy(this.homeBoard);
+      this.desiredTarget.set(0,0,0);
+      this.radius=fit;
+      this.showFullBoard=true;
+      return;
+    }
+    this.desiredPos.copy(this.homeBoard);this.desiredTarget.set(0,0,0);this.radius=42;
+  }
   cityView(){this.driveMode=false;this.desiredPos.copy(this.homeCity);this.desiredTarget.set(0,2,0);this.radius=26;}
   mallView(){this.driveMode=false;this.desiredTarget.set(5.1,1.35,6.7);this.desiredPos.set(11.8,6.2,13.1);this.radius=11;}
   garageView(){this.driveMode=false;this.desiredTarget.set(-9.9,.9,10.35);this.desiredPos.set(-4.0,5.3,15.1);this.radius=10;}
@@ -2389,6 +2416,7 @@ export class DetroitRenderer extends EventTarget {
   resize(){
     const r=this.container.getBoundingClientRect(),w=Math.max(300,Math.floor(r.width)),h=Math.max(460,Math.floor(r.height));
     this.renderer.setSize(w,h,false);this.camera.aspect=w/h;this.camera.updateProjectionMatrix();
+    if(this.artBoardActive&&this.showFullBoard)this.boardView();
   }
 
   animate(){
