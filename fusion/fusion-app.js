@@ -1,8 +1,8 @@
-import { BOARD_SPACES, LANDMARKS } from './fusion-data.js?v=4';
+import { BOARD_SPACES, LANDMARKS } from './fusion-data.js?v=5';
 import { DetroitRenderer, useBoardData } from './renderer.js?v=43';
-import { FusionEngine } from './fusion-engine.js?v=5';
-import { FusionUI } from './fusion-ui.js?v=7';
-import { FusionRoom } from './fusion-room.js?v=1';
+import { FusionEngine } from './fusion-engine.js?v=6';
+import { FusionUI } from './fusion-ui.js?v=8';
+import { FusionRoom } from './fusion-room.js?v=2';
 
 useBoardData(BOARD_SPACES,LANDMARKS);
 const engine=new FusionEngine();
