@@ -109,7 +109,7 @@ export function buildFusionArtBoard(view,spaces,landmarks){
     ring.position.y=.15;
     // The original printed prompt marker is always the visible graphic.
     // This subtle dynamic halo turns on only while an uncollected prompt is highlighted.
-    const clickable=circleHit(g,.84);
+    circleHit(g,.84);
     const producerSpace=spaces.find(s=>s.kind==='producer'&&s.producer===district);
     if(producerSpace){
       g.userData={type:'space',id:producerSpace.id,promptDistrict:district};
@@ -128,8 +128,6 @@ export function fusionArtLandingSlot(position,index=0){
 }
 export function syncFusionArtOwnership(view,state){
   state.spaces.forEach(s=>{
-    const g=view.spaceGroups.get(s.id),ring=g?.userData.ownershipRing;
-    if(!ring)return;
     const g=view.spaceGroups.get(s.id),ring=g?.userData.ownershipRing;
     if(!ring)return;
     const owner=state.players.find(p=>p.id===s.ownerId);
