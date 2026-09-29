@@ -38,8 +38,11 @@ Progress is saved automatically in the browser with `localStorage`.
 Open `fusion_board.html` to play the separate four-borough board match. The 40-space board,
 cars, dice, producers, property income, manager, radio, and finale are adapted from the
 Detroit Empire prototype. Hip-Hop Heights opens the existing walkable street and its rooms
-in a board overlay; closing it returns to the same car, space, and turn. The BeGenius door
-requires four producer sounds and a landing on its studio space during a board match.
+in a board overlay; closing it returns to the same car, space, and turn. Every player
+starts with **$1,000** and earns **$200 when passing GO**. The four producer prompts
+and **two completed laps** are required before booking a **$500 BeGenius Studio
+session**. A session can be booked from the in-game phone from any landed square;
+players can then enter the studio from the same phone without rolling a lucky number.
 
 The board's prompt-card song action and the full BeGenius room currently have separate song
 state. An experimental online playtest room now uses PeerJS for host-authoritative turns, shared
@@ -58,7 +61,12 @@ validates the sender's actual room seat and the card; recipients cannot receive
 duplicate borough cards or change a completed song. Card exchanges appear in room
 chat, sync to all players, and remain part of the host's saved board state.
 Complete all four prompts to preview/copy the combined song direction from your
-phone, then land at BeGenius Studio to upload the finished song. AI music generation
+phone, then book and pay for BeGenius Studio after completing two laps. You can
+enter from any square on your turn after rolling, copy your four-card AI prompt,
+and upload the finished song without paying twice. After recording, return to
+the board for at least another lap before hiring your manager (requires a music
+property and $300). Studio booking and remote guest requests are host-validated.
+AI music generation
 is not wired into this board; use your chosen authorized generator externally.
 
 **Two-phone playtest:** Phone A starts the board and creates a room from the
@@ -66,12 +74,15 @@ in-game phone. Share the invite with Phone B, which opens it, enters an artist
 name and joins. Each phone should see the same turn and car positions. Collect
 a producer card, open the phone and share it with the other artist; check the
 recipient's Producer Network and both chat logs, then close and reopen the phone.
-Finally, have the recipient gather all four cards and check the copied prompt.
+Finally, have the recipient gather all four cards, finish two laps, book a
+$500 session from the phone, open the BeGenius prompt lab without landing on its
+physical square, then return to the board before hiring a manager.
 Keep both browsers online and the host tab open while testing.
 
 **Automated checks:** run `npm test` with Node.js 22. The fusion collaboration
 suite checks missing-card and forged offers, off-turn exchanges, host seat
-authorization, save/load persistence and four-card studio unlock. A real two-phone
+authorization, save/load persistence, GO payouts, two-lap/$500 studio booking,
+remote booking and post-recording manager progression. A real two-phone
 test remains required before merging the draft PR into `dev`.
 
 The Live Freestyle feature is an MVP test path. It uses PeerJS public signaling so no private game server is required for early phone testing. Production multiplayer should move signaling, identity, moderation, room persistence, and anti-abuse controls to owned infrastructure.
