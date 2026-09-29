@@ -21,7 +21,8 @@ check('studio teaches a short beat-to-master workflow', () => {
   assert.match(studio, />LEAD</);
   assert.match(studio, />DOUBLE</);
   assert.match(studio, />AD-LIBS</);
-  assert.match(studio, />BACKGROUNDS</);
+  assert.match(studio, />HARMONY</);
+  assert.match(studio, />BACKGROUND</);
   assert.match(studio, />AI MASTER</);
 });
 
