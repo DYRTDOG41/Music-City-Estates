@@ -6,6 +6,7 @@
 .fusion-top button,.fusion-actions button,.fusion-dice button,.fusion-modal button{border:1px solid #ffffff4a;border-radius:11px;background:#172a44;color:#fff;padding:11px 14px;font-size:14px;font-weight:700;cursor:pointer}
 .fusion-top button:hover,.fusion-actions button:hover,.fusion-dice button:hover,.fusion-modal button:hover{background:#285078}
 .fusion-top-actions{display:flex;gap:8px;pointer-events:auto}
+.phone-toggle{pointer-events:auto;flex:none;font-size:18px!important;padding:8px 10px!important;background:#0b1525d9!important}
 .board-menu-toggle{display:none}
 .borough-view{position:fixed;z-index:40;inset:0;background:#07101b;display:flex;flex-direction:column}
 .borough-view[hidden]{display:none}
@@ -39,12 +40,14 @@
 .fusion-card .choices{display:grid;gap:10px}.fusion-card .choices button{text-align:left}.fusion-card .choices small{display:block;margin-top:4px;font-size:12px;line-height:1.35;font-weight:400;color:#d2deee}
 .garage-layout{display:grid;grid-template-columns:minmax(150px,1fr) minmax(0,1.4fr);gap:10px}.garage-car-list{display:grid;align-content:start;gap:5px;max-height:320px;overflow:auto}.fusion-card .garage-car{display:grid;gap:2px;margin:0;padding:8px 10px;text-align:left;font-size:13px}.garage-car small,.garage-rim small{font-size:11px;color:#bed3e8;font-weight:400}.fusion-card .garage-car.selected,.fusion-card .garage-rim.selected{border-color:#8eeab9;background:#20543e}.garage-detail{min-width:0;padding:8px;border:1px solid #6ba9df62;border-radius:11px;background:#111f30}.garage-detail h3{margin:8px 0 3px}.garage-detail p{font-size:12px;margin:6px 0}.garage-preview{aspect-ratio:16/9;display:grid;place-items:center;overflow:hidden;background:#10171d;border-radius:8px;color:#b5cee4;font-size:12px;text-align:center}.garage-preview img{width:100%;height:100%;object-fit:cover}.garage-preview img[hidden],.garage-preview span[hidden]{display:none}.garage-rim-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.fusion-card .garage-rim{display:grid;gap:3px;margin:0;padding:7px;text-align:left;font-size:12px}.garage-paint-list{display:flex;flex-wrap:wrap;gap:5px}.fusion-card .garage-paint{width:34px;height:34px;border-radius:50%;padding:0;margin:0;background:var(--paint);border:2px solid #ffffff72}.fusion-card .garage-paint.selected{outline:2px solid #9ce5bd;outline-offset:2px}.garage-detail button:disabled{opacity:.55}
 .fusion-card .progress{color:#91dcaf}.fusion-card audio{width:100%;margin:8px 0}
+.phone-actions{display:flex;flex-wrap:wrap;gap:7px;align-items:center}.phone-actions a{display:inline-block;border:1px solid #ffffff4a;border-radius:11px;background:#172a44;color:#fff;padding:11px 14px;font-size:14px;font-weight:700;text-decoration:none}.phone-roster{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.phone-roster>div{display:grid;padding:9px;border:1px solid #ffffff36;border-radius:9px;background:#132236}.phone-roster small{color:#aebfd0}
 .fusion-spotlight{background:radial-gradient(circle at 50% 0%,#488bdb88,transparent 46%),linear-gradient(130deg,#132c50,#201936);padding:34px 16px;border-radius:13px;text-align:center;min-height:185px;display:flex;flex-direction:column;justify-content:center;border:1px solid #96caff88;box-shadow:inset 0 -35px 70px #020713,0 0 30px #3274c850;animation:stagePulse 2s ease-in-out infinite alternate}
 @keyframes stagePulse{to{box-shadow:inset 0 -35px 70px #020713,0 0 58px #b279e887}}
 .fusion-spotlight strong{font-size:21px}.fusion-spotlight span{display:block;color:#b8cee7;margin:6px}
 .fusion-judges{display:grid;gap:8px;margin:12px 0}.fusion-judges button{text-align:left}
 @media(max-width:760px){
  .board-menu-toggle{display:block;pointer-events:auto;width:42px;height:42px;padding:0!important;font-size:21px!important;background:#0b1525d9!important}
+ .phone-toggle{width:42px;height:42px;padding:0!important;margin-left:auto;margin-right:5px;font-size:21px!important}
  .fusion-top-actions{display:none;position:absolute;right:0;top:48px;flex-direction:column;gap:5px;padding:7px;background:#0b1525f2;border:1px solid #6ba9df62;border-radius:12px;box-shadow:0 12px 30px #0008}.fusion-top-actions.open{display:flex}.fusion-top-actions button{font-size:13px;padding:9px 12px;text-align:left}
  .borough-bar{flex-wrap:wrap;gap:5px}.borough-bar span{display:none}.borough-bar button{margin-left:auto}
  .fusion-top{left:10px;right:10px}.fusion-top>div{padding:6px 9px}.fusion-top strong{font-size:16px}

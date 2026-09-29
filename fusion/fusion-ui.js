@@ -35,6 +35,7 @@ export class FusionUI {
     this.$('boardMenuToggle').onclick=()=>this.setMenuOpen(!this.$('boardMenu').classList.contains('open'));
     this.$('newGame').onclick=()=>{this.setMenuOpen(false);this.openSetup();};
     this.$('garageBtn').onclick=()=>{this.setMenuOpen(false);this.openGarage();};
+    this.$('phoneBtn').onclick=()=>{this.setMenuOpen(false);this.openPhone();};
     this.$('visitHeights').onclick=()=>{this.setMenuOpen(false);this.openBorough();};
     this.$('leaveBorough').onclick=()=>this.closeBorough();
     document.addEventListener('pointerdown',e=>{
@@ -93,6 +94,29 @@ export class FusionUI {
   }
   closeModal(){this.modal.hidden=true;this.modal.replaceChildren();}
   openModal(html){this.modal.innerHTML='<div class="fusion-card">'+html+'</div>';this.modal.hidden=false;}
+  openPhone(){
+    if(this.busy||!this.modal.hidden||!this.$('boroughView').hidden)return;
+    const players=this.engine.state.players;
+    this.renderer.paused=true;
+    this.openModal('<small>MUSIC CITY PHONE</small><h2>Connect with your crew</h2>'+ 
+      '<p>This board currently saves games on each device. Share the link to let friends test their own games, or take turns with up to four artists on one device. Live game rooms and in-game chat are not connected yet.</p>'+ 
+      '<div class="phone-actions"><button id="phoneShare" class="primary">Share test link</button><button id="phoneCopy">Copy link</button><a href="https://www.messenger.com/" target="_blank" rel="noopener noreferrer">Open Messenger ↗</a></div>'+ 
+      '<p id="phoneStatus" class="progress" role="status">Talk in your Messenger group while you test. Opening Messenger does not join your games together.</p>'+ 
+      '<h3>Artists in this local game</h3><div class="phone-roster">'+players.map(p=>'<div><b>'+esc(p.name)+'</b><small>'+(p.bot?'Computer':'On this device')+'</small></div>').join('')+'</div>'+ 
+      '<button id="phoneClose">Return to board</button>');
+    const link=new URL('fusion_board.html',location.href).href;
+    this.$('phoneCopy').onclick=async()=>{
+      try{await navigator.clipboard.writeText(link);this.$('phoneStatus').textContent='Test link copied. Paste it into your Messenger group.';}
+      catch(error){this.$('phoneStatus').textContent='Copy this link: '+link;}
+    };
+    this.$('phoneShare').onclick=async()=>{
+      if(navigator.share){
+        try{await navigator.share({title:'Music City Estates · Fusion Board',text:'Try the Fusion Board with me. Each phone currently has its own game.',url:link});}
+        catch(error){if(error.name!=='AbortError')this.$('phoneStatus').textContent='Use Copy link to share this game.';}
+      }else this.$('phoneCopy').click();
+    };
+    this.$('phoneClose').onclick=()=>{this.renderer.paused=false;this.closeModal();this.maybeBot();};
+  }
   openSetup(){
     this.setStatusExpanded(false);this.setMenuOpen(false);
     this.openModal('<h2>Music City Estates · Fusion Board</h2><p>Roll around the 3D city, collect four producer prompt cards, create one fusion song, buy a music business, hire a manager and get radio airplay. The first artist to reach the festival headlines the showcase.</p>'+ 
@@ -189,6 +213,7 @@ export class FusionUI {
       goalRow('Festival headline',s.headlineId===p.id,s.headlineId===p.id?'Booked':'Book after radio airplay');
     const canRoll=!this.busy&&!p.bot&&!s.showcaseComplete&&['ready','turn'].includes(s.phase);
     const canEnd=!this.busy&&!p.bot&&!s.showcaseComplete&&s.phase==='landed';
+    this.$('phoneBtn').disabled=this.busy;
     this.$('garageBtn').disabled=this.busy||!this.engine.garageAvailable();
     this.$('roll').hidden=!canRoll;this.$('endTurn').hidden=!canEnd;
     this.$('roll').parentElement.classList.toggle('is-empty',!canRoll&&!canEnd);
