@@ -1,4 +1,4 @@
-import { DISTRICTS, CONFIG } from './fusion-data.js?v=5';
+import { DISTRICTS, CONFIG } from './fusion-data.js?v=6';
 import { VEHICLES, RIMS, PAINTS, STARTER_VEHICLES, getVehicle } from './fusion-vehicles.js';
 
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -35,6 +35,10 @@ export class FusionUI {
     this.$('boardMenuToggle').onclick=()=>this.setMenuOpen(!this.$('boardMenu').classList.contains('open'));
     this.$('newGame').onclick=()=>{this.setMenuOpen(false);this.openSetup();};
     this.$('garageBtn').onclick=()=>{this.setMenuOpen(false);this.openGarage();};
+    this.$('boardOverview').onclick=()=>{
+      this.setMenuOpen(false);this.renderer.boardView();
+      this.showNotice('Full approved Music City board. Tap a borough or music stop to inspect it.');
+    };
     this.$('phoneBtn').onclick=()=>{this.setMenuOpen(false);this.openPhone();};
     this.$('visitHeights').onclick=()=>{this.setMenuOpen(false);this.openBorough();};
     this.$('leaveBorough').onclick=()=>this.closeBorough();
@@ -162,7 +166,7 @@ export class FusionUI {
   openSetup(){
     if(this.online?.active){this.showNotice('Leave the online room before starting another game.');return;}
     this.setStatusExpanded(false);this.setMenuOpen(false);
-    this.openModal('<h2>Music City Estates · Fusion Board</h2><p>Roll around the 3D city, collect four producer prompt cards, create one fusion song, buy a music business, hire a manager and get radio airplay. The first artist to reach the festival headlines the showcase.</p>'+ 
+    this.openModal('<h2>Music City Estates · Fusion Board</h2><p>Drive through the exact approved Music City board: Hip-Hop Heights, Country Crossings, Velvet Grove and Latin Quarter. Collect all four producer cards, finish two laps, book a $500 BeGenius session, make your song, buy music businesses and earn your way to the final showcase.</p>'+ 
       '<p><strong>Four artists enter the showcase.</strong> Uncheck “Computer artist” for each friend playing on this device. For a shared online board, start your local game first, open the phone and create a room. Friends can then claim a computer seat with your invite.</p>'+
       '<div id="setupRows"></div><div><button class="primary" id="begin">Start game</button><button id="continue">Continue saved game</button></div>');
     const rows=this.$('setupRows');
@@ -243,7 +247,7 @@ export class FusionUI {
     this.$('cash').textContent='$'+p.cash.toLocaleString();
     const cards=Object.keys(p.producerParts).length;
     this.$('goalCount').textContent=(cards+Number(Boolean(p.song)))+'/5';
-    const shortNames={hiphop:'Hip-Hop',latin:'Latin',global:'Global',country:'Country'};
+    const shortNames={hiphop:'Hip-Hop',latin:'Latin',global:'Velvet',country:'Country'};
     this.$('goalStrip').innerHTML=[...DISTRICTS.map(d=>({name:shortNames[d.id]||d.name,done:Boolean(p.producerParts[d.id])})),{name:'Song',done:Boolean(p.song)}]
       .map(goal=>'<div class="fusion-goal '+(goal.done?'done':'pending')+'"><span class="fusion-goal-mark" aria-hidden="true">'+(goal.done?'✓':'○')+'</span><span>'+esc(goal.name)+'</span></div>').join('');
     this.$('diceResult').textContent=s.lastRoll[0]?s.lastRoll.join(' + ')+' = '+(s.lastRoll[0]+s.lastRoll[1]):'Roll to move';
