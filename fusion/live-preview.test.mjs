@@ -55,12 +55,18 @@ try{
     const {engine,renderer}=window.musicCityFusion,p=engine.currentPlayer;
     const token=renderer.playerTokens.get(p.id),slot=renderer.getLandingSlot(p.position,0);
     return {position:p.position,actual:[token.position.x,token.position.z],
-      expected:[slot.x,slot.z],halo:!!token.userData.playerHalo};
+      expected:[slot.x,slot.z],halo:!!token.userData.playerHalo,
+      northUpOffset:[renderer.desiredPos.x-slot.x,renderer.desiredPos.z-slot.z],
+      droneActive:Boolean(renderer.droneActive)};
   });
   assert.ok(movedCar.position>=2&&movedCar.position<=12,'Dice must move the live car');
   assert.ok(Math.hypot(movedCar.actual[0]-movedCar.expected[0],
     movedCar.actual[1]-movedCar.expected[1])<.2,'The live 3D car must land on its mapped image road');
   assert.equal(movedCar.halo,true,'The player car must be visible over printed scenery');
+  assert.ok(movedCar.northUpOffset[1]>3&&Math.abs(movedCar.northUpOffset[0])<3,
+    'The camera must remain north-up so all four district labels stay readable');
+  assert.equal(movedCar.droneActive,false);
+
   if(await host.locator('#later').count())await host.locator('#later').click();
   await host.screenshot({path:'fusion-art-board-car-after-roll.png',fullPage:true});
   console.log('PASS: actual dice roll drove the glowing 3D artist car to its mapped roadway stop');
