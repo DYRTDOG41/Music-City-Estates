@@ -1,22 +1,26 @@
 import { BOARD_SPACES as DETROIT_BOARD, LANDMARKS as DETROIT_LANDMARKS } from './data.js';
 
+// The IDs remain stable for existing saves. "global" is the legacy save key for the
+// same fourth prompt slot, now represented by the approved artwork's Velvet Grove.
 export const DISTRICTS = [
+  { id:'country', name:'Country Crossings', side:'East', accent:'#ffb641',
+    parts:[{id:'guitar',name:'Acoustic guitar',prompt:'Bring in a clear acoustic guitar motif and a storytelling chorus.'},{id:'shuffle',name:'Country shuffle',prompt:'Give the song a light country shuffle and a melodic, story-driven hook.'}] },
+  { id:'global', name:'Velvet Grove', side:'South', accent:'#bd69f9',
+    parts:[{id:'soul',name:'Velvet soul chords',prompt:'Lay warm R&B keyboard chords beneath a smooth soulful melody and expressive vocal harmonies.'},{id:'groove',name:'R&B pocket',prompt:'Give the song a deep R&B bassline, restrained percussion and an emotional call-and-response hook.'},{id:'hand',name:'Legacy hand-drum texture',prompt:'Weave a gentle hand-drum pattern into the arrangement.'},{id:'pluck',name:'Legacy plucked melody',prompt:'Add a warm plucked-string melody as a global fusion texture.'}] },
   { id:'hiphop', name:'Hip-Hop Heights', side:'North', accent:'#4b9bff',
     parts:[{id:'boom',name:'Boom-bap groove',prompt:'Use a laid-back boom-bap drum groove with room for the vocal.'},{id:'trap',name:'Modern 808 groove',prompt:'Use crisp hip-hop drums and a warm, restrained 808 bassline.'}] },
-  { id:'latin', name:'Latin Quarter', side:'East', accent:'#f5a853',
+  { id:'latin', name:'Latin Quarter', side:'West', accent:'#ff6385',
     parts:[{id:'clave',name:'Clave rhythm',prompt:'Add a subtle clave-inspired rhythm and layered hand percussion.'},{id:'dance',name:'Dance percussion',prompt:'Add bright, syncopated Latin dance percussion that lifts the chorus.'}] },
-  { id:'global', name:'Global Sound District', side:'South', accent:'#9cdfb6',
-    parts:[{id:'hand',name:'Hand-drum texture',prompt:'Weave a gentle hand-drum pattern into the arrangement.'},{id:'pluck',name:'Plucked melody',prompt:'Add a warm plucked-string melody as a global fusion texture.'}] },
-  { id:'country', name:'Country Crossings', side:'West', accent:'#d9aeec',
-    parts:[{id:'guitar',name:'Acoustic guitar',prompt:'Bring in a clear acoustic guitar motif and a storytelling chorus.'},{id:'shuffle',name:'Country shuffle',prompt:'Give the song a light country shuffle and a melodic, story-driven hook.'}] },
 ];
 
 const producerBlocks = {North:[3,4,5],East:[13,14,15],South:[23,24,25],West:[33,34,35]};
+// The original 40 index IDs remain unchanged: physical roadway now follows the
+// approved image GO -> Hip-Hop -> Country -> Velvet -> Latin -> GO.
 const streetNames = {
   North:['Studio Row','Beat Market','East Mic Avenue','Freestyle Lane','Record Shop Row','Headliner Drive','Harmony Street'],
-  East:['Café Plaza','Rhythm Market','Festival Avenue','Dance Row','Producer Street','Soundcheck Square','Market Boulevard'],
-  South:['Collab Corner','World Stage Road','Global Market','Live Room Lane','Record Exchange','Tour Road','Crossroads'],
-  West:['Songwriter Lane','Backroad Records','Guitar Row','Story Street','Venue Avenue','Merch Square','Country Road'],
+  East:['Songwriter Lane','Backroad Records','Guitar Row','Story Street','Venue Avenue','Merch Square','Country Road'],
+  South:['Harmony Avenue','Velvet Records','Soul Stage Lane','Lyric Lounge','Hook House Row','R&B Market','Publishing Boulevard'],
+  West:['Café Plaza','Rhythm Market','Festival Avenue','Dance Row','Producer Street','Soundcheck Square','Market Boulevard'],
 };
 const cursors={North:0,East:0,South:0,West:0};
 export const BOARD_SPACES = DETROIT_BOARD.map((original,index)=>{
@@ -42,7 +46,7 @@ export const LANDMARKS = DETROIT_LANDMARKS.map((item,i)=>({
   x:i===5?0:i===8?-3.7:item.x,
   z:i===5?-3.7:i===8?0:item.z,
   level:1,
-  name:['Festival Pavilion','Hip-Hop Café','Latin Café','Global Café','Country Café',
+  name:['Festival Pavilion','Hip-Hop Café','Latin Café','Velvet Grove Café','Country Café',
     'Music City Radio','Record Store','Collab Hall','Artist Management'][i],
   price:140+i*15,
   description:'A music business that strengthens nearby properties.',
