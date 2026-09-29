@@ -1,4 +1,4 @@
-import { DISTRICTS, CONFIG } from './fusion-data.js?v=4';
+import { DISTRICTS, CONFIG } from './fusion-data.js?v=5';
 import { VEHICLES, RIMS, PAINTS, STARTER_VEHICLES, getVehicle } from './fusion-vehicles.js';
 
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
