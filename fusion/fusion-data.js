@@ -21,8 +21,8 @@ const streetNames = {
 const cursors={North:0,East:0,South:0,West:0};
 export const BOARD_SPACES = DETROIT_BOARD.map((original,index)=>{
   const s={...original,ownerId:null};
-  if(index===0)return {...s,name:'Music City Start',kind:'start',effect:'Collect $80 each lap.'};
-  if(index===8)return {...s,name:'BeGenius Studio · Hip-Hop Heights',kind:'studio',effect:'Book your $300 session from the in-game phone after collecting all four prompts. No lucky landing required.'};
+  if(index===0)return {...s,name:'Music City Start · GO',kind:'start',effect:'Collect $200 each time you pass GO.'};
+  if(index===8)return {...s,name:'BeGenius Studio · Hip-Hop Heights',kind:'studio',effect:'Collect four prompts and complete two laps. Book a $500 session through your in-game phone; landing here is optional.'};
   if(index===10)return {...s,name:'Borough Junction',kind:'event',effect:'Connect to the next borough.'};
   if(index===20)return {...s,name:'Music City Radio',kind:'radio',effect:'Manager and finished song required.'};
   if(index===30)return {...s,name:'Festival Finale',kind:'festival',effect:'Radio airplay required.'};
@@ -49,6 +49,6 @@ export const LANDMARKS = DETROIT_LANDMARKS.map((item,i)=>({
 }));
 
 export const CONFIG = {
-  startCash:240, passStart:80, studioSessionFee:300, streetGigPay:60, managerCost:300, radioCost:120,
+  startCash:1000, passStart:200, studioSessionFee:500, studioMinLaps:2, managerCost:300, radioCost:120,
   prize:2000, saveKey:'mce-fusion-board-v1'
 };
