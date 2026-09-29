@@ -10,18 +10,23 @@ export class FusionUI {
     this.busy=false;this.audioContext=null;this.playingAudio=null;
     this.$('roll').onclick=()=>this.moveCurrent();
     this.$('endTurn').onclick=()=>this.endTurn();
-    this.$('newGame').onclick=()=>this.openSetup();
-    this.$('visitHeights').onclick=()=>this.openBorough();
+    this.$('statusToggle').onclick=()=>this.setStatusExpanded(!document.querySelector('.fusion-hud').classList.contains('expanded'));
+    this.$('boardMenuToggle').onclick=()=>this.setMenuOpen(!this.$('boardMenu').classList.contains('open'));
+    this.$('newGame').onclick=()=>{this.setMenuOpen(false);this.openSetup();};
+    this.$('visitHeights').onclick=()=>{this.setMenuOpen(false);this.openBorough();};
     this.$('leaveBorough').onclick=()=>this.closeBorough();
+    document.addEventListener('pointerdown',e=>{
+      if(!e.target.closest('.fusion-top'))this.setMenuOpen(false);
+    });
     renderer.addEventListener('pick',e=>{
       if(e.detail.type==='borough'){
         if(e.detail.id==='hiphop')this.openBorough();
-        else this.$('instruction').textContent='The '+DISTRICTS.find(x=>x.id===e.detail.id)?.name+' producer is playable on the board. A walkable neighborhood is coming later.';
+        else this.showNotice('The '+DISTRICTS.find(x=>x.id===e.detail.id)?.name+' producer is playable on the board.');
         return;
       }
       if(e.detail.type==='space'){
         const item=engine.state.spaces.find(x=>x.id===e.detail.id);
-        if(item)this.$('instruction').textContent=item.name+' · '+(item.kind==='producer'?'Land here to choose a sound.':item.kind==='property'?'Land here to buy this music business.':item.effect||'');
+        if(item)this.showNotice(item.name+' · '+(item.kind==='producer'?'Land here to choose a sound.':item.kind==='property'?'Land here to buy this music business.':item.effect||''));
       }
     });
     engine.addEventListener('state',()=>this.render());
@@ -29,8 +34,25 @@ export class FusionUI {
     engine.addEventListener('turn',()=>this.render());
     this.render();this.openSetup();
   }
+  setStatusExpanded(open){
+    document.querySelector('.fusion-hud').classList.toggle('expanded',open);
+    this.$('statusToggle').setAttribute('aria-expanded',String(open));
+  }
+  setMenuOpen(open){
+    this.$('boardMenu').classList.toggle('open',open);
+    this.$('boardMenuToggle').setAttribute('aria-expanded',String(open));
+    this.$('boardMenuToggle').setAttribute('aria-label',open?'Close board menu':'Open board menu');
+  }
+  showNotice(message,ms=3200){
+    const notice=this.$('gameNotice');
+    clearTimeout(this.noticeTimer);
+    notice.textContent=message;
+    notice.classList.add('show');
+    this.noticeTimer=setTimeout(()=>notice.classList.remove('show'),ms);
+  }
   openBorough(){
     if(!this.modal.hidden)return;
+    this.setStatusExpanded(false);this.setMenuOpen(false);
     const view=this.$('boroughView'),frame=this.$('boroughFrame');
     frame.src='hip_hop_heights.html?fusion=1';
     view.hidden=false;
@@ -45,11 +67,12 @@ export class FusionUI {
   }
   save(){
     try{localStorage.setItem(CONFIG.saveKey,JSON.stringify(this.engine.exportState()));}
-    catch(error){this.$('instruction').textContent='This device could not save the session. Audio files may be too large.';}
+    catch(error){this.showNotice('This device could not save the session. Audio files may be too large.',5000);}
   }
   closeModal(){this.modal.hidden=true;this.modal.replaceChildren();}
   openModal(html){this.modal.innerHTML='<div class="fusion-card">'+html+'</div>';this.modal.hidden=false;}
   openSetup(){
+    this.setStatusExpanded(false);this.setMenuOpen(false);
     this.openModal('<h2>Music City Estates · Fusion Board</h2><p>Roll around the 3D city, meet four producers, build one song, buy a music business, hire a manager and get radio airplay. The first artist to reach the festival headlines the four-song showcase.</p>'+
       '<p><strong>Four artists enter the showcase.</strong> Uncheck “Computer artist” for each friend playing on this device. Online rooms are not connected in this prototype.</p>'+
       '<div id="setupRows"></div><div><button class="primary" id="begin">Start game</button><button id="continue">Continue saved game</button></div>');
@@ -83,6 +106,7 @@ export class FusionUI {
     this.$('artistName').textContent=p.name+(p.bot?' · computer':'');
     this.$('round').textContent=s.round;
     this.$('cash').textContent='$'+p.cash.toLocaleString();
+    this.$('pieceCount').textContent=Object.keys(p.producerParts).length+'/4';
     this.$('diceResult').textContent=s.lastRoll[0]?s.lastRoll.join(' + ')+' = '+(s.lastRoll[0]+s.lastRoll[1]):'Roll to move';
     this.$('pieces').innerHTML=DISTRICTS.map(d=>{
       const part=p.producerParts[d.id];
@@ -93,6 +117,7 @@ export class FusionUI {
     const canRoll=!this.busy&&!p.bot&&!s.showcaseComplete&&['ready','turn'].includes(s.phase);
     const canEnd=!this.busy&&!p.bot&&!s.showcaseComplete&&s.phase==='landed';
     this.$('roll').hidden=!canRoll;this.$('endTurn').hidden=!canEnd;
+    this.$('roll').parentElement.classList.toggle('is-empty',!canRoll&&!canEnd);
     const actions=this.$('actions');actions.replaceChildren();
     const action=(label,fn,secondary=false)=>{
       const button=document.createElement('button');button.textContent=label;
@@ -131,12 +156,15 @@ export class FusionUI {
   }
   act(fn){
     const result=fn();
-    if(!result?.ok)this.$('instruction').textContent=result?.reason||'That action is unavailable.';
-    else {this.save();this.render();}
+    if(!result?.ok){
+      const message=result?.reason||'That action is unavailable.';
+      this.$('instruction').textContent=message;this.showNotice(message);
+    }else {this.save();this.render();this.showNotice('Done · '+this.nextStep(this.engine.currentPlayer,this.engine.currentSpace));}
   }
   async moveCurrent(){
     if(this.busy||this.engine.currentPlayer.bot&&this.modal.hidden===false)return;
     const roll=this.engine.rollDice();if(!roll)return;
+    this.setStatusExpanded(false);this.setMenuOpen(false);
     this.busy=true;this.render();
     const p=this.engine.currentPlayer,index=this.engine.state.turn;
     const bot=p.bot,oldReduce=this.renderer.reduceMotion;
@@ -149,6 +177,7 @@ export class FusionUI {
     }catch(error){console.warn('Board animation skipped:',error);if(this.engine.state.phase==='moving')this.engine.resolveLanding();}
     this.renderer.reduceMotion=oldReduce;
     this.busy=false;this.save();this.render();
+    if(!p.bot)this.showNotice(this.engine.currentSpace.name+' · '+this.nextStep(p,this.engine.currentSpace));
     if(p.bot){this.botAction();await delay(450);this.endTurn();}
     else if(this.engine.currentSpace.kind==='producer'&&!p.producerParts[this.engine.currentSpace.producer])this.openProducer();
   }
@@ -167,7 +196,7 @@ export class FusionUI {
   }
   openStudio(){
     const p=this.engine.currentPlayer;
-    if(!this.engine.hasAllParts(p)){this.$('instruction').textContent='Studio locked: collect all four producer sounds.';return;}
+    if(!this.engine.hasAllParts(p)){this.showNotice('Studio locked: collect all four producer sounds.');return;}
     this.openModal('<small>BEGENIUS STUDIO</small><h2>Make your fusion song</h2><p>Your four producers supplied the groove, percussion, melody and texture. Record a short original vocal or upload one to finish your song.</p>'+
       '<label>Song title<input id="songTitle" maxlength="44" placeholder="Name your song" value="'+esc(p.song?.title||'')+'"></label>'+
       '<button id="recordVocal">Record 12 seconds</button><label>Or upload your own short vocal<input id="vocalFile" type="file" accept="audio/*"></label>'+
@@ -221,6 +250,7 @@ export class FusionUI {
   }
   endTurn(){
     if(!this.engine.endTurn())return;
+    this.setStatusExpanded(false);this.setMenuOpen(false);
     this.save();this.render();
     if(this.engine.canShowcase()){this.runShowcase();return;}
     this.maybeBot();
