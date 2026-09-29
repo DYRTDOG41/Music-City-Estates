@@ -102,7 +102,7 @@ export class FusionUI {
     this.openModal('<small>MUSIC CITY PHONE</small><h2>Connect with your crew</h2>'+ 
       '<p>'+(this.online?.active?'This phone connects you to your live board, invite link and room chat. Voice chat and shared audio are not yet part of the board.':'Create an online room below to play from separate phones, or use the local game on one device.')+'</p>'+ 
       '<div class="phone-actions"><button id="phoneShare" class="primary">Share test link</button><button id="phoneCopy">Copy link</button><a href="https://www.messenger.com/" target="_blank" rel="noopener noreferrer">Open Messenger ↗</a></div>'+ 
-      '<p id="phoneStatus" class="progress" role="status">Talk in your Messenger group while you test. Opening Messenger does not join your games together.</p>'+ 
+      '<p id="phoneStatus" class="progress" role="status">'+(this.online?.active?'Use your room phone below to exchange producer cards and chat.':'Start an online room to invite your crew; Messenger is optional.')+'</p>'+ 
       '<h3>Artists in this local game</h3><div class="phone-roster">'+players.map(p=>'<div><b>'+esc(p.name)+'</b><small>'+(p.bot?'Computer':this.online?.active?(this.online.canControl(p)?'This phone':'Online artist'):'On this device')+'</small></div>').join('')+'</div>'+ 
       '<button id="phoneClose">Return to board</button>');
     const link=this.online?.inviteLink() || new URL('fusion_board.html',location.href).href;
@@ -250,6 +250,7 @@ export class FusionUI {
       'Roll the dice to reach producer blocks and music businesses.';
     this.$('gameLog').textContent=s.log[0]||'';
     this.renderer.syncOwnership(s);
+    this.online?.renderCollab();
   }
   nextStep(p,space){
     if(space.kind==='studio')return this.engine.hasAllParts(p)?'All four prompts ready. Make your song.':'Studio locked. Visit all four producers.';
