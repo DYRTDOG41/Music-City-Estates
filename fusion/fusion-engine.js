@@ -1,4 +1,4 @@
-import { BOARD_SPACES, LANDMARKS, DISTRICTS, CONFIG } from './fusion-data.js?v=5';
+import { BOARD_SPACES, LANDMARKS, DISTRICTS, CONFIG } from './fusion-data.js?v=6';
 import { VEHICLES, RIMS, PAINTS, STARTER_VEHICLES, vehicleGate, rimGate } from './fusion-vehicles.js';
 
 const copy = value => JSON.parse(JSON.stringify(value));
@@ -8,7 +8,7 @@ export class FusionEngine extends EventTarget {
   emit(type,detail={}){this.dispatchEvent(new CustomEvent(type,{detail}));}
   newGame(entries=[{name:'Artist 1',bot:false},{name:'City Bot',bot:true}]){
     this.state={
-      version:1,turn:0,round:1,phase:'ready',lastRoll:[0,0],headlineId:null,
+      version:1,boardArtworkVersion:'approved-art-v1',turn:0,round:1,phase:'ready',lastRoll:[0,0],headlineId:null,
       showcaseComplete:false,winnerId:null,selected:{type:'space',id:'start'},
       spaces:copy(BOARD_SPACES),landmarks:copy(LANDMARKS),log:[],
       players:entries.slice(0,4).map((entry,i)=>({
@@ -225,6 +225,22 @@ export class FusionEngine extends EventTarget {
   exportState(){return copy(this.state);}
   importState(value){
     if(value?.version!==1||!Array.isArray(value.players)||value.players.length<2||value.players.length>4)throw Error('Invalid fusion save');
+    // Keep each existing property owner, manager and song when moving from the
+    // old generic board to the exact approved artwork's road and neighborhoods.
+    // IDs/indexes and producer-stop indexes are unchanged; only the artwork-
+    // aligned borough names and the prompt associated with three sides change.
+    if(value.boardArtworkVersion!=='approved-art-v1'){
+      const ownedSpaces=new Map((value.spaces||[]).map(s=>[s.id,s]));
+      const ownedLandmarks=new Map((value.landmarks||[]).map(l=>[l.id,l]));
+      value.spaces=copy(BOARD_SPACES).map(s=>({
+        ...s,ownerId:ownedSpaces.get(s.id)?.ownerId||null
+      }));
+      value.landmarks=copy(LANDMARKS).map(l=>{
+        const old=ownedLandmarks.get(l.id);
+        return {...l,ownerId:old?.ownerId||null,level:old?.level||l.level};
+      });
+      value.boardArtworkVersion='approved-art-v1';
+    }
     value.players.forEach(p=>{
       // Migration: legacy finished songs keep their career progress and do not owe a retroactive fee.
       p.studioBooked=Boolean(p.studioBooked||p.song);
