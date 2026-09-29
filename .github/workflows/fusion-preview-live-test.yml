@@ -1,0 +1,49 @@
+name: Fusion preview live smoke
+
+on:
+  push:
+    branches:
+      - feature/fusion-four-borough-board
+    paths:
+      - 'fusion/live-preview.test.mjs'
+      - '.github/workflows/fusion-preview-live-test.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      MCE_PREVIEW_URL: https://music-city-estates-api-git-f-5312dd-willwill3515-5514s-projects.vercel.app/fusion_board.html
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Confirm the deployed page is reachable
+        shell: bash
+        run: |
+          echo "Checking Vercel preview route for unauthenticated playtesters"
+          status=$(curl --location --retry 4 --retry-delay 4 --retry-all-errors --max-time 25 -sS -o /tmp/fusion-preview.html -w '%{http_code}' "$MCE_PREVIEW_URL")
+          echo "Preview HTTP status: $status"
+          if [ "$status" != "200" ]; then
+            echo "::error::Live preview returned HTTP $status. Check Vercel deployment protection and preview URL."
+            exit 1
+          fi
+          grep -q 'fusion-app.js' /tmp/fusion-preview.html || { echo "::error::Preview route did not serve Fusion Board HTML"; exit 1; }
+      - name: Install browser test runtime
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Test two mobile browsers, chat and producer exchange
+        run: node fusion/live-preview.test.mjs
+      - name: Upload screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fusion-preview-failure-screenshots
+          path: fusion-live-*.png
+          if-no-files-found: ignore
