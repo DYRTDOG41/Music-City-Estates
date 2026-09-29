@@ -62,7 +62,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: fusion-board-mobile-success
-          path: fusion-art-board-mobile.png
+          path: |
+            fusion-art-board-initial.png
+            fusion-art-board-car-after-roll.png
+            fusion-art-board-mobile.png
           if-no-files-found: error
       - name: Upload screenshots on failure
         if: failure()
