@@ -42,7 +42,7 @@ try{
   assert.equal(board.ready,true);
   assert.equal(board.spaces,40);
   assert.equal(board.imageBytes,2856862,'Must load the exact original approved PNG');
-  assert.match(board.contentType,/image\\/png/);
+  assert.match(board.contentType,/image\/png/);
   console.log('PASS: exact 2.86 MB user-approved art is the loaded 3D board texture, with 40 road stops');
   await host.locator('#phoneBtn').click();
   await host.locator('#createFusionRoom').click();
