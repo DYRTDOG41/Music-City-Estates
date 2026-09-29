@@ -57,6 +57,13 @@ jobs:
           echo "Local server ready; PeerJS signalling will still use the public online service."
       - name: Test two mobile browsers, chat and producer exchange
         run: node fusion/live-preview.test.mjs
+      - name: Save the approved board's mobile visual test image
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fusion-board-mobile-success
+          path: fusion-art-board-mobile.png
+          if-no-files-found: error
       - name: Upload screenshots on failure
         if: failure()
         uses: actions/upload-artifact@v4
