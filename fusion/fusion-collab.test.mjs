@@ -102,7 +102,7 @@ test('collecting all four cards does not bypass the two-lap or $500 studio gates
   assert.match(game.bookStudio().reason,/1 more lap/);
   p.laps=2;
   p.cash=499;
-  assert.match(game.bookStudio().reason,/Earn $1 more/);
+  assert.match(game.bookStudio().reason,/Earn \$1 more/);
   assert.equal(game.recordSong('Too Soon','audio','prompt').ok,false);
   p.cash=500;
   assert.equal(game.bookStudio().ok,true);
@@ -141,7 +141,7 @@ test('manager needs a finished song, property, money and one additional lap',()=
   assert.match(game.hireManager().reason,/Buy a music property/);
   assert.equal(game.buyProperty().ok,true);
   p.cash=299;
-  assert.match(game.hireManager().reason,/costs $300/);
+  assert.match(game.hireManager().reason,/costs \$300/);
   p.cash=300;
   assert.equal(game.hireManager().ok,true);
   assert.equal(p.cash,0);
